@@ -124,7 +124,7 @@ Color Card::getWildColor() {
  * Valid only when this is a wild card. Set the specified following legal
  * color by the player who played this wild card.
  *
- * @param color New wild color value.
+ * @param wildColor New wild color value.
  */
 void Card::setWildColor(Color wildColor) {
 	this->wildColor = wildColor;

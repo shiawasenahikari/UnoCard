@@ -36,6 +36,7 @@ static const Scalar RGB_BLUE = CV_RGB(0x55, 0x55, 0xFF);
 static const Scalar RGB_GREEN = CV_RGB(0x55, 0xAA, 0x55);
 static const Scalar RGB_WHITE = CV_RGB(0xCC, 0xCC, 0xCC);
 static const Scalar RGB_YELLOW = CV_RGB(0xFF, 0xAA, 0x11);
+static const string NAME[] = { "YOU", "WEST", "NORTH", "EAST" };
 static const enum HersheyFonts FONT_SANS = FONT_HERSHEY_DUPLEX;
 static const char FILE_HEADER[] = {
 	(char)('U' + 'N'),
@@ -59,7 +60,6 @@ static int sEasyTotal;
 static int sHardTotal;
 static int sDirection;
 static int sDifficulty;
-static string sName[4];
 
 // Functions
 static void easyAI();
@@ -106,10 +106,6 @@ int main() {
 
 	sUno = Uno::getInstance();
 	sWinner = PLAYER_YOU;
-	sName[0] = "YOU";
-	sName[1] = "WEST";
-	sName[2] = "NORTH";
-	sName[3] = "EAST";
 	sStatus = STAT_WELCOME;
 	sScreen = sUno->getBackground().clone();
 	namedWindow("Uno");
@@ -992,11 +988,11 @@ static void play(int index, Color color) {
 		else {
 			// When the played card is an action card or a wild card,
 			// do the necessary things according to the game rule
-			message = sName[now];
+			message = NAME[now];
 			switch (card->getContent()) {
 			case DRAW2:
 				next = (now + sDirection) % 4;
-				message += ": Let " + sName[next] + " draw 2 cards";
+				message += ": Let " + NAME[next] + " draw 2 cards";
 				refreshScreen(message);
 				waitKey(1500);
 				draw(next, 2);
@@ -1010,7 +1006,7 @@ static void play(int index, Color color) {
 					message += ": Skip your turn";
 				} // if (next == PLAYER_YOU)
 				else {
-					message += ": Skip " + sName[next] + "'s turn";
+					message += ": Skip " + NAME[next] + "'s turn";
 				} // else
 
 				refreshScreen(message);
@@ -1045,7 +1041,7 @@ static void play(int index, Color color) {
 
 			case WILD_DRAW4:
 				next = (now + sDirection) % 4;
-				message += ": Let " + sName[next] + " draw 4 cards";
+				message += ": Let " + NAME[next] + " draw 4 cards";
 				refreshScreen(message);
 				waitKey(1500);
 				draw(next, 4);
@@ -1082,7 +1078,7 @@ static void draw(int who, int count) {
 	now = sStatus;
 	sStatus = STAT_IDLE; // block mouse click events when idle
 	for (i = 0; i < count; ++i) {
-		message = sName[who];
+		message = NAME[who];
 		card = sUno->draw(who);
 		if (card != NULL) {
 			// Animation
@@ -1150,7 +1146,7 @@ static void draw(int who, int count) {
 			} // switch (who)
 		} // if (card != NULL)
 		else {
-			message = sName[who] + " can't hold more than 15 cards";
+			message = NAME[who] + " can't hold more than 15 cards";
 			refreshScreen(message);
 			break;
 		} // else
