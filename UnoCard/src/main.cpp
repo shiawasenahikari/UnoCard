@@ -1146,7 +1146,9 @@ static void draw(int who, int count) {
 			} // switch (who)
 		} // if (card != NULL)
 		else {
-			message = NAME[who] + " can't hold more than 15 cards";
+			message += " cannot hold more than ";
+			message += to_string(MAX_HOLD_CARDS);
+			message += " cards";
 			refreshScreen(message);
 			break;
 		} // else

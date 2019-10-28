@@ -121,16 +121,6 @@ Color Card::getWildColor() {
 } // getWildColor()
 
 /**
- * Valid only when this is a wild card. Set the specified following legal
- * color by the player who played this wild card.
- *
- * @param wildColor New wild color value.
- */
-void Card::setWildColor(Color wildColor) {
-	this->wildColor = wildColor;
-} // setWildColor()
-
-/**
  * @return Card's content.
  */
 Content Card::getContent() {
@@ -140,7 +130,7 @@ Content Card::getContent() {
 /**
  * @return Card's name.
  */
-string Card::getName() {
+const string& Card::getName() {
 	return name;
 } // getName()
 
@@ -691,13 +681,13 @@ Color Uno::bestColorFor(int whom) {
 	if (whom >= 0 && whom < 4) {
 		for (Card* card : hand[whom]) {
 			if (card->isZero()) {
-				++score[card->getColor()];
+				++score[card->color];
 			} // if (card->isZero())
 			else if (card->isAction()) {
-				score[card->getColor()] += 3;
+				score[card->color] += 3;
 			} // else if (card->isAction())
 			else {
-				score[card->getColor()] += 2;
+				score[card->color] += 2;
 			} // else
 		} // for (Card* card : hand[whom])
 
@@ -744,18 +734,18 @@ bool Uno::isLegalToPlay(Card* card) {
 		// Same color to previous: LEGAL
 		// Other cards: ILLEGAL
 		previous = recent.back();
-		if (card->getContent() == previous->getContent()) {
+		if (card->content == previous->content) {
 			result = true;
-		} // if (card->getContent() == previous->getContent())
+		} // if (card->content == previous->content)
 		else {
 			if (previous->isWild()) {
-				prevColor = previous->getWildColor();
+				prevColor = previous->wildColor;
 			} // if (previous->isWild())
 			else {
-				prevColor = previous->getColor();
+				prevColor = previous->color;
 			} // else
 
-			result = (card->getColor() == prevColor);
+			result = (card->color == prevColor);
 		} // else
 	} // else
 
@@ -786,7 +776,7 @@ Card* Uno::play(int who, int index, Color color) {
 		card = hand[who].at(index);
 		hand[who].erase(hand[who].begin() + index);
 		if (card->isWild()) {
-			card->setWildColor(color);
+			card->wildColor = color;
 		} // if (card->isWild())
 
 		recent.push_back(card);

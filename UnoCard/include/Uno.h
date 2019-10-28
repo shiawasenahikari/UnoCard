@@ -41,16 +41,6 @@ typedef enum {
 class Card {
 public:
 	/**
-	 * Default constructor.
-	 */
-	Card();
-
-	/**
-	 * Constructor. Provide parameters for an Uno card and create its instance.
-	 */
-	Card(cv::Mat, cv::Mat, Color, Content, std::string);
-
-	/**
 	 * Override relational operator (<).
 	 */
 	bool operator<(const Card& card);
@@ -104,14 +94,6 @@ public:
 	Color getWildColor();
 
 	/**
-	 * Valid only when this is a wild card. Set the specified following legal
-	 * color by the player who played this wild card.
-	 *
-	 * @param wildColor New wild color value.
-	 */
-	void setWildColor(Color wildColor);
-
-	/**
 	 * @return Card's content.
 	 */
 	Content getContent();
@@ -119,7 +101,7 @@ public:
 	/**
 	 * @return Card's name.
 	 */
-	std::string getName();
+	const std::string& getName();
 
 	/**
 	 * @return Whether the card is an action card.
@@ -177,6 +159,22 @@ private:
 	 * Card's name, e.g. "Blue 3"
 	 */
 	std::string name;
+
+	/**
+	 * Default constructor.
+	 */
+	Card();
+
+	/**
+	 * Constructor. Provide parameters for an Uno card and create its instance.
+	 */
+	Card(cv::Mat, cv::Mat, Color, Content, std::string);
+
+	/**
+	 * Grant Uno class to access our constructors (to create Card instances) and
+	 * our private fields (to change the wild color when necessary).
+	 */
+	friend class Uno;
 
 }; // Card Class
 
