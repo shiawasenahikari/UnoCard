@@ -140,8 +140,6 @@ static void easyAI() {
 		} // if (sUno->isLegalToPlay(card))
 		else {
 			draw();
-			sStatus = (sStatus + sDirection) % 4;
-			onStatusChanged(sStatus);
 		} // else
 	} // if (yourSize == 1)
 	else {
@@ -323,8 +321,6 @@ static void easyAI() {
 		else {
 			// No appropriate cards to play, or no card is legal to play
 			draw();
-			sStatus = (sStatus + sDirection) % 4;
-			onStatusChanged(sStatus);
 		} // else
 	} // else
 } // easyAI()
@@ -353,8 +349,6 @@ static void hardAI() {
 		} // if (sUno->isLegalToPlay(card))
 		else {
 			draw();
-			sStatus = (sStatus + sDirection) % 4;
-			onStatusChanged(sStatus);
 		} // else
 	} // if (yourSize == 1)
 	else {
@@ -600,8 +594,6 @@ static void hardAI() {
 		else {
 			// No appropriate cards to play, or no card is legal to play
 			draw();
-			sStatus = (sStatus + sDirection) % 4;
-			onStatusChanged(sStatus);
 		} // else
 	} // else
 } // hardAI()
@@ -996,8 +988,6 @@ static void play(int index, Color color) {
 				refreshScreen(message);
 				waitKey(1500);
 				draw(next, 2);
-				sStatus = (next + sDirection) % 4;
-				onStatusChanged(sStatus);
 				break; // case DRAW2
 
 			case SKIP:
@@ -1045,8 +1035,6 @@ static void play(int index, Color color) {
 				refreshScreen(message);
 				waitKey(1500);
 				draw(next, 4);
-				sStatus = (next + sDirection) % 4;
-				onStatusChanged(sStatus);
 				break; // case WILD_DRAW4
 
 			default:
@@ -1062,7 +1050,7 @@ static void play(int index, Color color) {
 } // play()
 
 /**
- * Let a player draw one or more cards.
+ * Let a player draw one or more cards, and skip its turn.
  *
  * @param who   Who draws a card. Must be one of the following values:
  *              PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
@@ -1070,12 +1058,11 @@ static void play(int index, Color color) {
  * @param count How many cards to draw. Default to 1.
  */
 static void draw(int who, int count) {
+	int i;
 	Mat image;
 	Card* card;
-	int i, now;
 	string message;
 
-	now = sStatus;
 	sStatus = STAT_IDLE; // block mouse click events when idle
 	for (i = 0; i < count; ++i) {
 		message = NAME[who];
@@ -1155,7 +1142,8 @@ static void draw(int who, int count) {
 	} // for (i = 0; i < count; ++i)
 
 	waitKey(1500);
-	sStatus = now;
+	sStatus = (who + sDirection) % 4;
+	onStatusChanged(sStatus);
 } // draw()
 
 /**
@@ -1243,8 +1231,6 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 			else if (y >= 270 && y <= 450 && x >= 420 && x <= 540) {
 				// Card deck area, draw a card
 				draw();
-				sStatus += sDirection;
-				onStatusChanged(sStatus);
 			} // else if (y >= 270 && y <= 450 && x >= 420 && x <= 540)
 			break; // case PLAYER_YOU
 
