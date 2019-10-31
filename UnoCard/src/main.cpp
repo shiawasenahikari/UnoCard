@@ -60,6 +60,7 @@ static int sEasyTotal;
 static int sHardTotal;
 static int sDirection;
 static int sDifficulty;
+static bool sAIRunning;
 
 // Functions
 static void easyAI();
@@ -105,6 +106,7 @@ int main() {
 	} // if (!reader.fail())
 
 	sUno = Uno::getInstance();
+	sAIRunning = false;
 	sWinner = PLAYER_YOU;
 	sStatus = STAT_WELCOME;
 	sScreen = sUno->getBackground().clone();
@@ -130,19 +132,25 @@ static void easyAI() {
 	int idx_zero, idx_num, idx_wild, idx_wildDraw4;
 	bool hasNum, hasRev, hasZero, hasSkip, hasWild, hasDraw2, hasWildDraw4;
 
-	hand = sUno->getHandCardsOf(sStatus);
-	yourSize = (int)hand.size();
-	if (yourSize == 1) {
-		// Only one card remained. Play it when it's legal.
-		card = hand.at(0);
-		if (sUno->isLegalToPlay(card)) {
-			play(0);
-		} // if (sUno->isLegalToPlay(card))
-		else {
-			draw();
-		} // else
-	} // if (yourSize == 1)
-	else {
+	sAIRunning = true;
+	while (sStatus == PLAYER_COM1
+		|| sStatus == PLAYER_COM2
+		|| sStatus == PLAYER_COM3) {
+		hand = sUno->getHandCardsOf(sStatus);
+		yourSize = (int)hand.size();
+		if (yourSize == 1) {
+			// Only one card remained. Play it when it's legal.
+			card = hand.at(0);
+			if (sUno->isLegalToPlay(card)) {
+				play(0);
+			} // if (sUno->isLegalToPlay(card))
+			else {
+				draw();
+			} // else
+
+			continue;
+		} // if (yourSize == 1)
+
 		next = (sStatus + sDirection) % 4;
 		nextSize = (int)sUno->getHandCardsOf(next).size();
 		oppo = (sStatus + 2) % 4;
@@ -322,7 +330,9 @@ static void easyAI() {
 			// No appropriate cards to play, or no card is legal to play
 			draw();
 		} // else
-	} // else
+	} // while (sStatus == PLAYER_COM1 || ...)
+
+	sAIRunning = false;
 } // easyAI()
 
 /**
@@ -339,19 +349,25 @@ static void hardAI() {
 	int idx_zero, idx_num, idx_wild, idx_wildDraw4;
 	bool hasNum, hasRev, hasZero, hasSkip, hasWild, hasDraw2, hasWildDraw4;
 
-	hand = sUno->getHandCardsOf(sStatus);
-	yourSize = (int)hand.size();
-	if (yourSize == 1) {
-		// Only one card remained. Play it when it's legal.
-		card = hand.at(0);
-		if (sUno->isLegalToPlay(card)) {
-			play(0);
-		} // if (sUno->isLegalToPlay(card))
-		else {
-			draw();
-		} // else
-	} // if (yourSize == 1)
-	else {
+	sAIRunning = true;
+	while (sStatus == PLAYER_COM1
+		|| sStatus == PLAYER_COM2
+		|| sStatus == PLAYER_COM3) {
+		hand = sUno->getHandCardsOf(sStatus);
+		yourSize = (int)hand.size();
+		if (yourSize == 1) {
+			// Only one card remained. Play it when it's legal.
+			card = hand.at(0);
+			if (sUno->isLegalToPlay(card)) {
+				play(0);
+			} // if (sUno->isLegalToPlay(card))
+			else {
+				draw();
+			} // else
+
+			continue;
+		} // if (yourSize == 1)
+
 		next = (sStatus + sDirection) % 4;
 		nextSize = (int)sUno->getHandCardsOf(next).size();
 		oppo = (sStatus + 2) % 4;
@@ -595,7 +611,9 @@ static void hardAI() {
 			// No appropriate cards to play, or no card is legal to play
 			draw();
 		} // else
-	} // else
+	} // while (sStatus == PLAYER_COM1 || ...)
+
+	sAIRunning = false;
 } // hardAI()
 
 /**
@@ -650,12 +668,14 @@ static void onStatusChanged(int status) {
 	case PLAYER_COM2:
 	case PLAYER_COM3:
 		// AI players' turn
-		if (sDifficulty == LV_EASY) {
-			easyAI();
-		} // if (sDifficulty == LV_EASY)
-		else {
-			hardAI();
-		} // else
+		if (!sAIRunning) {
+			if (sDifficulty == LV_EASY) {
+				easyAI();
+			} // if (sDifficulty == LV_EASY)
+			else {
+				hardAI();
+			} // else
+		} // if (!sAIRunning)
 		break; // case PLAYER_COM1, PLAYER_COM2, PLAYER_COM3
 
 	case STAT_GAME_OVER:
