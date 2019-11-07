@@ -654,7 +654,7 @@ static void onStatusChanged(int status) {
 		// Need to specify the following legal color after played a
 		// wild card. Draw color sectors in the center of screen
 		refreshScreen("^ Specify the following legal color");
-		rect = Rect(360, 270, 181, 181);
+		rect = Rect(450, 270, 181, 181);
 		sUno->getBackground()(rect).copyTo(sScreen(rect));
 		center = Point(450, 360);
 		axes = Size(90, 90);
