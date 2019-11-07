@@ -718,8 +718,17 @@ static void refreshScreen(string message) {
 	// Clear
 	sUno->getBackground().copyTo(sScreen);
 
-	// Center: card deck & recent played card
-	// Specially, for welcome screen, show difficulty buttons and winning rates
+	// Message area
+	width = getTextSize(message, FONT_SANS, 1.0, 1, NULL).width;
+	point = Point(640 - width / 2, 480);
+	putText(sScreen, message, point, FONT_SANS, 1.0, RGB_WHITE);
+
+	// Right-top corner: <QUIT> button
+	point.x = 1140;
+	point.y = 42;
+	putText(sScreen, "<QUIT>", point, FONT_SANS, 1.0, RGB_WHITE);
+
+	// For welcome screen, only show difficulty buttons and winning rates
 	if (status == STAT_WELCOME) {
 		image = sUno->getEasyImage();
 		roi = Rect(420, 270, 121, 181);
@@ -732,10 +741,12 @@ static void refreshScreen(string message) {
 		hardRate = (sHardTotal == 0 ? 0 : 100 * sHardWin / sHardTotal);
 		buff << easyRate << "% [WinningRate] " << hardRate << "%";
 		width = getTextSize(buff.str(), FONT_SANS, 1.0, 1, NULL).width;
-		point = Point(640 - width / 2, 250);
+		point.x = 640 - width / 2;
+		point.y = 250;
 		putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
 	} // if (status == STAT_WELCOME)
 	else {
+		// Center: card deck & recent played card
 		image = sUno->getBackImage();
 		roi = Rect(420, 270, 121, 181);
 		image.copyTo(sScreen(roi), image);
@@ -758,208 +769,195 @@ static void refreshScreen(string message) {
 			image.copyTo(sScreen(roi), image);
 			roi.x += 45;
 		} // for (Card* recent : hand)
-	} // else
 
-	// Left-top corner: remain / used
-	point = Point(20, 42);
-	remain = sUno->getDeckCount();
-	used = sUno->getUsedCount();
-	buff.str("");
-	buff << "Remain/Used: " << remain << "/" << used;
-	putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
+		// Left-top corner: remain / used
+		point = Point(20, 42);
+		remain = sUno->getDeckCount();
+		used = sUno->getUsedCount();
+		buff.str("");
+		buff << "Remain/Used: " << remain << "/" << used;
+		putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
 
-	// Right-top corner: <QUIT> button
-	point.x = 1140;
-	point.y = 42;
-	putText(sScreen, "<QUIT>", point, FONT_SANS, 1.0, RGB_WHITE);
-
-	// Left-center: Hand cards of Player West (COM1)
-	hand = sUno->getHandCardsOf(PLAYER_COM1);
-	size = (int)hand.size();
-	if (size == 0) {
-		// Played all hand cards, it's winner
-		if (status != STAT_WELCOME) {
-			point.x = 51;
-			point.y = 461;
-			putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
-		} // if (status != STAT_WELCOME)
-	} // if (size == 0)
-	else {
-		if (status == STAT_GAME_OVER) {
-			// Show remained cards to everyone when game over
-			height = 40 * size + 140;
-			roi.x = 20;
-			roi.y = 360 - height / 2;
-			for (Card* card : hand) {
-				image = card->getImage();
-				image.copyTo(sScreen(roi), image);
-				roi.y += 40;
-			} // for (Card* card : hand)
-		} // if (status == STAT_GAME_OVER)
+		// Left-center: Hand cards of Player West (COM1)
+		hand = sUno->getHandCardsOf(PLAYER_COM1);
+		size = (int)hand.size();
+		if (size == 0) {
+			// Played all hand cards, it's winner
+			if (status != STAT_WELCOME) {
+				point.x = 51;
+				point.y = 461;
+				putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
+			} // if (status != STAT_WELCOME)
+		} // if (size == 0)
 		else {
-			// Only show a card back in game process
-			image = sUno->getBackImage();
-			roi.x = 20;
-			roi.y = 270;
-			image.copyTo(sScreen(roi), image);
+			if (status == STAT_GAME_OVER) {
+				// Show remained cards to everyone when game over
+				height = 40 * size + 140;
+				roi.x = 20;
+				roi.y = 360 - height / 2;
+				for (Card* card : hand) {
+					image = card->getImage();
+					image.copyTo(sScreen(roi), image);
+					roi.y += 40;
+				} // for (Card* card : hand)
+			} // if (status == STAT_GAME_OVER)
+			else {
+				// Only show a card back in game process
+				image = sUno->getBackImage();
+				roi.x = 20;
+				roi.y = 270;
+				image.copyTo(sScreen(roi), image);
+			} // else
+
+			if (size == 1) {
+				// Show "UNO" warning when only one card in hand
+				point.x = 47;
+				point.y = 494;
+				putText(sScreen, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
+			} // if (size == 1)
+			else if (status != STAT_GAME_OVER) {
+				// When two or more cards in hand, show the amount
+				point.x = 50;
+				point.y = 494;
+				buff.str("");
+				buff << setw(2) << size;
+				putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
+			} // else if (status != STAT_GAME_OVER)
 		} // else
 
-		if (size == 1) {
-			// Show "UNO" warning when only one card in hand
-			point.x = 47;
-			point.y = 494;
-			putText(sScreen, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
-		} // if (size == 1)
-		else if (status != STAT_GAME_OVER) {
-			// When two or more cards in hand, show the amount
-			point.x = 50;
-			point.y = 494;
-			buff.str("");
-			buff << setw(2) << size;
-			putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
-		} // else if (status != STAT_GAME_OVER)
-	} // else
+		// Top-center: Hand cards of Player North (COM2)
+		hand = sUno->getHandCardsOf(PLAYER_COM2);
+		size = (int)hand.size();
+		if (size == 0) {
+			// Played all hand cards, it's winner
+			if (status != STAT_WELCOME) {
+				point.x = 611;
+				point.y = 121;
+				putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
+			} // if (status != STAT_WELCOME)
+		} // if (size == 0)
+		else {
+			if (status == STAT_GAME_OVER) {
+				// Show remained hand cards when game over
+				width = 45 * size + 75;
+				roi.x = 640 - width / 2;
+				roi.y = 20;
+				for (Card* card : hand) {
+					image = card->getImage();
+					image.copyTo(sScreen(roi), image);
+					roi.x += 45;
+				} // for (Card* card : hand)
+			} // if (status == STAT_GAME_OVER)
+			else {
+				// Only show a card back in game process
+				image = sUno->getBackImage();
+				roi.x = 580;
+				roi.y = 20;
+				image.copyTo(sScreen(roi), image);
+			} // else
 
-	// Top-center: Hand cards of Player North (COM2)
-	hand = sUno->getHandCardsOf(PLAYER_COM2);
-	size = (int)hand.size();
-	if (size == 0) {
-		// Played all hand cards, it's winner
-		if (status != STAT_WELCOME) {
-			point.x = 611;
-			point.y = 121;
-			putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
-		} // if (status != STAT_WELCOME)
-	} // if (size == 0)
-	else {
-		if (status == STAT_GAME_OVER) {
-			// Show remained hand cards when game over
+			if (size == 1) {
+				// Show "UNO" warning when only one card in hand
+				point.x = 500;
+				point.y = 121;
+				putText(sScreen, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
+			} // if (size == 1)
+			else if (status != STAT_GAME_OVER) {
+				// When two or more cards in hand, show the amount
+				point.x = 500;
+				point.y = 121;
+				buff.str("");
+				buff << setw(2) << size;
+				putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
+			} // else if (status != STAT_GAME_OVER)
+		} // else
+
+		// Right-center: Hand cards of Player East (COM3)
+		hand = sUno->getHandCardsOf(PLAYER_COM3);
+		size = (int)hand.size();
+		if (size == 0) {
+			// Played all hand cards, it's winner
+			if (status != STAT_WELCOME) {
+				point.x = 1170;
+				point.y = 461;
+				putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
+			} // if (status != STAT_WELCOME)
+		} // if (size == 0)
+		else {
+			if (status == STAT_GAME_OVER) {
+				// Show remained hand cards when game over
+				height = 40 * size + 140;
+				roi.x = 1140;
+				roi.y = 360 - height / 2;
+				for (Card* card : hand) {
+					image = card->getImage();
+					image.copyTo(sScreen(roi), image);
+					roi.y += 40;
+				} // for (Card* card : hand)
+			} // if (status == STAT_GAME_OVER)
+			else {
+				// Only show a card back in game process
+				image = sUno->getBackImage();
+				roi.x = 1140;
+				roi.y = 270;
+				image.copyTo(sScreen(roi), image);
+			} // else
+
+			if (size == 1) {
+				// Show "UNO" warning when only one card in hand
+				point.x = 1166;
+				point.y = 494;
+				putText(sScreen, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
+			} // if (size == 1)
+			else if (status != STAT_GAME_OVER) {
+				// When two or more cards in hand, show the amount
+				point.x = 1170;
+				point.y = 494;
+				buff.str("");
+				buff << setw(2) << size;
+				putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
+			} // else if (status != STAT_GAME_OVER)
+		} // else
+
+		// Bottom: Your hand cards
+		hand = sUno->getHandCardsOf(PLAYER_YOU);
+		size = (int)hand.size();
+		if (size == 0) {
+			// Played all hand cards, it's winner
+			if (status != STAT_WELCOME) {
+				point.x = 611;
+				point.y = 621;
+				putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
+			} // if (status != STAT_WELCOME)
+		} // if (size == 0)
+		else {
+			// Show your all hand cards
 			width = 45 * size + 75;
 			roi.x = 640 - width / 2;
-			roi.y = 20;
+			roi.y = 520;
 			for (Card* card : hand) {
-				image = card->getImage();
+				if (status == PLAYER_YOU && sUno->isLegalToPlay(card)) {
+					image = card->getImage();
+				} // if (status == PLAYER_YOU && sUno->isLegalToPlay(card))
+				else if (status == STAT_GAME_OVER) {
+					image = card->getImage();
+				} // else if (status == STAT_GAME_OVER)
+				else {
+					image = card->getDarkImg();
+				} // else
+
 				image.copyTo(sScreen(roi), image);
 				roi.x += 45;
 			} // for (Card* card : hand)
-		} // if (status == STAT_GAME_OVER)
-		else {
-			// Only show a card back in game process
-			image = sUno->getBackImage();
-			roi.x = 580;
-			roi.y = 20;
-			image.copyTo(sScreen(roi), image);
+
+			if (size == 1) {
+				// Show "UNO" warning when only one card in hand
+				point.x = 720;
+				point.y = 621;
+				putText(sScreen, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
+			} // if (size == 1)
 		} // else
-
-		if (size == 1) {
-			// Show "UNO" warning when only one card in hand
-			point.x = 500;
-			point.y = 121;
-			putText(sScreen, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
-		} // if (size == 1)
-		else if (status != STAT_GAME_OVER) {
-			// When two or more cards in hand, show the amount
-			point.x = 500;
-			point.y = 121;
-			buff.str("");
-			buff << setw(2) << size;
-			putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
-		} // else if (status != STAT_GAME_OVER)
 	} // else
-
-	// Right-center: Hand cards of Player East (COM3)
-	hand = sUno->getHandCardsOf(PLAYER_COM3);
-	size = (int)hand.size();
-	if (size == 0) {
-		// Played all hand cards, it's winner
-		if (status != STAT_WELCOME) {
-			point.x = 1170;
-			point.y = 461;
-			putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
-		} // if (status != STAT_WELCOME)
-	} // if (size == 0)
-	else {
-		if (status == STAT_GAME_OVER) {
-			// Show remained hand cards when game over
-			height = 40 * size + 140;
-			roi.x = 1140;
-			roi.y = 360 - height / 2;
-			for (Card* card : hand) {
-				image = card->getImage();
-				image.copyTo(sScreen(roi), image);
-				roi.y += 40;
-			} // for (Card* card : hand)
-		} // if (status == STAT_GAME_OVER)
-		else {
-			// Only show a card back in game process
-			image = sUno->getBackImage();
-			roi.x = 1140;
-			roi.y = 270;
-			image.copyTo(sScreen(roi), image);
-		} // else
-
-		if (size == 1) {
-			// Show "UNO" warning when only one card in hand
-			point.x = 1166;
-			point.y = 494;
-			putText(sScreen, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
-		} // if (size == 1)
-		else if (status != STAT_GAME_OVER) {
-			// When two or more cards in hand, show the amount
-			point.x = 1170;
-			point.y = 494;
-			buff.str("");
-			buff << setw(2) << size;
-			putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
-		} // else if (status != STAT_GAME_OVER)
-	} // else
-
-	// Bottom: Your hand cards
-	hand = sUno->getHandCardsOf(PLAYER_YOU);
-	size = (int)hand.size();
-	if (size == 0) {
-		// Played all hand cards, it's winner
-		if (status != STAT_WELCOME) {
-			point.x = 611;
-			point.y = 621;
-			putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
-		} // if (status != STAT_WELCOME)
-	} // if (size == 0)
-	else {
-		// Show your all hand cards
-		width = 45 * size + 75;
-		roi.x = 640 - width / 2;
-		roi.y = 520;
-		for (Card* card : hand) {
-			if (status == PLAYER_YOU && sUno->isLegalToPlay(card)) {
-				image = card->getImage();
-			} // if (status == PLAYER_YOU && sUno->isLegalToPlay(card))
-			else if (status == STAT_GAME_OVER) {
-				image = card->getImage();
-			} // else if (status == STAT_GAME_OVER)
-			else {
-				image = card->getDarkImg();
-			} // else
-
-			image.copyTo(sScreen(roi), image);
-			roi.x += 45;
-		} // for (Card* card : hand)
-
-		if (size == 1) {
-			// Show "UNO" warning when only one card in hand
-			point.x = 720;
-			point.y = 621;
-			putText(sScreen, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
-		} // if (size == 1)
-	} // else
-
-	// Message area
-	if (!message.empty()) {
-		width = getTextSize(message, FONT_SANS, 1.0, 1, NULL).width;
-		point.x = 640 - width / 2;
-		point.y = 480;
-		putText(sScreen, message, point, FONT_SANS, 1.0, RGB_WHITE);
-	} // if (!message.empty())
 
 	// Show screen
 	imshow("Uno", sScreen);
