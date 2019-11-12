@@ -60,8 +60,6 @@ public class MainActivity extends AppCompatActivity
     private static final int STAT_NEW_GAME = 0x3333;
     private static final int STAT_WELCOME = 0x2222;
     private static final int STAT_IDLE = 0x1111;
-    private static final int DIR_RIGHT = 3;
-    private static final int DIR_LEFT = 1;
     private static final int LV_HARD = 1;
     private static final int LV_EASY = 0;
     private ImageView mImgScreen;
@@ -99,7 +97,7 @@ public class MainActivity extends AppCompatActivity
         mUno = Uno.getInstance(this);
         mWinner = Uno.PLAYER_YOU;
         mStatus = STAT_WELCOME;
-        mScr = mUno.getBackground().clone();
+        mScr = mUno.getBackground(Uno.DIR_LEFT).clone();
         mBmp = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888);
         refreshScreen("WELCOME TO UNO CARD GAME");
         mImgScreen.setOnTouchListener(this);
@@ -600,6 +598,7 @@ public class MainActivity extends AppCompatActivity
         Rect rect;
         Size axes;
         Point center;
+        Mat areaToErase;
         Runnable delayedTask;
 
         switch (status) {
@@ -613,7 +612,7 @@ public class MainActivity extends AppCompatActivity
                 } // else
 
                 mUno.start();
-                mDirection = DIR_LEFT;
+                mDirection = Uno.DIR_LEFT;
                 refreshScreen("GET READY");
                 delayedTask = () -> {
                     mStatus = mWinner;
@@ -632,7 +631,8 @@ public class MainActivity extends AppCompatActivity
                 // wild card. Draw color sectors in the center of screen
                 refreshScreen("^ Specify the following legal color");
                 rect = new Rect(420, 270, 121, 181);
-                new Mat(mUno.getBackground(), rect).copyTo(new Mat(mScr, rect));
+                areaToErase = new Mat(mUno.getBackground(mDirection), rect);
+                areaToErase.copyTo(new Mat(mScr, rect));
                 center = new Point(405, 315);
                 axes = new Size(135, 135);
 
@@ -742,7 +742,7 @@ public class MainActivity extends AppCompatActivity
         status = mStatus;
 
         // Clear
-        mUno.getBackground().copyTo(mScr);
+        mUno.getBackground(mDirection).copyTo(mScr);
 
         // Message area
         textSize = Imgproc.getTextSize(message, FONT_SANS, 1.0, 1, null);
@@ -1070,13 +1070,13 @@ public class MainActivity extends AppCompatActivity
                             break; // case SKIP
 
                         case REV:
-                            if (mDirection == DIR_LEFT) {
-                                mDirection = DIR_RIGHT;
+                            if (mDirection == Uno.DIR_LEFT) {
+                                mDirection = Uno.DIR_RIGHT;
                                 message = NAME[now] + ": Change direction to "
                                         + "COUNTER CLOCKWISE";
-                            } // if (mDirection == DIR_LEFT)
+                            } // if (mDirection == Uno.DIR_LEFT)
                             else {
-                                mDirection = DIR_LEFT;
+                                mDirection = Uno.DIR_LEFT;
                                 message = NAME[now] + ": Change direction to "
                                         + "CLOCKWISE";
                             } // else
@@ -1155,8 +1155,8 @@ public class MainActivity extends AppCompatActivity
 
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             // Only response to tap down events, and ignore the others
-            x = (int) (event.getX() * mUno.backgroundWidth / v.getWidth());
-            y = (int) (event.getY() * mUno.backgroundHeight / v.getHeight());
+            x = (int) (event.getX() * mUno.getBgWidth() / v.getWidth());
+            y = (int) (event.getY() * mUno.getBgHeight() / v.getHeight());
             switch (mStatus) {
                 case STAT_WELCOME:
                     if (y >= 270 && y <= 450) {

@@ -48,6 +48,8 @@ import static com.github.hikari_toyama.unocard.core.Content.WILD_DRAW4;
  */
 @SuppressWarnings("ALL")
 public class Uno {
+    public static final int DIR_LEFT = 1;
+    public static final int DIR_RIGHT = 3;
     public static final int PLAYER_YOU = 0;
     public static final int PLAYER_COM1 = 1;
     public static final int PLAYER_COM2 = 2;
@@ -58,16 +60,6 @@ public class Uno {
      * Singleton.
      */
     private static Uno INSTANCE;
-
-    /**
-     * Background image's width (Unit: px).
-     */
-    public final int backgroundWidth;
-
-    /**
-     * Background image's height (Unit: px).
-     */
-    public final int backgroundHeight;
 
     /**
      * Random number generator.
@@ -105,9 +97,14 @@ public class Uno {
     private Mat hardImage;
 
     /**
-     * Background image resource.
+     * Background image resource (Direction: COUTNER CLOCKWISE).
      */
-    private Mat background;
+    private Mat bgCounter;
+
+    /**
+     * Background image resource (Direction: CLOCKWISE).
+     */
+    private Mat bgClockwise;
 
     /**
      * Card deck (ready to use).
@@ -141,12 +138,12 @@ public class Uno {
         Context appContext;
 
         try {
-            // Load background image resource
+            // Load background image resources
             appContext = context.getApplicationContext();
-            background = Utils.loadResource(appContext, R.raw.scr_bg);
-            Imgproc.cvtColor(background, background, Imgproc.COLOR_BGR2RGB);
-            backgroundWidth = background.cols();
-            backgroundHeight = background.rows();
+            bgCounter = Utils.loadResource(appContext, R.raw.bg_counter);
+            bgClockwise = Utils.loadResource(appContext, R.raw.bg_clockwise);
+            Imgproc.cvtColor(bgCounter, bgCounter, Imgproc.COLOR_BGR2RGB);
+            Imgproc.cvtColor(bgClockwise, bgClockwise, Imgproc.COLOR_BGR2RGB);
 
             // Load card back image resource
             backImage = Utils.loadResource(appContext, R.raw.back);
@@ -464,11 +461,26 @@ public class Uno {
     } // getHardImage()
 
     /**
-     * @return Background image resource.
+     * @param direction Pass the current direction (DIR_LEFT or DIR_RIGHT).
+     * @return Corresponding background image resource.
      */
-    public Mat getBackground() {
-        return background;
+    public Mat getBackground(int direction) {
+        return (direction == DIR_RIGHT ? bgCounter : bgClockwise);
     } // getBackground()
+
+    /**
+     * @return Background image's width (Unit: px).
+     */
+    public int getBgWidth() {
+        return bgClockwise.cols();
+    } // getBgWidth()
+
+    /**
+     * @return Background image's height (Unit: px).
+     */
+    public int getBgHeight() {
+        return bgClockwise.rows();
+    } // getBgHeight()
 
     /**
      * When a player played a wild card and specified a following legal color,

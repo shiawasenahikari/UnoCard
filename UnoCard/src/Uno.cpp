@@ -174,14 +174,19 @@ Uno::Uno() {
 	bool broken;
 	Mat br[54], dk[54];
 
-	// Load background image resource
-	background = imread("resource/scr_bg.png");
-	broken = background.empty();
-	broken = broken || background.rows != 720;
-	broken = broken || background.cols != 1280;
+	// Load background image resources
+	bgCounter = imread("resource/bg_counter.png");
+	bgClockwise = imread("resource/bg_clockwise.png");
+	broken = bgCounter.empty();
+	broken = broken || bgCounter.rows != 720;
+	broken = broken || bgCounter.cols != 1280;
+	broken = broken || bgClockwise.empty();
+	broken = broken || bgClockwise.rows != 720;
+	broken = broken || bgClockwise.cols != 1280;
 	if (broken) {
-		// Create a blank background when resource/scr_bg.png not found
-		background = Mat::zeros(720, 1280, CV_8UC3);
+		// Create blank backgrounds when background resources are invalid
+		bgCounter = Mat::zeros(720, 1280, CV_8UC3);
+		bgClockwise = Mat::zeros(720, 1280, CV_8UC3);
 	} // if (broken)
 
 	// Load card back image resource
@@ -494,10 +499,11 @@ const Mat& Uno::getHardImage() {
 } // getHardImage()
 
 /**
+ * @param direction Pass the current direction (DIR_LEFT or DIR_RIGHT).
  * @return Background image resource.
  */
-const Mat& Uno::getBackground() {
-	return background;
+const Mat& Uno::getBackground(int direction) {
+	return direction == DIR_RIGHT ? bgCounter : bgClockwise;
 } // getBackground()
 
 /**

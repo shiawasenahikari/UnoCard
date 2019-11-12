@@ -13,6 +13,8 @@
 #include <vector>
 #include <opencv2/core.hpp>
 
+#define DIR_LEFT        1
+#define DIR_RIGHT       3
 #define PLAYER_YOU      0
 #define PLAYER_COM1     1
 #define PLAYER_COM2     2
@@ -204,9 +206,10 @@ public:
 	const cv::Mat& getHardImage();
 
 	/**
+	 * @param direction Pass the current direction (DIR_LEFT or DIR_RIGHT).
 	 * @return Background image resource.
 	 */
-	const cv::Mat& getBackground();
+	const cv::Mat& getBackground(int direction);
 
 	/**
 	 * When a player played a wild card and specified a following legal color,
@@ -334,9 +337,14 @@ private:
 	cv::Mat hardImage;
 
 	/**
-	 * Background image resource.
+	 * Background image resource (Direction: COUTNER CLOCKWISE).
 	 */
-	cv::Mat background;
+	cv::Mat bgCounter;
+
+	/**
+	 * Background image resource (Direction: CLOCKWISE).
+	 */
+	cv::Mat bgClockwise;
 
 	/**
 	 * Image resources for wild cards.

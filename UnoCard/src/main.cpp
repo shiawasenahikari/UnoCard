@@ -22,8 +22,6 @@ using namespace std;
 
 #define LV_EASY         0
 #define LV_HARD         1
-#define DIR_LEFT        1
-#define DIR_RIGHT       3
 #define STAT_IDLE       0x1111
 #define STAT_WELCOME    0x2222
 #define STAT_NEW_GAME   0x3333
@@ -108,7 +106,7 @@ int main() {
 	sAIRunning = false;
 	sWinner = PLAYER_YOU;
 	sStatus = STAT_WELCOME;
-	sScreen = sUno->getBackground().clone();
+	sScreen = sUno->getBackground(DIR_LEFT).clone();
 	namedWindow("Uno");
 	refreshScreen("WELCOME TO UNO CARD GAME");
 	setMouseCallback("Uno", onMouse, NULL);
@@ -655,7 +653,7 @@ static void onStatusChanged(int status) {
 		// wild card. Draw color sectors in the center of screen
 		refreshScreen("^ Specify the following legal color");
 		rect = Rect(450, 270, 181, 181);
-		sUno->getBackground()(rect).copyTo(sScreen(rect));
+		sUno->getBackground(sDirection)(rect).copyTo(sScreen(rect));
 		center = Point(450, 360);
 		axes = Size(90, 90);
 		ellipse(sScreen, center, axes, 0, 0, -90, RGB_BLUE, -1, 16);
@@ -716,7 +714,7 @@ static void refreshScreen(string message) {
 	status = sStatus;
 
 	// Clear
-	sUno->getBackground().copyTo(sScreen);
+	sUno->getBackground(sDirection).copyTo(sScreen);
 
 	// Message area
 	width = getTextSize(message, FONT_SANS, 1.0, 1, NULL).width;
