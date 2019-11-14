@@ -56,7 +56,6 @@ static int sEasyWin;
 static int sHardWin;
 static int sEasyTotal;
 static int sHardTotal;
-static int sDirection;
 static int sDifficulty;
 static bool sAIRunning;
 
@@ -106,7 +105,7 @@ int main() {
 	sAIRunning = false;
 	sWinner = PLAYER_YOU;
 	sStatus = STAT_WELCOME;
-	sScreen = sUno->getBackground(DIR_LEFT).clone();
+	sScreen = sUno->getBackground().clone();
 	namedWindow("Uno");
 	refreshScreen("WELCOME TO UNO CARD GAME");
 	setMouseCallback("Uno", onMouse, NULL);
@@ -122,8 +121,8 @@ static void easyAI() {
 	Card* card;
 	Card* previous;
 	vector<Card*> hand;
-	int i, next, oppo, prev;
 	Color bestColor, prevColor;
+	int i, next, oppo, prev, direction;
 	bool hasNum, hasWild, hasWildDraw4;
 	bool hasRev, hasSkip, hasDraw2, hasZero;
 	int yourSize, nextSize, oppoSize, prevSize;
@@ -149,11 +148,12 @@ static void easyAI() {
 			continue;
 		} // if (yourSize == 1)
 
-		next = (sStatus + sDirection) % 4;
+		direction = sUno->getDirection();
+		next = (sStatus + direction) % 4;
 		nextSize = (int)sUno->getHandCardsOf(next).size();
 		oppo = (sStatus + 2) % 4;
 		oppoSize = (int)sUno->getHandCardsOf(oppo).size();
-		prev = (4 + sStatus - sDirection) % 4;
+		prev = (4 + sStatus - direction) % 4;
 		prevSize = (int)sUno->getHandCardsOf(prev).size();
 		idx_best = idx_rev = idx_skip = idx_draw2 = -1;
 		idx_zero = idx_num = idx_wild = idx_wildDraw4 = -1;
@@ -340,8 +340,8 @@ static void hardAI() {
 	Card* card;
 	Card* previous;
 	vector<Card*> hand;
-	int i, next, oppo, prev;
 	Color bestColor, prevColor;
+	int i, next, oppo, prev, direction;
 	bool hasNum, hasWild, hasWildDraw4;
 	bool hasRev, hasSkip, hasDraw2, hasZero;
 	int yourSize, nextSize, oppoSize, prevSize;
@@ -367,11 +367,12 @@ static void hardAI() {
 			continue;
 		} // if (yourSize == 1)
 
-		next = (sStatus + sDirection) % 4;
+		direction = sUno->getDirection();
+		next = (sStatus + direction) % 4;
 		nextSize = (int)sUno->getHandCardsOf(next).size();
 		oppo = (sStatus + 2) % 4;
 		oppoSize = (int)sUno->getHandCardsOf(oppo).size();
-		prev = (4 + sStatus - sDirection) % 4;
+		prev = (4 + sStatus - direction) % 4;
 		prevSize = (int)sUno->getHandCardsOf(prev).size();
 		idx_best = idx_rev = idx_skip = idx_draw2 = -1;
 		idx_zero = idx_num = idx_wild = idx_wildDraw4 = -1;
@@ -636,7 +637,6 @@ static void onStatusChanged(int status) {
 		} // else
 
 		sUno->start();
-		sDirection = DIR_LEFT;
 		refreshScreen("GET READY");
 		waitKey(2000);
 		sStatus = sWinner;
@@ -653,7 +653,7 @@ static void onStatusChanged(int status) {
 		// wild card. Draw color sectors in the center of screen
 		refreshScreen("^ Specify the following legal color");
 		rect = Rect(450, 270, 181, 181);
-		sUno->getBackground(sDirection)(rect).copyTo(sScreen(rect));
+		sUno->getBackground()(rect).copyTo(sScreen(rect));
 		center = Point(450, 360);
 		axes = Size(90, 90);
 		ellipse(sScreen, center, axes, 0, 0, -90, RGB_BLUE, -1, 16);
@@ -714,7 +714,7 @@ static void refreshScreen(string message) {
 	status = sStatus;
 
 	// Clear
-	sUno->getBackground(sDirection).copyTo(sScreen);
+	sUno->getBackground().copyTo(sScreen);
 
 	// Message area
 	width = getTextSize(message, FONT_SANS, 1.0, 1, NULL).width;
@@ -973,8 +973,8 @@ static void play(int index, Color color) {
 	Rect roi;
 	Mat image;
 	Card* card;
-	int now, next;
 	string message;
+	int now, next, direction;
 
 	now = sStatus;
 	sStatus = STAT_IDLE; // block mouse click events when idle
@@ -1023,7 +1023,8 @@ static void play(int index, Color color) {
 			message = NAME[now];
 			switch (card->getContent()) {
 			case DRAW2:
-				next = (now + sDirection) % 4;
+				direction = sUno->getDirection();
+				next = (now + direction) % 4;
 				message += ": Let " + NAME[next] + " draw 2 cards";
 				refreshScreen(message);
 				waitKey(1500);
@@ -1031,7 +1032,8 @@ static void play(int index, Color color) {
 				break; // case DRAW2
 
 			case SKIP:
-				next = (now + sDirection) % 4;
+				direction = sUno->getDirection();
+				next = (now + direction) % 4;
 				if (next == PLAYER_YOU) {
 					message += ": Skip your turn";
 				} // if (next == PLAYER_YOU)
@@ -1041,36 +1043,37 @@ static void play(int index, Color color) {
 
 				refreshScreen(message);
 				waitKey(1500);
-				sStatus = (next + sDirection) % 4;
+				sStatus = (next + direction) % 4;
 				onStatusChanged(sStatus);
 				break; // case SKIP
 
 			case REV:
-				if (sDirection == DIR_LEFT) {
-					sDirection = DIR_RIGHT;
-					message += ": Change direction to COUNTER CLOCKWISE";
-				} // if (sDirection == DIR_LEFT)
-				else {
-					sDirection = DIR_LEFT;
+				direction = sUno->switchDirection();
+				if (direction == DIR_LEFT) {
 					message += ": Change direction to CLOCKWISE";
+				} // if (direction == DIR_LEFT)
+				else {
+					message += ": Change direction to COUNTER CLOCKWISE";
 				} // else
 
 				refreshScreen(message);
 				waitKey(1500);
-				sStatus = (now + sDirection) % 4;
+				sStatus = (now + direction) % 4;
 				onStatusChanged(sStatus);
 				break; // case REV
 
 			case WILD:
+				direction = sUno->getDirection();
 				message += ": Change the following legal color";
 				refreshScreen(message);
 				waitKey(1500);
-				sStatus = (now + sDirection) % 4;
+				sStatus = (now + direction) % 4;
 				onStatusChanged(sStatus);
 				break; // case WILD
 
 			case WILD_DRAW4:
-				next = (now + sDirection) % 4;
+				direction = sUno->getDirection();
+				next = (now + direction) % 4;
 				message += ": Let " + NAME[next] + " draw 4 cards";
 				refreshScreen(message);
 				waitKey(1500);
@@ -1078,10 +1081,11 @@ static void play(int index, Color color) {
 				break; // case WILD_DRAW4
 
 			default:
+				direction = sUno->getDirection();
 				message += ": " + card->getName();
 				refreshScreen(message);
 				waitKey(1500);
-				sStatus = (now + sDirection) % 4;
+				sStatus = (now + direction) % 4;
 				onStatusChanged(sStatus);
 				break; // default
 			} // switch (card->getContent())
@@ -1179,7 +1183,7 @@ static void draw(int who, int count) {
 	} // for (i = 0; i < count; ++i)
 
 	waitKey(1500);
-	sStatus = (who + sDirection) % 4;
+	sStatus = (who + sUno->getDirection()) % 4;
 	onStatusChanged(sStatus);
 } // draw()
 

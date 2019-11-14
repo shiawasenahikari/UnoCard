@@ -206,10 +206,9 @@ public:
 	const cv::Mat& getHardImage();
 
 	/**
-	 * @param direction Pass the current direction (DIR_LEFT or DIR_RIGHT).
-	 * @return Background image resource.
+	 * @return Background image resource in current direction.
 	 */
-	const cv::Mat& getBackground(int direction);
+	const cv::Mat& getBackground();
 
 	/**
 	 * When a player played a wild card and specified a following legal color,
@@ -230,6 +229,20 @@ public:
 	 * @return Corresponding color-filled image.
 	 */
 	const cv::Mat& getColoredWildDraw4Image(Color color);
+
+	/**
+	 * @return Current action sequence. DIR_LEFT for clockwise,
+	 * or DIR_RIGHT for counter-clockwise.
+	 */
+	int getDirection();
+
+	/**
+	 * Switch current action sequence.
+	 *
+	 * @return Switched action sequence. DIR_LEFT for clockwise,
+	 * or DIR_RIGHT for counter-clockwise.
+	 */
+	int switchDirection();
 
 	/**
 	 * @return How many cards in deck (haven't been used yet).
@@ -355,6 +368,11 @@ private:
 	 * Image resources for wild +4 cards.
 	 */
 	cv::Mat wildDraw4Image[5];
+
+	/**
+	 * Current action sequence (DIR_LEFT / DIR_RIGHT).
+	 */
+	int direction = DIR_LEFT;
 
 	/**
 	 * Card deck (ready to use).

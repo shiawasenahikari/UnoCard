@@ -185,8 +185,7 @@ Uno::Uno() {
 	broken = broken || bgClockwise.cols != 1280;
 	if (broken) {
 		// Create blank backgrounds when background resources are invalid
-		bgCounter = Mat::zeros(720, 1280, CV_8UC3);
-		bgClockwise = Mat::zeros(720, 1280, CV_8UC3);
+		bgCounter = bgClockwise = Mat::zeros(720, 1280, CV_8UC3);
 	} // if (broken)
 
 	// Load card back image resource
@@ -499,10 +498,9 @@ const Mat& Uno::getHardImage() {
 } // getHardImage()
 
 /**
- * @param direction Pass the current direction (DIR_LEFT or DIR_RIGHT).
- * @return Background image resource.
+ * @return Background image resource in current direction.
  */
-const Mat& Uno::getBackground(int direction) {
+const Mat& Uno::getBackground() {
 	return direction == DIR_RIGHT ? bgCounter : bgClockwise;
 } // getBackground()
 
@@ -529,6 +527,25 @@ const Mat& Uno::getColoredWildImage(Color color) {
 const Mat& Uno::getColoredWildDraw4Image(Color color) {
 	return wildDraw4Image[color];
 } // getColoredWildDraw4Image()
+
+/**
+ * @return Current action sequence. DIR_LEFT for clockwise,
+ *         or DIR_RIGHT for counter-clockwise.
+ */
+int Uno::getDirection() {
+	return direction;
+} // getDirection()
+
+/**
+ * Switch current action sequence.
+ *
+ * @return Switched action sequence. DIR_LEFT for clockwise,
+ *         or DIR_RIGHT for counter-clockwise.
+ */
+int Uno::switchDirection() {
+	direction = 4 - direction;
+	return direction;
+} // switchDirection()
 
 /**
  * @return How many cards in deck (haven't been used yet).
@@ -574,6 +591,9 @@ void Uno::start() {
 	int i, index, size;
 	vector<Card*> allCards;
 	vector<Card>::iterator it;
+
+	// Reset direction
+	direction = DIR_LEFT;
 
 	// Clear card deck, used card deck, recent played cards,
 	// and everyone's hand cards

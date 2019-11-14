@@ -65,7 +65,6 @@ public class MainActivity extends AppCompatActivity
     private ImageView mImgScreen;
     private Handler mHandler;
     private int mDifficulty;
-    private int mDirection;
     private int mWildIndex;
     private int mHardTotal;
     private int mEasyTotal;
@@ -97,7 +96,7 @@ public class MainActivity extends AppCompatActivity
         mUno = Uno.getInstance(this);
         mWinner = Uno.PLAYER_YOU;
         mStatus = STAT_WELCOME;
-        mScr = mUno.getBackground(Uno.DIR_LEFT).clone();
+        mScr = mUno.getBackground().clone();
         mBmp = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888);
         refreshScreen("WELCOME TO UNO CARD GAME");
         mImgScreen.setOnTouchListener(this);
@@ -109,8 +108,8 @@ public class MainActivity extends AppCompatActivity
     private void easyAI() {
         Card card, previous;
         List<Card> hand, recent;
-        int i, next, oppo, prev;
         Color bestColor, prevColor;
+        int i, next, oppo, prev, direction;
         boolean hasNum, hasWild, hasWildDraw4;
         boolean hasRev, hasSkip, hasDraw2, hasZero;
         int yourSize, nextSize, oppoSize, prevSize;
@@ -132,11 +131,12 @@ public class MainActivity extends AppCompatActivity
             return;
         } // if (yourSize == 1)
 
-        next = (mStatus + mDirection) % 4;
+        direction = mUno.getDirection();
+        next = (mStatus + direction) % 4;
         nextSize = mUno.getHandCardsOf(next).size();
         oppo = (mStatus + 2) % 4;
         oppoSize = mUno.getHandCardsOf(oppo).size();
-        prev = (4 + mStatus - mDirection) % 4;
+        prev = (4 + mStatus - direction) % 4;
         prevSize = mUno.getHandCardsOf(prev).size();
         idx_best = idx_rev = idx_skip = idx_draw2 = -1;
         idx_zero = idx_num = idx_wild = idx_wildDraw4 = -1;
@@ -320,8 +320,8 @@ public class MainActivity extends AppCompatActivity
     private void hardAI() {
         Card card, previous;
         List<Card> hand, recent;
-        int i, next, oppo, prev;
         Color bestColor, prevColor;
+        int i, next, oppo, prev, direction;
         boolean hasNum, hasWild, hasWildDraw4;
         boolean hasRev, hasSkip, hasDraw2, hasZero;
         int yourSize, nextSize, oppoSize, prevSize;
@@ -343,11 +343,12 @@ public class MainActivity extends AppCompatActivity
             return;
         } // if (yourSize == 1)
 
-        next = (mStatus + mDirection) % 4;
+        direction = mUno.getDirection();
+        next = (mStatus + direction) % 4;
         nextSize = mUno.getHandCardsOf(next).size();
         oppo = (mStatus + 2) % 4;
         oppoSize = mUno.getHandCardsOf(oppo).size();
-        prev = (4 + mStatus - mDirection) % 4;
+        prev = (4 + mStatus - direction) % 4;
         prevSize = mUno.getHandCardsOf(prev).size();
         idx_best = idx_rev = idx_skip = idx_draw2 = -1;
         idx_zero = idx_num = idx_wild = idx_wildDraw4 = -1;
@@ -612,7 +613,6 @@ public class MainActivity extends AppCompatActivity
                 } // else
 
                 mUno.start();
-                mDirection = Uno.DIR_LEFT;
                 refreshScreen("GET READY");
                 delayedTask = () -> {
                     mStatus = mWinner;
@@ -631,7 +631,7 @@ public class MainActivity extends AppCompatActivity
                 // wild card. Draw color sectors in the center of screen
                 refreshScreen("^ Specify the following legal color");
                 rect = new Rect(420, 270, 121, 181);
-                areaToErase = new Mat(mUno.getBackground(mDirection), rect);
+                areaToErase = new Mat(mUno.getBackground(), rect);
                 areaToErase.copyTo(new Mat(mScr, rect));
                 center = new Point(405, 315);
                 axes = new Size(135, 135);
@@ -742,7 +742,7 @@ public class MainActivity extends AppCompatActivity
         status = mStatus;
 
         // Clear
-        mUno.getBackground(mDirection).copyTo(mScr);
+        mUno.getBackground().copyTo(mScr);
 
         // Message area
         textSize = Imgproc.getTextSize(message, FONT_SANS, 1.0, 1, null);
@@ -1030,8 +1030,8 @@ public class MainActivity extends AppCompatActivity
             } // switch (now)
 
             delayedTask = () -> {
-                int next;
                 String message;
+                int next, direction;
 
                 if (mUno.getHandCardsOf(now).size() == 0) {
                     // The player in action becomes winner when it played the
@@ -1045,7 +1045,8 @@ public class MainActivity extends AppCompatActivity
                     // do the necessary things according to the game rule
                     switch (card.getContent()) {
                         case DRAW2:
-                            next = (now + mDirection) % 4;
+                            direction = mUno.getDirection();
+                            next = (now + direction) % 4;
                             message = NAME[now] + ": Let "
                                     + NAME[next] + " draw 2 cards";
                             refreshScreen(message);
@@ -1053,7 +1054,8 @@ public class MainActivity extends AppCompatActivity
                             break; // case DRAW2
 
                         case SKIP:
-                            next = (now + mDirection) % 4;
+                            direction = mUno.getDirection();
+                            next = (now + direction) % 4;
                             if (next == Uno.PLAYER_YOU) {
                                 message = NAME[now] + ": Skip your turn";
                             } // if (next == Uno.PLAYER_YOU)
@@ -1064,42 +1066,43 @@ public class MainActivity extends AppCompatActivity
 
                             refreshScreen(message);
                             mHandler.postDelayed(() -> {
-                                mStatus = (next + mDirection) % 4;
+                                mStatus = (next + direction) % 4;
                                 onStatusChanged(mStatus);
                             }, 1500); // mHandler.postDelayed()
                             break; // case SKIP
 
                         case REV:
-                            if (mDirection == Uno.DIR_LEFT) {
-                                mDirection = Uno.DIR_RIGHT;
-                                message = NAME[now] + ": Change direction to "
-                                        + "COUNTER CLOCKWISE";
-                            } // if (mDirection == Uno.DIR_LEFT)
-                            else {
-                                mDirection = Uno.DIR_LEFT;
+                            direction = mUno.switchDirection();
+                            if (direction == Uno.DIR_LEFT) {
                                 message = NAME[now] + ": Change direction to "
                                         + "CLOCKWISE";
+                            } // if (direction == Uno.DIR_LEFT)
+                            else {
+                                message = NAME[now] + ": Change direction to "
+                                        + "COUNTER CLOCKWISE";
                             } // else
 
                             refreshScreen(message);
                             mHandler.postDelayed(() -> {
-                                mStatus = (now + mDirection) % 4;
+                                mStatus = (now + direction) % 4;
                                 onStatusChanged(mStatus);
                             }, 1500); // mHandler.postDelayed()
                             break; // case REV
 
                         case WILD:
+                            direction = mUno.getDirection();
                             message = NAME[now]
                                     + ": Change the following legal color";
                             refreshScreen(message);
                             mHandler.postDelayed(() -> {
-                                mStatus = (now + mDirection) % 4;
+                                mStatus = (now + direction) % 4;
                                 onStatusChanged(mStatus);
                             }, 1500); // mHandler.postDelayed()
                             break; // case WILD
 
                         case WILD_DRAW4:
-                            next = (now + mDirection) % 4;
+                            direction = mUno.getDirection();
+                            next = (now + direction) % 4;
                             message = NAME[now] + ": Let "
                                     + NAME[next] + " draw 4 cards";
                             refreshScreen(message);
@@ -1107,10 +1110,11 @@ public class MainActivity extends AppCompatActivity
                             break; // case WILD_DRAW4
 
                         default:
+                            direction = mUno.getDirection();
                             message = NAME[now] + ": " + card.getName();
                             refreshScreen(message);
                             mHandler.postDelayed(() -> {
-                                mStatus = (now + mDirection) % 4;
+                                mStatus = (now + direction) % 4;
                                 onStatusChanged(mStatus);
                             }, 1500); // mHandler.postDelayed()
                             break; // default
@@ -1443,7 +1447,7 @@ public class MainActivity extends AppCompatActivity
                     else {
                         // All requested cards are drawn, do following things
                         mHandler.postDelayed(() -> {
-                            mStatus = (who + mDirection) % 4;
+                            mStatus = (who + mUno.getDirection()) % 4;
                             onStatusChanged(mStatus);
                         }, 1500); // mHandler.postDelayed()
                     } // else
@@ -1455,7 +1459,7 @@ public class MainActivity extends AppCompatActivity
                         + Uno.MAX_HOLD_CARDS + " cards";
                 refreshScreen(message);
                 mHandler.postDelayed(() -> {
-                    mStatus = (who + mDirection) % 4;
+                    mStatus = (who + mUno.getDirection()) % 4;
                     onStatusChanged(mStatus);
                 }, 1500); // mHandler.postDelayed()
             } // else

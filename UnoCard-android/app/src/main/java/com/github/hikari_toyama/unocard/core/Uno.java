@@ -107,6 +107,11 @@ public class Uno {
     private Mat bgClockwise;
 
     /**
+     * Current action sequence (DIR_LEFT / DIR_RIGHT).
+     */
+    private int direction = DIR_LEFT;
+
+    /**
      * Card deck (ready to use).
      */
     private List<Card> deck;
@@ -412,7 +417,7 @@ public class Uno {
                 new Card(br[52], dk[52], BLACK, WILD, "Wild")
         }; // table = new Card[]{}
 
-        // Initialize other members
+        // Initialize containers
         deck = new ArrayList<>();
         used = new ArrayList<>();
         recent = new ArrayList<>();
@@ -461,10 +466,9 @@ public class Uno {
     } // getHardImage()
 
     /**
-     * @param direction Pass the current direction (DIR_LEFT or DIR_RIGHT).
-     * @return Corresponding background image resource.
+     * @return Background image resource in current direction.
      */
-    public Mat getBackground(int direction) {
+    public Mat getBackground() {
         return (direction == DIR_RIGHT ? bgCounter : bgClockwise);
     } // getBackground()
 
@@ -505,6 +509,25 @@ public class Uno {
     public Mat getColoredWildDraw4Image(Color color) {
         return w4Image[color.ordinal()];
     } // getColoredWildDraw4Image()
+
+    /**
+     * @return Current action sequence. DIR_LEFT for clockwise,
+     * or DIR_RIGHT for counter-clockwise.
+     */
+    public int getDirection() {
+        return direction;
+    } // getDirection()
+
+    /**
+     * Switch current action sequence.
+     *
+     * @return Switched action sequence. DIR_LEFT for clockwise,
+     * or DIR_RIGHT for counter-clockwise.
+     */
+    public int switchDirection() {
+        direction = 4 - direction;
+        return direction;
+    } // switchDirection()
 
     /**
      * @return How many cards in deck (haven't been used yet).
@@ -554,6 +577,9 @@ public class Uno {
         hand.get(PLAYER_COM1).clear();
         hand.get(PLAYER_COM2).clear();
         hand.get(PLAYER_COM3).clear();
+
+        // Reset direction
+        direction = DIR_LEFT;
 
         // Generate a temporary sequenced card deck
         allCards = new ArrayList<>();
