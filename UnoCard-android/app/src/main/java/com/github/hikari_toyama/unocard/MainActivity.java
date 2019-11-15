@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity
         int idx_best, idx_rev, idx_skip, idx_draw2;
         int idx_zero, idx_num, idx_wild, idx_wildDraw4;
 
-        hand = mUno.getHandCardsOf(mStatus);
+        hand = mUno.getPlayer(mStatus).getHandCards();
         yourSize = hand.size();
         if (yourSize == 1) {
             // Only one card remained. Play it when it's legal.
@@ -133,11 +133,11 @@ public class MainActivity extends AppCompatActivity
 
         direction = mUno.getDirection();
         next = (mStatus + direction) % 4;
-        nextSize = mUno.getHandCardsOf(next).size();
+        nextSize = mUno.getPlayer(next).getHandCards().size();
         oppo = (mStatus + 2) % 4;
-        oppoSize = mUno.getHandCardsOf(oppo).size();
+        oppoSize = mUno.getPlayer(oppo).getHandCards().size();
         prev = (4 + mStatus - direction) % 4;
-        prevSize = mUno.getHandCardsOf(prev).size();
+        prevSize = mUno.getPlayer(prev).getHandCards().size();
         idx_best = idx_rev = idx_skip = idx_draw2 = -1;
         idx_zero = idx_num = idx_wild = idx_wildDraw4 = -1;
         bestColor = mUno.bestColorFor(mStatus);
@@ -328,7 +328,7 @@ public class MainActivity extends AppCompatActivity
         int idx_best, idx_rev, idx_skip, idx_draw2;
         int idx_zero, idx_num, idx_wild, idx_wildDraw4;
 
-        hand = mUno.getHandCardsOf(mStatus);
+        hand = mUno.getPlayer(mStatus).getHandCards();
         yourSize = hand.size();
         if (yourSize == 1) {
             // Only one card remained. Play it when it's legal.
@@ -345,11 +345,11 @@ public class MainActivity extends AppCompatActivity
 
         direction = mUno.getDirection();
         next = (mStatus + direction) % 4;
-        nextSize = mUno.getHandCardsOf(next).size();
+        nextSize = mUno.getPlayer(next).getHandCards().size();
         oppo = (mStatus + 2) % 4;
-        oppoSize = mUno.getHandCardsOf(oppo).size();
+        oppoSize = mUno.getPlayer(oppo).getHandCards().size();
         prev = (4 + mStatus - direction) % 4;
-        prevSize = mUno.getHandCardsOf(prev).size();
+        prevSize = mUno.getPlayer(prev).getHandCards().size();
         idx_best = idx_rev = idx_skip = idx_draw2 = -1;
         idx_zero = idx_num = idx_wild = idx_wildDraw4 = -1;
         bestColor = mUno.bestColorFor(mStatus);
@@ -803,7 +803,7 @@ public class MainActivity extends AppCompatActivity
         Imgproc.putText(mScr, info, point, FONT_SANS, 1.0, RGB_WHITE);
 
         // Left-center: Hand cards of Player West (COM1)
-        hand = mUno.getHandCardsOf(Uno.PLAYER_COM1);
+        hand = mUno.getPlayer(Uno.PLAYER_COM1).getHandCards();
         size = hand.size();
         if (size == 0) {
             // Played all hand cards, it's winner
@@ -847,7 +847,7 @@ public class MainActivity extends AppCompatActivity
         } // else
 
         // Top-center: Hand cards of Player North (COM2)
-        hand = mUno.getHandCardsOf(Uno.PLAYER_COM2);
+        hand = mUno.getPlayer(Uno.PLAYER_COM2).getHandCards();
         size = hand.size();
         if (size == 0) {
             // Played all hand cards, it's winner
@@ -891,7 +891,7 @@ public class MainActivity extends AppCompatActivity
         } // else
 
         // Right-center: Hand cards of Player East (COM3)
-        hand = mUno.getHandCardsOf(Uno.PLAYER_COM3);
+        hand = mUno.getPlayer(Uno.PLAYER_COM3).getHandCards();
         size = hand.size();
         if (size == 0) {
             // Played all hand cards, it's winner
@@ -935,7 +935,7 @@ public class MainActivity extends AppCompatActivity
         } // else
 
         // Bottom: Your hand cards
-        hand = mUno.getHandCardsOf(Uno.PLAYER_YOU);
+        hand = mUno.getPlayer(Uno.PLAYER_YOU).getHandCards();
         size = hand.size();
         if (size == 0) {
             // Played all hand cards, it's winner
@@ -1033,13 +1033,13 @@ public class MainActivity extends AppCompatActivity
                 String message;
                 int next, direction;
 
-                if (mUno.getHandCardsOf(now).size() == 0) {
+                if (mUno.getPlayer(now).getHandCards().size() == 0) {
                     // The player in action becomes winner when it played the
                     // final card in its hand successfully
                     mWinner = now;
                     mStatus = STAT_GAME_OVER;
                     onStatusChanged(mStatus);
-                } // if (mUno.getHandCardsOf(now).size() == 0)
+                } // if (mUno.getPlayer(now).getHandCards().size() == 0)
                 else {
                     // When the played card is an action card or a wild card,
                     // do the necessary things according to the game rule
@@ -1181,7 +1181,7 @@ public class MainActivity extends AppCompatActivity
 
                 case Uno.PLAYER_YOU:
                     if (y >= 520 && y <= 700) {
-                        hand = mUno.getHandCardsOf(Uno.PLAYER_YOU);
+                        hand = mUno.getPlayer(Uno.PLAYER_YOU).getHandCards();
                         size = hand.size();
                         width = 60 * size + 60;
                         startX = 640 - width / 2;

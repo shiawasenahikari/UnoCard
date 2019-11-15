@@ -112,6 +112,11 @@ public class Uno {
     private int direction = DIR_LEFT;
 
     /**
+     * Game players.
+     */
+    private Player[] player;
+
+    /**
      * Card deck (ready to use).
      */
     private List<Card> deck;
@@ -125,11 +130,6 @@ public class Uno {
      * Recent played cards.
      */
     private List<Card> recent;
-
-    /**
-     * Everyone's hand cards.
-     */
-    private List<List<Card>> hand;
 
     /**
      * Singleton, hide default constructor.
@@ -421,11 +421,11 @@ public class Uno {
         deck = new ArrayList<>();
         used = new ArrayList<>();
         recent = new ArrayList<>();
-        hand = new ArrayList<>();
-        hand.add(new ArrayList<>()); // PLAYER_YOU
-        hand.add(new ArrayList<>()); // PLAYER_COM1
-        hand.add(new ArrayList<>()); // PLAYER_COM2
-        hand.add(new ArrayList<>()); // PLAYER_COM3
+        player = new Player[4];
+        player[0] = new Player(); // PLAYER_YOU
+        player[1] = new Player(); // PLAYER_COM1
+        player[2] = new Player(); // PLAYER_COM2
+        player[3] = new Player(); // PLAYER_COM3
 
         // Generate a random seed based on the current time stamp
         rand = new Random();
@@ -511,6 +511,9 @@ public class Uno {
     } // getColoredWildDraw4Image()
 
     /**
+     * Get current action sequence. You can get the next player by calculating
+     * (now + this->getDirection()) % 4.
+     *
      * @return Current action sequence. DIR_LEFT for clockwise,
      * or DIR_RIGHT for counter-clockwise.
      */
@@ -528,6 +531,15 @@ public class Uno {
         direction = 4 - direction;
         return direction;
     } // switchDirection()
+
+    /**
+     * @param who Get which player's instance. Must be one of the following
+     *            values: PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+     * @return Specified player's instance.
+     */
+    public Player getPlayer(int who) {
+        return player[who];
+    } // getPlayer()
 
     /**
      * @return How many cards in deck (haven't been used yet).
@@ -554,9 +566,11 @@ public class Uno {
      * @param whom Get whose hand cards. Must be one of the following values:
      *             PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
      * @return Specified player's all hand cards.
+     * @deprecated Use getPlayer(whom).getHandCards() instead.
      */
+    @Deprecated
     public List<Card> getHandCardsOf(int whom) {
-        return Collections.unmodifiableList(hand.get(whom));
+        return getPlayer(whom).getHandCards();
     } // getHandCardsOf()
 
     /**
@@ -573,10 +587,10 @@ public class Uno {
         deck.clear();
         used.clear();
         recent.clear();
-        hand.get(PLAYER_YOU).clear();
-        hand.get(PLAYER_COM1).clear();
-        hand.get(PLAYER_COM2).clear();
-        hand.get(PLAYER_COM3).clear();
+        player[0].handCards.clear();
+        player[1].handCards.clear();
+        player[2].handCards.clear();
+        player[3].handCards.clear();
 
         // Reset direction
         direction = DIR_LEFT;
@@ -635,8 +649,8 @@ public class Uno {
         List<Card> handCards;
 
         card = null;
-        handCards = hand.get(who);
-        if (handCards != null && handCards.size() < MAX_HOLD_CARDS) {
+        handCards = player[who].handCards;
+        if (handCards.size() < MAX_HOLD_CARDS) {
             // Draw a card from card deck, and put it to an appropriate position
             index = deck.size() - 1;
             card = deck.get(index);
@@ -651,6 +665,7 @@ public class Uno {
             } // for (i = 0; i < size; ++i)
 
             handCards.add(i, card);
+            player[who].recent = null;
             if (deck.isEmpty()) {
                 // Re-use the used cards when there are no more cards in deck
                 size = used.size();
@@ -661,7 +676,7 @@ public class Uno {
                     --size;
                 } // while (size > 0)
             } // if (deck.isEmpty())
-        } // if (handCards != null && handCards.size() < MAX_HOLD_CARDS)
+        } // if (handCards.size() < MAX_HOLD_CARDS)
 
         return card;
     } // draw()
@@ -681,38 +696,34 @@ public class Uno {
     public Color bestColorFor(int whom) {
         Color best;
         int[] score;
-        List<Card> handCards;
 
         best = RED;
-        handCards = hand.get(whom);
-        if (handCards != null) {
-            score = new int[]{0, 0, 0, 0, 0};
-            for (Card card : handCards) {
-                if (card.isZero()) {
-                    ++score[card.color.ordinal()];
-                } // if (card.isZero())
-                else if (card.isAction()) {
-                    score[card.color.ordinal()] += 3;
-                } // else if (card.isAction())
-                else {
-                    score[card.color.ordinal()] += 2;
-                } // else
-            } // for (Card card : handCards)
+        score = new int[]{0, 0, 0, 0, 0};
+        for (Card card : player[whom].handCards) {
+            if (card.isZero()) {
+                ++score[card.color.ordinal()];
+            } // if (card.isZero())
+            else if (card.isAction()) {
+                score[card.color.ordinal()] += 3;
+            } // else if (card.isAction())
+            else {
+                score[card.color.ordinal()] += 2;
+            } // else
+        } // for (Card card : player[whom].handCards)
 
-            // default to red, when only wild cards in hand,
-            // method will return Color.RED
-            if (score[BLUE.ordinal()] > score[best.ordinal()]) {
-                best = BLUE;
-            } // if (score[BLUE.ordinal()] > score[best.ordinal()])
+        // default to red, when only wild cards in hand,
+        // method will return Color.RED
+        if (score[BLUE.ordinal()] > score[best.ordinal()]) {
+            best = BLUE;
+        } // if (score[BLUE.ordinal()] > score[best.ordinal()])
 
-            if (score[GREEN.ordinal()] > score[best.ordinal()]) {
-                best = GREEN;
-            } // if (score[GREEN.ordinal()] > score[best.ordinal()])
+        if (score[GREEN.ordinal()] > score[best.ordinal()]) {
+            best = GREEN;
+        } // if (score[GREEN.ordinal()] > score[best.ordinal()])
 
-            if (score[YELLOW.ordinal()] > score[best.ordinal()]) {
-                best = YELLOW;
-            } // if (score[YELLOW.ordinal()] > score[best.ordinal()])
-        } // if (handCards != null)
+        if (score[YELLOW.ordinal()] > score[best.ordinal()]) {
+            best = YELLOW;
+        } // if (score[YELLOW.ordinal()] > score[best.ordinal()])
 
         return best;
     } // bestColorFor()
@@ -782,20 +793,21 @@ public class Uno {
         List<Card> handCards;
 
         card = null;
-        handCards = hand.get(who);
-        if (handCards != null && index < handCards.size()) {
+        handCards = player[who].handCards;
+        if (index < handCards.size()) {
             card = handCards.get(index);
             handCards.remove(index);
             if (card.isWild()) {
                 card.wildColor = color;
             } // if（card.isWild())
 
+            player[who].recent = card;
             recent.add(card);
             if (recent.size() > 5) {
                 used.add(recent.get(0));
                 recent.remove(0);
             } // if (recent.size() > 5)
-        } // if (handCards != null && index < handCards.size())
+        } // if (index < handCards.size())
 
         return card;
     } // play()

@@ -181,6 +181,47 @@ private:
 }; // Card Class
 
 /**
+ * Store a Uno player's real-time information,
+ * such as hand cards, and recent played card.
+ */
+class Player {
+public:
+	/**
+	 * @return This player's all hand cards.
+	 */
+	const std::vector<Card*>& getHandCards();
+
+	/**
+	 * @return This player's recent played card, or null if this player drew one
+	 *         or more cards in its previous action.
+	 */
+	Card* getRecent();
+
+private:
+	/**
+	 * Default constructor.
+	 */
+	Player();
+
+	/**
+	 * Hand cards.
+	 */
+	std::vector<Card*> handCards;
+
+	/**
+	 * Recent played card. If the player drew one or more cards in its last
+	 * action, this member will be null.
+	 */
+	Card* recent = NULL;
+
+	/**
+	 * Grant Uno class to access our constructors (to create Player instances)
+	 * and our private fields (to change players' real-time information).
+	 */
+	friend class Uno;
+}; // Player Class
+
+/**
  * Uno Runtime Class (Singleton).
  */
 class Uno {
@@ -231,8 +272,11 @@ public:
 	const cv::Mat& getColoredWildDraw4Image(Color color);
 
 	/**
+	 * Get current action sequence. You can get the next player by calculating
+	 * (now + this->getDirection()) % 4.
+	 *
 	 * @return Current action sequence. DIR_LEFT for clockwise,
-	 * or DIR_RIGHT for counter-clockwise.
+	 *         or DIR_RIGHT for counter-clockwise.
 	 */
 	int getDirection();
 
@@ -240,9 +284,16 @@ public:
 	 * Switch current action sequence.
 	 *
 	 * @return Switched action sequence. DIR_LEFT for clockwise,
-	 * or DIR_RIGHT for counter-clockwise.
+	 *         or DIR_RIGHT for counter-clockwise.
 	 */
 	int switchDirection();
+
+	/**
+	 * @param who Get which player's instance. Must be one of the following
+	 *        values: PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+	 * @return Specified player's instance.
+	 */
+	Player* getPlayer(int who);
 
 	/**
 	 * @return How many cards in deck (haven't been used yet).
@@ -263,8 +314,9 @@ public:
 	 * @param whom Get whose hand cards. Must be one of the following values:
 	 *             PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
 	 * @return Specified player's all hand cards.
+	 * @deprecated Use getPlayer(whom)->getHandCards() instead.
 	 */
-	const std::vector<Card*>& getHandCardsOf(int whom);
+	[[deprecated]] const std::vector<Card*>& getHandCardsOf(int whom);
 
 	/**
 	 * Start a new Uno game. Shuffle cards, let everyone draw 7 cards,
@@ -375,6 +427,11 @@ private:
 	int direction = DIR_LEFT;
 
 	/**
+	 * Game players.
+	 */
+	Player player[4];
+
+	/**
 	 * Card deck (ready to use).
 	 */
 	std::vector<Card*> deck;
@@ -388,11 +445,6 @@ private:
 	 * Recent played cards.
 	 */
 	std::vector<Card*> recent;
-
-	/**
-	 * Everyone's hand cards.
-	 */
-	std::vector<Card*> hand[4];
 
 	/**
 	 * Singleton, hide default constructor.

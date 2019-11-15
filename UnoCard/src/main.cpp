@@ -133,7 +133,7 @@ static void easyAI() {
 	while (sStatus == PLAYER_COM1
 		|| sStatus == PLAYER_COM2
 		|| sStatus == PLAYER_COM3) {
-		hand = sUno->getHandCardsOf(sStatus);
+		hand = sUno->getPlayer(sStatus)->getHandCards();
 		yourSize = (int)hand.size();
 		if (yourSize == 1) {
 			// Only one card remained. Play it when it's legal.
@@ -150,11 +150,11 @@ static void easyAI() {
 
 		direction = sUno->getDirection();
 		next = (sStatus + direction) % 4;
-		nextSize = (int)sUno->getHandCardsOf(next).size();
+		nextSize = (int)sUno->getPlayer(next)->getHandCards().size();
 		oppo = (sStatus + 2) % 4;
-		oppoSize = (int)sUno->getHandCardsOf(oppo).size();
+		oppoSize = (int)sUno->getPlayer(oppo)->getHandCards().size();
 		prev = (4 + sStatus - direction) % 4;
-		prevSize = (int)sUno->getHandCardsOf(prev).size();
+		prevSize = (int)sUno->getPlayer(prev)->getHandCards().size();
 		idx_best = idx_rev = idx_skip = idx_draw2 = -1;
 		idx_zero = idx_num = idx_wild = idx_wildDraw4 = -1;
 		bestColor = sUno->bestColorFor(sStatus);
@@ -352,7 +352,7 @@ static void hardAI() {
 	while (sStatus == PLAYER_COM1
 		|| sStatus == PLAYER_COM2
 		|| sStatus == PLAYER_COM3) {
-		hand = sUno->getHandCardsOf(sStatus);
+		hand = sUno->getPlayer(sStatus)->getHandCards();
 		yourSize = (int)hand.size();
 		if (yourSize == 1) {
 			// Only one card remained. Play it when it's legal.
@@ -369,11 +369,11 @@ static void hardAI() {
 
 		direction = sUno->getDirection();
 		next = (sStatus + direction) % 4;
-		nextSize = (int)sUno->getHandCardsOf(next).size();
+		nextSize = (int)sUno->getPlayer(next)->getHandCards().size();
 		oppo = (sStatus + 2) % 4;
-		oppoSize = (int)sUno->getHandCardsOf(oppo).size();
+		oppoSize = (int)sUno->getPlayer(oppo)->getHandCards().size();
 		prev = (4 + sStatus - direction) % 4;
-		prevSize = (int)sUno->getHandCardsOf(prev).size();
+		prevSize = (int)sUno->getPlayer(prev)->getHandCards().size();
 		idx_best = idx_rev = idx_skip = idx_draw2 = -1;
 		idx_zero = idx_num = idx_wild = idx_wildDraw4 = -1;
 		bestColor = sUno->bestColorFor(sStatus);
@@ -777,7 +777,7 @@ static void refreshScreen(string message) {
 		putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
 
 		// Left-center: Hand cards of Player West (COM1)
-		hand = sUno->getHandCardsOf(PLAYER_COM1);
+		hand = sUno->getPlayer(PLAYER_COM1)->getHandCards();
 		size = (int)hand.size();
 		if (size == 0) {
 			// Played all hand cards, it's winner
@@ -824,7 +824,7 @@ static void refreshScreen(string message) {
 		} // else
 
 		// Top-center: Hand cards of Player North (COM2)
-		hand = sUno->getHandCardsOf(PLAYER_COM2);
+		hand = sUno->getPlayer(PLAYER_COM2)->getHandCards();
 		size = (int)hand.size();
 		if (size == 0) {
 			// Played all hand cards, it's winner
@@ -871,7 +871,7 @@ static void refreshScreen(string message) {
 		} // else
 
 		// Right-center: Hand cards of Player East (COM3)
-		hand = sUno->getHandCardsOf(PLAYER_COM3);
+		hand = sUno->getPlayer(PLAYER_COM3)->getHandCards();
 		size = (int)hand.size();
 		if (size == 0) {
 			// Played all hand cards, it's winner
@@ -918,7 +918,7 @@ static void refreshScreen(string message) {
 		} // else
 
 		// Bottom: Your hand cards
-		hand = sUno->getHandCardsOf(PLAYER_YOU);
+		hand = sUno->getPlayer(PLAYER_YOU)->getHandCards();
 		size = (int)hand.size();
 		if (size == 0) {
 			// Played all hand cards, it's winner
@@ -1010,13 +1010,13 @@ static void play(int index, Color color) {
 			break; // default
 		} // switch (now)
 
-		if (sUno->getHandCardsOf(now).size() == 0) {
+		if (sUno->getPlayer(now)->getHandCards().size() == 0) {
 			// The player in action becomes winner when it played the
 			// final card in its hand successfully
 			sWinner = now;
 			sStatus = STAT_GAME_OVER;
 			onStatusChanged(sStatus);
-		} // if (sUno->getHandCardsOf(now).size() == 0)
+		} // if (sUno->getPlayer(now)->getHandCards().size() == 0)
 		else {
 			// When the played card is an action card or a wild card,
 			// do the necessary things according to the game rule
@@ -1245,7 +1245,7 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 
 		case PLAYER_YOU:
 			if (y >= 520 && y <= 700) {
-				hand = sUno->getHandCardsOf(PLAYER_YOU);
+				hand = sUno->getPlayer(PLAYER_YOU)->getHandCards();
 				size = (int)hand.size();
 				width = 45 * size + 75;
 				startX = 640 - width / 2;

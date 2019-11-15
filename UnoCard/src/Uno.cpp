@@ -164,6 +164,30 @@ bool Card::isNonZeroNumber() {
 		|| content == NUM7 || content == NUM8 || content == NUM9;
 } // isNonZeroNumber()
 
+/* ------------------ Method Definitions for Player Class ------------------ */
+
+/**
+ * Default constructor.
+ */
+Player::Player() {
+	// NOP (Only change accessibility to private)
+} // Player() (Class Constructor)
+
+/**
+ * @return This player's all hand cards.
+ */
+const vector<Card*>& Player::getHandCards() {
+	return handCards;
+} // getHandCards()
+
+/**
+ * @return This player's recent played card, or null if this player drew one
+ *         or more cards in its previous action.
+ */
+Card* Player::getRecent() {
+	return recent;
+} // getRecent()
+
 /* -------------------- Method Definitions for Uno Class -------------------- */
 
 /**
@@ -529,6 +553,9 @@ const Mat& Uno::getColoredWildDraw4Image(Color color) {
 } // getColoredWildDraw4Image()
 
 /**
+ * Get current action sequence. You can get the next player by calculating
+ * (now + this->getDirection()) % 4.
+ *
  * @return Current action sequence. DIR_LEFT for clockwise,
  *         or DIR_RIGHT for counter-clockwise.
  */
@@ -546,6 +573,20 @@ int Uno::switchDirection() {
 	direction = 4 - direction;
 	return direction;
 } // switchDirection()
+
+/**
+ * @param who Get which player's instance. Must be one of the following
+ *        values: PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+ * @return Specified player's instance.
+ */
+Player* Uno::getPlayer(int who) {
+	if (who >= 0 && who < 4) {
+		return &player[who];
+	} // if (who >= 0 && who < 4)
+	else {
+		throw "Illegal parameter";
+	} // else
+} // getPlayer()
 
 /**
  * @return How many cards in deck (haven't been used yet).
@@ -572,14 +613,10 @@ const vector<Card*>& Uno::getRecent() {
  * @param whom Get whose hand cards. Must be one of the following values:
  *             PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
  * @return Specified player's all hand cards.
+ * @deprecated Use getPlayer(whom)->getHandCards() instead.
  */
-const vector<Card*>& Uno::getHandCardsOf(int whom) {
-	if (whom >= 0 && whom < 4) {
-		return hand[whom];
-	} // if (whom >= 0 && whom < 4)
-	else {
-		throw "Illegal parameter";
-	} // else
+[[deprecated]] const vector<Card*>& Uno::getHandCardsOf(int whom) {
+	return getPlayer(whom)->getHandCards();
 } // getHandCardsOf()
 
 /**
@@ -600,10 +637,10 @@ void Uno::start() {
 	deck.clear();
 	used.clear();
 	recent.clear();
-	hand[0].clear();
-	hand[1].clear();
-	hand[2].clear();
-	hand[3].clear();
+	player[0].handCards.clear();
+	player[1].handCards.clear();
+	player[2].handCards.clear();
+	player[3].handCards.clear();
 
 	// Generate a temporary sequenced card deck
 	for (i = 0; i < 108; ++i) {
@@ -655,23 +692,28 @@ void Uno::start() {
  */
 Card* Uno::draw(int who) {
 	Card* card;
+	Player* player;
 	int index, size;
+	vector<Card*>* hand;
 	vector<Card*>::iterator i;
 
 	card = NULL;
-	if (who >= 0 && who < 4 && hand[who].size() < MAX_HOLD_CARDS) {
+	player = getPlayer(who);
+	hand = &player->handCards;
+	if (hand->size() < MAX_HOLD_CARDS) {
 		// Draw a card from card deck, and put it to an appropriate position
 		card = deck.back();
 		deck.pop_back();
-		for (i = hand[who].begin(); i != hand[who].end(); ++i) {
+		for (i = hand->begin(); i != hand->end(); ++i) {
 			if (*(*i) > *card) {
 				// Found an appropriate position to insert the new card,
 				// which keeps the player's hand cards sequenced
 				break;
 			} // if (*(*i) > *card)
-		} // for (i = hand[who].begin(); i != hand[who].end(); ++i)
+		} // for (i = hand->begin(); i != hand->end(); ++i)
 
-		hand[who].insert(i, card);
+		hand->insert(i, card);
+		player->recent = NULL;
 		if (deck.empty()) {
 			// Re-use the used cards when there are no more cards in deck
 			size = (int)used.size();
@@ -682,7 +724,7 @@ Card* Uno::draw(int who) {
 				--size;
 			} // while (size > 0)
 		} // if (deck.empty())
-	} // if (who >= 0 && who < 4 && hand[who].size() < MAX_HOLD_CARDS)
+	} // if (hand->size() < MAX_HOLD_CARDS)
 
 	return card;
 } // draw()
@@ -704,33 +746,31 @@ Color Uno::bestColorFor(int whom) {
 	Color best = RED;
 	int score[5] = { 0, 0, 0, 0, 0 };
 
-	if (whom >= 0 && whom < 4) {
-		for (Card* card : hand[whom]) {
-			if (card->isZero()) {
-				++score[card->color];
-			} // if (card->isZero())
-			else if (card->isAction()) {
-				score[card->color] += 3;
-			} // else if (card->isAction())
-			else {
-				score[card->color] += 2;
-			} // else
-		} // for (Card* card : hand[whom])
+	for (Card* card : getPlayer(whom)->handCards) {
+		if (card->isZero()) {
+			++score[card->color];
+		} // if (card->isZero())
+		else if (card->isAction()) {
+			score[card->color] += 3;
+		} // else if (card->isAction())
+		else {
+			score[card->color] += 2;
+		} // else
+	} // for (Card* card : getPlayer(whom)->handCards)
 
-		// default to red, when only wild cards in hand,
-		// function will return Color::RED
-		if (score[BLUE] > score[best]) {
-			best = BLUE;
-		} // if (score[BLUE] > score[best]
+	// default to red, when only wild cards in hand,
+	// function will return Color::RED
+	if (score[BLUE] > score[best]) {
+		best = BLUE;
+	} // if (score[BLUE] > score[best]
 
-		if (score[GREEN] > score[best]) {
-			best = GREEN;
-		} // if (score[GREEN] > score[best])
+	if (score[GREEN] > score[best]) {
+		best = GREEN;
+	} // if (score[GREEN] > score[best])
 
-		if (score[YELLOW] > score[best]) {
-			best = YELLOW;
-		} // if (score[YELLOW] > score[best])
-	} // if (whom >= 0 && whom < 4)
+	if (score[YELLOW] > score[best]) {
+		best = YELLOW;
+	} // if (score[YELLOW] > score[best])
 
 	return best;
 } // bestColorFor()
@@ -796,21 +836,27 @@ bool Uno::isLegalToPlay(Card* card) {
  * @return Reference of the played card.
  */
 Card* Uno::play(int who, int index, Color color) {
-	Card* card = NULL;
+	Card* card;
+	Player* player;
+	vector<Card*>* hand;
 
-	if (who >= 0 && who < 4 && index < hand[who].size()) {
-		card = hand[who].at(index);
-		hand[who].erase(hand[who].begin() + index);
+	card = NULL;
+	player = getPlayer(who);
+	hand = &player->handCards;
+	if (index < hand->size()) {
+		card = hand->at(index);
+		hand->erase(hand->begin() + index);
 		if (card->isWild()) {
 			card->wildColor = color;
 		} // if (card->isWild())
 
+		player->recent = card;
 		recent.push_back(card);
 		if (recent.size() > 5) {
 			used.push_back(recent.front());
 			recent.erase(recent.begin());
 		} // if (recent.size() > 5)
-	} // if (who >= 0 && who < 4 && index < hand[who].size())
+	} // if (index < hand->size())
 
 	return card;
 } // play()
