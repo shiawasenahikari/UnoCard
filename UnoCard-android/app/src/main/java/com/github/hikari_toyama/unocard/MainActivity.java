@@ -246,13 +246,13 @@ public class MainActivity extends AppCompatActivity
             // Strategies when your opposite player remains only one card.
             // Give more freedom to your next player, the only one that can
             // directly limit your opposite player's action.
-            if (hasRev && nextSize <= 3 && prevSize >= 6) {
+            if (hasRev && prevSize - nextSize >= 3) {
                 // Play a [reverse] when your next player remains only a few
                 // cards but your previous player remains a lot of cards,
                 // because your previous player has more possibility to limit
                 // your opposite player's action.
                 idxBest = idxRev;
-            } // if (hasRev && nextSize <= 3 && prevSize >= 6)
+            } // if (hasRev && prevSize - nextSize >= 3)
             else if (hasNum) {
                 // Then you can play a number card. In order to increase your
                 // next player's possibility of changing the legal color, do
@@ -588,13 +588,13 @@ public class MainActivity extends AppCompatActivity
                     idxBest = idxZero;
                 } // else if (hasZero)
             } // if (oppo.getRecent().getWildColor() == lastColor)
-            else if (hasRev && nextSize <= 3 && prevSize >= 6) {
+            else if (hasRev && prevSize - nextSize >= 3) {
                 // Play a [reverse] when your next player remains only a few
                 // cards but your previous player remains a lot of cards,
                 // because your previous player has more possibility to limit
                 // your opposite player's action.
                 idxBest = idxRev;
-            } // else if (hasRev && nextSize <= 3 && prevSize >= 6)
+            } // else if (hasRev && prevSize - nextSize >= 3)
             else if (hasNum) {
                 // Then you can play a number card. In order to increase your
                 // next player's possibility of changing the legal color, do
@@ -622,13 +622,13 @@ public class MainActivity extends AppCompatActivity
                 } // if (nextSize <= 4)
             } // else if (hasWildDraw4 && lastColor != bestColor)
         } // else if (oppoSize == 1)
-        else if (next.getRecent() == null) {
+        else if (next.getRecent() == null && yourSize > 2) {
             // Strategies when your next player drew a card in its last action.
-            // You do not need to play your limitation/wild card in this case.
-            // Save them in order to use them in dangerous cases.
-            if (hasRev && nextSize <= 3 && prevSize >= 6) {
+            // You do not need to play your limitation/wild cards when you are
+            // not ready to start dash. Use them in more dangerous cases.
+            if (hasRev && prevSize - nextSize >= 3) {
                 idxBest = idxRev;
-            } // if (hasRev && nextSize <= 3 && prevSize >= 6)
+            } // if (hasRev && prevSize - nextSize >= 3)
             else if (hasZero) {
                 idxBest = idxZero;
             } // else if (hasZero)
@@ -638,15 +638,15 @@ public class MainActivity extends AppCompatActivity
             else if (hasRev && prevSize >= 4) {
                 idxBest = idxRev;
             } // else if (hasRev && prevSize >= 4)
-        } // else if (next.getRecent() == null)
+        } // else if (next.getRecent() == null && yourSize > 2)
         else {
             // Normal strategies
-            if (hasRev && nextSize <= 3 && prevSize >= 6) {
+            if (hasRev && prevSize - nextSize >= 3) {
                 // Play a [reverse] when your next player remains only a few
                 // cards but your previous player remains a lot of cards, in
                 // order to balance everyone's hand-card amount.
                 idxBest = idxRev;
-            } // if (hasRev && nextSize <= 3 && prevSize >= 6)
+            } // if (hasRev && prevSize - nextSize >= 3)
             else if (hasDraw2 && nextSize <= 4) {
                 // Play a [+2] when your next player remains only a few cards.
                 idxBest = idxDraw2;

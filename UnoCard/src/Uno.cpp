@@ -731,8 +731,8 @@ Card* Uno::draw(int who) {
 
 /**
  * Evaluate which color is the best color for the specified player. In our
- * evaluation system, zero cards are worth 1 point, non-zero number cards
- * are worth 2 points, and action cards are worth 3 points. Finally, the
+ * evaluation system, zero cards are worth 2 points, non-zero number cards
+ * are worth 4 points, and action cards are worth 5 points. Finally, the
  * color which contains the worthiest cards becomes the best color.
  *
  * @param whom Evaluate whose best color. Must be one of the following
@@ -748,13 +748,13 @@ Color Uno::bestColorFor(int whom) {
 
 	for (Card* card : getPlayer(whom)->handCards) {
 		if (card->isZero()) {
-			++score[card->color];
+			score[card->color] += 2;
 		} // if (card->isZero())
 		else if (card->isAction()) {
-			score[card->color] += 3;
+			score[card->color] += 5;
 		} // else if (card->isAction())
 		else {
-			score[card->color] += 2;
+			score[card->color] += 4;
 		} // else
 	} // for (Card* card : getPlayer(whom)->handCards)
 
