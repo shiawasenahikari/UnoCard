@@ -41,7 +41,6 @@ import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Random;
 
 /**
@@ -870,7 +869,8 @@ public class MainActivity extends AppCompatActivity
         String info;
         Size textSize;
         List<Card> hand;
-        int status, size, width, height, remain, used, easyRate, hardRate;
+        int i, status, size, width, height;
+        int remain, used, easyRate, hardRate;
 
         // Lock the value of member [mStatus]
         status = mStatus;
@@ -946,11 +946,11 @@ public class MainActivity extends AppCompatActivity
             Imgproc.putText(mScr, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
         } // if (size == 0)
         else {
+            height = 40 * size + 140;
+            roi.x = 20;
+            roi.y = 360 - height / 2;
             if (status == STAT_GAME_OVER) {
                 // Show remained cards to everyone when game over
-                height = 40 * size + 140;
-                roi.x = 20;
-                roi.y = 360 - height / 2;
                 for (Card card : hand) {
                     image = card.getImage();
                     image.copyTo(new Mat(mScr, roi), image);
@@ -958,11 +958,12 @@ public class MainActivity extends AppCompatActivity
                 } // for (Card card : hand)
             } // if (status == STAT_GAME_OVER)
             else {
-                // Only show a card back in game process
+                // Only show card backs in game process
                 image = mUno.getBackImage();
-                roi.x = 20;
-                roi.y = 270;
-                image.copyTo(new Mat(mScr, roi), image);
+                for (i = 0; i < size; ++i) {
+                    image.copyTo(new Mat(mScr, roi), image);
+                    roi.y += 40;
+                } // for (i = 0; i < size; ++i)
             } // else
 
             if (size == 1) {
@@ -971,13 +972,6 @@ public class MainActivity extends AppCompatActivity
                 point.y = 494;
                 Imgproc.putText(mScr, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
             } // if (size == 1)
-            else if (status != STAT_GAME_OVER) {
-                // When two or more cards in hand, show the amount
-                point.x = 50;
-                point.y = 494;
-                info = String.format(Locale.getDefault(), "%2d", size);
-                Imgproc.putText(mScr, info, point, FONT_SANS, 1.0, RGB_WHITE);
-            } // else if (status != STAT_GAME_OVER)
         } // else
 
         // Top-center: Hand cards of Player North (COM2)
@@ -990,11 +984,11 @@ public class MainActivity extends AppCompatActivity
             Imgproc.putText(mScr, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
         } // if (size == 0)
         else {
+            width = 45 * size + 75;
+            roi.x = 640 - width / 2;
+            roi.y = 20;
             if (status == STAT_GAME_OVER) {
                 // Show remained hand cards when game over
-                width = 45 * size + 75;
-                roi.x = 640 - width / 2;
-                roi.y = 20;
                 for (Card card : hand) {
                     image = card.getImage();
                     image.copyTo(new Mat(mScr, roi), image);
@@ -1002,11 +996,12 @@ public class MainActivity extends AppCompatActivity
                 } // for (Card card : hand)
             } // if (status == STAT_GAME_OVER)
             else {
-                // Only show a card back in game process
+                // Only show card backs in game process
                 image = mUno.getBackImage();
-                roi.x = 580;
-                roi.y = 20;
-                image.copyTo(new Mat(mScr, roi), image);
+                for (i = 0; i < size; ++i) {
+                    image.copyTo(new Mat(mScr, roi), image);
+                    roi.x += 45;
+                } // for (i = 0; i < size; ++i)
             } // else
 
             if (size == 1) {
@@ -1015,13 +1010,6 @@ public class MainActivity extends AppCompatActivity
                 point.y = 121;
                 Imgproc.putText(mScr, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
             } // if (size == 1)
-            else if (status != STAT_GAME_OVER) {
-                // When two or more cards in hand, show the amount
-                point.x = 500;
-                point.y = 121;
-                info = String.format(Locale.getDefault(), "%2d", size);
-                Imgproc.putText(mScr, info, point, FONT_SANS, 1.0, RGB_WHITE);
-            } // else if (status != STAT_GAME_OVER)
         } // else
 
         // Right-center: Hand cards of Player East (COM3)
@@ -1034,11 +1022,11 @@ public class MainActivity extends AppCompatActivity
             Imgproc.putText(mScr, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
         } // if (size == 0)
         else {
+            height = 40 * size + 140;
+            roi.x = 1140;
+            roi.y = 360 - height / 2;
             if (status == STAT_GAME_OVER) {
                 // Show remained hand cards when game over
-                height = 40 * size + 140;
-                roi.x = 1140;
-                roi.y = 360 - height / 2;
                 for (Card card : hand) {
                     image = card.getImage();
                     image.copyTo(new Mat(mScr, roi), image);
@@ -1046,11 +1034,12 @@ public class MainActivity extends AppCompatActivity
                 } // for (Card card : hand)
             } // if (status == STAT_GAME_OVER)
             else {
-                // Only show a card back in game process
+                // Only show card backs in game process
                 image = mUno.getBackImage();
-                roi.x = 1140;
-                roi.y = 270;
-                image.copyTo(new Mat(mScr, roi), image);
+                for (i = 0; i < size; ++i) {
+                    image.copyTo(new Mat(mScr, roi), image);
+                    roi.y += 40;
+                } // for (i = 0; i < size; ++i)
             } // else
 
             if (size == 1) {
@@ -1059,13 +1048,6 @@ public class MainActivity extends AppCompatActivity
                 point.y = 494;
                 Imgproc.putText(mScr, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
             } // if (size == 1)
-            else if (status != STAT_GAME_OVER) {
-                // When two or more cards in hand, show the amount
-                point.x = 1170;
-                point.y = 494;
-                info = String.format(Locale.getDefault(), "%2d", size);
-                Imgproc.putText(mScr, info, point, FONT_SANS, 1.0, RGB_WHITE);
-            } // else if (status != STAT_GAME_OVER)
         } // else
 
         // Bottom: Your hand cards
@@ -1119,50 +1101,39 @@ public class MainActivity extends AppCompatActivity
      *              Pass the specified following legal color.
      */
     private void play(int index, Color color) {
+        int now;
         Rect roi;
         Mat image;
         Card card;
-        int now, waitMs;
         Runnable delayedTask;
 
         now = mStatus;
         mStatus = STAT_IDLE; // block tap down events when idle
         card = mUno.play(now, index, color);
         if (card != null) {
-            // Animation
+            image = card.getImage();
             switch (now) {
                 case Uno.PLAYER_COM1:
-                    image = card.getImage();
                     roi = new Rect(160, 270, 121, 181);
-                    image.copyTo(new Mat(mScr, roi), image);
-                    Utils.matToBitmap(mScr, mBmp);
-                    mImgScreen.setImageBitmap(mBmp);
-                    waitMs = 300;
                     break; // case Uno.PLAYER_COM1
 
                 case Uno.PLAYER_COM2:
-                    image = card.getImage();
-                    roi = new Rect(720, 20, 121, 181);
-                    image.copyTo(new Mat(mScr, roi), image);
-                    Utils.matToBitmap(mScr, mBmp);
-                    mImgScreen.setImageBitmap(mBmp);
-                    waitMs = 300;
+                    roi = new Rect(650, 220, 121, 181);
                     break; // case Uno.PLAYER_COM2
 
                 case Uno.PLAYER_COM3:
-                    image = card.getImage();
                     roi = new Rect(1000, 270, 121, 181);
-                    image.copyTo(new Mat(mScr, roi), image);
-                    Utils.matToBitmap(mScr, mBmp);
-                    mImgScreen.setImageBitmap(mBmp);
-                    waitMs = 300;
                     break; // case Uno.PLAYER_COM3
 
                 default:
-                    waitMs = 0;
+                    roi = new Rect(650, 320, 121, 181);
                     break; // default
             } // switch (now)
 
+            // Animation
+            image.copyTo(new Mat(mScr, roi), image);
+            Utils.matToBitmap(mScr, mBmp);
+            mImgScreen.setImageBitmap(mBmp);
             delayedTask = () -> {
                 String message;
                 int next, direction;
@@ -1255,7 +1226,7 @@ public class MainActivity extends AppCompatActivity
                     } // switch (card.getContent())
                 } // else
             }; // delayedTask = () -> {}
-            mHandler.postDelayed(delayedTask, waitMs);
+            mHandler.postDelayed(delayedTask, 300);
         } // if (card != null)
     } // play()
 
@@ -1514,7 +1485,6 @@ public class MainActivity extends AppCompatActivity
 
             card = mUno.draw(who);
             if (card != null) {
-                // Animation
                 switch (who) {
                     case Uno.PLAYER_COM1:
                         if (count == 1) {
@@ -1526,9 +1496,6 @@ public class MainActivity extends AppCompatActivity
 
                         image = mUno.getBackImage();
                         roi = new Rect(160, 270, 121, 181);
-                        image.copyTo(new Mat(mScr, roi), image);
-                        Utils.matToBitmap(mScr, mBmp);
-                        mImgScreen.setImageBitmap(mBmp);
                         break; // case Uno.PLAYER_COM1
 
                     case Uno.PLAYER_COM2:
@@ -1540,10 +1507,7 @@ public class MainActivity extends AppCompatActivity
                         } // else
 
                         image = mUno.getBackImage();
-                        roi = new Rect(720, 20, 121, 181);
-                        image.copyTo(new Mat(mScr, roi), image);
-                        Utils.matToBitmap(mScr, mBmp);
-                        mImgScreen.setImageBitmap(mBmp);
+                        roi = new Rect(420, 220, 121, 181);
                         break; // case Uno.PLAYER_COM2
 
                     case Uno.PLAYER_COM3:
@@ -1556,21 +1520,19 @@ public class MainActivity extends AppCompatActivity
 
                         image = mUno.getBackImage();
                         roi = new Rect(1000, 270, 121, 181);
-                        image.copyTo(new Mat(mScr, roi), image);
-                        Utils.matToBitmap(mScr, mBmp);
-                        mImgScreen.setImageBitmap(mBmp);
                         break; // case Uno.PLAYER_COM3
 
                     default:
                         message = NAME[who] + ": Draw " + card.getName();
                         image = card.getImage();
-                        roi = new Rect(140, 520, 121, 181);
-                        image.copyTo(new Mat(mScr, roi), image);
-                        Utils.matToBitmap(mScr, mBmp);
-                        mImgScreen.setImageBitmap(mBmp);
+                        roi = new Rect(420, 320, 121, 181);
                         break; // default
                 } // switch (who)
 
+                // Animation
+                image.copyTo(new Mat(mScr, roi), image);
+                Utils.matToBitmap(mScr, mBmp);
+                mImgScreen.setImageBitmap(mBmp);
                 delayedTask = () -> {
                     refreshScreen(message);
                     ++times;
