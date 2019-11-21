@@ -31,6 +31,7 @@ import com.github.hikari_toyama.unocard.core.Content;
 import com.github.hikari_toyama.unocard.core.Player;
 import com.github.hikari_toyama.unocard.core.Uno;
 
+import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
@@ -49,6 +50,7 @@ import java.util.Random;
 @SuppressWarnings("ClickableViewAccessibility")
 public class MainActivity extends AppCompatActivity
         implements View.OnTouchListener {
+    private static final boolean OPENCV_INIT_SUCCESS = OpenCVLoader.initDebug();
     private static final String[] NAME = {"YOU", "WEST", "NORTH", "EAST"};
     private static final Scalar RGB_YELLOW = new Scalar(0xFF, 0xAA, 0x11);
     private static final Scalar RGB_WHITE = new Scalar(0xCC, 0xCC, 0xCC);
@@ -69,6 +71,7 @@ public class MainActivity extends AppCompatActivity
     private int mWildIndex;
     private int mHardTotal;
     private int mEasyTotal;
+    private boolean mAuto;
     private int mHardWin;
     private int mEasyWin;
     private int mStatus;
@@ -84,25 +87,32 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         SharedPreferences sp;
+        DialogFragment dialog;
 
         // Preparations
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         sp = getSharedPreferences("UnoStat", Context.MODE_PRIVATE);
+        mHandler = new Handler();
         mEasyWin = sp.getInt("easyWin", 0);
         mHardWin = sp.getInt("hardWin", 0);
         mEasyTotal = sp.getInt("easyTotal", 0);
         mHardTotal = sp.getInt("hardTotal", 0);
-        mImgScreen = findViewById(R.id.imgMainScreen);
-        mHandler = new Handler();
-        mRnd = new Random();
-        mUno = Uno.getInstance(this);
-        mWinner = Uno.PLAYER_YOU;
-        mStatus = STAT_WELCOME;
-        mScr = mUno.getBackground().clone();
-        mBmp = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888);
-        refreshScreen("WELCOME TO UNO CARD GAME");
-        mImgScreen.setOnTouchListener(this);
+        if (OPENCV_INIT_SUCCESS) {
+            mUno = Uno.getInstance(this);
+            mWinner = Uno.PLAYER_YOU;
+            mStatus = STAT_WELCOME;
+            mRnd = new Random();
+            mScr = mUno.getBackground().clone();
+            mBmp = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888);
+            mImgScreen = findViewById(R.id.imgMainScreen);
+            refreshScreen("WELCOME TO UNO CARD GAME");
+            mImgScreen.setOnTouchListener(this);
+        } // if (OPENCV_INIT_SUCCESS)
+        else {
+            dialog = new UnsupportedDeviceDialog();
+            dialog.show(getSupportFragmentManager(), "UnsupportedDeviceDialog");
+        } // else
     } // onCreate()
 
     /**
@@ -756,7 +766,17 @@ public class MainActivity extends AppCompatActivity
 
             case Uno.PLAYER_YOU:
                 // Your turn, select a hand card to play, or draw a card
-                refreshScreen("Your turn, play or draw a card");
+                if (mAuto) {
+                    if (mDifficulty == LV_EASY) {
+                        easyAI();
+                    } // if (mDifficulty == LV_EASY)
+                    else {
+                        hardAI();
+                    } // else
+                } // if (mAuto)
+                else {
+                    refreshScreen("Your turn, play or draw a card");
+                } // else
                 break; // case Uno.PLAYER_YOU
 
             case STAT_WILD_COLOR:
@@ -882,6 +902,16 @@ public class MainActivity extends AppCompatActivity
         textSize = Imgproc.getTextSize(message, FONT_SANS, 1.0, 1, null);
         point = new Point(640 - textSize.width / 2, 480);
         Imgproc.putText(mScr, message, point, FONT_SANS, 1.0, RGB_WHITE);
+
+        // Right-bottom corner: <AUTO> button
+        point.x = 1130;
+        point.y = 700;
+        if (mAuto) {
+            Imgproc.putText(mScr, "<AUTO>", point, FONT_SANS, 1.0, RGB_YELLOW);
+        } // if (mAuto)
+        else {
+            Imgproc.putText(mScr, "<AUTO>", point, FONT_SANS, 1.0, RGB_WHITE);
+        } // else
 
         // For welcome screen, only show difficulty buttons and winning rates
         if (status == STAT_WELCOME) {
@@ -1245,7 +1275,7 @@ public class MainActivity extends AppCompatActivity
         // for-loop. We need to create a Runnable object, and make a delayed
         // cycle by executing mHandler.postDelayed(this, delayedMs); in the
         // run() method of the created Runnable object.
-        new DrawLoop(who, count).run();
+        mHandler.post(new DrawLoop(who, count));
     } // draw()
 
     /**
@@ -1259,6 +1289,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         Card card;
+        Point point;
         List<Card> hand;
         int x, y, index, size, width, startX;
 
@@ -1266,7 +1297,49 @@ public class MainActivity extends AppCompatActivity
             // Only response to tap down events, and ignore the others
             x = (int) (event.getX() * mUno.getBgWidth() / v.getWidth());
             y = (int) (event.getY() * mUno.getBgHeight() / v.getHeight());
-            switch (mStatus) {
+            if (y >= 679 && y <= 700 && x >= 1130 && x <= 1260) {
+                // <AUTO> button
+                // In player's action, automatically play or draw cards by AI
+                mAuto = !mAuto;
+                switch (mStatus) {
+                    case Uno.PLAYER_YOU:
+                        onStatusChanged(mStatus);
+                        break; // case Uno.PLAYER_YOU
+
+                    case STAT_WILD_COLOR:
+                        mStatus = Uno.PLAYER_YOU;
+                        onStatusChanged(mStatus);
+                        break; // case STAT_WILD_COLOR
+
+                    default:
+                        point = new Point(1130, 700);
+                        if (mAuto) {
+                            Imgproc.putText(
+                                    /* img       */ mScr,
+                                    /* text      */ "<AUTO>",
+                                    /* org       */ point,
+                                    /* fontFace  */ FONT_SANS,
+                                    /* fontScale */ 1.0,
+                                    /* color     */ RGB_YELLOW
+                            ); // Imgproc.putText()
+                        } // if (mAuto)
+                        else {
+                            Imgproc.putText(
+                                    /* img       */ mScr,
+                                    /* text      */ "<AUTO>",
+                                    /* org       */ point,
+                                    /* fontFace  */ FONT_SANS,
+                                    /* fontScale */ 1.0,
+                                    /* color     */ RGB_WHITE
+                            ); // Imgproc.putText()
+                        } // else
+
+                        Utils.matToBitmap(mScr, mBmp);
+                        mImgScreen.setImageBitmap(mBmp);
+                        break; // default
+                } // switch (mStatus)
+            } // if (y >= 679 && y <= 700 && x >= 1130 && x <= 1260)
+            else switch (mStatus) {
                 case STAT_WELCOME:
                     if (y >= 270 && y <= 450) {
                         if (x >= 420 && x <= 540) {
@@ -1285,7 +1358,10 @@ public class MainActivity extends AppCompatActivity
                     break; // case STAT_WELCOME
 
                 case Uno.PLAYER_YOU:
-                    if (y >= 520 && y <= 700) {
+                    if (mAuto) {
+                        break; // case Uno.PLAYER_YOU
+                    } // if (mAuto)
+                    else if (y >= 520 && y <= 700) {
                         hand = mUno.getPlayer(Uno.PLAYER_YOU).getHandCards();
                         size = hand.size();
                         width = 60 * size + 60;
@@ -1319,30 +1395,31 @@ public class MainActivity extends AppCompatActivity
                     break; // case Uno.PLAYER_YOU
 
                 case STAT_WILD_COLOR:
-                    if (y > 220 && y < 315) {
-                        if (x > 310 && x < 405) {
-                            // Red sector
-                            mStatus = Uno.PLAYER_YOU;
-                            play(mWildIndex, Color.RED);
-                        } // if (x > 310 && x < 405)
-                        else if (x > 405 && x < 500) {
-                            // Blue sector
-                            mStatus = Uno.PLAYER_YOU;
-                            play(mWildIndex, Color.BLUE);
-                        } // else if (x > 405 && x < 500)
-                    } // if (y > 220 && y < 315)
-                    else if (y > 315 && y < 410) {
-                        if (x > 310 && x < 405) {
-                            // Yellow sector
-                            mStatus = Uno.PLAYER_YOU;
-                            play(mWildIndex, Color.YELLOW);
-                        } // if (x > 310 && x < 405)
-                        else if (x > 405 && x < 500) {
-                            // Green sector
-                            mStatus = Uno.PLAYER_YOU;
-                            play(mWildIndex, Color.GREEN);
-                        } // else if (x > 405 && x < 500)
-                    } // else if (y > 315 && y < 410)
+                    if (y > 220 && y < 315 && x > 310 && x < 405) {
+                        // Red sector
+                        mStatus = Uno.PLAYER_YOU;
+                        play(mWildIndex, Color.RED);
+                    } // if (y > 220 && y < 315 && x > 310 && x < 405)
+                    else if (y > 220 && y < 315 && x > 405 && x < 500) {
+                        // Blue sector
+                        mStatus = Uno.PLAYER_YOU;
+                        play(mWildIndex, Color.BLUE);
+                    } // else if (y > 220 && y < 315 && x > 405 && x < 500)
+                    else if (y > 315 && y < 410 && x > 310 && x < 405) {
+                        // Yellow sector
+                        mStatus = Uno.PLAYER_YOU;
+                        play(mWildIndex, Color.YELLOW);
+                    } // else if (y > 315 && y < 410 && x > 310 && x < 405)
+                    else if (y > 315 && y < 410 && x > 405 && x < 500) {
+                        // Green sector
+                        mStatus = Uno.PLAYER_YOU;
+                        play(mWildIndex, Color.GREEN);
+                    } // else if (y > 315 && y < 410 && x > 405 && x < 500)
+                    else {
+                        // Undo
+                        mStatus = Uno.PLAYER_YOU;
+                        onStatusChanged(mStatus);
+                    } // else
                     break; // case STAT_WILD_COLOR
 
                 case STAT_GAME_OVER:
@@ -1355,7 +1432,7 @@ public class MainActivity extends AppCompatActivity
 
                 default:
                     break; // default
-            } // switch (mStatus)
+            } // else switch (mStatus)
         } // if (event.getAction() == MotionEvent.ACTION_DOWN)
 
         return true;
@@ -1408,6 +1485,43 @@ public class MainActivity extends AppCompatActivity
         mHandler.removeCallbacksAndMessages(null);
         super.onDestroy();
     } // onDestroy()
+
+    /**
+     * Unsupported Device Dialog.
+     */
+    public static class UnsupportedDeviceDialog extends DialogFragment
+            implements DialogInterface.OnClickListener {
+        /**
+         * Triggered when dialog box created.
+         *
+         * @return Created dialog object.
+         */
+        @NonNull
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            return new AlertDialog.Builder(requireActivity())
+                    .setCancelable(false)
+                    .setTitle(R.string.app_name)
+                    .setMessage(R.string.dlgUnsupportedDeviceMsg)
+                    .setIcon(android.R.drawable.ic_dialog_info)
+                    .setPositiveButton(android.R.string.ok, this)
+                    .create();
+        } // onCreateDialog()
+
+        /**
+         * Implementation method of interface DialogInterface.OnClickListener.
+         * Triggered when a dialog button is pressed.
+         *
+         * @param dialog The button in which dialog box is pressed.
+         * @param which  Which button is pressed, e.g.
+         *               DialogInterface.BUTTON_POSITIVE
+         */
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            dialog.dismiss();
+            requireActivity().finish();
+        } // onClick()
+    } // UnsupportedDeviceDialog Inner Class
 
     /**
      * Exit Dialog.

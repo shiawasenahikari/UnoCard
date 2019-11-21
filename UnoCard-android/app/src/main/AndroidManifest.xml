@@ -4,7 +4,6 @@
     package="com.github.hikari_toyama.unocard">
 
     <application
-        android:name=".App"
         android:allowBackup="true"
         android:extractNativeLibs="false"
         android:fullBackupContent="@xml/backup_descriptor"

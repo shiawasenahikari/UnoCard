@@ -48,6 +48,7 @@ static const char FILE_HEADER[] = {
 
 // Global Variables
 static Uno* sUno;
+static bool sAuto;
 static Mat sScreen;
 static int sStatus;
 static int sWinner;
@@ -101,6 +102,7 @@ int main() {
 	} // if (!reader.fail())
 
 	sUno = Uno::getInstance();
+	sAuto = false;
 	sAIRunning = false;
 	sWinner = PLAYER_YOU;
 	sStatus = STAT_WELCOME;
@@ -134,7 +136,8 @@ static void easyAI() {
 	sAIRunning = true;
 	while (sStatus == PLAYER_COM1
 		|| sStatus == PLAYER_COM2
-		|| sStatus == PLAYER_COM3) {
+		|| sStatus == PLAYER_COM3
+		|| sStatus == PLAYER_YOU && sAuto) {
 		hand = sUno->getPlayer(sStatus)->getHandCards();
 		yourSize = (int)hand.size();
 		if (yourSize == 1) {
@@ -356,7 +359,8 @@ static void hardAI() {
 	sAIRunning = true;
 	while (sStatus == PLAYER_COM1
 		|| sStatus == PLAYER_COM2
-		|| sStatus == PLAYER_COM3) {
+		|| sStatus == PLAYER_COM3
+		|| sStatus == PLAYER_YOU && sAuto) {
 		hand = sUno->getPlayer(sStatus)->getHandCards();
 		yourSize = (int)hand.size();
 		if (yourSize == 1) {
@@ -778,14 +782,26 @@ static void onStatusChanged(int status) {
 
 	case PLAYER_YOU:
 		// Your turn, select a hand card to play, or draw a card
-		refreshScreen("Your turn, play or draw a card");
+		if (sAuto) {
+			if (!sAIRunning) {
+				if (sDifficulty == LV_EASY) {
+					easyAI();
+				} // if (sDifficulty == LV_EASY)
+				else {
+					hardAI();
+				} // else
+			} // if (!sAIRunning)
+		} // if (sAuto)
+		else {
+			refreshScreen("Your turn, play or draw a card");
+		} // else
 		break; // case PLAYER_YOU
 
 	case STAT_WILD_COLOR:
 		// Need to specify the following legal color after played a
 		// wild card. Draw color sectors in the center of screen
 		refreshScreen("^ Specify the following legal color");
-		rect = Rect(450, 270, 181, 181);
+		rect = Rect(360, 270, 181, 181);
 		sUno->getBackground()(rect).copyTo(sScreen(rect));
 		center = Point(450, 360);
 		axes = Size(90, 90);
@@ -858,6 +874,16 @@ static void refreshScreen(string message) {
 	point.x = 1140;
 	point.y = 42;
 	putText(sScreen, "<QUIT>", point, FONT_SANS, 1.0, RGB_WHITE);
+
+	// Right-bottom corner: <AUTO> button
+	point.x = 1130;
+	point.y = 700;
+	if (sAuto) {
+		putText(sScreen, "<AUTO>", point, FONT_SANS, 1.0, RGB_YELLOW);
+	} // if (sAuto)
+	else {
+		putText(sScreen, "<AUTO>", point, FONT_SANS, 1.0, RGB_WHITE);
+	} // else
 
 	// For welcome screen, only show difficulty buttons and winning rates
 	if (status == STAT_WELCOME) {
@@ -1292,6 +1318,7 @@ static void draw(int who, int count) {
  */
 static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 	static Card* card;
+	static Point point;
 	static ofstream writer;
 	static vector<Card*> hand;
 	static int index, size, width, startX, checksum;
@@ -1317,6 +1344,33 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 			destroyAllWindows();
 			exit(0);
 		} // if (y >= 21 && y <= 42 && x >= 1140 && x <= 1260)
+		else if (y >= 679 && y <= 700 && x >= 1130 && x <= 1260) {
+			// <AUTO> button
+			// In player's action, automatically play or draw cards by AI
+			sAuto = !sAuto;
+			switch (sStatus) {
+			case PLAYER_YOU:
+				onStatusChanged(sStatus);
+				break; // case PLAYER_YOU
+
+			case STAT_WILD_COLOR:
+				sStatus = PLAYER_YOU;
+				onStatusChanged(sStatus);
+				break; // case STAT_WILD_COLOR
+
+			default:
+				point = Point(1130, 700);
+				if (sAuto) {
+					putText(sScreen, "<AUTO>", point, FONT_SANS, 1.0, RGB_YELLOW);
+				} // if (sAuto)
+				else {
+					putText(sScreen, "<AUTO>", point, FONT_SANS, 1.0, RGB_WHITE);
+				} // else
+
+				imshow("Uno", sScreen);
+				break; // default
+			} // switch (sStatus)
+		} // else if (y >= 679 && y <= 700 && x >= 1130 && x <= 1260)
 		else switch (sStatus) {
 		case STAT_WELCOME:
 			if (y >= 270 && y <= 450) {
@@ -1336,7 +1390,10 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 			break; // case STAT_WELCOME
 
 		case PLAYER_YOU:
-			if (y >= 520 && y <= 700) {
+			if (sAuto) {
+				break; // case PLAYER_YOU
+			} // if (sAuto)
+			else if (y >= 520 && y <= 700) {
 				hand = sUno->getPlayer(PLAYER_YOU)->getHandCards();
 				size = (int)hand.size();
 				width = 45 * size + 75;
@@ -1359,7 +1416,7 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 						play(index);
 					} // else if (sUno->isLegalToPlay(card))
 				} // if (x >= startX && x <= startX + width)
-			} // if (y >= 520 && y <= 700)
+			} // else if (y >= 520 && y <= 700)
 			else if (y >= 270 && y <= 450 && x >= 420 && x <= 540) {
 				// Card deck area, draw a card
 				draw();
@@ -1367,30 +1424,31 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 			break; // case PLAYER_YOU
 
 		case STAT_WILD_COLOR:
-			if (y > 296 && y < 360) {
-				if (x > 386 && x < 450) {
-					// Red sector
-					sStatus = PLAYER_YOU;
-					play(index, RED);
-				} // if (x > 386 && x < 450)
-				else if (x > 450 && x < 514) {
-					// Blue sector
-					sStatus = PLAYER_YOU;
-					play(index, BLUE);
-				} // else if (x > 450 && x < 514)
-			} // if (y > 296 && y < 360)
-			else if (y > 360 && y < 424) {
-				if (x > 386 && x < 450) {
-					// Yellow sector
-					sStatus = PLAYER_YOU;
-					play(index, YELLOW);
-				} // if (x > 386 && x < 450)
-				else if (x > 450 && x < 514) {
-					// Green sector
-					sStatus = PLAYER_YOU;
-					play(index, GREEN);
-				} // else if (x > 450 && x < 514)
-			} // else if (y > 360 && y < 424)
+			if (y > 296 && y < 360 && x > 386 && x < 450) {
+				// Red sector
+				sStatus = PLAYER_YOU;
+				play(index, RED);
+			} // if (y > 296 && y < 360 && x > 386 && x < 450)
+			else if (y > 296 && y < 360 && x > 450 && x < 514) {
+				// Blue sector
+				sStatus = PLAYER_YOU;
+				play(index, BLUE);
+			} // else if (y > 296 && y < 360 && x > 450 && x < 514)
+			else if (y > 360 && y < 424 && x > 386 && x < 450) {
+				// Yellow sector
+				sStatus = PLAYER_YOU;
+				play(index, YELLOW);
+			} // else if (y > 360 && y < 424 && x > 386 && x < 450)
+			else if (y > 360 && y < 424 && x > 450 && x < 514) {
+				// Green sector
+				sStatus = PLAYER_YOU;
+				play(index, GREEN);
+			} // else if (y > 360 && y < 424 && x > 450 && x < 514)
+			else {
+				// Undo
+				sStatus = PLAYER_YOU;
+				onStatusChanged(sStatus);
+			} // else
 			break; // case STAT_WILD_COLOR
 
 		case STAT_GAME_OVER:
