@@ -19,6 +19,7 @@ import org.opencv.imgproc.Imgproc;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
@@ -418,8 +419,8 @@ public class Uno {
         }; // table = new Card[]{}
 
         // Initialize containers
-        deck = new ArrayList<>();
         used = new ArrayList<>();
+        deck = new LinkedList<>();
         recent = new ArrayList<>();
         player = new Player[4];
         player[0] = new Player(); // PLAYER_YOU
@@ -512,7 +513,8 @@ public class Uno {
 
     /**
      * Get current action sequence. You can get the next player by calculating
-     * (now + this->getDirection()) % 4.
+     * (now + this.getDirection()) % 4, or the previous player by calculating
+     * (now + 4 - this.getDirection()) % 4.
      *
      * @return Current action sequence. DIR_LEFT for clockwise,
      * or DIR_RIGHT for counter-clockwise.

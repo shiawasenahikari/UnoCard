@@ -9,6 +9,7 @@
 #ifndef __UNO_H_494649FDFA62B3C015120BCB9BE17613__
 #define __UNO_H_494649FDFA62B3C015120BCB9BE17613__
 
+#include <list>
 #include <string>
 #include <vector>
 #include <opencv2/core.hpp>
@@ -273,7 +274,8 @@ public:
 
 	/**
 	 * Get current action sequence. You can get the next player by calculating
-	 * (now + this->getDirection()) % 4.
+	 * (now + this->getDirection()) % 4, or the previous player by calculating
+	 * (now + 4 - this->getDirection()).
 	 *
 	 * @return Current action sequence. DIR_LEFT for clockwise,
 	 *         or DIR_RIGHT for counter-clockwise.
@@ -434,7 +436,7 @@ private:
 	/**
 	 * Card deck (ready to use).
 	 */
-	std::vector<Card*> deck;
+	std::list<Card*> deck;
 
 	/**
 	 * Used cards.

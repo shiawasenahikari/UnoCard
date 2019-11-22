@@ -6,8 +6,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "Uno.h"
+#include <list>
 #include <ctime>
+#include <Uno.h>
 #include <string>
 #include <vector>
 #include <cstdlib>
@@ -554,7 +555,8 @@ const Mat& Uno::getColoredWildDraw4Image(Color color) {
 
 /**
  * Get current action sequence. You can get the next player by calculating
- * (now + this->getDirection()) % 4.
+ * (now + this->getDirection()) % 4, or the previous player by calculating
+ * (now + 4 - this->getDirection()).
  *
  * @return Current action sequence. DIR_LEFT for clockwise,
  *         or DIR_RIGHT for counter-clockwise.
@@ -669,7 +671,7 @@ void Uno::start() {
 		if (card->isWild()) {
 			// Start card cannot be a wild card, so return it
 			// to the bottom of card deck and pick another card
-			deck.insert(deck.begin(), card);
+			deck.push_front(card);
 		} // if (card->isWild())
 		else {
 			// Any non-wild card can be start card
