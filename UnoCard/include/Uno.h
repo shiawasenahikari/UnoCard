@@ -26,7 +26,7 @@
  * Uno Color Enumeration.
  */
 typedef enum {
-	BLACK, RED, BLUE, GREEN, YELLOW
+	NONE, RED, BLUE, GREEN, YELLOW
 } Color;
 
 /**
@@ -91,6 +91,8 @@ public:
 	/**
 	 * Valid only when this is a wild card. Get the specified following legal
 	 * color by the player who played this wild card.
+	 * <p>
+	 * For non-wild cards, this function will always return Color::NONE.
 	 *
 	 * @return Card's wild color.
 	 */
@@ -380,7 +382,7 @@ public:
 	 *              Pass the specified following legal color.
 	 * @return Reference of the played card.
 	 */
-	Card* play(int who, int index, Color color = BLACK);
+	Card* play(int who, int index, Color color = NONE);
 
 private:
 	/**

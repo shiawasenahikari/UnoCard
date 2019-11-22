@@ -10,7 +10,7 @@ package com.github.hikari_toyama.unocard.core;
 
 import org.opencv.core.Mat;
 
-import static com.github.hikari_toyama.unocard.core.Color.BLACK;
+import static com.github.hikari_toyama.unocard.core.Color.NONE;
 import static com.github.hikari_toyama.unocard.core.Content.DRAW2;
 import static com.github.hikari_toyama.unocard.core.Content.NUM0;
 import static com.github.hikari_toyama.unocard.core.Content.NUM1;
@@ -93,9 +93,9 @@ public class Card implements Comparable<Card> {
             this.name = name;
             this.image = image;
             this.color = color;
+            this.wildColor = NONE;
             this.content = content;
             this.darkImg = darkImg;
-            this.wildColor = BLACK;
             this.order = color.ordinal() << 8 | content.ordinal();
         } // else
     } // Card(Mat, Mat, Color, Content, String) (Class Constructor)
@@ -124,6 +124,8 @@ public class Card implements Comparable<Card> {
     /**
      * Valid only when this is a wild card. Get the specified following legal
      * color by the player who played this wild card.
+     * <p>
+     * For non-wild cards, this method will always return Color.NONE.
      *
      * @return Card's wild color.
      */

@@ -23,9 +23,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
-import static com.github.hikari_toyama.unocard.core.Color.BLACK;
 import static com.github.hikari_toyama.unocard.core.Color.BLUE;
 import static com.github.hikari_toyama.unocard.core.Color.GREEN;
+import static com.github.hikari_toyama.unocard.core.Color.NONE;
 import static com.github.hikari_toyama.unocard.core.Color.RED;
 import static com.github.hikari_toyama.unocard.core.Color.YELLOW;
 import static com.github.hikari_toyama.unocard.core.Content.DRAW2;
@@ -360,9 +360,9 @@ public class Uno {
                 new Card(br[49], dk[49], YELLOW, DRAW2, "Yellow +2"),
                 new Card(br[50], dk[50], YELLOW, SKIP, "Yellow Skip"),
                 new Card(br[51], dk[51], YELLOW, REV, "Yellow Reverse"),
-                new Card(br[52], dk[52], BLACK, WILD, "Wild"),
-                new Card(br[52], dk[52], BLACK, WILD, "Wild"),
-                new Card(br[53], dk[53], BLACK, WILD_DRAW4, "Wild +4"),
+                new Card(br[52], dk[52], NONE, WILD, "Wild"),
+                new Card(br[52], dk[52], NONE, WILD, "Wild"),
+                new Card(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4"),
                 new Card(br[1], dk[1], RED, NUM1, "Red 1"),
                 new Card(br[2], dk[2], RED, NUM2, "Red 2"),
                 new Card(br[3], dk[3], RED, NUM3, "Red 3"),
@@ -375,7 +375,7 @@ public class Uno {
                 new Card(br[10], dk[10], RED, DRAW2, "Red +2"),
                 new Card(br[11], dk[11], RED, SKIP, "Red Skip"),
                 new Card(br[12], dk[12], RED, REV, "Red Reverse"),
-                new Card(br[53], dk[53], BLACK, WILD_DRAW4, "Wild +4"),
+                new Card(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4"),
                 new Card(br[14], dk[14], BLUE, NUM1, "Blue 1"),
                 new Card(br[15], dk[15], BLUE, NUM2, "Blue 2"),
                 new Card(br[16], dk[16], BLUE, NUM3, "Blue 3"),
@@ -388,7 +388,7 @@ public class Uno {
                 new Card(br[23], dk[23], BLUE, DRAW2, "Blue +2"),
                 new Card(br[24], dk[24], BLUE, SKIP, "Blue Skip"),
                 new Card(br[25], dk[25], BLUE, REV, "Blue Reverse"),
-                new Card(br[53], dk[53], BLACK, WILD_DRAW4, "Wild +4"),
+                new Card(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4"),
                 new Card(br[27], dk[27], GREEN, NUM1, "Green 1"),
                 new Card(br[28], dk[28], GREEN, NUM2, "Green 2"),
                 new Card(br[29], dk[29], GREEN, NUM3, "Green 3"),
@@ -401,7 +401,7 @@ public class Uno {
                 new Card(br[36], dk[36], GREEN, DRAW2, "Green +2"),
                 new Card(br[37], dk[37], GREEN, SKIP, "Green Skip"),
                 new Card(br[38], dk[38], GREEN, REV, "Green Reverse"),
-                new Card(br[53], dk[53], BLACK, WILD_DRAW4, "Wild +4"),
+                new Card(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4"),
                 new Card(br[40], dk[40], YELLOW, NUM1, "Yellow 1"),
                 new Card(br[41], dk[41], YELLOW, NUM2, "Yellow 2"),
                 new Card(br[42], dk[42], YELLOW, NUM3, "Yellow 3"),
@@ -414,8 +414,8 @@ public class Uno {
                 new Card(br[49], dk[49], YELLOW, DRAW2, "Yellow +2"),
                 new Card(br[50], dk[50], YELLOW, SKIP, "Yellow Skip"),
                 new Card(br[51], dk[51], YELLOW, REV, "Yellow Reverse"),
-                new Card(br[52], dk[52], BLACK, WILD, "Wild"),
-                new Card(br[52], dk[52], BLACK, WILD, "Wild")
+                new Card(br[52], dk[52], NONE, WILD, "Wild"),
+                new Card(br[52], dk[52], NONE, WILD, "Wild")
         }; // table = new Card[]{}
 
         // Initialize containers

@@ -27,11 +27,11 @@ static const string BROKEN_IMAGE_RESOURCES_EXCEPTION =
  */
 Card::Card() {
 	name = "";
+	color = NONE;
 	image = Mat();
-	color = BLACK;
 	content = WILD;
 	darkImg = Mat();
-	wildColor = BLACK;
+	wildColor = NONE;
 	order = (color << 8) + content;
 } // Card() (Class Constructor)
 
@@ -42,9 +42,9 @@ Card::Card(Mat image, Mat darkImg, Color color, Content content, string name) {
 	this->name = name;
 	this->image = image;
 	this->color = color;
+	this->wildColor = NONE;
 	this->content = content;
 	this->darkImg = darkImg;
-	this->wildColor = BLACK;
 	this->order = (color << 8) + content;
 } // Card(Mat, Mat, Color, Content, string) (Class Constructor)
 
@@ -114,6 +114,8 @@ Color Card::getColor() {
 /**
  * Valid only when this is a wild card. Get the specified following legal
  * color by the player who played this wild card.
+ * <p>
+ * For non-wild cards, this function will always return Color::NONE.
  *
  * @return Card's wild color.
  */
@@ -432,9 +434,9 @@ Uno::Uno() {
 	table[49] = Card(br[49], dk[49], YELLOW, DRAW2, "Yellow +2");
 	table[50] = Card(br[50], dk[50], YELLOW, SKIP, "Yellow Skip");
 	table[51] = Card(br[51], dk[51], YELLOW, REV, "Yellow Reverse");
-	table[52] = Card(br[52], dk[52], BLACK, WILD, "Wild");
-	table[53] = Card(br[52], dk[52], BLACK, WILD, "Wild");
-	table[54] = Card(br[53], dk[53], BLACK, WILD_DRAW4, "Wild +4");
+	table[52] = Card(br[52], dk[52], NONE, WILD, "Wild");
+	table[53] = Card(br[52], dk[52], NONE, WILD, "Wild");
+	table[54] = Card(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4");
 	table[55] = Card(br[1], dk[1], RED, NUM1, "Red 1");
 	table[56] = Card(br[2], dk[2], RED, NUM2, "Red 2");
 	table[57] = Card(br[3], dk[3], RED, NUM3, "Red 3");
@@ -447,7 +449,7 @@ Uno::Uno() {
 	table[64] = Card(br[10], dk[10], RED, DRAW2, "Red +2");
 	table[65] = Card(br[11], dk[11], RED, SKIP, "Red Skip");
 	table[66] = Card(br[12], dk[12], RED, REV, "Red Reverse");
-	table[67] = Card(br[53], dk[53], BLACK, WILD_DRAW4, "Wild +4");
+	table[67] = Card(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4");
 	table[68] = Card(br[14], dk[14], BLUE, NUM1, "Blue 1");
 	table[69] = Card(br[15], dk[15], BLUE, NUM2, "Blue 2");
 	table[70] = Card(br[16], dk[16], BLUE, NUM3, "Blue 3");
@@ -460,7 +462,7 @@ Uno::Uno() {
 	table[77] = Card(br[23], dk[23], BLUE, DRAW2, "Blue +2");
 	table[78] = Card(br[24], dk[24], BLUE, SKIP, "Blue Skip");
 	table[79] = Card(br[25], dk[25], BLUE, REV, "Blue Reverse");
-	table[80] = Card(br[53], dk[53], BLACK, WILD_DRAW4, "Wild +4");
+	table[80] = Card(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4");
 	table[81] = Card(br[27], dk[27], GREEN, NUM1, "Green 1");
 	table[82] = Card(br[28], dk[28], GREEN, NUM2, "Green 2");
 	table[83] = Card(br[29], dk[29], GREEN, NUM3, "Green 3");
@@ -473,7 +475,7 @@ Uno::Uno() {
 	table[90] = Card(br[36], dk[36], GREEN, DRAW2, "Green +2");
 	table[91] = Card(br[37], dk[37], GREEN, SKIP, "Green Skip");
 	table[92] = Card(br[38], dk[38], GREEN, REV, "Green Reverse");
-	table[93] = Card(br[53], dk[53], BLACK, WILD_DRAW4, "Wild +4");
+	table[93] = Card(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4");
 	table[94] = Card(br[40], dk[40], YELLOW, NUM1, "Yellow 1");
 	table[95] = Card(br[41], dk[41], YELLOW, NUM2, "Yellow 2");
 	table[96] = Card(br[42], dk[42], YELLOW, NUM3, "Yellow 3");
@@ -486,8 +488,8 @@ Uno::Uno() {
 	table[103] = Card(br[49], dk[49], YELLOW, DRAW2, "Yellow +2");
 	table[104] = Card(br[50], dk[50], YELLOW, SKIP, "Yellow Skip");
 	table[105] = Card(br[51], dk[51], YELLOW, REV, "Yellow Reverse");
-	table[106] = Card(br[52], dk[52], BLACK, WILD, "Wild");
-	table[107] = Card(br[52], dk[52], BLACK, WILD, "Wild");
+	table[106] = Card(br[52], dk[52], NONE, WILD, "Wild");
+	table[107] = Card(br[52], dk[52], NONE, WILD, "Wild");
 
 	// Generate a random seed based on the current time stamp
 	srand((unsigned)time(NULL));
