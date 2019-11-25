@@ -1207,36 +1207,46 @@ public class MainActivity extends AppCompatActivity
      *              Pass the specified following legal color.
      */
     private void play(int index, Color color) {
-        int now;
         Rect roi;
         Mat image;
         Card card;
         Runnable delayedTask;
+        int x, y, now, size, width, height;
 
         now = mStatus;
         mStatus = STAT_IDLE; // block tap down events when idle
+        size = mUno.getPlayer(now).getHandCards().size();
         card = mUno.play(now, index, color);
         if (card != null) {
             image = card.getImage();
             switch (now) {
                 case Uno.PLAYER_COM1:
-                    roi = new Rect(160, 270, 121, 181);
+                    height = 40 * size + 140;
+                    x = 160;
+                    y = 360 - height / 2 + 40 * index;
                     break; // case Uno.PLAYER_COM1
 
                 case Uno.PLAYER_COM2:
-                    roi = new Rect(650, 220, 121, 181);
+                    width = 45 * size + 75;
+                    x = 640 - width / 2 + 45 * index;
+                    y = 70;
                     break; // case Uno.PLAYER_COM2
 
                 case Uno.PLAYER_COM3:
-                    roi = new Rect(1000, 270, 121, 181);
+                    height = 40 * size + 140;
+                    x = 1000;
+                    y = 360 - height / 2 + 40 * index;
                     break; // case Uno.PLAYER_COM3
 
                 default:
-                    roi = new Rect(650, 320, 121, 181);
+                    width = 60 * size + 60;
+                    x = 640 - width / 2 + 60 * index;
+                    y = 470;
                     break; // default
             } // switch (now)
 
             // Animation
+            roi = new Rect(x, y, 121, 181);
             image.copyTo(new Mat(mScr, roi), image);
             Utils.matToBitmap(mScr, mBmp);
             mImgScreen.setImageBitmap(mBmp);
@@ -1697,7 +1707,7 @@ public class MainActivity extends AppCompatActivity
                         } // else
 
                         image = mUno.getBackImage();
-                        roi = new Rect(420, 220, 121, 181);
+                        roi = new Rect(580, 70, 121, 181);
                         break; // case Uno.PLAYER_COM2
 
                     case Uno.PLAYER_COM3:
@@ -1715,7 +1725,7 @@ public class MainActivity extends AppCompatActivity
                     default:
                         message = NAME[who] + ": Draw " + card.getName();
                         image = card.getImage();
-                        roi = new Rect(420, 320, 121, 181);
+                        roi = new Rect(580, 470, 121, 181);
                         break; // default
                 } // switch (who)
 

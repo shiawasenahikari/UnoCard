@@ -1187,32 +1187,42 @@ static void play(int index, Color color) {
 	Mat image;
 	Card* card;
 	string message;
-	int now, next, direction;
+	int x, y, now, size, width, height, next, direction;
 
 	now = sStatus;
 	sStatus = STAT_IDLE; // block mouse click events when idle
+	size = (int)sUno->getPlayer(now)->getHandCards().size();
 	card = sUno->play(now, index, color);
 	if (card != NULL) {
 		image = card->getImage();
 		switch (now) {
 		case PLAYER_COM1:
-			roi = Rect(160, 270, 121, 181);
+			height = 40 * size + 140;
+			x = 160;
+			y = 360 - height / 2 + 40 * index;
 			break; // case PLAYER_COM1
 
 		case PLAYER_COM2:
-			roi = Rect(650, 220, 121, 181);
+			width = 45 * size + 75;
+			x = 640 - width / 2 + 45 * index;
+			y = 70;
 			break; // case PLAYER_COM2
 
 		case PLAYER_COM3:
-			roi = Rect(1000, 270, 121, 181);
+			height = 40 * size + 140;
+			x = 1000;
+			y = 360 - height / 2 + 40 * index;
 			break; // case PLAYER_COM3
 
 		default:
-			roi = Rect(650, 320, 121, 181);
+			width = 45 * size + 75;
+			x = 640 - width / 2 + 45 * index;
+			y = 470;
 			break; // default
 		} // switch (now)
 
 		// Animation
+		roi = Rect(x, y, 121, 181);
 		image.copyTo(sScreen(roi), image);
 		imshow("Uno", sScreen);
 		waitKey(300);
@@ -1333,7 +1343,7 @@ static void draw(int who, int count) {
 
 			case PLAYER_COM2:
 				image = sUno->getBackImage();
-				roi = Rect(420, 220, 121, 181);
+				roi = Rect(580, 70, 121, 181);
 				if (count == 1) {
 					buff << NAME[who] << ": Draw a card";
 				} // if (count == 1)
@@ -1355,7 +1365,7 @@ static void draw(int who, int count) {
 
 			default:
 				image = card->getImage();
-				roi = Rect(420, 320, 121, 181);
+				roi = Rect(580, 470, 121, 181);
 				buff << NAME[who] << ": Draw " + card->getName();
 				break; // default
 			} // switch (who)
