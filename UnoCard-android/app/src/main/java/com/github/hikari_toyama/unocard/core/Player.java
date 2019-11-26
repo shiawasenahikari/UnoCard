@@ -43,6 +43,16 @@ public class Player {
     } // getHandCards()
 
     /**
+     * Normally return Color.NONE, but when this player started a UNO dash with
+     * a wild card, call this method to get which color this player selected.
+     *
+     * @return This player's dangerous color.
+     */
+    public Color getDangerousColor() {
+        return (handCards.size() == 1 ? recent.wildColor : Color.NONE);
+    } // getDangerousColor()
+
+    /**
      * @return This player's recent played card, or null if this player drew one
      * or more cards in its previous action.
      */

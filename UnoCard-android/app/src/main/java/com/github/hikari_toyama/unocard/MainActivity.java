@@ -436,7 +436,7 @@ public class MainActivity extends AppCompatActivity
         if (nextSize == 1) {
             // Strategies when your next player remains only one card.
             // Limit your next player's action as well as you can.
-            dangerColor = next.getRecent().getWildColor();
+            dangerColor = next.getDangerousColor();
             if (hasDraw2) {
                 // Play a [+2] to make your next player draw two cards!
                 idxBest = idxDraw2;
@@ -462,8 +462,12 @@ public class MainActivity extends AppCompatActivity
                 } // else if (hasSkip)
                 else if (hasWildDraw4) {
                     // Now start to use wild cards. Use [wild +4] cards priorly,
-                    // because this card makes your next player draw four cards,
-                    // you can choose your best color without hesitation.
+                    // because this card makes your next player draw four cards.
+                    while (bestColor == oppo.getDangerousColor() ||
+                            bestColor == prev.getDangerousColor()) {
+                        bestColor = Color.values()[mRnd.nextInt(4) + 1];
+                    } // while (bestColor == oppo.getDangerousColor() || ...)
+
                     idxBest = idxWildDraw4;
                 } // else if (hasWildDraw4)
                 else if (hasWild) {
@@ -471,9 +475,11 @@ public class MainActivity extends AppCompatActivity
                     // to your best color, but when your next player's last card
                     // has the same color to your best color, you have to change
                     // to another color.
-                    while (bestColor == dangerColor) {
+                    while (bestColor == dangerColor ||
+                            bestColor == oppo.getDangerousColor() ||
+                            bestColor == prev.getDangerousColor()) {
                         bestColor = Color.values()[mRnd.nextInt(4) + 1];
-                    } // while (bestColor == dangerColor)
+                    } // while (bestColor == dangerColor || ...)
 
                     idxBest = idxWild;
                 } // else if (hasWild)
@@ -536,7 +542,7 @@ public class MainActivity extends AppCompatActivity
             // Save your action cards as much as you can. once a reverse card is
             // played, you can use these cards to limit your previous player's
             // action.
-            dangerColor = prev.getRecent().getWildColor();
+            dangerColor = prev.getDangerousColor();
             if (lastColor == dangerColor) {
                 // Your previous player played a wild card, started a UNO dash
                 // in its last action. You have to change the following legal
@@ -551,16 +557,20 @@ public class MainActivity extends AppCompatActivity
                     // to your best color, but when your next player's last card
                     // has the same color to your best color, you have to change
                     // to another color.
-                    while (bestColor == dangerColor) {
+                    while (bestColor == dangerColor ||
+                            bestColor == next.getDangerousColor() ||
+                            bestColor == oppo.getDangerousColor()) {
                         bestColor = Color.values()[mRnd.nextInt(4) + 1];
-                    } // while (bestColor == dangerColor)
+                    } // while (bestColor == dangerColor || ...)
 
                     idxBest = idxWild;
                 } // else if (hasWild)
                 else if (hasWildDraw4) {
-                    while (bestColor == dangerColor) {
+                    while (bestColor == dangerColor ||
+                            bestColor == next.getDangerousColor() ||
+                            bestColor == oppo.getDangerousColor()) {
                         bestColor = Color.values()[mRnd.nextInt(4) + 1];
-                    } // while (bestColor == dangerColor)
+                    } // while (bestColor == dangerColor || ...)
 
                     idxBest = idxWild;
                 } // else if (hasWildDraw4)
@@ -596,7 +606,7 @@ public class MainActivity extends AppCompatActivity
             // Strategies when your opposite player remains only one card.
             // Give more freedom to your next player, the only one that can
             // directly limit your opposite player's action.
-            dangerColor = oppo.getRecent().getWildColor();
+            dangerColor = oppo.getDangerousColor();
             if (lastColor == dangerColor) {
                 // Your opposite player played a wild card, started a UNO dash
                 // in its last action, and what's worse is that the legal color
@@ -624,16 +634,20 @@ public class MainActivity extends AppCompatActivity
                     // change to your best color, but when your next player's
                     // last card has the same color to your best color, you
                     // have to change to another color.
-                    while (bestColor == dangerColor) {
+                    while (bestColor == dangerColor ||
+                            bestColor == next.getDangerousColor() ||
+                            bestColor == prev.getDangerousColor()) {
                         bestColor = Color.values()[mRnd.nextInt(4) + 1];
-                    } // while (bestColor == dangerColor)
+                    } // while (bestColor == dangerColor || ...)
 
                     idxBest = idxWild;
                 } // else if (hasWild)
                 else if (hasWildDraw4) {
-                    while (bestColor == dangerColor) {
+                    while (bestColor == dangerColor ||
+                            bestColor == next.getDangerousColor() ||
+                            bestColor == prev.getDangerousColor()) {
                         bestColor = Color.values()[mRnd.nextInt(4) + 1];
-                    } // while (bestColor == dangerColor)
+                    } // while (bestColor == dangerColor || ...)
 
                     idxBest = idxWildDraw4;
                 } // else if (hasWildDraw4)

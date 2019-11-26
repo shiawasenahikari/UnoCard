@@ -49,6 +49,7 @@ static const char FILE_HEADER[] = {
 // Global Variables
 static Uno* sUno;
 static bool sAuto;
+static bool sTest;
 static Mat sScreen;
 static int sStatus;
 static int sWinner;
@@ -62,6 +63,7 @@ static bool sAIRunning;
 // Functions
 static void easyAI();
 static void hardAI();
+static void waitMs(int delay = 0);
 static void onStatusChanged(int status);
 static void refreshScreen(string message);
 static void play(int index, Color color = NONE);
@@ -103,6 +105,7 @@ int main() {
 
 	sUno = Uno::getInstance();
 	sAuto = false;
+	sTest = false;
 	sAIRunning = false;
 	sWinner = PLAYER_YOU;
 	sStatus = STAT_WELCOME;
@@ -111,7 +114,7 @@ int main() {
 	refreshScreen("WELCOME TO UNO CARD GAME");
 	setMouseCallback("Uno", onMouse, NULL);
 	for (;;) {
-		waitKey(0); // prevent from blocking main thread
+		waitMs(0); // prevent from blocking main thread
 	} // for (;;)
 } // main()
 
@@ -453,7 +456,7 @@ static void hardAI() {
 		if (nextSize == 1) {
 			// Strategies when your next player remains only one card.
 			// Limit your next player's action as well as you can.
-			dangerColor = next->getRecent()->getWildColor();
+			dangerColor = next->getDangerousColor();
 			if (hasDraw2) {
 				// Play a [+2] to make your next player draw two cards!
 				idxBest = idxDraw2;
@@ -479,8 +482,12 @@ static void hardAI() {
 				} // else if (hasSkip)
 				else if (hasWildDraw4) {
 					// Now start to use wild cards. Use [wild +4] cards priorly,
-					// because this card makes your next player draw four cards,
-					// you can choose your best color without hesitation.
+					// because this card makes your next player draw four cards.
+					while (bestColor == oppo->getDangerousColor()
+						|| bestColor == prev->getDangerousColor()) {
+						bestColor = Color(rand() % 4 + 1);
+					} // while (bestColor == oppo->getDangerousColor() || ...)
+
 					idxBest = idxWildDraw4;
 				} // else if (hasWildDraw4)
 				else if (hasWild) {
@@ -488,9 +495,11 @@ static void hardAI() {
 					// to your best color, but when your next player's last card
 					// has the same color to your best color, you have to change
 					// to another color.
-					while (bestColor == dangerColor) {
+					while (bestColor == dangerColor
+						|| bestColor == oppo->getDangerousColor()
+						|| bestColor == prev->getDangerousColor()) {
 						bestColor = Color(rand() % 4 + 1);
-					} // while (bestColor == dangerColor)
+					} // while (bestColor == dangerColor || ...)
 
 					idxBest = idxWild;
 				} // else if (hasWild)
@@ -553,7 +562,7 @@ static void hardAI() {
 			// Save your action cards as much as you can. once a reverse card is
 			// played, you can use these cards to limit your previous player's
 			// action.
-			dangerColor = prev->getRecent()->getWildColor();
+			dangerColor = prev->getDangerousColor();
 			if (lastColor == dangerColor) {
 				// Your previous player played a wild card, started a UNO dash
 				// in its last action. You have to change the following legal
@@ -568,16 +577,20 @@ static void hardAI() {
 					// to your best color, but when your next player's last card
 					// has the same color to your best color, you have to change
 					// to another color.
-					while (bestColor == dangerColor) {
+					while (bestColor == dangerColor
+						|| bestColor == next->getDangerousColor()
+						|| bestColor == oppo->getDangerousColor()) {
 						bestColor = Color(rand() % 4 + 1);
-					} // while (bestColor == dangerColor)
+					} // while (bestColor == dangerColor || ...)
 
 					idxBest = idxWild;
 				} // else if (hasWild)
 				else if (hasWildDraw4) {
-					while (bestColor == dangerColor) {
+					while (bestColor == dangerColor
+						|| bestColor == next->getDangerousColor()
+						|| bestColor == oppo->getDangerousColor()) {
 						bestColor = Color(rand() % 4 + 1);
-					} // while (bestColor == dangerColor)
+					} // while (bestColor == dangerColor || ...)
 
 					idxBest = idxWild;
 				} // else if (hasWildDraw4)
@@ -613,7 +626,7 @@ static void hardAI() {
 			// Strategies when your opposite player remains only one card.
 			// Give more freedom to your next player, the only one that can
 			// directly limit your opposite player's action.
-			dangerColor = oppo->getRecent()->getWildColor();
+			dangerColor = oppo->getDangerousColor();
 			if (lastColor == dangerColor) {
 				// Your opposite player played a wild card, started a UNO dash
 				// in its last action, and what's worse is that the legal color
@@ -641,16 +654,20 @@ static void hardAI() {
 					// change to your best color, but when your next player's
 					// last card has the same color to your best color, you
 					// have to change to another color.
-					while (bestColor == dangerColor) {
+					while (bestColor == dangerColor
+						|| bestColor == next->getDangerousColor()
+						|| bestColor == prev->getDangerousColor()) {
 						bestColor = Color(rand() % 4 + 1);
-					} // while (bestColor == dangerColor)
+					} // while (bestColor == dangerColor || ...)
 
 					idxBest = idxWild;
 				} // else if (hasWild)
 				else if (hasWildDraw4) {
-					while (bestColor == dangerColor) {
+					while (bestColor == dangerColor
+						|| bestColor == next->getDangerousColor()
+						|| bestColor == prev->getDangerousColor()) {
 						bestColor = Color(rand() % 4 + 1);
-					} // while (bestColor == dangerColor)
+					} // while (bestColor == dangerColor || ...)
 
 					idxBest = idxWildDraw4;
 				} // else if (hasWildDraw4)
@@ -830,6 +847,33 @@ static void hardAI() {
 } // hardAI()
 
 /**
+ * Wrapper function of cv::waitKey(). Enable test mode when "UnoTest" typed.
+ */
+static void waitMs(int delay) {
+	static int key;
+	static int len;
+	static string input;
+
+	key = waitKey(delay);
+	if (key != -1) {
+		input.append(1, (char)key);
+		len = (int)input.size();
+		if (len == 7 && strcmp(input.c_str(), "UnoTest") == 0) {
+			// "UnoTest" typed. Enable or disable test mode.
+			input.clear();
+			sTest = !sTest;
+		} // if (len == 7 && strcmp(input.c_str(), "UnoTest") == 0)
+		else if (strncmp(input.c_str(), "UnoTest", len) != 0) {
+			// Mismatched. Clear buffer.
+			input.clear();
+			if (key == 'U') {
+				input.append(1, (char)key);
+			} // if (key == 'U')
+		} // else if (strncmp(input.c_str(), "UnoTest", len) != 0)
+	} // if (key != -1)
+} // waitMs()
+
+/**
  * Triggered when the value of global value [sStatus] changed.
  *
  * @param status New status value.
@@ -851,7 +895,7 @@ static void onStatusChanged(int status) {
 
 		sUno->start();
 		refreshScreen("GET READY");
-		waitKey(2000);
+		waitMs(2000);
 		sStatus = sWinner;
 		onStatusChanged(sStatus);
 		break; // case STAT_NEW_GAME
@@ -1025,14 +1069,14 @@ static void refreshScreen(string message) {
 			height = 40 * size + 140;
 			roi.x = 20;
 			roi.y = 360 - height / 2;
-			if (status == STAT_GAME_OVER) {
-				// Show remained cards to everyone when game over
+			if (sTest || status == STAT_GAME_OVER) {
+				// Show remained cards to everyone when testing or game over
 				for (Card* card : hand) {
 					image = card->getImage();
 					image.copyTo(sScreen(roi), image);
 					roi.y += 40;
 				} // for (Card* card : hand)
-			} // if (status == STAT_GAME_OVER)
+			} // if (sTest || status == STAT_GAME_OVER)
 			else {
 				// Only show card backs in game process
 				image = sUno->getBackImage();
@@ -1065,14 +1109,14 @@ static void refreshScreen(string message) {
 			width = 45 * size + 75;
 			roi.x = 640 - width / 2;
 			roi.y = 20;
-			if (status == STAT_GAME_OVER) {
-				// Show remained hand cards when game over
+			if (sTest || status == STAT_GAME_OVER) {
+				// Show remained hand cards when testing or game over
 				for (Card* card : hand) {
 					image = card->getImage();
 					image.copyTo(sScreen(roi), image);
 					roi.x += 45;
 				} // for (Card* card : hand)
-			} // if (status == STAT_GAME_OVER)
+			} // if (sTest || status == STAT_GAME_OVER)
 			else {
 				// Only show card backs in game process
 				image = sUno->getBackImage();
@@ -1105,14 +1149,14 @@ static void refreshScreen(string message) {
 			height = 40 * size + 140;
 			roi.x = 1140;
 			roi.y = 360 - height / 2;
-			if (status == STAT_GAME_OVER) {
-				// Show remained hand cards when game over
+			if (sTest || status == STAT_GAME_OVER) {
+				// Show remained hand cards when testing or game over
 				for (Card* card : hand) {
 					image = card->getImage();
 					image.copyTo(sScreen(roi), image);
 					roi.y += 40;
 				} // for (Card* card : hand)
-			} // if (status == STAT_GAME_OVER)
+			} // if (sTest || status == STAT_GAME_OVER)
 			else {
 				// Only show card backs in game process
 				image = sUno->getBackImage();
@@ -1225,7 +1269,7 @@ static void play(int index, Color color) {
 		roi = Rect(x, y, 121, 181);
 		image.copyTo(sScreen(roi), image);
 		imshow("Uno", sScreen);
-		waitKey(300);
+		waitMs(300);
 		if (sUno->getPlayer(now)->getHandCards().size() == 0) {
 			// The player in action becomes winner when it played the
 			// final card in its hand successfully
@@ -1243,7 +1287,7 @@ static void play(int index, Color color) {
 				next = (now + direction) % 4;
 				message += ": Let " + NAME[next] + " draw 2 cards";
 				refreshScreen(message);
-				waitKey(1500);
+				waitMs(1500);
 				draw(next, 2);
 				break; // case DRAW2
 
@@ -1258,7 +1302,7 @@ static void play(int index, Color color) {
 				} // else
 
 				refreshScreen(message);
-				waitKey(1500);
+				waitMs(1500);
 				sStatus = (next + direction) % 4;
 				onStatusChanged(sStatus);
 				break; // case SKIP
@@ -1273,7 +1317,7 @@ static void play(int index, Color color) {
 				} // else
 
 				refreshScreen(message);
-				waitKey(1500);
+				waitMs(1500);
 				sStatus = (now + direction) % 4;
 				onStatusChanged(sStatus);
 				break; // case REV
@@ -1282,7 +1326,7 @@ static void play(int index, Color color) {
 				direction = sUno->getDirection();
 				message += ": Change the following legal color";
 				refreshScreen(message);
-				waitKey(1500);
+				waitMs(1500);
 				sStatus = (now + direction) % 4;
 				onStatusChanged(sStatus);
 				break; // case WILD
@@ -1292,7 +1336,7 @@ static void play(int index, Color color) {
 				next = (now + direction) % 4;
 				message += ": Let " + NAME[next] + " draw 4 cards";
 				refreshScreen(message);
-				waitKey(1500);
+				waitMs(1500);
 				draw(next, 4);
 				break; // case WILD_DRAW4
 
@@ -1300,7 +1344,7 @@ static void play(int index, Color color) {
 				direction = sUno->getDirection();
 				message += ": " + card->getName();
 				refreshScreen(message);
-				waitKey(1500);
+				waitMs(1500);
 				sStatus = (now + direction) % 4;
 				onStatusChanged(sStatus);
 				break; // default
@@ -1373,9 +1417,9 @@ static void draw(int who, int count) {
 			// Animation
 			image.copyTo(sScreen(roi), image);
 			imshow("Uno", sScreen);
-			waitKey(300);
+			waitMs(300);
 			refreshScreen(buff.str());
-			waitKey(300);
+			waitMs(300);
 		} // if (card != NULL)
 		else {
 			buff << NAME[who];
@@ -1386,7 +1430,7 @@ static void draw(int who, int count) {
 		} // else
 	} // for (i = 0; i < count; ++i)
 
-	waitKey(1500);
+	waitMs(1500);
 	sStatus = (who + sUno->getDirection()) % 4;
 	onStatusChanged(sStatus);
 } // draw()
