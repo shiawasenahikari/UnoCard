@@ -19,15 +19,14 @@
 using namespace cv;
 using namespace std;
 
-#define LV_EASY         0
-#define LV_HARD         1
-#define STAT_IDLE       0x1111
-#define STAT_WELCOME    0x2222
-#define STAT_NEW_GAME   0x3333
-#define STAT_GAME_OVER  0x4444
-#define STAT_WILD_COLOR 0x5555
-
 // Constants
+static const int LV_EASY = 0;
+static const int LV_HARD = 1;
+static const int STAT_IDLE = 0x1111;
+static const int STAT_WELCOME = 0x2222;
+static const int STAT_NEW_GAME = 0x3333;
+static const int STAT_GAME_OVER = 0x4444;
+static const int STAT_WILD_COLOR = 0x5555;
 static const Scalar RGB_RED = CV_RGB(0xFF, 0x55, 0x55);
 static const Scalar RGB_BLUE = CV_RGB(0x55, 0x55, 0xFF);
 static const Scalar RGB_GREEN = CV_RGB(0x55, 0xAA, 0x55);
@@ -107,7 +106,7 @@ int main() {
 	sAuto = false;
 	sTest = false;
 	sAIRunning = false;
-	sWinner = PLAYER_YOU;
+	sWinner = Player::YOU;
 	sStatus = STAT_WELCOME;
 	sScreen = sUno->getBackground().clone();
 	namedWindow("Uno");
@@ -137,10 +136,10 @@ static void easyAI() {
 	int yourSize, nextSize, oppoSize, prevSize;
 
 	sAIRunning = true;
-	while (sStatus == PLAYER_COM1
-		|| sStatus == PLAYER_COM2
-		|| sStatus == PLAYER_COM3
-		|| sStatus == PLAYER_YOU && sAuto) {
+	while (sStatus == Player::COM1
+		|| sStatus == Player::COM2
+		|| sStatus == Player::COM3
+		|| sStatus == Player::YOU && sAuto) {
 		hand = sUno->getPlayer(sStatus)->getHandCards();
 		yourSize = (int)hand.size();
 		if (yourSize == 1) {
@@ -336,7 +335,7 @@ static void easyAI() {
 			// No appropriate cards to play, or no card is legal to play
 			draw();
 		} // else
-	} // while (sStatus == PLAYER_COM1 || ...)
+	} // while (sStatus == Player::COM1 || ...)
 
 	sAIRunning = false;
 } // easyAI()
@@ -362,10 +361,10 @@ static void hardAI() {
 	int yourSize, nextSize, oppoSize, prevSize;
 
 	sAIRunning = true;
-	while (sStatus == PLAYER_COM1
-		|| sStatus == PLAYER_COM2
-		|| sStatus == PLAYER_COM3
-		|| sStatus == PLAYER_YOU && sAuto) {
+	while (sStatus == Player::COM1
+		|| sStatus == Player::COM2
+		|| sStatus == Player::COM3
+		|| sStatus == Player::YOU && sAuto) {
 		hand = sUno->getPlayer(sStatus)->getHandCards();
 		yourSize = (int)hand.size();
 		if (yourSize == 1) {
@@ -841,7 +840,7 @@ static void hardAI() {
 			// No appropriate cards to play, or no card is legal to play
 			draw();
 		} // else
-	} // while (sStatus == PLAYER_COM1 || ...)
+	} // while (sStatus == Player::COM1 || ...)
 
 	sAIRunning = false;
 } // hardAI()
@@ -850,9 +849,8 @@ static void hardAI() {
  * Wrapper function of cv::waitKey(). Enable test mode when "UnoTest" typed.
  */
 static void waitMs(int delay) {
-	static int key;
-	static int len;
 	static string input;
+	static int key, len;
 
 	key = waitKey(delay);
 	if (key != -1) {
@@ -900,7 +898,7 @@ static void onStatusChanged(int status) {
 		onStatusChanged(sStatus);
 		break; // case STAT_NEW_GAME
 
-	case PLAYER_YOU:
+	case Player::YOU:
 		// Your turn, select a hand card to play, or draw a card
 		if (sAuto) {
 			if (!sAIRunning) {
@@ -915,7 +913,7 @@ static void onStatusChanged(int status) {
 		else {
 			refreshScreen("Your turn, play or draw a card");
 		} // else
-		break; // case PLAYER_YOU
+		break; // case Player::YOU
 
 	case STAT_WILD_COLOR:
 		// Need to specify the following legal color after played a
@@ -932,9 +930,9 @@ static void onStatusChanged(int status) {
 		imshow("Uno", sScreen);
 		break; // case STAT_WILD_COLOR
 
-	case PLAYER_COM1:
-	case PLAYER_COM2:
-	case PLAYER_COM3:
+	case Player::COM1:
+	case Player::COM2:
+	case Player::COM3:
 		// AI players' turn
 		if (!sAIRunning) {
 			if (sDifficulty == LV_EASY) {
@@ -944,18 +942,18 @@ static void onStatusChanged(int status) {
 				hardAI();
 			} // else
 		} // if (!sAIRunning)
-		break; // case PLAYER_COM1, PLAYER_COM2, PLAYER_COM3
+		break; // case Player::COM1, Player::COM2, Player::COM3
 
 	case STAT_GAME_OVER:
 		// Game over
-		if (sWinner == PLAYER_YOU) {
+		if (sWinner == Player::YOU) {
 			if (sDifficulty == LV_EASY) {
 				++sEasyWin;
 			} // if (sDifficulty == LV_EASY)
 			else {
 				++sHardWin;
 			} // else
-		} // if (sWinner == PLAYER_YOU)
+		} // if (sWinner == Player::YOU)
 
 		refreshScreen("Click the card deck to restart");
 		break; // case STAT_GAME_OVER
@@ -1055,7 +1053,7 @@ static void refreshScreen(string message) {
 		putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
 
 		// Left-center: Hand cards of Player West (COM1)
-		hand = sUno->getPlayer(PLAYER_COM1)->getHandCards();
+		hand = sUno->getPlayer(Player::COM1)->getHandCards();
 		size = (int)hand.size();
 		if (size == 0) {
 			// Played all hand cards, it's winner
@@ -1095,7 +1093,7 @@ static void refreshScreen(string message) {
 		} // else
 
 		// Top-center: Hand cards of Player North (COM2)
-		hand = sUno->getPlayer(PLAYER_COM2)->getHandCards();
+		hand = sUno->getPlayer(Player::COM2)->getHandCards();
 		size = (int)hand.size();
 		if (size == 0) {
 			// Played all hand cards, it's winner
@@ -1135,7 +1133,7 @@ static void refreshScreen(string message) {
 		} // else
 
 		// Right-center: Hand cards of Player East (COM3)
-		hand = sUno->getPlayer(PLAYER_COM3)->getHandCards();
+		hand = sUno->getPlayer(Player::COM3)->getHandCards();
 		size = (int)hand.size();
 		if (size == 0) {
 			// Played all hand cards, it's winner
@@ -1175,7 +1173,7 @@ static void refreshScreen(string message) {
 		} // else
 
 		// Bottom: Your hand cards
-		hand = sUno->getPlayer(PLAYER_YOU)->getHandCards();
+		hand = sUno->getPlayer(Player::YOU)->getHandCards();
 		size = (int)hand.size();
 		if (size == 0) {
 			// Played all hand cards, it's winner
@@ -1191,9 +1189,9 @@ static void refreshScreen(string message) {
 			roi.x = 640 - width / 2;
 			roi.y = 520;
 			for (Card* card : hand) {
-				if (status == PLAYER_YOU && sUno->isLegalToPlay(card)) {
+				if (status == Player::YOU && sUno->isLegalToPlay(card)) {
 					image = card->getImage();
-				} // if (status == PLAYER_YOU && sUno->isLegalToPlay(card))
+				} // if (status == Player::YOU && sUno->isLegalToPlay(card))
 				else if (status == STAT_GAME_OVER) {
 					image = card->getImage();
 				} // else if (status == STAT_GAME_OVER)
@@ -1240,23 +1238,23 @@ static void play(int index, Color color) {
 	if (card != NULL) {
 		image = card->getImage();
 		switch (now) {
-		case PLAYER_COM1:
+		case Player::COM1:
 			height = 40 * size + 140;
 			x = 160;
 			y = 360 - height / 2 + 40 * index;
-			break; // case PLAYER_COM1
+			break; // case Player::COM1
 
-		case PLAYER_COM2:
+		case Player::COM2:
 			width = 45 * size + 75;
 			x = 640 - width / 2 + 45 * index;
 			y = 70;
-			break; // case PLAYER_COM2
+			break; // case Player::COM2
 
-		case PLAYER_COM3:
+		case Player::COM3:
 			height = 40 * size + 140;
 			x = 1000;
 			y = 360 - height / 2 + 40 * index;
-			break; // case PLAYER_COM3
+			break; // case Player::COM3
 
 		default:
 			width = 45 * size + 75;
@@ -1294,9 +1292,9 @@ static void play(int index, Color color) {
 			case SKIP:
 				direction = sUno->getDirection();
 				next = (now + direction) % 4;
-				if (next == PLAYER_YOU) {
+				if (next == Player::YOU) {
 					message += ": Skip your turn";
-				} // if (next == PLAYER_YOU)
+				} // if (next == Player::YOU)
 				else {
 					message += ": Skip " + NAME[next] + "'s turn";
 				} // else
@@ -1309,9 +1307,9 @@ static void play(int index, Color color) {
 
 			case REV:
 				direction = sUno->switchDirection();
-				if (direction == DIR_LEFT) {
+				if (direction == Uno::DIR_LEFT) {
 					message += ": Change direction to CLOCKWISE";
-				} // if (direction == DIR_LEFT)
+				} // if (direction == Uno::DIR_LEFT)
 				else {
 					message += ": Change direction to COUNTER CLOCKWISE";
 				} // else
@@ -1356,8 +1354,8 @@ static void play(int index, Color color) {
 /**
  * Let a player draw one or more cards, and skip its turn.
  *
- * @param who   Who draws a card. Must be one of the following values:
- *              PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+ * @param who   Who draws cards. Must be one of the following values:
+ *              Player::YOU, Player::COM1, Player::COM2, Player::COM3.
  *              Default to the player in turn, i.e. sStatus.
  * @param count How many cards to draw. Default to 1.
  */
@@ -1374,7 +1372,7 @@ static void draw(int who, int count) {
 		card = sUno->draw(who);
 		if (card != NULL) {
 			switch (who) {
-			case PLAYER_COM1:
+			case Player::COM1:
 				image = sUno->getBackImage();
 				roi = Rect(160, 270, 121, 181);
 				if (count == 1) {
@@ -1383,9 +1381,9 @@ static void draw(int who, int count) {
 				else {
 					buff << NAME[who] << ": Draw " << count << " cards";
 				} // else
-				break; // case PLAYER_COM1
+				break; // case Player::COM1
 
-			case PLAYER_COM2:
+			case Player::COM2:
 				image = sUno->getBackImage();
 				roi = Rect(580, 70, 121, 181);
 				if (count == 1) {
@@ -1394,9 +1392,9 @@ static void draw(int who, int count) {
 				else {
 					buff << NAME[who] << ": Draw " << count << " cards";
 				} // else
-				break; // case PLAYER_COM2
+				break; // case Player::COM2
 
-			case PLAYER_COM3:
+			case Player::COM3:
 				image = sUno->getBackImage();
 				roi = Rect(1000, 270, 121, 181);
 				if (count == 1) {
@@ -1405,7 +1403,7 @@ static void draw(int who, int count) {
 				else {
 					buff << NAME[who] << ": Draw " << count << " cards";
 				} // else
-				break; // case PLAYER_COM3
+				break; // case Player::COM3
 
 			default:
 				image = card->getImage();
@@ -1424,7 +1422,7 @@ static void draw(int who, int count) {
 		else {
 			buff << NAME[who];
 			buff << " cannot hold more than ";
-			buff << MAX_HOLD_CARDS << " cards";
+			buff << Uno::MAX_HOLD_CARDS << " cards";
 			refreshScreen(buff.str());
 			break;
 		} // else
@@ -1479,12 +1477,12 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 			// In player's action, automatically play or draw cards by AI
 			sAuto = !sAuto;
 			switch (sStatus) {
-			case PLAYER_YOU:
+			case Player::YOU:
 				onStatusChanged(sStatus);
-				break; // case PLAYER_YOU
+				break; // case Player::YOU
 
 			case STAT_WILD_COLOR:
-				sStatus = PLAYER_YOU;
+				sStatus = Player::YOU;
 				onStatusChanged(sStatus);
 				break; // case STAT_WILD_COLOR
 
@@ -1519,12 +1517,12 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 			} // if (y >= 270 && y <= 450)
 			break; // case STAT_WELCOME
 
-		case PLAYER_YOU:
+		case Player::YOU:
 			if (sAuto) {
-				break; // case PLAYER_YOU
+				break; // case Player::YOU
 			} // if (sAuto)
 			else if (y >= 520 && y <= 700) {
-				hand = sUno->getPlayer(PLAYER_YOU)->getHandCards();
+				hand = sUno->getPlayer(Player::YOU)->getHandCards();
 				size = (int)hand.size();
 				width = 45 * size + 75;
 				startX = 640 - width / 2;
@@ -1551,32 +1549,28 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 				// Card deck area, draw a card
 				draw();
 			} // else if (y >= 270 && y <= 450 && x >= 420 && x <= 540)
-			break; // case PLAYER_YOU
+			break; // case Player::YOU
 
 		case STAT_WILD_COLOR:
+			sStatus = Player::YOU;
 			if (y > 296 && y < 360 && x > 386 && x < 450) {
 				// Red sector
-				sStatus = PLAYER_YOU;
 				play(index, RED);
 			} // if (y > 296 && y < 360 && x > 386 && x < 450)
 			else if (y > 296 && y < 360 && x > 450 && x < 514) {
 				// Blue sector
-				sStatus = PLAYER_YOU;
 				play(index, BLUE);
 			} // else if (y > 296 && y < 360 && x > 450 && x < 514)
 			else if (y > 360 && y < 424 && x > 386 && x < 450) {
 				// Yellow sector
-				sStatus = PLAYER_YOU;
 				play(index, YELLOW);
 			} // else if (y > 360 && y < 424 && x > 386 && x < 450)
 			else if (y > 360 && y < 424 && x > 450 && x < 514) {
 				// Green sector
-				sStatus = PLAYER_YOU;
 				play(index, GREEN);
 			} // else if (y > 360 && y < 424 && x > 450 && x < 514)
 			else {
 				// Undo
-				sStatus = PLAYER_YOU;
 				onStatusChanged(sStatus);
 			} // else
 			break; // case STAT_WILD_COLOR

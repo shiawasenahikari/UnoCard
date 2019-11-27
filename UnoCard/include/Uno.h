@@ -14,14 +14,6 @@
 #include <vector>
 #include <opencv2/core.hpp>
 
-#define DIR_LEFT        1
-#define DIR_RIGHT       3
-#define PLAYER_YOU      0
-#define PLAYER_COM1     1
-#define PLAYER_COM2     2
-#define PLAYER_COM3     3
-#define MAX_HOLD_CARDS  15
-
 /**
  * Uno Color Enumeration.
  */
@@ -190,6 +182,26 @@ private:
 class Player {
 public:
 	/**
+	 * Your player ID.
+	 */
+	static const int YOU = 0;
+
+	/**
+	 * WEST's player ID.
+	 */
+	static const int COM1 = 1;
+
+	/**
+	 * NORTH's player ID.
+	 */
+	static const int COM2 = 2;
+
+	/**
+	 * EAST's player ID.
+	 */
+	static const int COM3 = 3;
+
+	/**
 	 * @return This player's all hand cards.
 	 */
 	const std::vector<Card*>& getHandCards();
@@ -230,6 +242,7 @@ private:
 	 * and our private fields (to change players' real-time information).
 	 */
 	friend class Uno;
+
 }; // Player Class
 
 /**
@@ -237,6 +250,21 @@ private:
  */
 class Uno {
 public:
+	/**
+	 * Direction value (clockwise).
+	 */
+	static const int DIR_LEFT = 1;
+
+	/**
+	 * Direction value (counter-clockwise).
+	 */
+	static const int DIR_RIGHT = 3;
+
+	/**
+	 * In this application, everyone can hold 15 cards at most.
+	 */
+	static const int MAX_HOLD_CARDS = 15;
+
 	/**
 	 * @return Reference of our singleton.
 	 */
@@ -302,7 +330,7 @@ public:
 
 	/**
 	 * @param who Get which player's instance. Must be one of the following
-	 *        values: PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+	 *        values: Player::YOU, Player::COM1, Player::COM2, Player::COM3.
 	 * @return Specified player's instance.
 	 */
 	Player* getPlayer(int who);
@@ -324,7 +352,7 @@ public:
 
 	/**
 	 * @param whom Get whose hand cards. Must be one of the following values:
-	 *             PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+	 *             Player::YOU, Player::COM1, Player::COM2, Player::COM3.
 	 * @return Specified player's all hand cards.
 	 * @deprecated Use getPlayer(whom)->getHandCards() instead.
 	 */
@@ -343,7 +371,7 @@ public:
 	 * function is called, the specified player may not draw a card as a result.
 	 *
 	 * @param who Who draws a card. Must be one of the following values:
-	 *            PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+	 *            Player::YOU, Player::COM1, Player::COM2, Player::COM3.
 	 * @return Reference of the drawn card, or null if the specified player
 	 *         didn't draw a card because of the limit.
 	 */
@@ -351,14 +379,14 @@ public:
 
 	/**
 	 * Evaluate which color is the best color for the specified player. In our
-	 * evaluation system, zero cards are worth 1 point, non-zero number cards
-	 * are worth 2 points, and action cards are worth 3 points. Finally, the
+	 * evaluation system, zero cards are worth 2 points, non-zero number cards
+	 * are worth 4 points, and action cards are worth 5 points. Finally, the
 	 * color which contains the worthiest cards becomes the best color.
 	 *
-	 * @param whom Evaluate whose best color. Must be one of the following
-	 *             values: PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+	 * @param whom Evaluate for whom. Must be one of the following values:
+	 *             Player::YOU, Player::COM1, Player::COM2, Player::COM3.
 	 * @return The best color for the specified player now. Specially, when an
-	 *         illegal [whom] parameter was passed in, or the specified. player
+	 *         illegal [whom] parameter was passed in, or the specified player
 	 *         remains only wild cards, function will return a default value,
 	 *         which is Color::RED.
 	 */
@@ -383,7 +411,7 @@ public:
 	 * This function will play the card directly without checking the legality.
 	 *
 	 * @param who   Who plays a card. Must be one of the following values:
-	 *              PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+	 *              Player::YOU, Player::COM1, Player::COM2, Player::COM3.
 	 * @param index Play which card. Pass the corresponding card's index of the
 	 *              specified player's hand cards.
 	 * @param color Optional, available when the card to play is a wild card.

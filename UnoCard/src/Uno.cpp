@@ -590,7 +590,7 @@ int Uno::switchDirection() {
 
 /**
  * @param who Get which player's instance. Must be one of the following
- *        values: PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+ *        values: Player::YOU, Player::COM1, Player::COM2, Player::COM3.
  * @return Specified player's instance.
  */
 Player* Uno::getPlayer(int who) {
@@ -625,7 +625,7 @@ const vector<Card*>& Uno::getRecent() {
 
 /**
  * @param whom Get whose hand cards. Must be one of the following values:
- *             PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+ *             Player::YOU, Player::COM1, Player::COM2, Player::COM3.
  * @return Specified player's all hand cards.
  * @deprecated Use getPlayer(whom)->getHandCards() instead.
  */
@@ -700,7 +700,7 @@ void Uno::start() {
  * function is called, the specified player may not draw a card as a result.
  *
  * @param who Who draws a card. Must be one of the following values:
- *            PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+ *            Player::YOU, Player::COM1, Player::COM2, Player::COM3.
  * @return Reference of the drawn card, or null if the specified player
  *         didn't draw a card because of the limit.
  */
@@ -749,10 +749,10 @@ Card* Uno::draw(int who) {
  * are worth 4 points, and action cards are worth 5 points. Finally, the
  * color which contains the worthiest cards becomes the best color.
  *
- * @param whom Evaluate whose best color. Must be one of the following
- *             values: PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+ * @param whom Evaluate for whom. Must be one of the following values:
+ *             Player::YOU, Player::COM1, Player::COM2, Player::COM3.
  * @return The best color for the specified player now. Specially, when an
- *         illegal [whom] parameter was passed in, or the specified. player
+ *         illegal [whom] parameter was passed in, or the specified player
  *         remains only wild cards, function will return a default value,
  *         which is Color::RED.
  */
@@ -842,7 +842,7 @@ bool Uno::isLegalToPlay(Card* card) {
  * This function will play the card directly without checking the legality.
  *
  * @param who   Who plays a card. Must be one of the following values:
- *              PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+ *              Player::YOU, Player::COM1, Player::COM2, Player::COM3.
  * @param index Play which card. Pass the corresponding card's index of the
  *              specified player's hand cards.
  * @param color Optional, available when the card to play is a wild card.

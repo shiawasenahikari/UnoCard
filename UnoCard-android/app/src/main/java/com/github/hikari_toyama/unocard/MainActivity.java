@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity
         mHardTotal = sp.getInt("hardTotal", 0);
         if (OPENCV_INIT_SUCCESS) {
             mUno = Uno.getInstance(this);
-            mWinner = Uno.PLAYER_YOU;
+            mWinner = Player.YOU;
             mStatus = STAT_WELCOME;
             mRnd = new Random();
             mScr = mUno.getBackground().clone();
@@ -854,7 +854,7 @@ public class MainActivity extends AppCompatActivity
                 mHandler.postDelayed(delayedTask, 2000);
                 break; // case STAT_NEW_GAME
 
-            case Uno.PLAYER_YOU:
+            case Player.YOU:
                 // Your turn, select a hand card to play, or draw a card
                 if (mAuto) {
                     if (mDifficulty == LV_EASY) {
@@ -867,7 +867,7 @@ public class MainActivity extends AppCompatActivity
                 else {
                     refreshScreen("Your turn, play or draw a card");
                 } // else
-                break; // case Uno.PLAYER_YOU
+                break; // case Player.YOU
 
             case STAT_WILD_COLOR:
                 // Need to specify the following legal color after played a
@@ -936,9 +936,9 @@ public class MainActivity extends AppCompatActivity
                 mImgScreen.setImageBitmap(mBmp);
                 break; // case STAT_WILD_COLOR
 
-            case Uno.PLAYER_COM1:
-            case Uno.PLAYER_COM2:
-            case Uno.PLAYER_COM3:
+            case Player.COM1:
+            case Player.COM2:
+            case Player.COM3:
                 // AI players' turn
                 if (mDifficulty == LV_EASY) {
                     easyAI();
@@ -946,18 +946,18 @@ public class MainActivity extends AppCompatActivity
                 else {
                     hardAI();
                 } // else
-                break; // case Uno.PLAYER_COM1, Uno.PLAYER_COM2, Uno.PLAYER_COM3
+                break; // case Player.COM1, Player.COM2, Player.COM3
 
             case STAT_GAME_OVER:
                 // Game over
-                if (mWinner == Uno.PLAYER_YOU) {
+                if (mWinner == Player.YOU) {
                     if (mDifficulty == LV_EASY) {
                         ++mEasyWin;
                     } // if (mDifficulty == LV_EASY)
                     else {
                         ++mHardWin;
                     } // else
-                } // if (mWinner == Uno.PLAYER_YOU)
+                } // if (mWinner == Player.YOU)
 
                 refreshScreen("Click the card deck to restart");
                 break; // case STAT_GAME_OVER
@@ -1057,7 +1057,7 @@ public class MainActivity extends AppCompatActivity
         Imgproc.putText(mScr, info, point, FONT_SANS, 1.0, RGB_WHITE);
 
         // Left-center: Hand cards of Player West (COM1)
-        hand = mUno.getPlayer(Uno.PLAYER_COM1).getHandCards();
+        hand = mUno.getPlayer(Player.COM1).getHandCards();
         size = hand.size();
         if (size == 0) {
             // Played all hand cards, it's winner
@@ -1095,7 +1095,7 @@ public class MainActivity extends AppCompatActivity
         } // else
 
         // Top-center: Hand cards of Player North (COM2)
-        hand = mUno.getPlayer(Uno.PLAYER_COM2).getHandCards();
+        hand = mUno.getPlayer(Player.COM2).getHandCards();
         size = hand.size();
         if (size == 0) {
             // Played all hand cards, it's winner
@@ -1133,7 +1133,7 @@ public class MainActivity extends AppCompatActivity
         } // else
 
         // Right-center: Hand cards of Player East (COM3)
-        hand = mUno.getPlayer(Uno.PLAYER_COM3).getHandCards();
+        hand = mUno.getPlayer(Player.COM3).getHandCards();
         size = hand.size();
         if (size == 0) {
             // Played all hand cards, it's winner
@@ -1171,7 +1171,7 @@ public class MainActivity extends AppCompatActivity
         } // else
 
         // Bottom: Your hand cards
-        hand = mUno.getPlayer(Uno.PLAYER_YOU).getHandCards();
+        hand = mUno.getPlayer(Player.YOU).getHandCards();
         size = hand.size();
         if (size == 0) {
             // Played all hand cards, it's winner
@@ -1185,9 +1185,9 @@ public class MainActivity extends AppCompatActivity
             roi.x = 640 - width / 2;
             roi.y = 520;
             for (Card card : hand) {
-                if (status == Uno.PLAYER_YOU && mUno.isLegalToPlay(card)) {
+                if (status == Player.YOU && mUno.isLegalToPlay(card)) {
                     image = card.getImage();
-                } // if (status == Uno.PLAYER_YOU && mUno.isLegalToPlay(card))
+                } // if (status == Player.YOU && mUno.isLegalToPlay(card))
                 else if (status == STAT_GAME_OVER) {
                     image = card.getImage();
                 } // else if (status == STAT_GAME_OVER)
@@ -1234,23 +1234,23 @@ public class MainActivity extends AppCompatActivity
         if (card != null) {
             image = card.getImage();
             switch (now) {
-                case Uno.PLAYER_COM1:
+                case Player.COM1:
                     height = 40 * size + 140;
                     x = 160;
                     y = 360 - height / 2 + 40 * index;
-                    break; // case Uno.PLAYER_COM1
+                    break; // case Player.COM1
 
-                case Uno.PLAYER_COM2:
+                case Player.COM2:
                     width = 45 * size + 75;
                     x = 640 - width / 2 + 45 * index;
                     y = 70;
-                    break; // case Uno.PLAYER_COM2
+                    break; // case Player.COM2
 
-                case Uno.PLAYER_COM3:
+                case Player.COM3:
                     height = 40 * size + 140;
                     x = 1000;
                     y = 360 - height / 2 + 40 * index;
-                    break; // case Uno.PLAYER_COM3
+                    break; // case Player.COM3
 
                 default:
                     width = 60 * size + 60;
@@ -1291,9 +1291,9 @@ public class MainActivity extends AppCompatActivity
                         case SKIP:
                             direction = mUno.getDirection();
                             next = (now + direction) % 4;
-                            if (next == Uno.PLAYER_YOU) {
+                            if (next == Player.YOU) {
                                 message = NAME[now] + ": Skip your turn";
-                            } // if (next == Uno.PLAYER_YOU)
+                            } // if (next == Player.YOU)
                             else {
                                 message = NAME[now] + ": Skip "
                                         + NAME[next] + "'s turn";
@@ -1364,7 +1364,7 @@ public class MainActivity extends AppCompatActivity
      * Let a player draw one or more cards, and skip its turn.
      *
      * @param who   Who draws cards. Must be one of the following values:
-     *              PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+     *              Player.YOU, Player.COM1, Player.COM2, Player.COM3.
      * @param count How many cards to draw.
      * @see DrawLoop
      */
@@ -1402,12 +1402,12 @@ public class MainActivity extends AppCompatActivity
                 // In player's action, automatically play or draw cards by AI
                 mAuto = !mAuto;
                 switch (mStatus) {
-                    case Uno.PLAYER_YOU:
+                    case Player.YOU:
                         onStatusChanged(mStatus);
-                        break; // case Uno.PLAYER_YOU
+                        break; // case Player.YOU
 
                     case STAT_WILD_COLOR:
-                        mStatus = Uno.PLAYER_YOU;
+                        mStatus = Player.YOU;
                         onStatusChanged(mStatus);
                         break; // case STAT_WILD_COLOR
 
@@ -1457,12 +1457,12 @@ public class MainActivity extends AppCompatActivity
                     } // if (y >= 270 && y <= 450)
                     break; // case STAT_WELCOME
 
-                case Uno.PLAYER_YOU:
+                case Player.YOU:
                     if (mAuto) {
-                        break; // case Uno.PLAYER_YOU
+                        break; // case Player.YOU
                     } // if (mAuto)
                     else if (y >= 520 && y <= 700) {
-                        hand = mUno.getPlayer(Uno.PLAYER_YOU).getHandCards();
+                        hand = mUno.getPlayer(Player.YOU).getHandCards();
                         size = hand.size();
                         width = 60 * size + 60;
                         startX = 640 - width / 2;
@@ -1490,34 +1490,30 @@ public class MainActivity extends AppCompatActivity
                     } // if (y >= 520 && y <= 700)
                     else if (y >= 270 && y <= 450 && x >= 420 && x <= 540) {
                         // Card deck area, draw a card
-                        draw(Uno.PLAYER_YOU, 1);
+                        draw(Player.YOU, 1);
                     } // else if (y >= 270 && y <= 450 && x >= 420 && x <= 540)
-                    break; // case Uno.PLAYER_YOU
+                    break; // case Player.YOU
 
                 case STAT_WILD_COLOR:
+                    mStatus = Player.YOU;
                     if (y > 220 && y < 315 && x > 310 && x < 405) {
                         // Red sector
-                        mStatus = Uno.PLAYER_YOU;
                         play(mWildIndex, Color.RED);
                     } // if (y > 220 && y < 315 && x > 310 && x < 405)
                     else if (y > 220 && y < 315 && x > 405 && x < 500) {
                         // Blue sector
-                        mStatus = Uno.PLAYER_YOU;
                         play(mWildIndex, Color.BLUE);
                     } // else if (y > 220 && y < 315 && x > 405 && x < 500)
                     else if (y > 315 && y < 410 && x > 310 && x < 405) {
                         // Yellow sector
-                        mStatus = Uno.PLAYER_YOU;
                         play(mWildIndex, Color.YELLOW);
                     } // else if (y > 315 && y < 410 && x > 310 && x < 405)
                     else if (y > 315 && y < 410 && x > 405 && x < 500) {
                         // Green sector
-                        mStatus = Uno.PLAYER_YOU;
                         play(mWildIndex, Color.GREEN);
                     } // else if (y > 315 && y < 410 && x > 405 && x < 500)
                     else {
                         // Undo
-                        mStatus = Uno.PLAYER_YOU;
                         onStatusChanged(mStatus);
                     } // else
                     break; // case STAT_WILD_COLOR
@@ -1618,7 +1614,7 @@ public class MainActivity extends AppCompatActivity
          */
         @Override
         public void onClick(DialogInterface dialog, int which) {
-            dialog.dismiss();
+            dismiss();
             requireActivity().finish();
         } // onClick()
     } // UnsupportedDeviceDialog Inner Class
@@ -1655,7 +1651,7 @@ public class MainActivity extends AppCompatActivity
          */
         @Override
         public void onClick(DialogInterface dialog, int which) {
-            dialog.dismiss();
+            dismiss();
             if (which == DialogInterface.BUTTON_POSITIVE) {
                 // [OK] Button
                 requireActivity().finish();
@@ -1677,7 +1673,7 @@ public class MainActivity extends AppCompatActivity
          * DrawLoop Constructor.
          *
          * @param who   Who draws cards. Must be one of the following values:
-         *              PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+         *              Player.YOU, Player.COM1, Player.COM2, Player.COM3.
          * @param count How many cards to draw.
          */
         private DrawLoop(int who, int count) {
@@ -1700,7 +1696,7 @@ public class MainActivity extends AppCompatActivity
             card = mUno.draw(who);
             if (card != null) {
                 switch (who) {
-                    case Uno.PLAYER_COM1:
+                    case Player.COM1:
                         if (count == 1) {
                             message = NAME[who] + ": Draw a card";
                         } // if (count == 1)
@@ -1710,9 +1706,9 @@ public class MainActivity extends AppCompatActivity
 
                         image = mUno.getBackImage();
                         roi = new Rect(160, 270, 121, 181);
-                        break; // case Uno.PLAYER_COM1
+                        break; // case Player.COM1
 
-                    case Uno.PLAYER_COM2:
+                    case Player.COM2:
                         if (count == 1) {
                             message = NAME[who] + ": Draw a card";
                         } // if (count == 1)
@@ -1722,9 +1718,9 @@ public class MainActivity extends AppCompatActivity
 
                         image = mUno.getBackImage();
                         roi = new Rect(580, 70, 121, 181);
-                        break; // case Uno.PLAYER_COM2
+                        break; // case Player.COM2
 
-                    case Uno.PLAYER_COM3:
+                    case Player.COM3:
                         if (count == 1) {
                             message = NAME[who] + ": Draw a card";
                         } // if (count == 1)
@@ -1734,7 +1730,7 @@ public class MainActivity extends AppCompatActivity
 
                         image = mUno.getBackImage();
                         roi = new Rect(1000, 270, 121, 181);
-                        break; // case Uno.PLAYER_COM3
+                        break; // case Player.COM3
 
                     default:
                         message = NAME[who] + ": Draw " + card.getName();

@@ -49,12 +49,19 @@ import static com.github.hikari_toyama.unocard.core.Content.WILD_DRAW4;
  */
 @SuppressWarnings("ALL")
 public class Uno {
+    /**
+     * Direction value (clockwise).
+     */
     public static final int DIR_LEFT = 1;
+
+    /**
+     * Direction value (counter-clockwise).
+     */
     public static final int DIR_RIGHT = 3;
-    public static final int PLAYER_YOU = 0;
-    public static final int PLAYER_COM1 = 1;
-    public static final int PLAYER_COM2 = 2;
-    public static final int PLAYER_COM3 = 3;
+
+    /**
+     * In this application, everyone can hold 15 cards at most.
+     */
     public static final int MAX_HOLD_CARDS = 15;
 
     /**
@@ -423,10 +430,10 @@ public class Uno {
         deck = new LinkedList<>();
         recent = new ArrayList<>();
         player = new Player[4];
-        player[0] = new Player(); // PLAYER_YOU
-        player[1] = new Player(); // PLAYER_COM1
-        player[2] = new Player(); // PLAYER_COM2
-        player[3] = new Player(); // PLAYER_COM3
+        player[0] = new Player(); // Player.YOU
+        player[1] = new Player(); // Player.COM1
+        player[2] = new Player(); // Player.COM2
+        player[3] = new Player(); // Player.COM3
 
         // Generate a random seed based on the current time stamp
         rand = new Random();
@@ -536,7 +543,7 @@ public class Uno {
 
     /**
      * @param who Get which player's instance. Must be one of the following
-     *            values: PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+     *            values: Player.YOU, Player.COM1, Player.COM2, Player.COM3.
      * @return Specified player's instance.
      */
     public Player getPlayer(int who) {
@@ -566,9 +573,9 @@ public class Uno {
 
     /**
      * @param whom Get whose hand cards. Must be one of the following values:
-     *             PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+     *             Player.YOU, Player.COM1, Player.COM2, Player.COM3.
      * @return Specified player's all hand cards.
-     * @deprecated Use getPlayer(whom).getHandCards() instead.
+     * @deprecated Use getPlayer(whom)->getHandCards() instead.
      */
     @Deprecated
     public List<Card> getHandCardsOf(int whom) {
@@ -641,7 +648,7 @@ public class Uno {
      * method is called, the specified player may not draw a card as a result.
      *
      * @param who Who draws a card. Must be one of the following values:
-     *            PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+     *            Player.YOU, Player.COM1, Player.COM2, Player.COM3.
      * @return Reference of the drawn card, or null if the specified player
      * didn't draw a card because of the limit.
      */
@@ -689,10 +696,10 @@ public class Uno {
      * are worth 4 points, and action cards are worth 5 points. Finally, the
      * color which contains the worthiest cards becomes the best color.
      *
-     * @param whom Evaluate whose best color. Must be one of the following
-     *             values: PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+     * @param whom Evaluate for whom. Must be one of the following values:
+     *             Player.YOU, Player.COM1, Player.COM2, Player.COM3.
      * @return The best color for the specified player now. Specially, when an
-     * illegal [whom] parameter was passed in, or the specified. player remains
+     * illegal [whom] parameter was passed in, or the specified player remains
      * only wild cards, method will return a default value, which is Color.RED.
      */
     public Color bestColorFor(int whom) {
@@ -778,12 +785,12 @@ public class Uno {
      * replaces the "previous played card", and the original "previous played
      * card" becomes a used card at the same time.
      * <p>
-     * NOTE: Before calling this method, you must call isLegalToPlay(Card)
+     * NOTE: Before calling this method, you must call isLegalToPlay(Card*)
      * method at first to check whether the specified card is legal to play.
      * This method will play the card directly without checking the legality.
      *
      * @param who   Who plays a card. Must be one of the following values:
-     *              PLAYER_YOU, PLAYER_COM1, PLAYER_COM2, PLAYER_COM3.
+     *              Player.YOU, Player.COM1, Player.COM2, Player.COM3.
      * @param index Play which card. Pass the corresponding card's index of the
      *              specified player's hand cards.
      * @param color Optional, available when the card to play is a wild card.

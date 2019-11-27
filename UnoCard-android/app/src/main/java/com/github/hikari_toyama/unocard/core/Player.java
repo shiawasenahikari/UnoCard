@@ -18,6 +18,26 @@ import java.util.List;
  */
 public class Player {
     /**
+     * Your player ID.
+     */
+    public static final int YOU = 0;
+
+    /**
+     * WEST's player ID.
+     */
+    public static final int COM1 = 1;
+
+    /**
+     * NORTH's player ID.
+     */
+    public static final int COM2 = 2;
+
+    /**
+     * EAST's player ID.
+     */
+    public static final int COM3 = 3;
+
+    /**
      * Hand cards.
      */
     List<Card> handCards = new ArrayList<>();
