@@ -106,7 +106,7 @@ public class MainActivity extends AppCompatActivity
             mScr = mUno.getBackground().clone();
             mBmp = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888);
             mImgScreen = findViewById(R.id.imgMainScreen);
-            refreshScreen("WELCOME TO UNO CARD GAME");
+            refreshScreen("Welcome to Uno game, please select difficulty");
             mImgScreen.setOnTouchListener(this);
         } // if (OPENCV_INIT_SUCCESS)
         else {
@@ -873,7 +873,7 @@ public class MainActivity extends AppCompatActivity
                 // Need to specify the following legal color after played a
                 // wild card. Draw color sectors in the center of screen
                 refreshScreen("^ Specify the following legal color");
-                rect = new Rect(420, 270, 121, 181);
+                rect = new Rect(338, 270, 121, 181);
                 areaToErase = new Mat(mUno.getBackground(), rect);
                 areaToErase.copyTo(new Mat(mScr, rect));
                 center = new Point(405, 315);
@@ -1006,15 +1006,15 @@ public class MainActivity extends AppCompatActivity
         // For welcome screen, only show difficulty buttons and winning rates
         if (status == STAT_WELCOME) {
             image = mUno.getEasyImage();
-            roi = new Rect(420, 270, 121, 181);
+            roi = new Rect(338, 270, 121, 181);
             image.copyTo(new Mat(mScr, roi), image);
             image = mUno.getHardImage();
-            roi.x = 740;
+            roi.x = 822;
             roi.y = 270;
             image.copyTo(new Mat(mScr, roi), image);
             easyRate = (mEasyTotal == 0 ? 0 : 100 * mEasyWin / mEasyTotal);
             hardRate = (mHardTotal == 0 ? 0 : 100 * mHardWin / mHardTotal);
-            info = easyRate + "% [WinningRate] " + hardRate + "%";
+            info = easyRate + "%     [WINNING RATE]     " + hardRate + "%";
             textSize = Imgproc.getTextSize(info, FONT_SANS, 1.0, 1, null);
             point.x = 640 - textSize.width / 2;
             point.y = 250;
@@ -1026,12 +1026,12 @@ public class MainActivity extends AppCompatActivity
 
         // Center: card deck & recent played card
         image = mUno.getBackImage();
-        roi = new Rect(420, 270, 121, 181);
+        roi = new Rect(338, 270, 121, 181);
         image.copyTo(new Mat(mScr, roi), image);
         hand = mUno.getRecent();
         size = hand.size();
         width = 45 * size + 75;
-        roi.x = 710 - width / 2;
+        roi.x = 882 - width / 2;
         roi.y = 270;
         for (Card recent : hand) {
             if (recent.getContent() == Content.WILD) {
@@ -1442,18 +1442,18 @@ public class MainActivity extends AppCompatActivity
             else switch (mStatus) {
                 case STAT_WELCOME:
                     if (y >= 270 && y <= 450) {
-                        if (x >= 420 && x <= 540) {
+                        if (x >= 338 && x <= 458) {
                             // Difficulty: EASY
                             mDifficulty = LV_EASY;
                             mStatus = STAT_NEW_GAME;
                             onStatusChanged(mStatus);
-                        } // if (x >= 420 && x <= 540)
-                        else if (x >= 740 && x <= 860) {
+                        } // if (x >= 338 && x <= 458)
+                        else if (x >= 822 && x <= 942) {
                             // Difficulty: HARD
                             mDifficulty = LV_HARD;
                             mStatus = STAT_NEW_GAME;
                             onStatusChanged(mStatus);
-                        } // else if (x >= 740 && x <= 860)
+                        } // else if (x >= 822 && x <= 942)
                     } // if (y >= 270 && y <= 450)
                     break; // case STAT_WELCOME
 
@@ -1488,10 +1488,10 @@ public class MainActivity extends AppCompatActivity
                             } // else if (mUno.isLegalToPlay(card))
                         } // if (x >= startX && x <= startX + width)
                     } // if (y >= 520 && y <= 700)
-                    else if (y >= 270 && y <= 450 && x >= 420 && x <= 540) {
+                    else if (y >= 270 && y <= 450 && x >= 338 && x <= 458) {
                         // Card deck area, draw a card
                         draw(Player.YOU, 1);
-                    } // else if (y >= 270 && y <= 450 && x >= 420 && x <= 540)
+                    } // else if (y >= 270 && y <= 450 && x >= 338 && x <= 458)
                     break; // case Player.YOU
 
                 case STAT_WILD_COLOR:
@@ -1519,11 +1519,11 @@ public class MainActivity extends AppCompatActivity
                     break; // case STAT_WILD_COLOR
 
                 case STAT_GAME_OVER:
-                    if (y >= 270 && y <= 450 && x >= 420 && x <= 540) {
+                    if (y >= 270 && y <= 450 && x >= 338 && x <= 458) {
                         // Card deck area, start a new game
                         mStatus = STAT_NEW_GAME;
                         onStatusChanged(mStatus);
-                    } // if (y >= 270 && y <= 450 && x >= 420 && x <= 540)
+                    } // if (y >= 270 && y <= 450 && x >= 338 && x <= 458)
                     break; // case STAT_GAME_OVER
 
                 default:

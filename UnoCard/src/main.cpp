@@ -110,7 +110,7 @@ int main() {
 	sStatus = STAT_WELCOME;
 	sScreen = sUno->getBackground().clone();
 	namedWindow("Uno");
-	refreshScreen("WELCOME TO UNO CARD GAME");
+	refreshScreen("Welcome to Uno game, please select difficulty");
 	setMouseCallback("Uno", onMouse, NULL);
 	for (;;) {
 		waitMs(0); // prevent from blocking main thread
@@ -919,9 +919,9 @@ static void onStatusChanged(int status) {
 		// Need to specify the following legal color after played a
 		// wild card. Draw color sectors in the center of screen
 		refreshScreen("^ Specify the following legal color");
-		rect = Rect(360, 270, 181, 181);
+		rect = Rect(338, 270, 121, 181);
 		sUno->getBackground()(rect).copyTo(sScreen(rect));
-		center = Point(450, 360);
+		center = Point(368, 360);
 		axes = Size(90, 90);
 		ellipse(sScreen, center, axes, 0, 0, -90, RGB_BLUE, -1, 16);
 		ellipse(sScreen, center, axes, 0, 0, 90, RGB_GREEN, -1, 16);
@@ -1006,15 +1006,15 @@ static void refreshScreen(string message) {
 	// For welcome screen, only show difficulty buttons and winning rates
 	if (status == STAT_WELCOME) {
 		image = sUno->getEasyImage();
-		roi = Rect(420, 270, 121, 181);
+		roi = Rect(338, 270, 121, 181);
 		image.copyTo(sScreen(roi), image);
 		image = sUno->getHardImage();
-		roi.x = 740;
+		roi.x = 822;
 		roi.y = 270;
 		image.copyTo(sScreen(roi), image);
 		easyRate = (sEasyTotal == 0 ? 0 : 100 * sEasyWin / sEasyTotal);
 		hardRate = (sHardTotal == 0 ? 0 : 100 * sHardWin / sHardTotal);
-		buff << easyRate << "% [WinningRate] " << hardRate << "%";
+		buff << easyRate << "%     [WINNING RATE]     " << hardRate << "%";
 		width = getTextSize(buff.str(), FONT_SANS, 1.0, 1, NULL).width;
 		point.x = 640 - width / 2;
 		point.y = 250;
@@ -1023,12 +1023,12 @@ static void refreshScreen(string message) {
 	else {
 		// Center: card deck & recent played card
 		image = sUno->getBackImage();
-		roi = Rect(420, 270, 121, 181);
+		roi = Rect(338, 270, 121, 181);
 		image.copyTo(sScreen(roi), image);
 		hand = sUno->getRecent();
 		size = (int)hand.size();
 		width = 45 * size + 75;
-		roi.x = 710 - width / 2;
+		roi.x = 882 - width / 2;
 		roi.y = 270;
 		for (Card* recent : hand) {
 			if (recent->getContent() == WILD) {
@@ -1502,18 +1502,18 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 		else switch (sStatus) {
 		case STAT_WELCOME:
 			if (y >= 270 && y <= 450) {
-				if (x >= 420 && x <= 540) {
+				if (x >= 338 && x <= 458) {
 					// Difficulty: EASY
 					sDifficulty = LV_EASY;
 					sStatus = STAT_NEW_GAME;
 					onStatusChanged(sStatus);
-				} // if (x >= 420 && x <= 540)
-				else if (x >= 740 && x <= 860) {
+				} // if (x >= 338 && x <= 458)
+				else if (x >= 822 && x <= 942) {
 					// Difficulty: HARD
 					sDifficulty = LV_HARD;
 					sStatus = STAT_NEW_GAME;
 					onStatusChanged(sStatus);
-				} // else if (x >= 740 && x <= 860)
+				} // else if (x >= 822 && x <= 942)
 			} // if (y >= 270 && y <= 450)
 			break; // case STAT_WELCOME
 
@@ -1545,30 +1545,30 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 					} // else if (sUno->isLegalToPlay(card))
 				} // if (x >= startX && x <= startX + width)
 			} // else if (y >= 520 && y <= 700)
-			else if (y >= 270 && y <= 450 && x >= 420 && x <= 540) {
+			else if (y >= 270 && y <= 450 && x >= 338 && x <= 458) {
 				// Card deck area, draw a card
 				draw();
-			} // else if (y >= 270 && y <= 450 && x >= 420 && x <= 540)
+			} // else if (y >= 270 && y <= 450 && x >= 338 && x <= 458)
 			break; // case Player::YOU
 
 		case STAT_WILD_COLOR:
 			sStatus = Player::YOU;
-			if (y > 296 && y < 360 && x > 386 && x < 450) {
+			if (y > 296 && y < 360 && x > 304 && x < 368) {
 				// Red sector
 				play(index, RED);
-			} // if (y > 296 && y < 360 && x > 386 && x < 450)
-			else if (y > 296 && y < 360 && x > 450 && x < 514) {
+			} // if (y > 296 && y < 360 && x > 304 && x < 368)
+			else if (y > 296 && y < 360 && x > 368 && x < 432) {
 				// Blue sector
 				play(index, BLUE);
-			} // else if (y > 296 && y < 360 && x > 450 && x < 514)
-			else if (y > 360 && y < 424 && x > 386 && x < 450) {
+			} // else if (y > 296 && y < 360 && x > 368 && x < 432)
+			else if (y > 360 && y < 424 && x > 304 && x < 368) {
 				// Yellow sector
 				play(index, YELLOW);
-			} // else if (y > 360 && y < 424 && x > 386 && x < 450)
-			else if (y > 360 && y < 424 && x > 450 && x < 514) {
+			} // else if (y > 360 && y < 424 && x > 304 && x < 368)
+			else if (y > 360 && y < 424 && x > 368 && x < 432) {
 				// Green sector
 				play(index, GREEN);
-			} // else if (y > 360 && y < 424 && x > 450 && x < 514)
+			} // else if (y > 360 && y < 424 && x > 368 && x < 432)
 			else {
 				// Undo
 				onStatusChanged(sStatus);
@@ -1576,11 +1576,11 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 			break; // case STAT_WILD_COLOR
 
 		case STAT_GAME_OVER:
-			if (y >= 270 && y <= 450 && x >= 420 && x <= 540) {
+			if (y >= 270 && y <= 450 && x >= 338 && x <= 458) {
 				// Card deck area, start a new game
 				sStatus = STAT_NEW_GAME;
 				onStatusChanged(sStatus);
-			} // if (y >= 270 && y <= 450 && x >= 420 && x <= 540)
+			} // if (y >= 270 && y <= 450 && x >= 338 && x <= 458)
 			break; // case STAT_GAME_OVER
 
 		default:
