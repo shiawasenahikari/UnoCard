@@ -19,6 +19,8 @@
 using namespace cv;
 using namespace std;
 
+#define WAIT_MS(delay) if (waitKey(delay) == '*') sTest = !sTest
+
 // Constants
 static const int LV_EASY = 0;
 static const int LV_HARD = 1;
@@ -62,7 +64,6 @@ static bool sAIRunning;
 // Functions
 static void easyAI();
 static void hardAI();
-static void waitMs(int delay = 0);
 static void onStatusChanged(int status);
 static void refreshScreen(string message);
 static void play(int index, Color color = NONE);
@@ -113,7 +114,7 @@ int main() {
 	refreshScreen("Welcome to Uno game, please select difficulty");
 	setMouseCallback("Uno", onMouse, NULL);
 	for (;;) {
-		waitMs(0); // prevent from blocking main thread
+		WAIT_MS(0); // prevent from blocking main thread
 	} // for (;;)
 } // main()
 
@@ -846,32 +847,6 @@ static void hardAI() {
 } // hardAI()
 
 /**
- * Wrapper function of cv::waitKey(). Enable test mode when "UnoTest" typed.
- */
-static void waitMs(int delay) {
-	static string input;
-	static int key, len;
-
-	key = waitKey(delay);
-	if (key != -1) {
-		input.append(1, (char)key);
-		len = (int)input.size();
-		if (len == 7 && strcmp(input.c_str(), "UnoTest") == 0) {
-			// "UnoTest" typed. Enable or disable test mode.
-			input.clear();
-			sTest = !sTest;
-		} // if (len == 7 && strcmp(input.c_str(), "UnoTest") == 0)
-		else if (strncmp(input.c_str(), "UnoTest", len) != 0) {
-			// Mismatched. Clear buffer.
-			input.clear();
-			if (key == 'U') {
-				input.append(1, (char)key);
-			} // if (key == 'U')
-		} // else if (strncmp(input.c_str(), "UnoTest", len) != 0)
-	} // if (key != -1)
-} // waitMs()
-
-/**
  * Triggered when the value of global value [sStatus] changed.
  *
  * @param status New status value.
@@ -893,7 +868,7 @@ static void onStatusChanged(int status) {
 
 		sUno->start();
 		refreshScreen("GET READY");
-		waitMs(2000);
+		WAIT_MS(2000);
 		sStatus = sWinner;
 		onStatusChanged(sStatus);
 		break; // case STAT_NEW_GAME
@@ -1267,7 +1242,7 @@ static void play(int index, Color color) {
 		roi = Rect(x, y, 121, 181);
 		image.copyTo(sScreen(roi), image);
 		imshow("Uno", sScreen);
-		waitMs(300);
+		WAIT_MS(300);
 		if (sUno->getPlayer(now)->getHandCards().size() == 0) {
 			// The player in action becomes winner when it played the
 			// final card in its hand successfully
@@ -1285,7 +1260,7 @@ static void play(int index, Color color) {
 				next = (now + direction) % 4;
 				message += ": Let " + NAME[next] + " draw 2 cards";
 				refreshScreen(message);
-				waitMs(1500);
+				WAIT_MS(1500);
 				draw(next, 2);
 				break; // case DRAW2
 
@@ -1300,7 +1275,7 @@ static void play(int index, Color color) {
 				} // else
 
 				refreshScreen(message);
-				waitMs(1500);
+				WAIT_MS(1500);
 				sStatus = (next + direction) % 4;
 				onStatusChanged(sStatus);
 				break; // case SKIP
@@ -1315,7 +1290,7 @@ static void play(int index, Color color) {
 				} // else
 
 				refreshScreen(message);
-				waitMs(1500);
+				WAIT_MS(1500);
 				sStatus = (now + direction) % 4;
 				onStatusChanged(sStatus);
 				break; // case REV
@@ -1324,7 +1299,7 @@ static void play(int index, Color color) {
 				direction = sUno->getDirection();
 				message += ": Change the following legal color";
 				refreshScreen(message);
-				waitMs(1500);
+				WAIT_MS(1500);
 				sStatus = (now + direction) % 4;
 				onStatusChanged(sStatus);
 				break; // case WILD
@@ -1334,7 +1309,7 @@ static void play(int index, Color color) {
 				next = (now + direction) % 4;
 				message += ": Let " + NAME[next] + " draw 4 cards";
 				refreshScreen(message);
-				waitMs(1500);
+				WAIT_MS(1500);
 				draw(next, 4);
 				break; // case WILD_DRAW4
 
@@ -1342,7 +1317,7 @@ static void play(int index, Color color) {
 				direction = sUno->getDirection();
 				message += ": " + card->getName();
 				refreshScreen(message);
-				waitMs(1500);
+				WAIT_MS(1500);
 				sStatus = (now + direction) % 4;
 				onStatusChanged(sStatus);
 				break; // default
@@ -1415,9 +1390,9 @@ static void draw(int who, int count) {
 			// Animation
 			image.copyTo(sScreen(roi), image);
 			imshow("Uno", sScreen);
-			waitMs(300);
+			WAIT_MS(300);
 			refreshScreen(buff.str());
-			waitMs(300);
+			WAIT_MS(300);
 		} // if (card != NULL)
 		else {
 			buff << NAME[who];
@@ -1428,7 +1403,7 @@ static void draw(int who, int count) {
 		} // else
 	} // for (i = 0; i < count; ++i)
 
-	waitMs(1500);
+	WAIT_MS(1500);
 	sStatus = (who + sUno->getDirection()) % 4;
 	onStatusChanged(sStatus);
 } // draw()
