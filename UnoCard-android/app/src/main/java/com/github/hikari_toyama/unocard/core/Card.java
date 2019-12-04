@@ -33,6 +33,29 @@ import static com.github.hikari_toyama.unocard.core.Content.WILD_DRAW4;
 @SuppressWarnings("ALL")
 public class Card implements Comparable<Card> {
     /**
+     * Card's order. Used in the hand card sorting procedure.
+     * Everyone's hand cards will be sorted based on the order sequence.
+     */
+    int order;
+
+    /**
+     * Card's image resource ID, e.g. Imgcodecs.imread
+     * ("/sdcard/Android/data/com.github.hikari_toyama/files/front_b3.png")
+     */
+    Mat image;
+
+    /**
+     * Card's dark image resource, e.g. Imgcodecs.imread
+     * ("/sdcard/Android/data/com.github.hikari_toyama/files/dark_b3.png")
+     */
+    Mat darkImg;
+
+    /**
+     * Card's name, e.g. "Blue 3"
+     */
+    String name;
+
+    /**
      * Card's color, e.g. Color.BLUE
      */
     Color color;
@@ -48,56 +71,36 @@ public class Card implements Comparable<Card> {
     Content content;
 
     /**
-     * Card's order. Used in the hand card sorting procedure.
-     * Everyone's hand cards will be sorted based on the order sequence.
-     */
-    private int order;
-
-    /**
-     * Card's image resource ID, e.g. Imgcodecs.imread
-     * ("/sdcard/Android/data/com.github.hikari_toyama/files/front_b3.png")
-     */
-    private Mat image;
-
-    /**
-     * Card's dark image resource, e.g. Imgcodecs.imread
-     * ("/sdcard/Android/data/com.github.hikari_toyama/files/dark_b3.png")
-     */
-    private Mat darkImg;
-
-    /**
-     * Card's name, e.g. "Blue 3"
-     */
-    private String name;
-
-    /**
      * Constructor. Provide parameters for an Uno card and create its instance.
      */
     Card(Mat image, Mat darkImg, Color color, Content content, String name) {
         if (image == null) {
             throw new IllegalArgumentException("DO NOT PASS NULL PARAMETER!!!");
         } // if (image == null)
-        else if (darkImg == null) {
+
+        if (darkImg == null) {
             throw new IllegalArgumentException("DO NOT PASS NULL PARAMETER!!!");
-        } // else if (darkImg == null)
-        else if (color == null) {
+        } // if (darkImg == null)
+
+        if (color == null) {
             throw new IllegalArgumentException("DO NOT PASS NULL PARAMETER!!!");
-        } // else if (color == null)
-        else if (content == null) {
+        } // if (color == null)
+
+        if (content == null) {
             throw new IllegalArgumentException("DO NOT PASS NULL PARAMETER!!!");
-        } // else if (content == null)
-        else if (name == null) {
+        } // if (content == null)
+
+        if (name == null) {
             throw new IllegalArgumentException("DO NOT PASS NULL PARAMETER!!!");
-        } // else if (name == null)
-        else {
-            this.name = name;
-            this.image = image;
-            this.color = color;
-            this.wildColor = NONE;
-            this.content = content;
-            this.darkImg = darkImg;
-            this.order = color.ordinal() << 8 | content.ordinal();
-        } // else
+        } // if (name == null)
+
+        this.name = name;
+        this.image = image;
+        this.color = color;
+        this.wildColor = NONE;
+        this.content = content;
+        this.darkImg = darkImg;
+        this.order = color.ordinal() << 8 | content.ordinal();
     } // Card(Mat, Mat, Color, Content, String) (Class Constructor)
 
     /**
@@ -115,6 +118,13 @@ public class Card implements Comparable<Card> {
     } // getDarkImg()
 
     /**
+     * @return Card's name.
+     */
+    public String getName() {
+        return name;
+    } // getName()
+
+    /**
      * @return Card's color.
      */
     public Color getColor() {
@@ -123,9 +133,8 @@ public class Card implements Comparable<Card> {
 
     /**
      * Valid only when this is a wild card. Get the specified following legal
-     * color by the player who played this wild card.
-     * <p>
-     * For non-wild cards, this method will always return Color.NONE.
+     * color by the player who played this wild card. For non-wild cards, this
+     * method will always return Color.NONE.
      *
      * @return Card's wild color.
      */
@@ -139,13 +148,6 @@ public class Card implements Comparable<Card> {
     public Content getContent() {
         return content;
     } // getContent()
-
-    /**
-     * @return Card's name.
-     */
-    public String getName() {
-        return name;
-    } // getName()
 
     /**
      * @return Whether the card is an action card.

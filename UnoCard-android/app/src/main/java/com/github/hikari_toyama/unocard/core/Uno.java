@@ -9,6 +9,7 @@
 package com.github.hikari_toyama.unocard.core;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.github.hikari_toyama.unocard.R;
 
@@ -65,9 +66,14 @@ public class Uno {
     public static final int MAX_HOLD_CARDS = 15;
 
     /**
+     * Tag name for Android Logcat.
+     */
+    private static final String TAG = "Uno";
+
+    /**
      * Singleton.
      */
-    private static Uno INSTANCE;
+    private static volatile Uno INSTANCE;
 
     /**
      * Random number generator.
@@ -105,6 +111,11 @@ public class Uno {
     private Mat hardImage;
 
     /**
+     * Background image resource (for welcome screen).
+     */
+    private Mat bgWelcome;
+
+    /**
      * Background image resource (Direction: COUTNER CLOCKWISE).
      */
     private Mat bgCounter;
@@ -117,7 +128,7 @@ public class Uno {
     /**
      * Current action sequence (DIR_LEFT / DIR_RIGHT).
      */
-    private int direction = DIR_LEFT;
+    private int direction = 0;
 
     /**
      * Game players.
@@ -140,33 +151,51 @@ public class Uno {
     private List<Card> recent;
 
     /**
+     * Recent played cards (read-only version, provide for external accesses).
+     */
+    private List<Card> recent_readOnly;
+
+    /**
      * Singleton, hide default constructor.
      *
      * @param context Pass a context object to let we get the card image
      *                resources stored in this application.
      */
     private Uno(Context context) {
-        int i;
         Mat[] br, dk;
         Context appContext;
+        int i, loaded, total;
+
+        // Preparations
+        appContext = context.getApplicationContext();
+        loaded = 0;
+        total = 122;
+        Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
 
         try {
             // Load background image resources
-            appContext = context.getApplicationContext();
+            bgWelcome = Utils.loadResource(appContext, R.raw.bg_welcome);
             bgCounter = Utils.loadResource(appContext, R.raw.bg_counter);
             bgClockwise = Utils.loadResource(appContext, R.raw.bg_clockwise);
+            Imgproc.cvtColor(bgWelcome, bgWelcome, Imgproc.COLOR_BGR2RGB);
             Imgproc.cvtColor(bgCounter, bgCounter, Imgproc.COLOR_BGR2RGB);
             Imgproc.cvtColor(bgClockwise, bgClockwise, Imgproc.COLOR_BGR2RGB);
+            loaded += 3;
+            Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
 
             // Load card back image resource
             backImage = Utils.loadResource(appContext, R.raw.back);
             Imgproc.cvtColor(backImage, backImage, Imgproc.COLOR_BGR2RGB);
+            ++loaded;
+            Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
 
             // Load difficulty image resources
             easyImage = Utils.loadResource(appContext, R.raw.lv_easy);
             hardImage = Utils.loadResource(appContext, R.raw.lv_hard);
             Imgproc.cvtColor(easyImage, easyImage, Imgproc.COLOR_BGR2RGB);
             Imgproc.cvtColor(hardImage, hardImage, Imgproc.COLOR_BGR2RGB);
+            loaded += 2;
+            Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
 
             // Load cards' front image resources
             br = new Mat[]{
@@ -284,6 +313,8 @@ public class Uno {
             for (i = 0; i < 54; ++i) {
                 Imgproc.cvtColor(br[i], br[i], Imgproc.COLOR_BGR2RGB);
                 Imgproc.cvtColor(dk[i], dk[i], Imgproc.COLOR_BGR2RGB);
+                loaded += 2;
+                Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
             } // for (i = 0; i < 54; ++i)
 
             // Load wild & wild +4 image resources
@@ -304,6 +335,8 @@ public class Uno {
             for (i = 1; i < 5; ++i) {
                 Imgproc.cvtColor(wImage[i], wImage[i], Imgproc.COLOR_BGR2RGB);
                 Imgproc.cvtColor(w4Image[i], w4Image[i], Imgproc.COLOR_BGR2RGB);
+                loaded += 2;
+                Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
             } // for (i = 1; i < 5; ++i)
         } // try
         catch (IOException e) {
@@ -429,6 +462,7 @@ public class Uno {
         used = new ArrayList<>();
         deck = new LinkedList<>();
         recent = new ArrayList<>();
+        recent_readOnly = Collections.unmodifiableList(recent);
         player = new Player[4];
         player[0] = new Player(); // Player.YOU
         player[1] = new Player(); // Player.COM1
@@ -444,9 +478,13 @@ public class Uno {
      *                resources stored in this application.
      * @return Reference of our singleton.
      */
-    public static synchronized Uno getInstance(Context context) {
+    public static Uno getInstance(Context context) {
         if (INSTANCE == null) {
-            INSTANCE = new Uno(context);
+            synchronized (Uno.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new Uno(context);
+                } // if (INSTANCE == null)
+            } // synchronized (Uno.class)
         } // if (INSTANCE == null)
 
         return INSTANCE;
@@ -477,7 +515,16 @@ public class Uno {
      * @return Background image resource in current direction.
      */
     public Mat getBackground() {
-        return (direction == DIR_RIGHT ? bgCounter : bgClockwise);
+        switch (direction) {
+            case DIR_LEFT:
+                return bgClockwise; // case DIR_LEFT
+
+            case DIR_RIGHT:
+                return bgCounter; // case DIR_RIGHT
+
+            default:
+                return bgWelcome; // default
+        } // switch (direction)
     } // getBackground()
 
     /**
@@ -568,7 +615,7 @@ public class Uno {
      * @return Recent played cards.
      */
     public List<Card> getRecent() {
-        return Collections.unmodifiableList(recent);
+        return recent_readOnly;
     } // getRecent()
 
     /**
@@ -698,50 +745,20 @@ public class Uno {
      *
      * @param whom Evaluate for whom. Must be one of the following values:
      *             Player.YOU, Player.COM1, Player.COM2, Player.COM3.
-     * @return The best color for the specified player now. Specially, when an
-     * illegal [whom] parameter was passed in, or the specified player remains
-     * only wild cards, method will return a default value, which is Color.RED.
+     * @return Best color for the specified player now. Specially, when the
+     * player remains only wild cards, method will return Color.RED.
+     * @deprecated Use getPlayer(whom).calcBestColor() instead.
      */
+    @Deprecated
     public Color bestColorFor(int whom) {
-        Color best;
-        int[] score;
-
-        best = RED;
-        score = new int[]{0, 0, 0, 0, 0};
-        for (Card card : player[whom].handCards) {
-            if (card.isZero()) {
-                score[card.color.ordinal()] += 2;
-            } // if (card.isZero())
-            else if (card.isAction()) {
-                score[card.color.ordinal()] += 5;
-            } // else if (card.isAction())
-            else {
-                score[card.color.ordinal()] += 4;
-            } // else
-        } // for (Card card : player[whom].handCards)
-
-        // default to red, when only wild cards in hand,
-        // method will return Color.RED
-        if (score[BLUE.ordinal()] > score[best.ordinal()]) {
-            best = BLUE;
-        } // if (score[BLUE.ordinal()] > score[best.ordinal()])
-
-        if (score[GREEN.ordinal()] > score[best.ordinal()]) {
-            best = GREEN;
-        } // if (score[GREEN.ordinal()] > score[best.ordinal()])
-
-        if (score[YELLOW.ordinal()] > score[best.ordinal()]) {
-            best = YELLOW;
-        } // if (score[YELLOW.ordinal()] > score[best.ordinal()])
-
-        return best;
+        return getPlayer(whom).calcBestColor();
     } // bestColorFor()
 
     /**
      * Check whether the specified card is legal to play. It's legal only when
      * it's wild, or it has the same color/content to the previous played card.
      *
-     * @param card The card you want to check whether it's legal to play.
+     * @param card Check which card's legality.
      * @return Whether the specified card is legal to play.
      */
     public boolean isLegalToPlay(Card card) {
@@ -816,6 +833,10 @@ public class Uno {
                 used.add(recent.get(0));
                 recent.remove(0);
             } // if (recent.size() > 5)
+
+            if (handCards.size() == 0) {
+                direction = 0;
+            } // if (handCards.size() == 0)
         } // if (index < handCards.size())
 
         return card;

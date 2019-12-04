@@ -19,8 +19,6 @@
 using namespace cv;
 using namespace std;
 
-#define WAIT_MS(delay) if (waitKey(delay) == '*') sTest = !sTest
-
 // Constants
 static const int LV_EASY = 0;
 static const int LV_HARD = 1;
@@ -70,6 +68,9 @@ static void play(int index, Color color = NONE);
 static void draw(int who = sStatus, int count = 1);
 static void onMouse(int event, int x, int y, int flags, void* param);
 
+// Macros
+#define WAIT_MS(delay) if (waitKey(delay) == '*') sTest = !sTest
+
 /**
  * Defines the entry point for the console application.
  */
@@ -111,7 +112,7 @@ int main() {
 	sStatus = STAT_WELCOME;
 	sScreen = sUno->getBackground().clone();
 	namedWindow("Uno");
-	refreshScreen("Welcome to Uno game, please select difficulty");
+	refreshScreen("WELCOME TO UNO CARD GAME");
 	setMouseCallback("Uno", onMouse, NULL);
 	for (;;) {
 		WAIT_MS(0); // prevent from blocking main thread
@@ -124,6 +125,7 @@ int main() {
 static void easyAI() {
 	Card* card;
 	Card* last;
+	Player* curr;
 	Player* next;
 	Player* oppo;
 	Player* prev;
@@ -141,7 +143,8 @@ static void easyAI() {
 		|| sStatus == Player::COM2
 		|| sStatus == Player::COM3
 		|| sStatus == Player::YOU && sAuto) {
-		hand = sUno->getPlayer(sStatus)->getHandCards();
+		curr = sUno->getPlayer(sStatus);
+		hand = curr->getHandCards();
 		yourSize = (int)hand.size();
 		if (yourSize == 1) {
 			// Only one card remained. Play it when it's legal.
@@ -165,7 +168,7 @@ static void easyAI() {
 		prevSize = (int)prev->getHandCards().size();
 		idxBest = idxRev = idxSkip = idxDraw2 = -1;
 		idxZero = idxNum = idxWild = idxWildDraw4 = -1;
-		bestColor = sUno->bestColorFor(sStatus);
+		bestColor = curr->calcBestColor();
 		last = sUno->getRecent().back();
 		if (last->isWild()) {
 			lastColor = last->getWildColor();
@@ -347,6 +350,7 @@ static void easyAI() {
 static void hardAI() {
 	Card* card;
 	Card* last;
+	Player* curr;
 	Player* next;
 	Player* oppo;
 	Player* prev;
@@ -366,7 +370,8 @@ static void hardAI() {
 		|| sStatus == Player::COM2
 		|| sStatus == Player::COM3
 		|| sStatus == Player::YOU && sAuto) {
-		hand = sUno->getPlayer(sStatus)->getHandCards();
+		curr = sUno->getPlayer(sStatus);
+		hand = curr->getHandCards();
 		yourSize = (int)hand.size();
 		if (yourSize == 1) {
 			// Only one card remained. Play it when it's legal.
@@ -390,7 +395,7 @@ static void hardAI() {
 		prevSize = (int)prev->getHandCards().size();
 		idxBest = idxRev = idxSkip = idxDraw2 = -1;
 		idxZero = idxNum = idxWild = idxWildDraw4 = -1;
-		bestColor = sUno->bestColorFor(sStatus);
+		bestColor = curr->calcBestColor();
 		last = sUno->getRecent().back();
 		if (last->isWild()) {
 			lastColor = last->getWildColor();
@@ -462,7 +467,7 @@ static void hardAI() {
 				idxBest = idxDraw2;
 			} // if (hasDraw2)
 			else if (lastColor == dangerColor) {
-				// Your next player played a wild card, started a UNO dash in
+				// Your next player played a wild card, started an UNO dash in
 				// its last action, and what's worse is that the legal color has
 				// not been changed yet. You have to change the following legal
 				// color, or you will approximately 100% lose this game.
@@ -481,7 +486,7 @@ static void hardAI() {
 					idxBest = idxSkip;
 				} // else if (hasSkip)
 				else if (hasWildDraw4) {
-					// Now start to use wild cards. Use [wild +4] cards priorly,
+					// Now start to use wild cards. Use [wild +4] cards firstly,
 					// because this card makes your next player draw four cards.
 					while (bestColor == oppo->getDangerousColor()
 						|| bestColor == prev->getDangerousColor()) {
@@ -510,7 +515,7 @@ static void hardAI() {
 				} // else if (hasRev)
 			} // else if (lastColor == dangerColor)
 			else if (dangerColor != NONE) {
-				// Your next player played a wild card, started a UNO dash in
+				// Your next player played a wild card, started an UNO dash in
 				// its last action, but fortunately the legal color has been
 				// changed already. Just be careful not to re-change the legal
 				// color to the dangerous color again.
@@ -530,7 +535,7 @@ static void hardAI() {
 				} // else if (hasRev && ...)
 			} // else if (dangerColor != NONE)
 			else if (hasWildDraw4) {
-				// Your next player started a UNO dash without playing a wild
+				// Your next player started an UNO dash without playing a wild
 				// card, so use normal defense strategies. Firstly play a
 				// [wild +4] to make your next player draw four cards, even if
 				// the legal color is already your best color!
@@ -564,7 +569,7 @@ static void hardAI() {
 			// action.
 			dangerColor = prev->getDangerousColor();
 			if (lastColor == dangerColor) {
-				// Your previous player played a wild card, started a UNO dash
+				// Your previous player played a wild card, started an UNO dash
 				// in its last action. You have to change the following legal
 				// color, or you will approximately 100% lose this game.
 				if (hasSkip && hand.at(idxSkip)->getColor() != dangerColor) {
@@ -598,7 +603,7 @@ static void hardAI() {
 					// When you have no wild cards, play a number card and try
 					// to get help from other players. In order to increase your
 					// following players' possibility of changing the legal
-					// color, do not play zero cards priorly.
+					// color, do not play zero cards preferentially.
 					idxBest = idxNum;
 				} // else if (hasNum)
 				else if (hasZero) {
@@ -606,10 +611,10 @@ static void hardAI() {
 				} // else if (hasZero)
 			} // if (lastColor == dangerColor)
 			else if (hasNum) {
-				// Your next player started a UNO dash without playing a wild
-				// card, so use normal defense strategies. In order to increase
-				// your following players' possibility of changing the legal
-				// color, do not play zero cards priorly.
+				// Your previous player started an UNO dash without playing a
+				// wild card, so use normal defense strategies. In order to
+				// increase your following players' possibility of changing the
+				// legal color, do not play zero cards preferentially.
 				idxBest = idxNum;
 			} // else if (hasNum)
 			else if (hasZero) {
@@ -628,7 +633,7 @@ static void hardAI() {
 			// directly limit your opposite player's action.
 			dangerColor = oppo->getDangerousColor();
 			if (lastColor == dangerColor) {
-				// Your opposite player played a wild card, started a UNO dash
+				// Your opposite player played a wild card, started an UNO dash
 				// in its last action, and what's worse is that the legal color
 				// has not been changed yet. You have to change the following
 				// legal color, or you will approximately 100% lose this game.
@@ -683,7 +688,7 @@ static void hardAI() {
 				} // else if (hasZero)
 			} // if (lastColor == dangerColor)
 			else if (dangerColor != NONE) {
-				// Your opposite player played a wild card, started a UNO dash
+				// Your opposite player played a wild card, started an UNO dash
 				// in its last action, but fortunately the legal color has been
 				// changed already. Just be careful not to re-change the legal
 				// color to the dangerous color again.
@@ -706,7 +711,7 @@ static void hardAI() {
 				} // else if (hasRev && ...)
 			} // else if (dangerColor != NONE)
 			else if (hasRev && prevSize - nextSize >= 3) {
-				// Your opposite player started a UNO dash without playing a
+				// Your opposite player started an UNO dash without playing a
 				// wild card, so use normal defense strategies. Firstly play a
 				// [reverse] when your next player remains only a few cards but
 				// your previous player remains a lot of cards, because your
@@ -717,7 +722,7 @@ static void hardAI() {
 			else if (hasNum) {
 				// Then you can play a number card. In order to increase your
 				// next player's possibility of changing the legal color, do
-				// not play zero cards priorly.
+				// not play zero cards preferentially.
 				idxBest = idxNum;
 			} // else if (hasNum)
 			else if (hasZero) {
@@ -981,15 +986,15 @@ static void refreshScreen(string message) {
 	// For welcome screen, only show difficulty buttons and winning rates
 	if (status == STAT_WELCOME) {
 		image = sUno->getEasyImage();
-		roi = Rect(338, 270, 121, 181);
+		roi = Rect(420, 270, 121, 181);
 		image.copyTo(sScreen(roi), image);
 		image = sUno->getHardImage();
-		roi.x = 822;
+		roi.x = 740;
 		roi.y = 270;
 		image.copyTo(sScreen(roi), image);
 		easyRate = (sEasyTotal == 0 ? 0 : 100 * sEasyWin / sEasyTotal);
 		hardRate = (sHardTotal == 0 ? 0 : 100 * sHardWin / sHardTotal);
-		buff << easyRate << "%     [WINNING RATE]     " << hardRate << "%";
+		buff << easyRate << "% [WinningRate] " << hardRate << "%";
 		width = getTextSize(buff.str(), FONT_SANS, 1.0, 1, NULL).width;
 		point.x = 640 - width / 2;
 		point.y = 250;
@@ -1003,7 +1008,7 @@ static void refreshScreen(string message) {
 		hand = sUno->getRecent();
 		size = (int)hand.size();
 		width = 45 * size + 75;
-		roi.x = 882 - width / 2;
+		roi.x = 792 - width / 2;
 		roi.y = 270;
 		for (Card* recent : hand) {
 			if (recent->getContent() == WILD) {
@@ -1477,18 +1482,18 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 		else switch (sStatus) {
 		case STAT_WELCOME:
 			if (y >= 270 && y <= 450) {
-				if (x >= 338 && x <= 458) {
+				if (x >= 420 && x <= 540) {
 					// Difficulty: EASY
 					sDifficulty = LV_EASY;
 					sStatus = STAT_NEW_GAME;
 					onStatusChanged(sStatus);
-				} // if (x >= 338 && x <= 458)
-				else if (x >= 822 && x <= 942) {
+				} // if (x >= 420 && x <= 540)
+				else if (x >= 740 && x <= 860) {
 					// Difficulty: HARD
 					sDifficulty = LV_HARD;
 					sStatus = STAT_NEW_GAME;
 					onStatusChanged(sStatus);
-				} // else if (x >= 822 && x <= 942)
+				} // else if (x >= 740 && x <= 860)
 			} // if (y >= 270 && y <= 450)
 			break; // case STAT_WELCOME
 

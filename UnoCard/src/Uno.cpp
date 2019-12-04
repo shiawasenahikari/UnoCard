@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
+#include <iostream>
 #include <opencv2/highgui.hpp>
 
 using namespace cv;
@@ -25,27 +26,27 @@ static const string BROKEN_IMAGE_RESOURCES_EXCEPTION =
 /**
  * Default constructor.
  */
-Card::Card() {
-	name = "";
-	color = NONE;
-	image = Mat();
-	content = WILD;
-	darkImg = Mat();
-	wildColor = NONE;
-	order = (color << 8) + content;
+Card::Card() :
+	name(),
+	image(),
+	darkImg(),
+	color(NONE),
+	content(WILD),
+	wildColor(NONE),
+	order((color << 8) + content) {
 } // Card() (Class Constructor)
 
 /**
  * Constructor. Provide parameters for an Uno card and create its instance.
  */
-Card::Card(Mat image, Mat darkImg, Color color, Content content, string name) {
-	this->name = name;
-	this->image = image;
-	this->color = color;
-	this->wildColor = NONE;
-	this->content = content;
-	this->darkImg = darkImg;
-	this->order = (color << 8) + content;
+Card::Card(Mat image, Mat darkImg, Color color, Content content, string name) :
+	name(name),
+	image(image),
+	color(color),
+	wildColor(NONE),
+	content(content),
+	darkImg(darkImg),
+	order((color << 8) + content) {
 } // Card(Mat, Mat, Color, Content, string) (Class Constructor)
 
 /**
@@ -113,9 +114,8 @@ Color Card::getColor() {
 
 /**
  * Valid only when this is a wild card. Get the specified following legal
- * color by the player who played this wild card.
- * <p>
- * For non-wild cards, this function will always return Color::NONE.
+ * color by the player who played this wild card. For non-wild cards, this
+ * function will always return Color::NONE.
  *
  * @return Card's wild color.
  */
@@ -184,14 +184,56 @@ const vector<Card*>& Player::getHandCards() {
 } // getHandCards()
 
 /**
- * Normally return Color::NONE, but when this player started a UNO dash with
- * a wild card, call this function to get which color this player selected.
+ * Normally return Color::NONE, but when this player started an UNO dash
+ * with a wild card, call this function to get which color was specified.
  *
  * @return This player's dangerous color.
  */
 Color Player::getDangerousColor() {
 	return handCards.size() == 1 ? recent->getWildColor() : NONE;
 } // getDangerousColor()
+
+/**
+ * Evaluate which color is the best color for this player. In our evaluation
+ * system, zero cards are worth 2 points, non-zero number cards are worth 4
+ * points, and action cards are worth 5 points. Finally, the color which
+ * contains the worthiest cards becomes the best color.
+ *
+ * @return This player's best color. Specially, when the player remains only
+ *         wild cards, function will return a default value, Color::RED.
+ */
+Color Player::calcBestColor() {
+	Color best = RED;
+	int score[5] = { 0, 0, 0, 0, 0 };
+
+	for (Card* card : handCards) {
+		if (card->isZero()) {
+			score[card->getColor()] += 2;
+		} // if (card->isZero())
+		else if (card->isAction()) {
+			score[card->getColor()] += 5;
+		} // else if (card->isAction())
+		else {
+			score[card->getColor()] += 4;
+		} // else
+	} // for (Card* card : handCards)
+
+	  // default to red, when only wild cards in hand,
+	  // function will return Color::RED
+	if (score[BLUE] > score[best]) {
+		best = BLUE;
+	} // if (score[BLUE] > score[best]
+
+	if (score[GREEN] > score[best]) {
+		best = GREEN;
+	} // if (score[GREEN] > score[best])
+
+	if (score[YELLOW] > score[best]) {
+		best = YELLOW;
+	} // if (score[YELLOW] > score[best])
+
+	return best;
+} // calcBestColor()
 
 /**
  * @return This player's recent played card, or null if this player drew one
@@ -207,45 +249,64 @@ Card* Player::getRecent() {
  * Singleton, hide default constructor.
  */
 Uno::Uno() {
-	int i;
-	bool broken;
 	Mat br[54], dk[54];
+	int i, loaded, total;
+
+	// Preparations
+	loaded = 0;
+	total = 122;
+	cout << "Loading... (" << 100 * loaded / total << "%)" << endl;
 
 	// Load background image resources
+	bgWelcome = imread("resource/bg_welcome.png");
 	bgCounter = imread("resource/bg_counter.png");
 	bgClockwise = imread("resource/bg_clockwise.png");
-	broken = bgCounter.empty();
-	broken = broken || bgCounter.rows != 720;
-	broken = broken || bgCounter.cols != 1280;
-	broken = broken || bgClockwise.empty();
-	broken = broken || bgClockwise.rows != 720;
-	broken = broken || bgClockwise.cols != 1280;
-	if (broken) {
-		// Create blank backgrounds when background resources are invalid
-		bgCounter = bgClockwise = Mat::zeros(720, 1280, CV_8UC3);
-	} // if (broken)
+	if (bgWelcome.empty() ||
+		bgWelcome.rows != 720 ||
+		bgWelcome.cols != 1280 ||
+		bgCounter.empty() ||
+		bgCounter.rows != 720 ||
+		bgCounter.cols != 1280 ||
+		bgClockwise.empty() ||
+		bgClockwise.rows != 720 ||
+		bgClockwise.cols != 1280) {
+		cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << endl;
+		exit(1);
+	} // if (bgWelcome.empty() || ...)
+	else {
+		loaded += 3;
+		cout << "Loading... (" << 100 * loaded / total << "%)" << endl;
+	} // else
 
 	// Load card back image resource
 	backImage = imread("resource/back.png");
-	broken = backImage.empty();
-	broken = broken || backImage.cols != 121;
-	broken = broken || backImage.rows != 181;
-	if (broken) {
-		throw BROKEN_IMAGE_RESOURCES_EXCEPTION;
-	} // if (broken)
+	if (backImage.empty() ||
+		backImage.rows != 181 ||
+		backImage.cols != 121) {
+		cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << endl;
+		exit(1);
+	} // if (backImage.empty() || ...)
+	else {
+		++loaded;
+		cout << "Loading... (" << 100 * loaded / total << "%)" << endl;
+	} // else
 
 	// Load difficulty image resources
 	easyImage = imread("resource/lv_easy.png");
 	hardImage = imread("resource/lv_hard.png");
-	broken = easyImage.empty();
-	broken = broken || easyImage.cols != 121;
-	broken = broken || easyImage.rows != 181;
-	broken = broken || hardImage.empty();
-	broken = broken || hardImage.cols != 121;
-	broken = broken || hardImage.rows != 181;
-	if (broken) {
-		throw BROKEN_IMAGE_RESOURCES_EXCEPTION;
-	} // if (broken)
+	if (easyImage.empty() ||
+		easyImage.rows != 181 ||
+		easyImage.cols != 121 ||
+		hardImage.empty() ||
+		hardImage.rows != 181 ||
+		hardImage.cols != 121) {
+		cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << endl;
+		exit(1);
+	} // if (easyImage.empty() || ...)
+	else {
+		loaded += 2;
+		cout << "Loading... (" << 100 * loaded / total << "%)" << endl;
+	} // else
 
 	// Load cards' front image resources
 	br[0] = imread("resource/front_r0.png");
@@ -357,15 +418,15 @@ Uno::Uno() {
 	dk[52] = imread("resource/dark_kw.png");
 	dk[53] = imread("resource/dark_kw+.png");
 	for (i = 0; i < 54; ++i) {
-		broken = br[i].empty();
-		broken = broken || br[i].cols != 121;
-		broken = broken || br[i].rows != 181;
-		broken = broken || dk[i].empty();
-		broken = broken || dk[i].cols != 121;
-		broken = broken || dk[i].rows != 181;
-		if (broken) {
-			throw BROKEN_IMAGE_RESOURCES_EXCEPTION;
-		} // if (broken)
+		if (br[i].empty() || br[i].rows != 181 || br[i].cols != 121 ||
+			dk[i].empty() || dk[i].rows != 181 || dk[i].cols != 121) {
+			cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << endl;
+			exit(1);
+		} // if (br[i].empty() || ...)
+		else {
+			loaded += 2;
+			cout << "Loading... (" << 100 * loaded / total << "%)" << endl;
+		} // else
 	} // for (i = 0; i < 54; ++i)
 
 	// Load wild & wild +4 image resources
@@ -380,15 +441,19 @@ Uno::Uno() {
 	wildDraw4Image[3] = imread("resource/front_gw+.png");
 	wildDraw4Image[4] = imread("resource/front_yw+.png");
 	for (i = 1; i < 5; ++i) {
-		broken = wildImage[i].empty();
-		broken = broken || wildImage[i].cols != 121;
-		broken = broken || wildImage[i].rows != 181;
-		broken = broken || wildDraw4Image[i].empty();
-		broken = broken || wildDraw4Image[i].cols != 121;
-		broken = broken || wildDraw4Image[i].rows != 181;
-		if (broken) {
-			throw BROKEN_IMAGE_RESOURCES_EXCEPTION;
-		} // if (broken)
+		if (wildImage[i].empty() ||
+			wildImage[i].rows != 181 ||
+			wildImage[i].cols != 121 ||
+			wildDraw4Image[i].empty() ||
+			wildDraw4Image[i].rows != 181 ||
+			wildDraw4Image[i].cols != 121) {
+			cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << endl;
+			exit(1);
+		} // if (wildImage[i].empty() || ...)
+		else {
+			loaded += 2;
+			cout << "Loading... (" << 100 * loaded / total << "%)" << endl;
+		} // else
 	} // for (i = 1; i < 5; ++i)
 
 	// Generate card table
@@ -538,7 +603,16 @@ const Mat& Uno::getHardImage() {
  * @return Background image resource in current direction.
  */
 const Mat& Uno::getBackground() {
-	return direction == DIR_RIGHT ? bgCounter : bgClockwise;
+	switch (direction) {
+	case DIR_LEFT:
+		return bgClockwise; // case DIR_LEFT
+
+	case DIR_RIGHT:
+		return bgCounter; // case DIR_RIGHT
+
+	default:
+		return bgWelcome; // default
+	} // switch (direction)
 } // getBackground()
 
 /**
@@ -751,49 +825,19 @@ Card* Uno::draw(int who) {
  *
  * @param whom Evaluate for whom. Must be one of the following values:
  *             Player::YOU, Player::COM1, Player::COM2, Player::COM3.
- * @return The best color for the specified player now. Specially, when an
- *         illegal [whom] parameter was passed in, or the specified player
- *         remains only wild cards, function will return a default value,
- *         which is Color::RED.
+ * @return Best color for the specified player now. Specially, when the
+ *         player remains only wild cards, function will return Color::RED.
+ * @deprecated Use getPlayer(whom)->calcBestColor() instead.
  */
-Color Uno::bestColorFor(int whom) {
-	Color best = RED;
-	int score[5] = { 0, 0, 0, 0, 0 };
-
-	for (Card* card : getPlayer(whom)->handCards) {
-		if (card->isZero()) {
-			score[card->color] += 2;
-		} // if (card->isZero())
-		else if (card->isAction()) {
-			score[card->color] += 5;
-		} // else if (card->isAction())
-		else {
-			score[card->color] += 4;
-		} // else
-	} // for (Card* card : getPlayer(whom)->handCards)
-
-	// default to red, when only wild cards in hand,
-	// function will return Color::RED
-	if (score[BLUE] > score[best]) {
-		best = BLUE;
-	} // if (score[BLUE] > score[best]
-
-	if (score[GREEN] > score[best]) {
-		best = GREEN;
-	} // if (score[GREEN] > score[best])
-
-	if (score[YELLOW] > score[best]) {
-		best = YELLOW;
-	} // if (score[YELLOW] > score[best])
-
-	return best;
+[[deprecated]] Color Uno::bestColorFor(int whom) {
+	return getPlayer(whom)->calcBestColor();
 } // bestColorFor()
 
 /**
  * Check whether the specified card is legal to play. It's legal only when
  * it's wild, or it has the same color/content to the previous played card.
  *
- * @param card The card you want to check whether it's legal to play.
+ * @param card Check which card's legality.
  * @return Whether the specified card is legal to play.
  */
 bool Uno::isLegalToPlay(Card* card) {
@@ -870,6 +914,10 @@ Card* Uno::play(int who, int index, Color color) {
 			used.push_back(recent.front());
 			recent.erase(recent.begin());
 		} // if (recent.size() > 5)
+
+		if (hand->size() == 0) {
+			direction = 0;
+		} // if (hand->size() == 0)
 	} // if (index < hand->size())
 
 	return card;

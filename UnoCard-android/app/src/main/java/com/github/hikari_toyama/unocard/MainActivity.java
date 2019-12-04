@@ -106,7 +106,7 @@ public class MainActivity extends AppCompatActivity
             mScr = mUno.getBackground().clone();
             mBmp = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888);
             mImgScreen = findViewById(R.id.imgMainScreen);
-            refreshScreen("Welcome to Uno game, please select difficulty");
+            refreshScreen("WELCOME TO UNO CARD GAME");
             mImgScreen.setOnTouchListener(this);
         } // if (OPENCV_INIT_SUCCESS)
         else {
@@ -122,15 +122,16 @@ public class MainActivity extends AppCompatActivity
         Card card, last;
         int i, direction;
         List<Card> hand, recent;
-        Player next, oppo, prev;
         Color bestColor, lastColor;
+        Player curr, next, oppo, prev;
         int idxBest, idxRev, idxSkip, idxDraw2;
         boolean hasZero, hasWild, hasWildDraw4;
         boolean hasNum, hasRev, hasSkip, hasDraw2;
         int idxZero, idxNum, idxWild, idxWildDraw4;
         int yourSize, nextSize, oppoSize, prevSize;
 
-        hand = mUno.getPlayer(mStatus).getHandCards();
+        curr = mUno.getPlayer(mStatus);
+        hand = curr.getHandCards();
         yourSize = hand.size();
         if (yourSize == 1) {
             // Only one card remained. Play it when it's legal.
@@ -154,7 +155,7 @@ public class MainActivity extends AppCompatActivity
         prevSize = prev.getHandCards().size();
         idxBest = idxRev = idxSkip = idxDraw2 = -1;
         idxZero = idxNum = idxWild = idxWildDraw4 = -1;
-        bestColor = mUno.bestColorFor(mStatus);
+        bestColor = curr.calcBestColor();
         recent = mUno.getRecent();
         last = recent.get(recent.size() - 1);
         if (last.isWild()) {
@@ -338,14 +339,15 @@ public class MainActivity extends AppCompatActivity
         int i, direction;
         Color dangerColor;
         List<Card> hand, recent;
-        Player next, oppo, prev;
+        Player curr, next, oppo, prev;
         int idxBest, idxRev, idxSkip, idxDraw2;
         boolean hasZero, hasWild, hasWildDraw4;
         boolean hasNum, hasRev, hasSkip, hasDraw2;
         int idxZero, idxNum, idxWild, idxWildDraw4;
         int yourSize, nextSize, oppoSize, prevSize;
 
-        hand = mUno.getPlayer(mStatus).getHandCards();
+        curr = mUno.getPlayer(mStatus);
+        hand = curr.getHandCards();
         yourSize = hand.size();
         if (yourSize == 1) {
             // Only one card remained. Play it when it's legal.
@@ -369,7 +371,7 @@ public class MainActivity extends AppCompatActivity
         prevSize = prev.getHandCards().size();
         idxBest = idxRev = idxSkip = idxDraw2 = -1;
         idxZero = idxNum = idxWild = idxWildDraw4 = -1;
-        bestColor = mUno.bestColorFor(mStatus);
+        bestColor = curr.calcBestColor();
         recent = mUno.getRecent();
         last = recent.get(recent.size() - 1);
         if (last.isWild()) {
@@ -442,7 +444,7 @@ public class MainActivity extends AppCompatActivity
                 idxBest = idxDraw2;
             } // if (hasDraw2)
             else if (lastColor == dangerColor) {
-                // Your next player played a wild card, started a UNO dash in
+                // Your next player played a wild card, started an UNO dash in
                 // its last action, and what's worse is that the legal color has
                 // not been changed yet. You have to change the following legal
                 // color, or you will approximately 100% lose this game.
@@ -461,7 +463,7 @@ public class MainActivity extends AppCompatActivity
                     idxBest = idxSkip;
                 } // else if (hasSkip)
                 else if (hasWildDraw4) {
-                    // Now start to use wild cards. Use [wild +4] cards priorly,
+                    // Now start to use wild cards. Use [wild +4] cards firstly,
                     // because this card makes your next player draw four cards.
                     while (bestColor == oppo.getDangerousColor() ||
                             bestColor == prev.getDangerousColor()) {
@@ -490,7 +492,7 @@ public class MainActivity extends AppCompatActivity
                 } // else if (hasRev)
             } // else if (lastColor == dangerColor)
             else if (dangerColor != Color.NONE) {
-                // Your next player played a wild card, started a UNO dash in
+                // Your next player played a wild card, started an UNO dash in
                 // its last action, but fortunately the legal color has been
                 // changed already. Just be careful not to re-change the legal
                 // color to the dangerous color again.
@@ -510,7 +512,7 @@ public class MainActivity extends AppCompatActivity
                 } // else if (hasRev && ...)
             } // else if (dangerColor != Color.NONE)
             else if (hasWildDraw4) {
-                // Your next player started a UNO dash without playing a wild
+                // Your next player started an UNO dash without playing a wild
                 // card, so use normal defense strategies. Firstly play a
                 // [wild +4] to make your next player draw four cards, even if
                 // the legal color is already your best color!
@@ -544,7 +546,7 @@ public class MainActivity extends AppCompatActivity
             // action.
             dangerColor = prev.getDangerousColor();
             if (lastColor == dangerColor) {
-                // Your previous player played a wild card, started a UNO dash
+                // Your previous player played a wild card, started an UNO dash
                 // in its last action. You have to change the following legal
                 // color, or you will approximately 100% lose this game.
                 if (hasSkip && hand.get(idxSkip).getColor() != dangerColor) {
@@ -578,7 +580,7 @@ public class MainActivity extends AppCompatActivity
                     // When you have no wild cards, play a number card and try
                     // to get help from other players. In order to increase your
                     // following players' possibility of changing the legal
-                    // color, do not play zero cards priorly.
+                    // color, do not play zero cards preferentially.
                     idxBest = idxNum;
                 } // else if (hasNum)
                 else if (hasZero) {
@@ -586,10 +588,10 @@ public class MainActivity extends AppCompatActivity
                 } // else if (hasZero)
             } // if (lastColor == dangerColor)
             else if (hasNum) {
-                // Your next player started a UNO dash without playing a wild
-                // card, so use normal defense strategies. In order to increase
-                // your following players' possibility of changing the legal
-                // color, do not play zero cards priorly.
+                // Your previous player started an UNO dash without playing a
+                // wild card, so use normal defense strategies. In order to
+                // increase your following players' possibility of changing the
+                // legal color, do not play zero cards preferentially.
                 idxBest = idxNum;
             } // else if (hasNum)
             else if (hasZero) {
@@ -608,7 +610,7 @@ public class MainActivity extends AppCompatActivity
             // directly limit your opposite player's action.
             dangerColor = oppo.getDangerousColor();
             if (lastColor == dangerColor) {
-                // Your opposite player played a wild card, started a UNO dash
+                // Your opposite player played a wild card, started an UNO dash
                 // in its last action, and what's worse is that the legal color
                 // has not been changed yet. You have to change the following
                 // legal color, or you will approximately 100% lose this game.
@@ -663,7 +665,7 @@ public class MainActivity extends AppCompatActivity
                 } // else if (hasZero)
             } // if (lastColor == dangerColor)
             else if (dangerColor != Color.NONE) {
-                // Your opposite player played a wild card, started a UNO dash
+                // Your opposite player played a wild card, started an UNO dash
                 // in its last action, but fortunately the legal color has been
                 // changed already. Just be careful not to re-change the legal
                 // color to the dangerous color again.
@@ -686,7 +688,7 @@ public class MainActivity extends AppCompatActivity
                 } // else if (hasRev && ...)
             } // else if (dangerColor != Color.NONE)
             else if (hasRev && prevSize - nextSize >= 3) {
-                // Your opposite player started a UNO dash without playing a
+                // Your opposite player started an UNO dash without playing a
                 // wild card, so use normal defense strategies. Firstly play a
                 // [reverse] when your next player remains only a few cards but
                 // your previous player remains a lot of cards, because your
@@ -697,7 +699,7 @@ public class MainActivity extends AppCompatActivity
             else if (hasNum) {
                 // Then you can play a number card. In order to increase your
                 // next player's possibility of changing the legal color, do
-                // not play zero cards priorly.
+                // not play zero cards preferentially.
                 idxBest = idxNum;
             } // else if (hasNum)
             else if (hasZero) {
@@ -1006,15 +1008,15 @@ public class MainActivity extends AppCompatActivity
         // For welcome screen, only show difficulty buttons and winning rates
         if (status == STAT_WELCOME) {
             image = mUno.getEasyImage();
-            roi = new Rect(338, 270, 121, 181);
+            roi = new Rect(420, 270, 121, 181);
             image.copyTo(new Mat(mScr, roi), image);
             image = mUno.getHardImage();
-            roi.x = 822;
+            roi.x = 740;
             roi.y = 270;
             image.copyTo(new Mat(mScr, roi), image);
             easyRate = (mEasyTotal == 0 ? 0 : 100 * mEasyWin / mEasyTotal);
             hardRate = (mHardTotal == 0 ? 0 : 100 * mHardWin / mHardTotal);
-            info = easyRate + "%     [WINNING RATE]     " + hardRate + "%";
+            info = easyRate + "% [WinningRate] " + hardRate + "%";
             textSize = Imgproc.getTextSize(info, FONT_SANS, 1.0, 1, null);
             point.x = 640 - textSize.width / 2;
             point.y = 250;
@@ -1031,7 +1033,7 @@ public class MainActivity extends AppCompatActivity
         hand = mUno.getRecent();
         size = hand.size();
         width = 45 * size + 75;
-        roi.x = 882 - width / 2;
+        roi.x = 792 - width / 2;
         roi.y = 270;
         for (Card recent : hand) {
             if (recent.getContent() == Content.WILD) {
@@ -1442,18 +1444,18 @@ public class MainActivity extends AppCompatActivity
             else switch (mStatus) {
                 case STAT_WELCOME:
                     if (y >= 270 && y <= 450) {
-                        if (x >= 338 && x <= 458) {
+                        if (x >= 420 && x <= 540) {
                             // Difficulty: EASY
                             mDifficulty = LV_EASY;
                             mStatus = STAT_NEW_GAME;
                             onStatusChanged(mStatus);
-                        } // if (x >= 338 && x <= 458)
-                        else if (x >= 822 && x <= 942) {
+                        } // if (x >= 420 && x <= 540)
+                        else if (x >= 740 && x <= 860) {
                             // Difficulty: HARD
                             mDifficulty = LV_HARD;
                             mStatus = STAT_NEW_GAME;
                             onStatusChanged(mStatus);
-                        } // else if (x >= 822 && x <= 942)
+                        } // else if (x >= 740 && x <= 860)
                     } // if (y >= 270 && y <= 450)
                     break; // case STAT_WELCOME
 

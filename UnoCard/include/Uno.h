@@ -82,9 +82,8 @@ public:
 
 	/**
 	 * Valid only when this is a wild card. Get the specified following legal
-	 * color by the player who played this wild card.
-	 * <p>
-	 * For non-wild cards, this function will always return Color::NONE.
+	 * color by the player who played this wild card. For non-wild cards, this
+	 * function will always return Color::NONE.
 	 *
 	 * @return Card's wild color.
 	 */
@@ -176,7 +175,7 @@ private:
 }; // Card Class
 
 /**
- * Store a Uno player's real-time information,
+ * Store an Uno player's real-time information,
  * such as hand cards, and recent played card.
  */
 class Player {
@@ -207,12 +206,23 @@ public:
 	const std::vector<Card*>& getHandCards();
 
 	/**
-	 * Normally return Color::NONE, but when this player started a UNO dash with
-	 * a wild card, call this function to get which color this player selected.
+	 * Normally return Color::NONE, but when this player started an UNO dash
+	 * with a wild card, call this function to get which color was specified.
 	 *
 	 * @return This player's dangerous color.
 	 */
 	Color getDangerousColor();
+
+	/**
+	 * Evaluate which color is the best color for this player. In our evaluation
+	 * system, zero cards are worth 2 points, non-zero number cards are worth 4
+	 * points, and action cards are worth 5 points. Finally, the color which
+	 * contains the worthiest cards becomes the best color.
+	 *
+	 * @return This player's best color. Specially, when the player remains only
+	 *         wild cards, function will return a default value, Color::RED.
+	 */
+	Color calcBestColor();
 
 	/**
 	 * @return This player's recent played card, or null if this player drew one
@@ -385,18 +395,17 @@ public:
 	 *
 	 * @param whom Evaluate for whom. Must be one of the following values:
 	 *             Player::YOU, Player::COM1, Player::COM2, Player::COM3.
-	 * @return The best color for the specified player now. Specially, when an
-	 *         illegal [whom] parameter was passed in, or the specified player
-	 *         remains only wild cards, function will return a default value,
-	 *         which is Color::RED.
+	 * @return Best color for the specified player now. Specially, when the
+	 *         player remains only wild cards, function will return Color::RED.
+	 * @deprecated Use getPlayer(whom)->calcBestColor() instead.
 	 */
-	Color bestColorFor(int whom);
+	[[deprecated]] Color bestColorFor(int whom);
 
 	/**
 	 * Check whether the specified card is legal to play. It's legal only when
 	 * it's wild, or it has the same color/content to the previous played card.
 	 *
-	 * @param card The card you want to check whether it's legal to play.
+	 * @param card Check which card's legality.
 	 * @return Whether the specified card is legal to play.
 	 */
 	bool isLegalToPlay(Card* card);
@@ -442,6 +451,11 @@ private:
 	cv::Mat hardImage;
 
 	/**
+	 * Background image resource (for welcome screen).
+	 */
+	cv::Mat bgWelcome;
+
+	/**
 	 * Background image resource (Direction: COUTNER CLOCKWISE).
 	 */
 	cv::Mat bgCounter;
@@ -464,7 +478,7 @@ private:
 	/**
 	 * Current action sequence (DIR_LEFT / DIR_RIGHT).
 	 */
-	int direction = DIR_LEFT;
+	int direction = 0;
 
 	/**
 	 * Game players.
