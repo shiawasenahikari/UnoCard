@@ -27,6 +27,9 @@ static const int STAT_WELCOME = 0x2222;
 static const int STAT_NEW_GAME = 0x3333;
 static const int STAT_GAME_OVER = 0x4444;
 static const int STAT_WILD_COLOR = 0x5555;
+static const int STAT_CHALLENGE_ASK = 0x6666;
+static const int STAT_CHALLENGE_SUBMIT = 0x7777;
+static const int STAT_CHALLENGE_ABSTAIN = 0x8888;
 static const Scalar RGB_RED = CV_RGB(0xFF, 0x55, 0x55);
 static const Scalar RGB_BLUE = CV_RGB(0x55, 0x55, 0xFF);
 static const Scalar RGB_GREEN = CV_RGB(0x55, 0xAA, 0x55);
@@ -58,10 +61,13 @@ static int sEasyTotal;
 static int sHardTotal;
 static int sDifficulty;
 static bool sAIRunning;
+static int sChallengerID;
+static int sDraw4PlayerID;
 
 // Functions
 static void easyAI();
 static void hardAI();
+static void challengeAI();
 static void onStatusChanged(int status);
 static void refreshScreen(string message);
 static void play(int index, Color color = NONE);
@@ -852,14 +858,62 @@ static void hardAI() {
 } // hardAI()
 
 /**
+ * AI strategies when determining whether it's necessary to
+ * challenge previous player's [wild +4] card.
+ */
+static void challengeAI() {
+	bool challenge;
+	Card* next2last;
+	Color draw4Color;
+	Player* challenger;
+	vector<Card*> recent;
+	Color colorBeforeDraw4;
+
+	challenger = sUno->getPlayer(sChallengerID);
+	if (challenger->getHandCards().size() == 1) {
+		// Challenge when defending my UNO dash
+		challenge = true;
+	} // if (challenger->getHandCards().size() == 1)
+	else {
+		// Challenge when legal color has not been changed
+		recent = sUno->getRecent();
+		next2last = recent.at(recent.size() - 2);
+		if (next2last->isWild()) {
+			colorBeforeDraw4 = next2last->getWildColor();
+		} // if (next2last->isWild())
+		else {
+			colorBeforeDraw4 = next2last->getColor();
+		} // else
+
+		draw4Color = recent.at(recent.size() - 1)->getWildColor();
+		challenge = draw4Color == colorBeforeDraw4;
+	} // else
+
+	if (challenge) {
+		sStatus = STAT_CHALLENGE_SUBMIT;
+	} // if (challenge)
+	else {
+		sStatus = STAT_CHALLENGE_ABSTAIN;
+	} // else
+
+	onStatusChanged(sStatus);
+} // challengeAI()
+
+/**
  * Triggered when the value of global value [sStatus] changed.
  *
  * @param status New status value.
  */
 static void onStatusChanged(int status) {
-	static Rect rect;
-	static Size axes;
-	static Point center;
+	Rect rect;
+	Size axes;
+	Point center;
+	string message;
+	Card* next2last;
+	bool draw4IsLegal;
+	Player* draw4Player;
+	vector<Card*> recent;
+	Color colorBeforeDraw4;
 
 	switch (status) {
 	case STAT_NEW_GAME:
@@ -910,6 +964,90 @@ static void onStatusChanged(int status) {
 		imshow("Uno", sScreen);
 		break; // case STAT_WILD_COLOR
 
+	case STAT_CHALLENGE_ASK:
+		// When current player played a [wild +4], the next player can challenge
+		// its legality. According to the rule, only when you have no cards that
+		// match the previous played card's color, you can play a [wild +4].
+		// Next player does not challenge: next player draw 4 cards;
+		// Challenge success: current player draw 4 cards.
+		// Challenge failure: next player draw 6 cards;
+		sChallengerID = (sDraw4PlayerID + sUno->getDirection()) % 4;
+		if (sChallengerID == Player::YOU && !sAuto) {
+			refreshScreen("^ Challenge the legality of Wild +4?");
+			rect = Rect(338, 270, 121, 181);
+			sUno->getBackground()(rect).copyTo(sScreen(rect));
+			center = Point(368, 360);
+			axes = Size(90, 90);
+			ellipse(sScreen, center, axes, 0, 0, -180, RGB_GREEN, -1, 16);
+			ellipse(sScreen, center, axes, 0, 0, 180, RGB_RED, -1, 16);
+			putText(sScreen, "YES", Point(338, 340), FONT_SANS, 1.0, RGB_WHITE);
+			putText(sScreen, "NO", Point(345, 402), FONT_SANS, 1.0, RGB_WHITE);
+			imshow("Uno", sScreen);
+		} // if (sChallengerID == Player::YOU && !sAuto)
+		else {
+			challengeAI();
+		} // else
+		break; // case STAT_CHALLENGE_ASK
+
+	case STAT_CHALLENGE_SUBMIT:
+		message = NAME[sChallengerID] + " challenged " + NAME[sDraw4PlayerID];
+		refreshScreen(message);
+		WAIT_MS(1500);
+		recent = sUno->getRecent();
+		next2last = recent.at(recent.size() - 2);
+		if (next2last->isWild()) {
+			colorBeforeDraw4 = next2last->getWildColor();
+		} // if (next2last->isWild())
+		else {
+			colorBeforeDraw4 = next2last->getColor();
+		} // else
+
+		draw4Player = sUno->getPlayer(sDraw4PlayerID);
+		draw4IsLegal = true;
+		for (Card* card : draw4Player->getHandCards()) {
+			if (card->getColor() == colorBeforeDraw4) {
+				// Found a hand card whose color matches the next-to-last
+				// recent played card, [wild +4] has been used illegally
+				draw4IsLegal = false;
+				break;
+			} // if (card->getColor() == colorBeforeDraw4)
+		} // for (Card* card : draw4Player->getHandCards())
+
+		if (draw4IsLegal) {
+			// Challenge failure, challenger draws 6 cards
+			message = "Challenge failure, " + NAME[sChallengerID];
+			if (sChallengerID == Player::YOU) {
+				message += " draw 6 cards";
+			} // if (sChallengerID == Player::YOU)
+			else {
+				message += " draws 6 cards";
+			} // else
+
+			refreshScreen(message);
+			WAIT_MS(1500);
+			draw(sChallengerID, 6);
+		} // if (draw4IsLegal)
+		else {
+			// Challenge success, who played [wild +4] draws 4 cards
+			message = "Challenge success, " + NAME[sDraw4PlayerID];
+			if (sDraw4PlayerID == Player::YOU) {
+				message += " draw 4 cards";
+			} // if (sDraw4PlayerID == Player::YOU)
+			else {
+				message += " draws 4 cards";
+			} // else
+
+			refreshScreen(message);
+			WAIT_MS(1500);
+			draw(sDraw4PlayerID, 4);
+		} // else
+		break; // case STAT_CHALLENGE_SUBMIT
+
+	case STAT_CHALLENGE_ABSTAIN:
+		// Challenge abstained, next player draw 4 cards
+		draw(sChallengerID, 4);
+		break; // case STAT_CHALLENGE_ABSTAIN
+
 	case Player::COM1:
 	case Player::COM2:
 	case Player::COM3:
@@ -953,6 +1091,7 @@ static void refreshScreen(string message) {
 	Rect roi;
 	Mat image;
 	Point point;
+	bool beChallenged;
 	stringstream buff;
 	vector<Card*> hand;
 	int i, status, size, width, height, remain, used, easyRate, hardRate;
@@ -1047,14 +1186,17 @@ static void refreshScreen(string message) {
 			height = 40 * size + 140;
 			roi.x = 20;
 			roi.y = 360 - height / 2;
-			if (sTest || status == STAT_GAME_OVER) {
-				// Show remained cards to everyone when testing or game over
+			beChallenged = sStatus == STAT_CHALLENGE_SUBMIT;
+			beChallenged = beChallenged && sDraw4PlayerID == Player::COM1;
+			if (beChallenged || sTest || status == STAT_GAME_OVER) {
+				// Show remained cards to everyone
+				// when being challenged, testing, or game over
 				for (Card* card : hand) {
 					image = card->getImage();
 					image.copyTo(sScreen(roi), image);
 					roi.y += 40;
 				} // for (Card* card : hand)
-			} // if (sTest || status == STAT_GAME_OVER)
+			} // if (beChallenged || sTest || status == STAT_GAME_OVER)
 			else {
 				// Only show card backs in game process
 				image = sUno->getBackImage();
@@ -1087,14 +1229,17 @@ static void refreshScreen(string message) {
 			width = 45 * size + 75;
 			roi.x = 640 - width / 2;
 			roi.y = 20;
-			if (sTest || status == STAT_GAME_OVER) {
-				// Show remained hand cards when testing or game over
+			beChallenged = sStatus == STAT_CHALLENGE_SUBMIT;
+			beChallenged = beChallenged && sDraw4PlayerID == Player::COM2;
+			if (beChallenged || sTest || status == STAT_GAME_OVER) {
+				// Show remained cards to everyone
+				// when being challenged, testing, or game over
 				for (Card* card : hand) {
 					image = card->getImage();
 					image.copyTo(sScreen(roi), image);
 					roi.x += 45;
 				} // for (Card* card : hand)
-			} // if (sTest || status == STAT_GAME_OVER)
+			} // if (beChallenged || sTest || status == STAT_GAME_OVER)
 			else {
 				// Only show card backs in game process
 				image = sUno->getBackImage();
@@ -1127,14 +1272,17 @@ static void refreshScreen(string message) {
 			height = 40 * size + 140;
 			roi.x = 1140;
 			roi.y = 360 - height / 2;
-			if (sTest || status == STAT_GAME_OVER) {
-				// Show remained hand cards when testing or game over
+			beChallenged = sStatus == STAT_CHALLENGE_SUBMIT;
+			beChallenged = beChallenged && sDraw4PlayerID == Player::COM3;
+			if (beChallenged || sTest || status == STAT_GAME_OVER) {
+				// Show remained cards to everyone
+				// when being challenged, testing, or game over
 				for (Card* card : hand) {
 					image = card->getImage();
 					image.copyTo(sScreen(roi), image);
 					roi.y += 40;
 				} // for (Card* card : hand)
-			} // if (sTest || status == STAT_GAME_OVER)
+			} // if (beChallenged || sTest || status == STAT_GAME_OVER)
 			else {
 				// Only show card backs in game process
 				image = sUno->getBackImage();
@@ -1310,12 +1458,14 @@ static void play(int index, Color color) {
 				break; // case WILD
 
 			case WILD_DRAW4:
+				sDraw4PlayerID = now;
 				direction = sUno->getDirection();
 				next = (now + direction) % 4;
 				message += ": Let " + NAME[next] + " draw 4 cards";
 				refreshScreen(message);
 				WAIT_MS(1500);
-				draw(next, 4);
+				sStatus = STAT_CHALLENGE_ASK;
+				onStatusChanged(sStatus);
 				break; // case WILD_DRAW4
 
 			default:
@@ -1458,8 +1608,9 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 			sAuto = !sAuto;
 			switch (sStatus) {
 			case Player::YOU:
+			case STAT_CHALLENGE_ASK:
 				onStatusChanged(sStatus);
-				break; // case Player::YOU
+				break; // case Player::YOU, STAT_CHALLENGE_ASK
 
 			case STAT_WILD_COLOR:
 				sStatus = Player::YOU;
@@ -1554,6 +1705,21 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 				onStatusChanged(sStatus);
 			} // else
 			break; // case STAT_WILD_COLOR
+
+		case STAT_CHALLENGE_ASK:
+			if (x > 304 && x < 432) {
+				if (y > 296 && y < 360) {
+					// YES button, challenge wild +4
+					sStatus = STAT_CHALLENGE_SUBMIT;
+					onStatusChanged(sStatus);
+				} // if (y > 296 && y < 360)
+				else if (y > 360 && y < 424) {
+					// NO button, do not challenge wild +4
+					sStatus = STAT_CHALLENGE_ABSTAIN;
+					onStatusChanged(sStatus);
+				} // else if (y > 360 && y < 424)
+			} // if (x > 304 && x < 432)
+			break; // case STAT_CHALLENGE_ASK
 
 		case STAT_GAME_OVER:
 			if (y >= 270 && y <= 450 && x >= 338 && x <= 458) {

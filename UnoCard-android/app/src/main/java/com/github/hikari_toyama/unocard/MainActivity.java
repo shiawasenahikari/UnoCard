@@ -58,6 +58,9 @@ public class MainActivity extends AppCompatActivity
     private static final Scalar RGB_BLUE = new Scalar(0x55, 0x55, 0xFF);
     private static final Scalar RGB_RED = new Scalar(0xFF, 0x55, 0x55);
     private static final int FONT_SANS = Core.FONT_HERSHEY_DUPLEX;
+    private static final int STAT_CHALLENGE_ABSTAIN = 0x8888;
+    private static final int STAT_CHALLENGE_SUBMIT = 0x7777;
+    private static final int STAT_CHALLENGE_ASK = 0x6666;
     private static final int STAT_WILD_COLOR = 0x5555;
     private static final int STAT_GAME_OVER = 0x4444;
     private static final int STAT_NEW_GAME = 0x3333;
@@ -66,6 +69,8 @@ public class MainActivity extends AppCompatActivity
     private static final int LV_HARD = 1;
     private static final int LV_EASY = 0;
     private ImageView mImgScreen;
+    private int mDraw4PlayerID;
+    private int mChallengerID;
     private Handler mHandler;
     private int mDifficulty;
     private int mWildIndex;
@@ -826,6 +831,48 @@ public class MainActivity extends AppCompatActivity
     } // hardAI()
 
     /**
+     * AI strategies when determining whether it's necessary to
+     * challenge previous player's [wild +4] card.
+     */
+    private void challengeAI() {
+        Card next2last;
+        Color draw4Color;
+        Player challenger;
+        boolean challenge;
+        List<Card> recent;
+        Color colorBeforeDraw4;
+
+        challenger = mUno.getPlayer(mChallengerID);
+        if (challenger.getHandCards().size() == 1) {
+            // Challenge when defending my UNO dash
+            challenge = true;
+        } // if (challenger.getHandCards().size() == 1)
+        else {
+            // Challenge when legal color has not been changed
+            recent = mUno.getRecent();
+            next2last = recent.get(recent.size() - 2);
+            if (next2last.isWild()) {
+                colorBeforeDraw4 = next2last.getWildColor();
+            } // if (next2last.isWild())
+            else {
+                colorBeforeDraw4 = next2last.getColor();
+            } // else
+
+            draw4Color = recent.get(recent.size() - 1).getWildColor();
+            challenge = draw4Color == colorBeforeDraw4;
+        } // else
+
+        if (challenge) {
+            mStatus = STAT_CHALLENGE_SUBMIT;
+        } // if (challenge)
+        else {
+            mStatus = STAT_CHALLENGE_ABSTAIN;
+        } // else
+
+        onStatusChanged(mStatus);
+    } // challengeAI()
+
+    /**
      * Triggered when the value of member [mStatus] changed.
      *
      * @param status New status value.
@@ -834,6 +881,7 @@ public class MainActivity extends AppCompatActivity
         Rect rect;
         Size axes;
         Point center;
+        String message;
         Mat areaToErase;
         Runnable delayedTask;
 
@@ -938,6 +986,148 @@ public class MainActivity extends AppCompatActivity
                 mImgScreen.setImageBitmap(mBmp);
                 break; // case STAT_WILD_COLOR
 
+            case STAT_CHALLENGE_ASK:
+                // When current player played a [wild +4], the next player can
+                // challenge its legality. According to the rule, only when you
+                // have no cards that match the previous played card's color,
+                // you can play a [wild +4].
+                // Next player does not challenge: next player draw 4 cards;
+                // Challenge success: current player draw 4 cards;
+                // Challenge failure: next player draw 6 cards.
+                mChallengerID = (mDraw4PlayerID + mUno.getDirection()) % 4;
+                if (mChallengerID == Player.YOU && !mAuto) {
+                    refreshScreen("^ Challenge the legality of Wild +4?");
+                    rect = new Rect(338, 270, 121, 181);
+                    areaToErase = new Mat(mUno.getBackground(), rect);
+                    areaToErase.copyTo(new Mat(mScr, rect));
+                    center = new Point(405, 315);
+                    axes = new Size(135, 135);
+
+                    // Draw YES button
+                    Imgproc.ellipse(
+                            /* img        */ mScr,
+                            /* center     */ center,
+                            /* axes       */ axes,
+                            /* angle      */ 0,
+                            /* startAngle */ 0,
+                            /* endAngle   */ -180,
+                            /* color      */ RGB_GREEN,
+                            /* thickness  */ -1,
+                            /* lineType   */ Imgproc.LINE_AA
+                    ); // Imgproc.ellipse()
+                    Imgproc.putText(
+                            /* img       */ mScr,
+                            /* text      */ "YES",
+                            /* org       */ new Point(375, 295),
+                            /* fontFace  */ FONT_SANS,
+                            /* fontScale */ 1.0,
+                            /* color     */ RGB_WHITE
+                    ); // Imgproc.putText()
+
+                    // Draw NO button
+                    Imgproc.ellipse(
+                            /* img        */ mScr,
+                            /* center     */ center,
+                            /* axes       */ axes,
+                            /* angle      */ 0,
+                            /* startAngle */ 0,
+                            /* endAngle   */ 180,
+                            /* color      */ RGB_RED,
+                            /* thickness  */ -1,
+                            /* lineType   */ Imgproc.LINE_AA
+                    ); // Imgproc.ellipse()
+                    Imgproc.putText(
+                            /* img        */ mScr,
+                            /* text       */ "NO",
+                            /* org        */ new Point(382, 357),
+                            /* fontFace   */ FONT_SANS,
+                            /* fontScale  */ 1.0,
+                            /* color      */ RGB_WHITE
+                    ); // Imgproc.putText()
+
+                    // Show screen
+                    Utils.matToBitmap(mScr, mBmp);
+                    mImgScreen.setImageBitmap(mBmp);
+                } // if (mChallengerID == Player.YOU && !mAuto)
+                else {
+                    challengeAI();
+                } // else
+                break; // case STAT_CHALLENGE_ASK
+
+            case STAT_CHALLENGE_SUBMIT:
+                message = NAME[mChallengerID] + " challenged "
+                        + NAME[mDraw4PlayerID];
+                refreshScreen(message);
+                delayedTask = () -> {
+                    Card next2last;
+                    StringBuilder sb;
+                    List<Card> recent;
+                    Player draw4Player;
+                    boolean draw4IsLegal;
+                    Color colorBeforeDraw4;
+
+                    recent = mUno.getRecent();
+                    next2last = recent.get(recent.size() - 2);
+                    if (next2last.isWild()) {
+                        colorBeforeDraw4 = next2last.getWildColor();
+                    } // if (next2last.isWild())
+                    else {
+                        colorBeforeDraw4 = next2last.getColor();
+                    } // else
+
+                    draw4Player = mUno.getPlayer(mDraw4PlayerID);
+                    draw4IsLegal = true;
+                    for (Card card : draw4Player.getHandCards()) {
+                        if (card.getColor() == colorBeforeDraw4) {
+                            // Found a hand card whose color matches the
+                            // next-to-last recent played card, [wild +4]
+                            // has been used illegally
+                            draw4IsLegal = false;
+                            break;
+                        } // if (card.getColor() == colorBeforeDraw4)
+                    } // for (Card card : draw4Player.getHandCards())
+
+                    if (draw4IsLegal) {
+                        // Challenge failure, challenger draws 6 cards
+                        sb = new StringBuilder("Challenge failure, ");
+                        sb.append(NAME[mChallengerID]);
+                        if (mChallengerID == Player.YOU) {
+                            sb.append(" draw 6 cards");
+                        } // if (mChallengerID == Player.YOU)
+                        else {
+                            sb.append(" draws 6 cards");
+                        } // else
+
+                        refreshScreen(sb.toString());
+                        mHandler.postDelayed(
+                                () -> draw(mChallengerID, 6), 1500
+                        ); // mHandler.postDelayed()
+                    } // if (draw4IsLegal)
+                    else {
+                        // Challenge success, who played [wild +4] draws 4 cards
+                        sb = new StringBuilder("Challenge success, ");
+                        sb.append(NAME[mDraw4PlayerID]);
+                        if (mDraw4PlayerID == Player.YOU) {
+                            sb.append(" draw 4 cards");
+                        } // if (mDraw4PlayerID == Player.YOU)
+                        else {
+                            sb.append(" draws 4 cards");
+                        } // else
+
+                        refreshScreen(sb.toString());
+                        mHandler.postDelayed(
+                                () -> draw(mDraw4PlayerID, 4), 1500
+                        ); // mHandler.postDelayed()
+                    } // else
+                }; // delayedTask = () -> {}
+                mHandler.postDelayed(delayedTask, 1500);
+                break; // case STAT_CHALLENGE_SUBMIT
+
+            case STAT_CHALLENGE_ABSTAIN:
+                // Challenge abstained, next player draw 4 cards
+                draw(mChallengerID, 4);
+                break; // case STAT_CHALLENGE_ABSTAIN
+
             case Player.COM1:
             case Player.COM2:
             case Player.COM3:
@@ -981,6 +1171,7 @@ public class MainActivity extends AppCompatActivity
         String info;
         Size textSize;
         List<Card> hand;
+        boolean beChallenged;
         int i, status, size, width, height;
         int remain, used, easyRate, hardRate;
 
@@ -1071,14 +1262,17 @@ public class MainActivity extends AppCompatActivity
             height = 40 * size + 140;
             roi.x = 20;
             roi.y = 360 - height / 2;
-            if (status == STAT_GAME_OVER) {
-                // Show remained cards to everyone when game over
+            beChallenged = mStatus == STAT_CHALLENGE_SUBMIT;
+            beChallenged = beChallenged && mDraw4PlayerID == Player.COM1;
+            if (beChallenged || status == STAT_GAME_OVER) {
+                // Show remained cards to everyone
+                // when being challenged or game over
                 for (Card card : hand) {
                     image = card.getImage();
                     image.copyTo(new Mat(mScr, roi), image);
                     roi.y += 40;
                 } // for (Card card : hand)
-            } // if (status == STAT_GAME_OVER)
+            } // if (beChallenged || status == STAT_GAME_OVER)
             else {
                 // Only show card backs in game process
                 image = mUno.getBackImage();
@@ -1109,14 +1303,17 @@ public class MainActivity extends AppCompatActivity
             width = 45 * size + 75;
             roi.x = 640 - width / 2;
             roi.y = 20;
-            if (status == STAT_GAME_OVER) {
-                // Show remained hand cards when game over
+            beChallenged = mStatus == STAT_CHALLENGE_SUBMIT;
+            beChallenged = beChallenged && mDraw4PlayerID == Player.COM2;
+            if (beChallenged || status == STAT_GAME_OVER) {
+                // Show remained hand cards
+                // when being challenged or game over
                 for (Card card : hand) {
                     image = card.getImage();
                     image.copyTo(new Mat(mScr, roi), image);
                     roi.x += 45;
                 } // for (Card card : hand)
-            } // if (status == STAT_GAME_OVER)
+            } // if (beChallenged || status == STAT_GAME_OVER)
             else {
                 // Only show card backs in game process
                 image = mUno.getBackImage();
@@ -1147,14 +1344,17 @@ public class MainActivity extends AppCompatActivity
             height = 40 * size + 140;
             roi.x = 1140;
             roi.y = 360 - height / 2;
-            if (status == STAT_GAME_OVER) {
-                // Show remained hand cards when game over
+            beChallenged = mStatus == STAT_CHALLENGE_SUBMIT;
+            beChallenged = beChallenged && mDraw4PlayerID == Player.COM3;
+            if (beChallenged || status == STAT_GAME_OVER) {
+                // Show remained hand cards
+                // when being challenged or game over
                 for (Card card : hand) {
                     image = card.getImage();
                     image.copyTo(new Mat(mScr, roi), image);
                     roi.y += 40;
                 } // for (Card card : hand)
-            } // if (status == STAT_GAME_OVER)
+            } // if (beChallenged || status == STAT_GAME_OVER)
             else {
                 // Only show card backs in game process
                 image = mUno.getBackImage();
@@ -1338,12 +1538,16 @@ public class MainActivity extends AppCompatActivity
                             break; // case WILD
 
                         case WILD_DRAW4:
+                            mDraw4PlayerID = now;
                             direction = mUno.getDirection();
                             next = (now + direction) % 4;
                             message = NAME[now] + ": Let "
                                     + NAME[next] + " draw 4 cards";
                             refreshScreen(message);
-                            mHandler.postDelayed(() -> draw(next, 4), 1500);
+                            mHandler.postDelayed(() -> {
+                                mStatus = STAT_CHALLENGE_ASK;
+                                onStatusChanged(mStatus);
+                            }, 1500); // mHandler.postDelayed()
                             break; // case WILD_DRAW4
 
                         default:
@@ -1405,8 +1609,9 @@ public class MainActivity extends AppCompatActivity
                 mAuto = !mAuto;
                 switch (mStatus) {
                     case Player.YOU:
+                    case STAT_CHALLENGE_ASK:
                         onStatusChanged(mStatus);
-                        break; // case Player.YOU
+                        break; // case Player.YOU, STAT_CHALLENGE_ASK
 
                     case STAT_WILD_COLOR:
                         mStatus = Player.YOU;
@@ -1519,6 +1724,21 @@ public class MainActivity extends AppCompatActivity
                         onStatusChanged(mStatus);
                     } // else
                     break; // case STAT_WILD_COLOR
+
+                case STAT_CHALLENGE_ASK:
+                    if (x > 310 && x < 500) {
+                        if (y > 220 && y < 315) {
+                            // YES button, challenge wild +4
+                            mStatus = STAT_CHALLENGE_SUBMIT;
+                            onStatusChanged(mStatus);
+                        } // if (y > 220 && y < 315)
+                        else if (y > 315 && y < 410) {
+                            // NO button, do not challenge wild +4
+                            mStatus = STAT_CHALLENGE_ABSTAIN;
+                            onStatusChanged(mStatus);
+                        } // else if (y > 315 && y < 410)
+                    } // if (x > 310 && x < 500)
+                    break; // case STAT_CHALLENGE_ASK
 
                 case STAT_GAME_OVER:
                     if (y >= 270 && y <= 450 && x >= 338 && x <= 458) {
