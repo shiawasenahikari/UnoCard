@@ -176,40 +176,34 @@ static void easyAI() {
 		idxZero = idxNum = idxWild = idxWildDraw4 = -1;
 		bestColor = curr->calcBestColor();
 		last = sUno->getRecent().back();
-		if (last->isWild()) {
-			lastColor = last->getWildColor();
-		} // if (last->isWild())
-		else {
-			lastColor = last->getColor();
-		} // else
-
+		lastColor = last->getRealColor();
 		for (i = 0; i < yourSize; ++i) {
 			// Index of any kind
 			card = hand.at(i);
 			if (sUno->isLegalToPlay(card)) {
 				switch (card->getContent()) {
 				case NUM0:
-					if (idxZero < 0 || card->getColor() == bestColor) {
+					if (idxZero < 0 || card->getRealColor() == bestColor) {
 						idxZero = i;
-					} // if (idxZero < 0 || card->getColor() == bestColor)
+					} // if (idxZero < 0 || card->getRealColor() == bestColor)
 					break; // case NUM0
 
 				case DRAW2:
-					if (idxDraw2 < 0 || card->getColor() == bestColor) {
+					if (idxDraw2 < 0 || card->getRealColor() == bestColor) {
 						idxDraw2 = i;
-					} // if (idxDraw2 < 0 || card->getColor() == bestColor)
+					} // if (idxDraw2 < 0 || card->getRealColor() == bestColor)
 					break; // case DRAW2
 
 				case SKIP:
-					if (idxSkip < 0 || card->getColor() == bestColor) {
+					if (idxSkip < 0 || card->getRealColor() == bestColor) {
 						idxSkip = i;
-					} // if (idxSkip < 0 || card->getColor() == bestColor)
+					} // if (idxSkip < 0 || card->getRealColor() == bestColor)
 					break; // case SKIP
 
 				case REV:
-					if (idxRev < 0 || card->getColor() == bestColor) {
+					if (idxRev < 0 || card->getRealColor() == bestColor) {
 						idxRev = i;
-					} // if (idxRev < 0 || card->getColor() == bestColor)
+					} // if (idxRev < 0 || card->getRealColor() == bestColor)
 					break; // case REV
 
 				case WILD:
@@ -221,9 +215,9 @@ static void easyAI() {
 					break; // case WILD_DRAW4
 
 				default: // non-zero number cards
-					if (idxNum < 0 || card->getColor() == bestColor) {
+					if (idxNum < 0 || card->getRealColor() == bestColor) {
 						idxNum = i;
-					} // if (idxNum < 0 || card->getColor() == bestColor)
+					} // if (idxNum < 0 || card->getRealColor() == bestColor)
 					break; // default
 				} // switch (card->getContent())
 			} // if (sUno->isLegalToPlay(card))
@@ -403,40 +397,34 @@ static void hardAI() {
 		idxZero = idxNum = idxWild = idxWildDraw4 = -1;
 		bestColor = curr->calcBestColor();
 		last = sUno->getRecent().back();
-		if (last->isWild()) {
-			lastColor = last->getWildColor();
-		} // if (last->isWild())
-		else {
-			lastColor = last->getColor();
-		} // else
-
+		lastColor = last->getRealColor();
 		for (i = 0; i < yourSize; ++i) {
 			// Index of any kind
 			card = hand.at(i);
 			if (sUno->isLegalToPlay(card)) {
 				switch (card->getContent()) {
 				case NUM0:
-					if (idxZero < 0 || card->getColor() == bestColor) {
+					if (idxZero < 0 || card->getRealColor() == bestColor) {
 						idxZero = i;
-					} // if (idxZero < 0 || card->getColor() == bestColor)
+					} // if (idxZero < 0 || card->getRealColor() == bestColor)
 					break; // case NUM0
 
 				case DRAW2:
-					if (idxDraw2 < 0 || card->getColor() == bestColor) {
+					if (idxDraw2 < 0 || card->getRealColor() == bestColor) {
 						idxDraw2 = i;
-					} // if (idxDraw2 < 0 || card->getColor() == bestColor)
+					} // if (idxDraw2 < 0 || card->getRealColor() == bestColor)
 					break; // case DRAW2
 
 				case SKIP:
-					if (idxSkip < 0 || card->getColor() == bestColor) {
+					if (idxSkip < 0 || card->getRealColor() == bestColor) {
 						idxSkip = i;
-					} // if (idxSkip < 0 || card->getColor() == bestColor)
+					} // if (idxSkip < 0 || card->getRealColor() == bestColor)
 					break; // case SKIP
 
 				case REV:
-					if (idxRev < 0 || card->getColor() == bestColor) {
+					if (idxRev < 0 || card->getRealColor() == bestColor) {
 						idxRev = i;
-					} // if (idxRev < 0 || card->getColor() == bestColor)
+					} // if (idxRev < 0 || card->getRealColor() == bestColor)
 					break; // case REV
 
 				case WILD:
@@ -448,9 +436,9 @@ static void hardAI() {
 					break; // case WILD_DRAW4
 
 				default: // non-zero number cards
-					if (idxNum < 0 || card->getColor() == bestColor) {
+					if (idxNum < 0 || card->getRealColor() == bestColor) {
 						idxNum = i;
-					} // if (idxNum < 0 || card->getColor() == bestColor)
+					} // if (idxNum < 0 || card->getRealColor() == bestColor)
 					break; // default
 				} // switch (card->getContent())
 			} // if (sUno->isLegalToPlay(card))
@@ -477,14 +465,16 @@ static void hardAI() {
 				// its last action, and what's worse is that the legal color has
 				// not been changed yet. You have to change the following legal
 				// color, or you will approximately 100% lose this game.
-				if (hasZero && hand.at(idxZero)->getColor() != dangerColor) {
+				if (hasZero &&
+					hand.at(idxZero)->getRealColor() != dangerColor) {
 					// When you have no [+2] cards, you have to change the legal
 					// color, or use [wild +4] cards. At first, try to change
 					// legal color by playing a number card, instead of using
 					// wild cards.
 					idxBest = idxZero;
 				} // if (hasZero && ...)
-				else if (hasNum && hand.at(idxNum)->getColor() != dangerColor) {
+				else if (hasNum &&
+					hand.at(idxNum)->getRealColor() != dangerColor) {
 					idxBest = idxNum;
 				} // else if (hasNum && ...)
 				else if (hasSkip) {
@@ -494,10 +484,11 @@ static void hardAI() {
 				else if (hasWildDraw4) {
 					// Now start to use wild cards. Use [wild +4] cards firstly,
 					// because this card makes your next player draw four cards.
-					while (bestColor == oppo->getDangerousColor()
+					while (bestColor == dangerColor
+						|| bestColor == oppo->getDangerousColor()
 						|| bestColor == prev->getDangerousColor()) {
 						bestColor = Color(rand() % 4 + 1);
-					} // while (bestColor == oppo->getDangerousColor() || ...)
+					} // while (bestColor == dangerColor || ...)
 
 					idxBest = idxWildDraw4;
 				} // else if (hasWildDraw4)
@@ -525,20 +516,23 @@ static void hardAI() {
 				// its last action, but fortunately the legal color has been
 				// changed already. Just be careful not to re-change the legal
 				// color to the dangerous color again.
-				if (hasZero && hand.at(idxZero)->getColor() != dangerColor) {
+				if (hasZero &&
+					hand.at(idxZero)->getRealColor() != dangerColor) {
 					idxBest = idxZero;
 				} // if (hasZero && ...)
-				else if (hasNum && hand.at(idxNum)->getColor() != dangerColor) {
+				else if (hasNum &&
+					hand.at(idxNum)->getRealColor() != dangerColor) {
 					idxBest = idxNum;
 				} // else if (hasNum && ...)
-				else if (hasSkip && hand.at(idxSkip)->getColor() != dangerColor) {
+				else if (hasRev &&
+					prevSize >= 4 &&
+					hand.at(idxRev)->getRealColor() != dangerColor) {
+					idxBest = idxRev;
+				} // else if (hasRev && ...)
+				else if (hasSkip &&
+					hand.at(idxSkip)->getRealColor() != dangerColor) {
 					idxBest = idxSkip;
 				} // else if (hasSkip && ...)
-				else if (hasRev && hand.at(idxRev)->getColor() != dangerColor) {
-					if (prevSize >= 4) {
-						idxBest = idxRev;
-					} // if (prevSize >= 4)
-				} // else if (hasRev && ...)
 			} // else if (dangerColor != NONE)
 			else if (hasWildDraw4) {
 				// Your next player started an UNO dash without playing a wild
@@ -578,7 +572,8 @@ static void hardAI() {
 				// Your previous player played a wild card, started an UNO dash
 				// in its last action. You have to change the following legal
 				// color, or you will approximately 100% lose this game.
-				if (hasSkip && hand.at(idxSkip)->getColor() != dangerColor) {
+				if (hasSkip &&
+					hand.at(idxSkip)->getRealColor() != dangerColor) {
 					// When your opposite player played a [skip], and you have a
 					// [skip] with different color, play it.
 					idxBest = idxSkip;
@@ -643,21 +638,26 @@ static void hardAI() {
 				// in its last action, and what's worse is that the legal color
 				// has not been changed yet. You have to change the following
 				// legal color, or you will approximately 100% lose this game.
-				if (hasZero && hand.at(idxZero)->getColor() != dangerColor) {
+				if (hasZero &&
+					hand.at(idxZero)->getRealColor() != dangerColor) {
 					// At first, try to change legal color by playing an action
 					// card or a number card, instead of using wild cards.
 					idxBest = idxZero;
 				} // if (hasZero && ...)
-				else if (hasNum && hand.at(idxNum)->getColor() != dangerColor) {
+				else if (hasNum &&
+					hand.at(idxNum)->getRealColor() != dangerColor) {
 					idxBest = idxNum;
 				} // else if (hasNum && ...)
-				else if (hasRev && hand.at(idxRev)->getColor() != dangerColor) {
+				else if (hasRev &&
+					hand.at(idxRev)->getRealColor() != dangerColor) {
 					idxBest = idxRev;
 				} // else if (hasRev && ...)
-				else if (hasSkip && hand.at(idxSkip)->getColor() != dangerColor) {
+				else if (hasSkip &&
+					hand.at(idxSkip)->getRealColor() != dangerColor) {
 					idxBest = idxSkip;
 				} // else if (hasSkip && ...)
-				else if (hasDraw2 && hand.at(idxDraw2)->getColor() != dangerColor) {
+				else if (hasDraw2 &&
+					hand.at(idxDraw2)->getRealColor() != dangerColor) {
 					idxBest = idxDraw2;
 				} // else if (hasDraw2 && ...)
 				else if (hasWild) {
@@ -698,23 +698,27 @@ static void hardAI() {
 				// in its last action, but fortunately the legal color has been
 				// changed already. Just be careful not to re-change the legal
 				// color to the dangerous color again.
-				if (hasZero && hand.at(idxZero)->getColor() != dangerColor) {
+				if (hasZero &&
+					hand.at(idxZero)->getRealColor() != dangerColor) {
 					idxBest = idxZero;
 				} // if (hasZero && ...)
-				else if (hasNum && hand.at(idxNum)->getColor() != dangerColor) {
+				else if (hasNum &&
+					hand.at(idxNum)->getRealColor() != dangerColor) {
 					idxBest = idxNum;
 				} // else if (hasNum && ...)
-				else if (hasSkip && hand.at(idxSkip)->getColor() != dangerColor) {
+				else if (hasRev &&
+					prevSize >= 4 &&
+					hand.at(idxRev)->getRealColor() != dangerColor) {
+					idxBest = idxRev;
+				} // else if (hasRev && ...)
+				else if (hasSkip &&
+					hand.at(idxSkip)->getRealColor() != dangerColor) {
 					idxBest = idxSkip;
 				} // else if (hasSkip && ...)
-				else if (hasDraw2 && hand.at(idxDraw2)->getColor() != dangerColor) {
+				else if (hasDraw2 &&
+					hand.at(idxDraw2)->getRealColor() != dangerColor) {
 					idxBest = idxDraw2;
 				} // else if (hasDraw2 && ...)
-				else if (hasRev && hand.at(idxRev)->getColor() != dangerColor) {
-					if (prevSize >= 4) {
-						idxBest = idxRev;
-					} // if (prevSize >= 4)
-				} // else if (hasRev && ...)
 			} // else if (dangerColor != NONE)
 			else if (hasRev && prevSize - nextSize >= 3) {
 				// Your opposite player started an UNO dash without playing a
@@ -878,14 +882,8 @@ static void challengeAI() {
 		// Challenge when legal color has not been changed
 		recent = sUno->getRecent();
 		next2last = recent.at(recent.size() - 2);
-		if (next2last->isWild()) {
-			colorBeforeDraw4 = next2last->getWildColor();
-		} // if (next2last->isWild())
-		else {
-			colorBeforeDraw4 = next2last->getColor();
-		} // else
-
-		draw4Color = recent.at(recent.size() - 1)->getWildColor();
+		colorBeforeDraw4 = next2last->getRealColor();
+		draw4Color = recent.back()->getRealColor();
 		challenge = draw4Color == colorBeforeDraw4;
 	} // else
 
@@ -995,22 +993,16 @@ static void onStatusChanged(int status) {
 		WAIT_MS(1500);
 		recent = sUno->getRecent();
 		next2last = recent.at(recent.size() - 2);
-		if (next2last->isWild()) {
-			colorBeforeDraw4 = next2last->getWildColor();
-		} // if (next2last->isWild())
-		else {
-			colorBeforeDraw4 = next2last->getColor();
-		} // else
-
+		colorBeforeDraw4 = next2last->getRealColor();
 		draw4Player = sUno->getPlayer(sDraw4PlayerID);
 		draw4IsLegal = true;
 		for (Card* card : draw4Player->getHandCards()) {
-			if (card->getColor() == colorBeforeDraw4) {
+			if (card->getRealColor() == colorBeforeDraw4) {
 				// Found a hand card whose color matches the next-to-last
 				// recent played card, [wild +4] has been used illegally
 				draw4IsLegal = false;
 				break;
-			} // if (card->getColor() == colorBeforeDraw4)
+			} // if (card->getRealColor() == colorBeforeDraw4)
 		} // for (Card* card : draw4Player->getHandCards())
 
 		if (draw4IsLegal) {
@@ -1151,10 +1143,10 @@ static void refreshScreen(string message) {
 		roi.y = 270;
 		for (Card* recent : hand) {
 			if (recent->getContent() == WILD) {
-				image = sUno->getColoredWildImage(recent->getWildColor());
+				image = sUno->getColoredWildImage(recent->getRealColor());
 			} // if (recent->getContent() == WILD)
 			else if (recent->getContent() == WILD_DRAW4) {
-				image = sUno->getColoredWildDraw4Image(recent->getWildColor());
+				image = sUno->getColoredWildDraw4Image(recent->getRealColor());
 			} // else if (recent->getContent() == WILD_DRAW4)
 			else {
 				image = recent->getImage();

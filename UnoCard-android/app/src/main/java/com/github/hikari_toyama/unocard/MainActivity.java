@@ -142,7 +142,7 @@ public class MainActivity extends AppCompatActivity
             // Only one card remained. Play it when it's legal.
             card = hand.get(0);
             if (mUno.isLegalToPlay(card)) {
-                play(0, card.getColor());
+                play(0, card.getRealColor());
             } // if (mUno.isLegalToPlay(card))
             else {
                 draw(mStatus, 1);
@@ -163,40 +163,34 @@ public class MainActivity extends AppCompatActivity
         bestColor = curr.calcBestColor();
         recent = mUno.getRecent();
         last = recent.get(recent.size() - 1);
-        if (last.isWild()) {
-            lastColor = last.getWildColor();
-        } // if (last.isWild())
-        else {
-            lastColor = last.getColor();
-        } // else
-
+        lastColor = last.getRealColor();
         for (i = 0; i < yourSize; ++i) {
             // Index of any kind
             card = hand.get(i);
             if (mUno.isLegalToPlay(card)) {
                 switch (card.getContent()) {
                     case NUM0:
-                        if (idxZero < 0 || card.getColor() == bestColor) {
+                        if (idxZero < 0 || card.getRealColor() == bestColor) {
                             idxZero = i;
-                        } // if (idxZero < 0 || card.getColor() == bestColor)
+                        } // if (idxZero < 0 || ...)
                         break; // case NUM0
 
                     case DRAW2:
-                        if (idxDraw2 < 0 || card.getColor() == bestColor) {
+                        if (idxDraw2 < 0 || card.getRealColor() == bestColor) {
                             idxDraw2 = i;
-                        } // if (idxDraw2 < 0 || card.getColor() == bestColor)
+                        } // if (idxDraw2 < 0 || ...)
                         break; // case DRAW2
 
                     case SKIP:
-                        if (idxSkip < 0 || card.getColor() == bestColor) {
+                        if (idxSkip < 0 || card.getRealColor() == bestColor) {
                             idxSkip = i;
-                        } // if (idxSkip < 0 || card.getColor() == bestColor)
+                        } // if (idxSkip < 0 || ...)
                         break; // case SKIP
 
                     case REV:
-                        if (idxRev < 0 || card.getColor() == bestColor) {
+                        if (idxRev < 0 || card.getRealColor() == bestColor) {
                             idxRev = i;
-                        } // if (idxRev < 0 || card.getColor() == bestColor)
+                        } // if (idxRev < 0 || ...)
                         break; // case REV
 
                     case WILD:
@@ -208,9 +202,9 @@ public class MainActivity extends AppCompatActivity
                         break; // case WILD_DRAW4
 
                     default: // non-zero number cards
-                        if (idxNum < 0 || card.getColor() == bestColor) {
+                        if (idxNum < 0 || card.getRealColor() == bestColor) {
                             idxNum = i;
-                        } // if (idxNum < 0 || card.getColor() == bestColor)
+                        } // if (idxNum < 0 || ...)
                         break; // default
                 } // switch (card.getContent())
             } // if (mUno.isLegalToPlay(card))
@@ -358,7 +352,7 @@ public class MainActivity extends AppCompatActivity
             // Only one card remained. Play it when it's legal.
             card = hand.get(0);
             if (mUno.isLegalToPlay(card)) {
-                play(0, card.getColor());
+                play(0, card.getRealColor());
             } // if (mUno.isLegalToPlay(card))
             else {
                 draw(mStatus, 1);
@@ -379,40 +373,34 @@ public class MainActivity extends AppCompatActivity
         bestColor = curr.calcBestColor();
         recent = mUno.getRecent();
         last = recent.get(recent.size() - 1);
-        if (last.isWild()) {
-            lastColor = last.getWildColor();
-        } // if (last.isWild())
-        else {
-            lastColor = last.getColor();
-        } // else
-
+        lastColor = last.getRealColor();
         for (i = 0; i < yourSize; ++i) {
             // Index of any kind
             card = hand.get(i);
             if (mUno.isLegalToPlay(card)) {
                 switch (card.getContent()) {
                     case NUM0:
-                        if (idxZero < 0 || card.getColor() == bestColor) {
+                        if (idxZero < 0 || card.getRealColor() == bestColor) {
                             idxZero = i;
-                        } // if (idxZero < 0 || card.getColor() == bestColor)
+                        } // if (idxZero < 0 || ...)
                         break; // case NUM0
 
                     case DRAW2:
-                        if (idxDraw2 < 0 || card.getColor() == bestColor) {
+                        if (idxDraw2 < 0 || card.getRealColor() == bestColor) {
                             idxDraw2 = i;
-                        } // if (idxDraw2 < 0 || card.getColor() == bestColor)
+                        } // if (idxDraw2 < 0 || ...)
                         break; // case DRAW2
 
                     case SKIP:
-                        if (idxSkip < 0 || card.getColor() == bestColor) {
+                        if (idxSkip < 0 || card.getRealColor() == bestColor) {
                             idxSkip = i;
-                        } // if (idxSkip < 0 || card.getColor() == bestColor)
+                        } // if (idxSkip < 0 || ...)
                         break; // case SKIP
 
                     case REV:
-                        if (idxRev < 0 || card.getColor() == bestColor) {
+                        if (idxRev < 0 || card.getRealColor() == bestColor) {
                             idxRev = i;
-                        } // if (idxRev < 0 || card.getColor() == bestColor)
+                        } // if (idxRev < 0 || ...)
                         break; // case REV
 
                     case WILD:
@@ -424,9 +412,9 @@ public class MainActivity extends AppCompatActivity
                         break; // case WILD_DRAW4
 
                     default: // non-zero number cards
-                        if (idxNum < 0 || card.getColor() == bestColor) {
+                        if (idxNum < 0 || card.getRealColor() == bestColor) {
                             idxNum = i;
-                        } // if (idxNum < 0 || card.getColor() == bestColor)
+                        } // if (idxNum < 0 || ...)
                         break; // default
                 } // switch (card.getContent())
             } // if (mUno.isLegalToPlay(card))
@@ -453,14 +441,16 @@ public class MainActivity extends AppCompatActivity
                 // its last action, and what's worse is that the legal color has
                 // not been changed yet. You have to change the following legal
                 // color, or you will approximately 100% lose this game.
-                if (hasZero && hand.get(idxZero).getColor() != dangerColor) {
+                if (hasZero &&
+                        hand.get(idxZero).getRealColor() != dangerColor) {
                     // When you have no [+2] cards, you have to change the legal
                     // color, or use [wild +4] cards. At first, try to change
                     // legal color by playing a number card, instead of using
                     // wild cards.
                     idxBest = idxZero;
                 } // if (hasZero && ...)
-                else if (hasNum && hand.get(idxNum).getColor() != dangerColor) {
+                else if (hasNum &&
+                        hand.get(idxNum).getRealColor() != dangerColor) {
                     idxBest = idxNum;
                 } // else if (hasNum && ...)
                 else if (hasSkip) {
@@ -470,10 +460,11 @@ public class MainActivity extends AppCompatActivity
                 else if (hasWildDraw4) {
                     // Now start to use wild cards. Use [wild +4] cards firstly,
                     // because this card makes your next player draw four cards.
-                    while (bestColor == oppo.getDangerousColor() ||
+                    while (bestColor == dangerColor ||
+                            bestColor == oppo.getDangerousColor() ||
                             bestColor == prev.getDangerousColor()) {
                         bestColor = Color.values()[mRnd.nextInt(4) + 1];
-                    } // while (bestColor == oppo.getDangerousColor() || ...)
+                    } // while (bestColor == dangerColor || ...)
 
                     idxBest = idxWildDraw4;
                 } // else if (hasWildDraw4)
@@ -501,20 +492,23 @@ public class MainActivity extends AppCompatActivity
                 // its last action, but fortunately the legal color has been
                 // changed already. Just be careful not to re-change the legal
                 // color to the dangerous color again.
-                if (hasZero && hand.get(idxZero).getColor() != dangerColor) {
+                if (hasZero &&
+                        hand.get(idxZero).getRealColor() != dangerColor) {
                     idxBest = idxZero;
                 } // if (hasZero && ...)
-                else if (hasNum && hand.get(idxNum).getColor() != dangerColor) {
+                else if (hasNum &&
+                        hand.get(idxNum).getRealColor() != dangerColor) {
                     idxBest = idxNum;
                 } // else if (hasNum && ...)
-                else if (hasSkip && hand.get(idxSkip).getColor() != dangerColor) {
+                else if (hasRev &&
+                        prevSize >= 4 &&
+                        hand.get(idxRev).getRealColor() != dangerColor) {
+                    idxBest = idxRev;
+                } // else if (hasRev && ...)
+                else if (hasSkip &&
+                        hand.get(idxSkip).getRealColor() != dangerColor) {
                     idxBest = idxSkip;
                 } // else if (hasSkip && ...)
-                else if (hasRev && hand.get(idxRev).getColor() != dangerColor) {
-                    if (prevSize >= 4) {
-                        idxBest = idxRev;
-                    } // if (prevSize >= 4)
-                } // else if (hasRev && ...)
             } // else if (dangerColor != Color.NONE)
             else if (hasWildDraw4) {
                 // Your next player started an UNO dash without playing a wild
@@ -554,7 +548,8 @@ public class MainActivity extends AppCompatActivity
                 // Your previous player played a wild card, started an UNO dash
                 // in its last action. You have to change the following legal
                 // color, or you will approximately 100% lose this game.
-                if (hasSkip && hand.get(idxSkip).getColor() != dangerColor) {
+                if (hasSkip &&
+                        hand.get(idxSkip).getRealColor() != dangerColor) {
                     // When your opposite player played a [skip], and you have a
                     // [skip] with different color, play it.
                     idxBest = idxSkip;
@@ -619,21 +614,26 @@ public class MainActivity extends AppCompatActivity
                 // in its last action, and what's worse is that the legal color
                 // has not been changed yet. You have to change the following
                 // legal color, or you will approximately 100% lose this game.
-                if (hasZero && hand.get(idxZero).getColor() != dangerColor) {
+                if (hasZero &&
+                        hand.get(idxZero).getRealColor() != dangerColor) {
                     // At first, try to change legal color by playing an action
                     // card or a number card, instead of using wild cards.
                     idxBest = idxZero;
                 } // if (hasZero && ...)
-                else if (hasNum && hand.get(idxNum).getColor() != dangerColor) {
+                else if (hasNum &&
+                        hand.get(idxNum).getRealColor() != dangerColor) {
                     idxBest = idxNum;
                 } // else if (hasNum && ...)
-                else if (hasRev && hand.get(idxRev).getColor() != dangerColor) {
+                else if (hasRev &&
+                        hand.get(idxRev).getRealColor() != dangerColor) {
                     idxBest = idxRev;
                 } // else if (hasRev && ...)
-                else if (hasSkip && hand.get(idxSkip).getColor() != dangerColor) {
+                else if (hasSkip &&
+                        hand.get(idxSkip).getRealColor() != dangerColor) {
                     idxBest = idxSkip;
                 } // else if (hasSkip && ...)
-                else if (hasDraw2 && hand.get(idxDraw2).getColor() != dangerColor) {
+                else if (hasDraw2 &&
+                        hand.get(idxDraw2).getRealColor() != dangerColor) {
                     idxBest = idxDraw2;
                 } // else if (hasDraw2 && ...)
                 else if (hasWild) {
@@ -674,23 +674,27 @@ public class MainActivity extends AppCompatActivity
                 // in its last action, but fortunately the legal color has been
                 // changed already. Just be careful not to re-change the legal
                 // color to the dangerous color again.
-                if (hasZero && hand.get(idxZero).getColor() != dangerColor) {
+                if (hasZero &&
+                        hand.get(idxZero).getRealColor() != dangerColor) {
                     idxBest = idxZero;
                 } // if (hasZero && ...)
-                else if (hasNum && hand.get(idxNum).getColor() != dangerColor) {
+                else if (hasNum &&
+                        hand.get(idxNum).getRealColor() != dangerColor) {
                     idxBest = idxNum;
                 } // else if (hasNum && ...)
-                else if (hasSkip && hand.get(idxSkip).getColor() != dangerColor) {
+                else if (hasRev &&
+                        prevSize >= 4 &&
+                        hand.get(idxRev).getRealColor() != dangerColor) {
+                    idxBest = idxRev;
+                } // else if (hasRev && ...)
+                else if (hasSkip &&
+                        hand.get(idxSkip).getRealColor() != dangerColor) {
                     idxBest = idxSkip;
                 } // else if (hasSkip && ...)
-                else if (hasDraw2 && hand.get(idxDraw2).getColor() != dangerColor) {
+                else if (hasDraw2 &&
+                        hand.get(idxDraw2).getRealColor() != dangerColor) {
                     idxBest = idxDraw2;
                 } // else if (hasDraw2 && ...)
-                else if (hasRev && hand.get(idxRev).getColor() != dangerColor) {
-                    if (prevSize >= 4) {
-                        idxBest = idxRev;
-                    } // if (prevSize >= 4)
-                } // else if (hasRev && ...)
             } // else if (dangerColor != Color.NONE)
             else if (hasRev && prevSize - nextSize >= 3) {
                 // Your opposite player started an UNO dash without playing a
@@ -851,14 +855,8 @@ public class MainActivity extends AppCompatActivity
             // Challenge when legal color has not been changed
             recent = mUno.getRecent();
             next2last = recent.get(recent.size() - 2);
-            if (next2last.isWild()) {
-                colorBeforeDraw4 = next2last.getWildColor();
-            } // if (next2last.isWild())
-            else {
-                colorBeforeDraw4 = next2last.getColor();
-            } // else
-
-            draw4Color = recent.get(recent.size() - 1).getWildColor();
+            colorBeforeDraw4 = next2last.getRealColor();
+            draw4Color = recent.get(recent.size() - 1).getRealColor();
             challenge = draw4Color == colorBeforeDraw4;
         } // else
 
@@ -1068,23 +1066,17 @@ public class MainActivity extends AppCompatActivity
 
                     recent = mUno.getRecent();
                     next2last = recent.get(recent.size() - 2);
-                    if (next2last.isWild()) {
-                        colorBeforeDraw4 = next2last.getWildColor();
-                    } // if (next2last.isWild())
-                    else {
-                        colorBeforeDraw4 = next2last.getColor();
-                    } // else
-
+                    colorBeforeDraw4 = next2last.getRealColor();
                     draw4Player = mUno.getPlayer(mDraw4PlayerID);
                     draw4IsLegal = true;
                     for (Card card : draw4Player.getHandCards()) {
-                        if (card.getColor() == colorBeforeDraw4) {
+                        if (card.getRealColor() == colorBeforeDraw4) {
                             // Found a hand card whose color matches the
                             // next-to-last recent played card, [wild +4]
                             // has been used illegally
                             draw4IsLegal = false;
                             break;
-                        } // if (card.getColor() == colorBeforeDraw4)
+                        } // if (card.getRealColor() == colorBeforeDraw4)
                     } // for (Card card : draw4Player.getHandCards())
 
                     if (draw4IsLegal) {
@@ -1228,10 +1220,10 @@ public class MainActivity extends AppCompatActivity
         roi.y = 270;
         for (Card recent : hand) {
             if (recent.getContent() == Content.WILD) {
-                image = mUno.getColoredWildImage(recent.getWildColor());
+                image = mUno.getColoredWildImage(recent.getRealColor());
             } // if (recent.getContent() == Content.WILD)
             else if (recent.getContent() == Content.WILD_DRAW4) {
-                image = mUno.getColoredWildDraw4Image(recent.getWildColor());
+                image = mUno.getColoredWildDraw4Image(recent.getRealColor());
             } // else if (recent.getContent() == Content.WILD_DRAW4)
             else {
                 image = recent.getImage();
@@ -1691,7 +1683,7 @@ public class MainActivity extends AppCompatActivity
                                 onStatusChanged(mStatus);
                             } // if (card.isWild() && size > 1)
                             else if (mUno.isLegalToPlay(card)) {
-                                play(index, card.getColor());
+                                play(index, card.getRealColor());
                             } // else if (mUno.isLegalToPlay(card))
                         } // if (x >= startX && x <= startX + width)
                     } // if (y >= 520 && y <= 700)

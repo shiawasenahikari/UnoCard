@@ -653,7 +653,14 @@ public class Uno {
 
         // Generate a temporary sequenced card deck
         allCards = new ArrayList<>();
-        Collections.addAll(allCards, table);
+        for (i = 0; i < 108; ++i) {
+            if (table[i].isWild()) {
+                // reset the wild cards' colors
+                table[i].color = NONE;
+            } // if (table[i].isWild())
+
+            allCards.add(table[i]);
+        } // for (i = 0; i < 108; ++i)
 
         // Keep picking a card from the temporary card deck randomly,
         // until all cards are picked to the real card deck (shuffle cards)
@@ -700,7 +707,7 @@ public class Uno {
      * didn't draw a card because of the limit.
      */
     public Card draw(int who) {
-        Card card;
+        Card card, picked;
         int i, index, size;
         List<Card> handCards;
 
@@ -727,7 +734,13 @@ public class Uno {
                 size = used.size();
                 while (size > 0) {
                     index = rand.nextInt(size);
-                    deck.add(used.get(index));
+                    picked = used.get(index);
+                    if (picked.isWild()) {
+                        // reset the used wild cards' colors
+                        picked.color = NONE;
+                    } // if (picked.isWild())
+
+                    deck.add(picked);
                     used.remove(index);
                     --size;
                 } // while (size > 0)
@@ -764,7 +777,6 @@ public class Uno {
     public boolean isLegalToPlay(Card card) {
         Card previous;
         boolean result;
-        Color prevColor;
 
         if (card == null || recent.isEmpty()) {
             // Null Pointer
@@ -783,14 +795,7 @@ public class Uno {
                 result = true;
             } // if (card.content == previous.content)
             else {
-                if (previous.isWild()) {
-                    prevColor = previous.wildColor;
-                } // if (previous.isWild())
-                else {
-                    prevColor = previous.color;
-                } // else
-
-                result = (card.color == prevColor);
+                result = (card.color == previous.color);
             } // else
         } // else
 
@@ -824,7 +829,7 @@ public class Uno {
             card = handCards.get(index);
             handCards.remove(index);
             if (card.isWild()) {
-                card.wildColor = color;
+                card.color = color;
             } // if（card.isWild())
 
             player[who].recent = card;

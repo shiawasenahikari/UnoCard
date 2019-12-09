@@ -14,6 +14,7 @@ import java.util.List;
 
 import static com.github.hikari_toyama.unocard.core.Color.BLUE;
 import static com.github.hikari_toyama.unocard.core.Color.GREEN;
+import static com.github.hikari_toyama.unocard.core.Color.NONE;
 import static com.github.hikari_toyama.unocard.core.Color.RED;
 import static com.github.hikari_toyama.unocard.core.Color.YELLOW;
 
@@ -81,7 +82,16 @@ public class Player {
      * @return This player's dangerous color.
      */
     public Color getDangerousColor() {
-        return (handCards.size() == 1 ? recent.wildColor : Color.NONE);
+        Color dangerousColor;
+
+        if (handCards.size() == 1 && recent.isWild()) {
+            dangerousColor = recent.color;
+        } // if (handCards.size() == 1 && recent.isWild())
+        else {
+            dangerousColor = NONE;
+        } // else
+
+        return dangerousColor;
     } // getDangerousColor()
 
     /**

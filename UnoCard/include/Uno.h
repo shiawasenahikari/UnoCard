@@ -77,8 +77,10 @@ public:
 
 	/**
 	 * @return Card's color.
+	 * @deprecated Use this->getRealColor() to replace the following expression:
+	 *             this->isWild() ? this->getWildColor() : this->getColor()
 	 */
-	Color getColor();
+	[[deprecated]] Color getColor();
 
 	/**
 	 * Valid only when this is a wild card. Get the specified following legal
@@ -86,8 +88,17 @@ public:
 	 * function will always return Color::NONE.
 	 *
 	 * @return Card's wild color.
+	 * @deprecated Use this->getRealColor() to replace the following expression:
+	 *             this->isWild() ? this->getWildColor() : this->getColor()
 	 */
-	Color getWildColor();
+	[[deprecated]] Color getWildColor();
+
+	/**
+	 * @return For non-wild cards, return card's color. For wild cards, return
+	 *         the specified wild color by the player who played this card, or
+	 *         Color::NONE if this card is in hand or card deck.
+	 */
+	Color getRealColor();
 
 	/**
 	 * @return Card's content.
@@ -140,11 +151,6 @@ private:
 	 * Card's color, e.g. Color::BLUE
 	 */
 	Color color;
-
-	/**
-	 * Card's wild color. Valid only when this is a wild card.
-	 */
-	Color wildColor;
 
 	/**
 	 * Card's content, e.g. Content::NUM3

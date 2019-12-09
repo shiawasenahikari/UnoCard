@@ -32,7 +32,6 @@ Card::Card() :
 	darkImg(),
 	color(NONE),
 	content(WILD),
-	wildColor(NONE),
 	order((color << 8) + content) {
 } // Card() (Class Constructor)
 
@@ -43,7 +42,6 @@ Card::Card(Mat image, Mat darkImg, Color color, Content content, string name) :
 	name(name),
 	image(image),
 	color(color),
-	wildColor(NONE),
 	content(content),
 	darkImg(darkImg),
 	order((color << 8) + content) {
@@ -107,9 +105,11 @@ const Mat& Card::getDarkImg() {
 
 /**
  * @return Card's color.
+ * @deprecated Use this->getRealColor() to replace the following expression:
+ *             this->isWild() ? this->getWildColor() : this->getColor()
  */
-Color Card::getColor() {
-	return color;
+[[deprecated]] Color Card::getColor() {
+	return isWild() ? NONE : color;
 } // getColor()
 
 /**
@@ -118,10 +118,21 @@ Color Card::getColor() {
  * function will always return Color::NONE.
  *
  * @return Card's wild color.
+ * @deprecated Use this->getRealColor() to replace the following expression:
+ *             this->isWild() ? this->getWildColor() : this->getColor()
  */
-Color Card::getWildColor() {
-	return wildColor;
+[[deprecated]] Color Card::getWildColor() {
+	return isWild() ? color : NONE;
 } // getWildColor()
+
+/**
+ * @return For non-wild cards, return card's color. For wild cards, return
+ *         the specified wild color by the player who played this card, or
+ *         Color::NONE if this card is in hand or card deck.
+ */
+Color Card::getRealColor() {
+	return color;
+} // getRealColor()
 
 /**
  * @return Card's content.
@@ -190,7 +201,16 @@ const vector<Card*>& Player::getHandCards() {
  * @return This player's dangerous color.
  */
 Color Player::getDangerousColor() {
-	return handCards.size() == 1 ? recent->getWildColor() : NONE;
+	Color dangerousColor;
+
+	if (handCards.size() == 1 && recent->isWild()) {
+		dangerousColor = recent->getRealColor();
+	} // if (handCards.size() == 1 && recent->isWild())
+	else {
+		dangerousColor = NONE;
+	} // else
+
+	return dangerousColor;
 } // getDangerousColor()
 
 /**
@@ -208,13 +228,13 @@ Color Player::calcBestColor() {
 
 	for (Card* card : handCards) {
 		if (card->isZero()) {
-			score[card->getColor()] += 2;
+			score[card->getRealColor()] += 2;
 		} // if (card->isZero())
 		else if (card->isAction()) {
-			score[card->getColor()] += 5;
+			score[card->getRealColor()] += 5;
 		} // else if (card->isAction())
 		else {
-			score[card->getColor()] += 4;
+			score[card->getRealColor()] += 4;
 		} // else
 	} // for (Card* card : handCards)
 
@@ -732,6 +752,11 @@ void Uno::start() {
 
 	// Generate a temporary sequenced card deck
 	for (i = 0; i < 108; ++i) {
+		if (table[i].isWild()) {
+			// reset the wild cards' colors
+			table[i].color = NONE;
+		} // if (table[i].isWild())
+
 		allCards.push_back(&table[i]);
 	} // for (i = 0; i < 108; ++i)
 
@@ -780,6 +805,7 @@ void Uno::start() {
  */
 Card* Uno::draw(int who) {
 	Card* card;
+	Card* picked;
 	Player* player;
 	int index, size;
 	vector<Card*>* hand;
@@ -807,7 +833,13 @@ Card* Uno::draw(int who) {
 			size = (int)used.size();
 			while (size > 0) {
 				index = rand() % size;
-				deck.push_back(used.at(index));
+				picked = used.at(index);
+				if (picked->isWild()) {
+					// reset the used wild cards' colors
+					picked->color = NONE;
+				} // if (picked->isWild())
+
+				deck.push_back(picked);
 				used.erase(used.begin() + index);
 				--size;
 			} // while (size > 0)
@@ -843,7 +875,6 @@ Card* Uno::draw(int who) {
 bool Uno::isLegalToPlay(Card* card) {
 	bool result;
 	Card* previous;
-	Color prevColor;
 
 	if (card == NULL || recent.empty()) {
 		// NULL Pointer
@@ -862,14 +893,7 @@ bool Uno::isLegalToPlay(Card* card) {
 			result = true;
 		} // if (card->content == previous->content)
 		else {
-			if (previous->isWild()) {
-				prevColor = previous->wildColor;
-			} // if (previous->isWild())
-			else {
-				prevColor = previous->color;
-			} // else
-
-			result = (card->color == prevColor);
+			result = (card->color == previous->color);
 		} // else
 	} // else
 
@@ -905,7 +929,7 @@ Card* Uno::play(int who, int index, Color color) {
 		card = hand->at(index);
 		hand->erase(hand->begin() + index);
 		if (card->isWild()) {
-			card->wildColor = color;
+			card->color = color;
 		} // if (card->isWild())
 
 		player->recent = card;

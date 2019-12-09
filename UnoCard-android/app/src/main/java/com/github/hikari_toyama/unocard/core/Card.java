@@ -61,11 +61,6 @@ public class Card implements Comparable<Card> {
     Color color;
 
     /**
-     * Card's wild color. Valid only when this is a wild card.
-     */
-    Color wildColor;
-
-    /**
      * Card's content, e.g. Content.NUM3
      */
     Content content;
@@ -97,7 +92,6 @@ public class Card implements Comparable<Card> {
         this.name = name;
         this.image = image;
         this.color = color;
-        this.wildColor = NONE;
         this.content = content;
         this.darkImg = darkImg;
         this.order = color.ordinal() << 8 | content.ordinal();
@@ -126,9 +120,12 @@ public class Card implements Comparable<Card> {
 
     /**
      * @return Card's color.
+     * @deprecated Use this.getRealColor() to replace the following
+     * expression: this.isWild() ? this.getWildColor() : this.getColor()
      */
+    @Deprecated
     public Color getColor() {
-        return color;
+        return isWild() ? NONE : color;
     } // getColor()
 
     /**
@@ -137,10 +134,22 @@ public class Card implements Comparable<Card> {
      * method will always return Color.NONE.
      *
      * @return Card's wild color.
+     * @deprecated Use this.getRealColor() to replace the following
+     * expression: this.isWild() ? this.getWildColor() : this.getColor()
      */
+    @Deprecated
     public Color getWildColor() {
-        return wildColor;
+        return isWild() ? color : NONE;
     } // getWildColor()
+
+    /**
+     * @return For non-wild cards, return card's color. For wild cards,
+     * return the specified wild color by the player who played this
+     * card, or Color.NONE if this card is in hand or card deck.
+     */
+    public Color getRealColor() {
+        return color;
+    } // getRealColor()
 
     /**
      * @return Card's content.
