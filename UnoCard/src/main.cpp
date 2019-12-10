@@ -953,8 +953,8 @@ static void onStatusChanged(int status) {
 		refreshScreen("^ Specify the following legal color");
 		rect = Rect(338, 270, 121, 181);
 		sUno->getBackground()(rect).copyTo(sScreen(rect));
-		center = Point(368, 360);
-		axes = Size(90, 90);
+		center = Point(405, 315);
+		axes = Size(135, 135);
 		ellipse(sScreen, center, axes, 0, 0, -90, RGB_BLUE, -1, 16);
 		ellipse(sScreen, center, axes, 0, 0, 90, RGB_GREEN, -1, 16);
 		ellipse(sScreen, center, axes, 180, 0, 90, RGB_RED, -1, 16);
@@ -974,12 +974,34 @@ static void onStatusChanged(int status) {
 			refreshScreen("^ Challenge the legality of Wild +4?");
 			rect = Rect(338, 270, 121, 181);
 			sUno->getBackground()(rect).copyTo(sScreen(rect));
-			center = Point(368, 360);
-			axes = Size(90, 90);
-			ellipse(sScreen, center, axes, 0, 0, -180, RGB_GREEN, -1, 16);
-			ellipse(sScreen, center, axes, 0, 0, 180, RGB_RED, -1, 16);
-			putText(sScreen, "YES", Point(338, 340), FONT_SANS, 1.0, RGB_WHITE);
-			putText(sScreen, "NO", Point(345, 402), FONT_SANS, 1.0, RGB_WHITE);
+			center = Point(405, 315);
+			axes = Size(135, 135);
+
+			// Draw YES button
+			ellipse(sScreen, center, axes, 0, 0, -180, RGB_GREEN, -1, LINE_AA);
+			putText(
+				/* img       */ sScreen,
+				/* text      */ "YES",
+				/* org       */ Point(346, 295),
+				/* fontFace  */ FONT_SANS,
+				/* fontScale */ 2.0,
+				/* color     */ RGB_WHITE,
+				/* thickness */ 2
+			); // putText()
+
+			// Draw NO button
+			ellipse(sScreen, center, axes, 0, 0, 180, RGB_RED, -1, LINE_AA);
+			putText(
+				/* img       */ sScreen,
+				/* text      */ "NO",
+				/* org       */ Point(360, 378),
+				/* fontFace  */ FONT_SANS,
+				/* fontScale */ 2.0,
+				/* color     */ RGB_WHITE,
+				/* thickness */ 2
+			); // putText()
+
+			// Show screen
 			imshow("Uno", sScreen);
 		} // if (sChallengerID == Player::YOU && !sAuto)
 		else {
@@ -1676,22 +1698,22 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 
 		case STAT_WILD_COLOR:
 			sStatus = Player::YOU;
-			if (y > 296 && y < 360 && x > 304 && x < 368) {
+			if (y > 220 && y < 315 && x > 310 && x < 405) {
 				// Red sector
 				play(index, RED);
-			} // if (y > 296 && y < 360 && x > 304 && x < 368)
-			else if (y > 296 && y < 360 && x > 368 && x < 432) {
+			} // if (y > 220 && y < 315 && x > 310 && x < 405)
+			else if (y > 220 && y < 315 && x > 405 && x < 500) {
 				// Blue sector
 				play(index, BLUE);
-			} // else if (y > 296 && y < 360 && x > 368 && x < 432)
-			else if (y > 360 && y < 424 && x > 304 && x < 368) {
+			} // else if (y > 220 && y < 315 && x > 405 && x < 500)
+			else if (y > 315 && y < 410 && x > 310 && x < 405) {
 				// Yellow sector
 				play(index, YELLOW);
-			} // else if (y > 360 && y < 424 && x > 304 && x < 368)
-			else if (y > 360 && y < 424 && x > 368 && x < 432) {
+			} // else if (y > 315 && y < 410 && x > 310 && x < 405)
+			else if (y > 310 && y < 410 && x > 405 && x < 500) {
 				// Green sector
 				play(index, GREEN);
-			} // else if (y > 360 && y < 424 && x > 368 && x < 432)
+			} // else if (y > 315 && y < 410 && x > 405 && x < 500)
 			else {
 				// Undo
 				onStatusChanged(sStatus);
@@ -1699,18 +1721,18 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 			break; // case STAT_WILD_COLOR
 
 		case STAT_CHALLENGE_ASK:
-			if (x > 304 && x < 432) {
-				if (y > 296 && y < 360) {
+			if (x > 310 && x < 500) {
+				if (y > 220 && y < 315) {
 					// YES button, challenge wild +4
 					sStatus = STAT_CHALLENGE_SUBMIT;
 					onStatusChanged(sStatus);
-				} // if (y > 296 && y < 360)
-				else if (y > 360 && y < 424) {
+				} // if (y > 220 && y < 315)
+				else if (y > 315 && y < 410) {
 					// NO button, do not challenge wild +4
 					sStatus = STAT_CHALLENGE_ABSTAIN;
 					onStatusChanged(sStatus);
-				} // else if (y > 360 && y < 424)
-			} // if (x > 304 && x < 432)
+				} // else if (y > 315 && y < 410)
+			} // if (x > 310 && x < 500)
 			break; // case STAT_CHALLENGE_ASK
 
 		case STAT_GAME_OVER:

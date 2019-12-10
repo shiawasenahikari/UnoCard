@@ -1016,10 +1016,11 @@ public class MainActivity extends AppCompatActivity
                     Imgproc.putText(
                             /* img       */ mScr,
                             /* text      */ "YES",
-                            /* org       */ new Point(375, 295),
+                            /* org       */ new Point(346, 295),
                             /* fontFace  */ FONT_SANS,
-                            /* fontScale */ 1.0,
-                            /* color     */ RGB_WHITE
+                            /* fontScale */ 2.0,
+                            /* color     */ RGB_WHITE,
+                            /* thickness */ 2
                     ); // Imgproc.putText()
 
                     // Draw NO button
@@ -1037,10 +1038,11 @@ public class MainActivity extends AppCompatActivity
                     Imgproc.putText(
                             /* img        */ mScr,
                             /* text       */ "NO",
-                            /* org        */ new Point(382, 357),
+                            /* org        */ new Point(360, 378),
                             /* fontFace   */ FONT_SANS,
-                            /* fontScale  */ 1.0,
-                            /* color      */ RGB_WHITE
+                            /* fontScale  */ 2.0,
+                            /* color      */ RGB_WHITE,
+                            /* thickness  */ 2
                     ); // Imgproc.putText()
 
                     // Show screen
