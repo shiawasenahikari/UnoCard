@@ -846,6 +846,26 @@ static void hardAI() {
 					idxBest = idxWildDraw4;
 				} // else
 			} // else if (hasWildDraw4 && yourSize == 2 && prevSize <= 3)
+			else if (yourSize == Uno::MAX_HOLD_CARDS) {
+				// When you are holding 14 cards, which means you cannot hold
+				// more cards, you need to play your action/wild cards to keep
+				// game running, even if it's not worth enough to use them.
+				if (hasSkip) {
+					idxBest = idxSkip;
+				} // if (hasSkip)
+				else if (hasDraw2) {
+					idxBest = idxDraw2;
+				} // else if (hasDraw2)
+				else if (hasRev) {
+					idxBest = idxRev;
+				} // else if (hasRev)
+				else if (hasWild) {
+					idxBest = idxWild;
+				} // else if (hasWild)
+				else if (hasWildDraw4) {
+					idxBest = idxWildDraw4;
+				} // else if (hasWildDraw4)
+			} // else if (yourSize == Uno::MAX_HOLD_CARDS)
 		} // else
 
 		if (idxBest >= 0) {
@@ -869,15 +889,19 @@ static void challengeAI() {
 	bool challenge;
 	Card* next2last;
 	Color draw4Color;
-	Player* challenger;
-	vector<Card*> recent;
 	Color colorBeforeDraw4;
+	vector<Card*> hand, recent;
 
-	challenger = sUno->getPlayer(sChallengerID);
-	if (challenger->getHandCards().size() == 1) {
+	hand = sUno->getPlayer(sChallengerID)->getHandCards();
+	if (hand.size() == 1) {
 		// Challenge when defending my UNO dash
 		challenge = true;
-	} // if (challenger->getHandCards().size() == 1)
+	} // if (hand.size() == 1)
+	else if (hand.size() >= Uno::MAX_HOLD_CARDS - 4) {
+		// Challenge when I have 10 or more cards already, thus even if
+		// challenge failed, I draw at most 4 cards.
+		challenge = true;
+	} // else if (hand.size() >= Uno::MAX_HOLD_CARDS - 4)
 	else {
 		// Challenge when legal color has not been changed
 		recent = sUno->getRecent();

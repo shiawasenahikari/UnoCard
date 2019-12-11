@@ -277,9 +277,9 @@ public:
 	static const int DIR_RIGHT = 3;
 
 	/**
-	 * In this application, everyone can hold 15 cards at most.
+	 * In this application, everyone can hold 14 cards at most.
 	 */
-	static const int MAX_HOLD_CARDS = 15;
+	static const int MAX_HOLD_CARDS = 14;
 
 	/**
 	 * @return Reference of our singleton.

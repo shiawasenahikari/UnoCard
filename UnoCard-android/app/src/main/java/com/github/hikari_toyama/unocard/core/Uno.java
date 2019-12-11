@@ -61,9 +61,9 @@ public class Uno {
     public static final int DIR_RIGHT = 3;
 
     /**
-     * In this application, everyone can hold 15 cards at most.
+     * In this application, everyone can hold 14 cards at most.
      */
-    public static final int MAX_HOLD_CARDS = 15;
+    public static final int MAX_HOLD_CARDS = 14;
 
     /**
      * Tag name for Android Logcat.
