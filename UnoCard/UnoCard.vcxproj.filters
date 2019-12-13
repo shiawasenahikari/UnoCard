@@ -21,6 +21,9 @@
     <ClInclude Include="include\Uno.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="include\AI.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="UnoCard.rc">
@@ -37,6 +40,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\AI.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
