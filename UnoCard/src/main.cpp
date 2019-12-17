@@ -117,7 +117,7 @@ int main() {
 	sScreen = sUno->getBackground().clone();
 	namedWindow("Uno");
 	refreshScreen("WELCOME TO UNO CARD GAME");
-	setMouseCallback("Uno", onMouse, NULL);
+	setMouseCallback("Uno", onMouse, nullptr);
 	for (;;) {
 		WAIT_MS(0); // prevent from blocking main thread
 	} // for (;;)
@@ -141,7 +141,7 @@ static void easyAI() {
 		else {
 			idxBest = easyAI_bestCardIndexFor(
 				/* whom      */ sStatus,
-				/* drawnCard */ sImmPlayAsk ? sDrawnCard : NULL,
+				/* drawnCard */ sImmPlayAsk ? sDrawnCard : nullptr,
 				/* outColor  */ bestColor
 			); // idxBest = easyAI_bestCardIndexFor()
 
@@ -184,7 +184,7 @@ static void hardAI() {
 		else {
 			idxBest = hardAI_bestCardIndexFor(
 				/* whom      */ sStatus,
-				/* drawnCard */ sImmPlayAsk ? sDrawnCard : NULL,
+				/* drawnCard */ sImmPlayAsk ? sDrawnCard : nullptr,
 				/* outColor  */ bestColor
 			); // idxBest = hardAI_bestCardIndexFor()
 
@@ -408,7 +408,7 @@ static void refreshScreen(string message) {
 	sUno->getBackground().copyTo(sScreen);
 
 	// Message area
-	width = getTextSize(message, FONT_SANS, 1.0, 1, NULL).width;
+	width = getTextSize(message, FONT_SANS, 1.0, 1, nullptr).width;
 	point = Point(640 - width / 2, 480);
 	putText(sScreen, message, point, FONT_SANS, 1.0, RGB_WHITE);
 
@@ -439,7 +439,7 @@ static void refreshScreen(string message) {
 		easyRate = (sEasyTotal == 0 ? 0 : 100 * sEasyWin / sEasyTotal);
 		hardRate = (sHardTotal == 0 ? 0 : 100 * sHardWin / sHardTotal);
 		buff << easyRate << "% WinRate " << hardRate << "%";
-		width = getTextSize(buff.str(), FONT_SANS, 1.0, 1, NULL).width;
+		width = getTextSize(buff.str(), FONT_SANS, 1.0, 1, nullptr).width;
 		point.x = 640 - width / 2;
 		point.y = 250;
 		putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
@@ -684,7 +684,7 @@ static void play(int index, Color color) {
 	sStatus = STAT_IDLE; // block mouse click events when idle
 	size = (int)sUno->getPlayer(now)->getHandCards().size();
 	card = sUno->play(now, index, color);
-	if (card != NULL) {
+	if (card != nullptr) {
 		image = card->getImage();
 		switch (now) {
 		case Player::COM1:
@@ -799,7 +799,7 @@ static void play(int index, Color color) {
 				break; // default
 			} // switch (card->getContent())
 		} // else
-	} // if (card != NULL)
+	} // if (card != nullptr)
 } // play()
 
 /**
@@ -820,7 +820,7 @@ static void draw(int who, int count) {
 	for (i = 0; i < count; ++i) {
 		buff.str("");
 		sDrawnCard = sUno->draw(who);
-		if (sDrawnCard != NULL) {
+		if (sDrawnCard != nullptr) {
 			switch (who) {
 			case Player::COM1:
 				image = sUno->getBackImage();
@@ -868,7 +868,7 @@ static void draw(int who, int count) {
 			WAIT_MS(300);
 			refreshScreen(buff.str());
 			WAIT_MS(300);
-		} // if (sDrawnCard != NULL)
+		} // if (sDrawnCard != nullptr)
 		else {
 			buff << NAME[who];
 			buff << " cannot hold more than ";
@@ -880,7 +880,7 @@ static void draw(int who, int count) {
 
 	WAIT_MS(750);
 	if (count == 1 &&
-		sDrawnCard != NULL &&
+		sDrawnCard != nullptr &&
 		sUno->isLegalToPlay(sDrawnCard)) {
 		// Player drew one card by itself, the drawn card
 		// can be played immediately if it's legal to play

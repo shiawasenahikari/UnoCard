@@ -57,8 +57,8 @@ bool needToChallenge(int challenger) {
  * @param whom      Analyze whose hand cards. Must be one of the following:
  *                  Player::YOU, Player::COM1, Player::COM2, Player::COM3.
  * @param drawnCard When the specified player drew a card in its turn just
- *                  now, pass the drawn card. If not, pass NULL. If drew a
- *                  card from deck, then you can play only the drawn card,
+ *                  now, pass the drawn card. If not, pass nullptr. If drew
+ *                  a card from deck, then you can play only the drawn card,
  *                  but not the other cards in your hand, immediately.
  * @param outColor  This is a out parameter. Pass a Color array (length>=1)
  *                  in order to let we pass the return value by assigning
@@ -87,9 +87,9 @@ int easyAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 	int idxZero, idxNum, idxWild, idxWildDraw4;
 	int yourSize, nextSize, oppoSize, prevSize;
 
-	if (outColor == NULL) {
-		throw "outColor[] cannot be NULL";
-	} // if (outColor == NULL)
+	if (outColor == nullptr) {
+		throw "outColor[] cannot be nullptr";
+	} // if (outColor == nullptr)
 
 	curr = sUno->getPlayer(whom);
 	hand = curr->getHandCards();
@@ -116,9 +116,9 @@ int easyAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 	for (i = 0; i < yourSize; ++i) {
 		// Index of any kind
 		card = hand.at(i);
-		if (drawnCard == NULL) {
+		if (drawnCard == nullptr) {
 			legal = sUno->isLegalToPlay(card);
-		} // if (drawnCard == NULL)
+		} // if (drawnCard == nullptr)
 		else {
 			legal = card == drawnCard;
 		} // else
@@ -284,8 +284,8 @@ int easyAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
  * @param whom      Analyze whose hand cards. Must be one of the following:
  *                  Player::YOU, Player::COM1, Player::COM2, Player::COM3.
  * @param drawnCard When the specified player drew a card in its turn just
- *                  now, pass the drawn card. If not, pass NULL. If drew a
- *                  card from deck, then you can play only the drawn card,
+ *                  now, pass the drawn card. If not, pass nullptr. If drew
+ *                  a card from deck, then you can play only the drawn card,
  *                  but not the other cards in your hand, immediately.
  * @param outColor  This is a out parameter. Pass a Color array (length>=1)
  *                  in order to let we pass the return value by assigning
@@ -316,9 +316,9 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 	int idxZero, idxNum, idxWild, idxWildDraw4;
 	int yourSize, nextSize, oppoSize, prevSize;
 
-	if (outColor == NULL) {
-		throw "Illegal parameter";
-	} // if (outColor == NULL)
+	if (outColor == nullptr) {
+		throw "outColor[] cannot be nullptr";
+	} // if (outColor == nullptr)
 
 	curr = sUno->getPlayer(whom);
 	hand = curr->getHandCards();
@@ -345,9 +345,9 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 	for (i = 0; i < yourSize; ++i) {
 		// Index of any kind
 		card = hand.at(i);
-		if (drawnCard == NULL) {
+		if (drawnCard == nullptr) {
 			legal = sUno->isLegalToPlay(card);
-		} // if (drawnCard == NULL)
+		} // if (drawnCard == nullptr)
 		else {
 			legal = card == drawnCard;
 		} // else
@@ -707,7 +707,7 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 			} // if (nextSize <= 4)
 		} // else if (hasWildDraw4 && lastColor != bestColor)
 	} // else if (oppoSize == 1)
-	else if (next->getRecent() == NULL && yourSize > 2) {
+	else if (next->getRecent() == nullptr && yourSize > 2) {
 		// Strategies when your next player drew a card in its last action.
 		// You do not need to play your limitation/wild cards when you are
 		// not ready to start dash. Use them in more dangerous cases.
@@ -723,7 +723,7 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 		else if (hasRev && prevSize >= 4) {
 			idxBest = idxRev;
 		} // else if (hasRev && prevSize >= 4)
-	} // else if (next->getRecent() == NULL && yourSize > 2)
+	} // else if (next->getRecent() == nullptr && yourSize > 2)
 	else {
 		// Normal strategies
 		if (hasRev && prevSize - nextSize >= 3) {

@@ -27,8 +27,8 @@ bool needToChallenge(int challenger);
  * @param whom      Analyze whose hand cards. Must be one of the following:
  *                  Player::YOU, Player::COM1, Player::COM2, Player::COM3.
  * @param drawnCard When the specified player drew a card in its turn just
- *                  now, pass the drawn card. If not, pass NULL. If drew a
- *                  card from deck, then you can play only the drawn card,
+ *                  now, pass the drawn card. If not, pass nullptr. If drew
+ *                  a card from deck, then you can play only the drawn card,
  *                  but not the other cards in your hand, immediately.
  * @param outColor  This is a out parameter. Pass a Color array (length>=1)
  *                  in order to let we pass the return value by assigning
@@ -48,8 +48,8 @@ int easyAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]);
  * @param whom      Analyze whose hand cards. Must be one of the following:
  *                  Player::YOU, Player::COM1, Player::COM2, Player::COM3.
  * @param drawnCard When the specified player drew a card in its turn just
- *                  now, pass the drawn card. If not, pass NULL. If drew a
- *                  card from deck, then you can play only the drawn card,
+ *                  now, pass the drawn card. If not, pass nullptr. If drew
+ *                  a card from deck, then you can play only the drawn card,
  *                  but not the other cards in your hand, immediately.
  * @param outColor  This is a out parameter. Pass a Color array (length>=1)
  *                  in order to let we pass the return value by assigning

@@ -231,8 +231,8 @@ public:
 	Color calcBestColor();
 
 	/**
-	 * @return This player's recent played card, or null if this player drew one
-	 *         or more cards in its previous action.
+	 * @return This player's recent played card, or nullptr if this player drew
+	 *         one or more cards in its previous action.
 	 */
 	Card* getRecent();
 
@@ -249,9 +249,9 @@ private:
 
 	/**
 	 * Recent played card. If the player drew one or more cards in its last
-	 * action, this member will be null.
+	 * action, this member will be nullptr.
 	 */
-	Card* recent = NULL;
+	Card* recent = nullptr;
 
 	/**
 	 * Grant Uno class to access our constructors (to create Player instances)
@@ -388,7 +388,7 @@ public:
 	 *
 	 * @param who Who draws a card. Must be one of the following values:
 	 *            Player::YOU, Player::COM1, Player::COM2, Player::COM3.
-	 * @return Reference of the drawn card, or null if the specified player
+	 * @return Reference of the drawn card, or nullptr if the specified player
 	 *         didn't draw a card because of the limit.
 	 */
 	Card* draw(int who);

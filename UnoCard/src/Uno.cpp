@@ -256,8 +256,8 @@ Color Player::calcBestColor() {
 } // calcBestColor()
 
 /**
- * @return This player's recent played card, or null if this player drew one
- *         or more cards in its previous action.
+ * @return This player's recent played card, or nullptr if this player drew
+ *         one or more cards in its previous action.
  */
 Card* Player::getRecent() {
 	return recent;
@@ -587,7 +587,7 @@ Uno::Uno() {
 	table[107] = Card(br[52], dk[52], NONE, WILD, "Wild");
 
 	// Generate a random seed based on the current time stamp
-	srand((unsigned)time(NULL));
+	srand((unsigned)time(nullptr));
 } // Uno() (Class Constructor)
 
 /**
@@ -800,7 +800,7 @@ void Uno::start() {
  *
  * @param who Who draws a card. Must be one of the following values:
  *            Player::YOU, Player::COM1, Player::COM2, Player::COM3.
- * @return Reference of the drawn card, or null if the specified player
+ * @return Reference of the drawn card, or nullptr if the specified player
  *         didn't draw a card because of the limit.
  */
 Card* Uno::draw(int who) {
@@ -811,7 +811,7 @@ Card* Uno::draw(int who) {
 	vector<Card*>* hand;
 	vector<Card*>::iterator i;
 
-	card = NULL;
+	card = nullptr;
 	player = getPlayer(who);
 	hand = &player->handCards;
 	if (hand->size() < MAX_HOLD_CARDS) {
@@ -827,7 +827,7 @@ Card* Uno::draw(int who) {
 		} // for (i = hand->begin(); i != hand->end(); ++i)
 
 		hand->insert(i, card);
-		player->recent = NULL;
+		player->recent = nullptr;
 		if (deck.empty()) {
 			// Re-use the used cards when there are no more cards in deck
 			size = (int)used.size();
@@ -876,10 +876,10 @@ bool Uno::isLegalToPlay(Card* card) {
 	bool result;
 	Card* previous;
 
-	if (card == NULL || recent.empty()) {
-		// NULL Pointer
+	if (card == nullptr || recent.empty()) {
+		// Null Pointer
 		result = false;
-	} // if (card == NULL || recent.empty())
+	} // if (card == nullptr || recent.empty())
 	else if (card->isWild()) {
 		// Wild cards: LEGAL
 		result = true;
@@ -922,7 +922,7 @@ Card* Uno::play(int who, int index, Color color) {
 	Player* player;
 	vector<Card*>* hand;
 
-	card = NULL;
+	card = nullptr;
 	player = getPlayer(who);
 	hand = &player->handCards;
 	if (index < hand->size()) {
