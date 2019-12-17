@@ -430,15 +430,15 @@ static void refreshScreen(string message) {
 	// For welcome screen, only show difficulty buttons and winning rates
 	if (status == STAT_WELCOME) {
 		image = sUno->getEasyImage();
-		roi = Rect(420, 270, 121, 181);
+		roi = Rect(490, 270, 121, 181);
 		image.copyTo(sScreen(roi), image);
 		image = sUno->getHardImage();
-		roi.x = 740;
+		roi.x = 670;
 		roi.y = 270;
 		image.copyTo(sScreen(roi), image);
 		easyRate = (sEasyTotal == 0 ? 0 : 100 * sEasyWin / sEasyTotal);
 		hardRate = (sHardTotal == 0 ? 0 : 100 * sHardWin / sHardTotal);
-		buff << easyRate << "% [WinningRate] " << hardRate << "%";
+		buff << easyRate << "% WinRate " << hardRate << "%";
 		width = getTextSize(buff.str(), FONT_SANS, 1.0, 1, NULL).width;
 		point.x = 640 - width / 2;
 		point.y = 250;
@@ -1039,35 +1039,64 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 		else switch (sStatus) {
 		case STAT_WELCOME:
 			if (y >= 270 && y <= 450) {
-				if (x >= 420 && x <= 540) {
+				if (x >= 490 && x <= 610) {
 					// Difficulty: EASY
 					sDifficulty = LV_EASY;
 					sStatus = STAT_NEW_GAME;
 					onStatusChanged(sStatus);
-				} // if (x >= 420 && x <= 540)
-				else if (x >= 740 && x <= 860) {
+				} // if (x >= 490 && x <= 610)
+				else if (x >= 670 && x <= 790) {
 					// Difficulty: HARD
 					sDifficulty = LV_HARD;
 					sStatus = STAT_NEW_GAME;
 					onStatusChanged(sStatus);
-				} // else if (x >= 740 && x <= 860)
+				} // else if (x >= 670 && x <= 790)
 			} // if (y >= 270 && y <= 450)
 			break; // case STAT_WELCOME
 
 		case Player::YOU:
 			if (sAuto) {
+				// Do operations automatically by AI strategies
 				break; // case Player::YOU
 			} // if (sAuto)
 			else if (sImmPlayAsk) {
-				if (x > 310 && x < 500) {
+				// Asking if you want to play the drawn card immediately
+				if (y >= 520 && y <= 700) {
+					hand = sUno->getPlayer(Player::YOU)->getHandCards();
+					size = (int)hand.size();
+					width = 45 * size + 75;
+					startX = 640 - width / 2;
+					if (x >= startX && x <= startX + width) {
+						// Hand card area
+						// Calculate which card clicked by the X-coordinate
+						index = (x - startX) / 45;
+						if (index >= size) {
+							index = size - 1;
+						} // if (index >= size)
+
+						// If clicked the drawn card, play it
+						card = hand.at(index);
+						if (card == sDrawnCard) {
+							sImmPlayAsk = false;
+							if (card->isWild() && size > 1) {
+								sStatus = STAT_WILD_COLOR;
+								onStatusChanged(sStatus);
+							} // if (card->isWild() && size > 1)
+							else {
+								play(index);
+							} // else
+						} // if (card == sDrawnCard)
+					} // if (x >= startX && x <= startX + width)
+				} // if (y >= 520 && y <= 700)
+				else if (x > 310 && x < 500) {
 					if (y > 220 && y < 315) {
 						// YES button, play the drawn card
-						sImmPlayAsk = false;
 						hand = sUno->getPlayer(sStatus)->getHandCards();
 						size = (int)hand.size();
 						for (index = 0; index < size; ++index) {
 							card = hand.at(index);
 							if (card == sDrawnCard) {
+								sImmPlayAsk = false;
 								if (card->isWild() && size > 1) {
 									sStatus = STAT_WILD_COLOR;
 									onStatusChanged(sStatus);
@@ -1084,9 +1113,10 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 						sImmPlayAsk = false;
 						pass(sStatus);
 					} // else if (y > 315 && y < 410)
-				} // if (x > 310 && x < 500)
+				} // else if (x > 310 && x < 500)
 			} // else if (sImmPlayAsk)
 			else if (sChallengeAsk) {
+				// Asking if you want to challenge your previous player
 				if (x > 310 && x < 500) {
 					if (y > 220 && y < 315) {
 						// YES button, challenge wild +4

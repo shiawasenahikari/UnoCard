@@ -507,15 +507,15 @@ public class MainActivity extends AppCompatActivity
         // For welcome screen, only show difficulty buttons and winning rates
         if (status == STAT_WELCOME) {
             image = mUno.getEasyImage();
-            roi = new Rect(420, 270, 121, 181);
+            roi = new Rect(490, 270, 121, 181);
             image.copyTo(new Mat(mScr, roi), image);
             image = mUno.getHardImage();
-            roi.x = 740;
+            roi.x = 670;
             roi.y = 270;
             image.copyTo(new Mat(mScr, roi), image);
             easyRate = (mEasyTotal == 0 ? 0 : 100 * mEasyWin / mEasyTotal);
             hardRate = (mHardTotal == 0 ? 0 : 100 * mHardWin / mHardTotal);
-            info = easyRate + "% [WinningRate] " + hardRate + "%";
+            info = easyRate + "% WinRate " + hardRate + "%";
             textSize = Imgproc.getTextSize(info, FONT_SANS, 1.0, 1, null);
             point.x = 640 - textSize.width / 2;
             point.y = 250;
@@ -1058,35 +1058,68 @@ public class MainActivity extends AppCompatActivity
             else switch (mStatus) {
                 case STAT_WELCOME:
                     if (y >= 270 && y <= 450) {
-                        if (x >= 420 && x <= 540) {
+                        if (x >= 490 && x <= 610) {
                             // Difficulty: EASY
                             mDifficulty = LV_EASY;
                             mStatus = STAT_NEW_GAME;
                             onStatusChanged(mStatus);
-                        } // if (x >= 420 && x <= 540)
-                        else if (x >= 740 && x <= 860) {
+                        } // if (x >= 490 && x <= 610)
+                        else if (x >= 670 && x <= 790) {
                             // Difficulty: HARD
                             mDifficulty = LV_HARD;
                             mStatus = STAT_NEW_GAME;
                             onStatusChanged(mStatus);
-                        } // else if (x >= 740 && x <= 860)
+                        } // else if (x >= 670 && x <= 790)
                     } // if (y >= 270 && y <= 450)
                     break; // case STAT_WELCOME
 
                 case Player.YOU:
                     if (mAuto) {
+                        // Do operations automatically by AI strategies
                         break; // case Player.YOU
                     } // if (mAuto)
                     else if (mImmPlayAsk) {
-                        if (x > 310 && x < 500) {
+                        // Asking if you want to play the drawn card immediately
+                        if (y >= 520 && y <= 700) {
+                            hand = mUno.getPlayer(Player.YOU).getHandCards();
+                            size = hand.size();
+                            width = 60 * size + 60;
+                            startX = 640 - width / 2;
+                            if (x >= startX && x <= startX + width) {
+                                // Hand card area
+                                // Calculate which card clicked
+                                index = (x - startX) / 60;
+                                if (index >= size) {
+                                    index = size - 1;
+                                } // if (index >= size)
+
+                                // If clicked the drawn card, play it
+                                card = hand.get(index);
+                                if (card == mDrawnCard) {
+                                    mImmPlayAsk = false;
+                                    if (card.isWild() && size > 1) {
+                                        // Store index value as class member.
+                                        // This value will be used after the
+                                        // wild color determined.
+                                        mWildIndex = index;
+                                        mStatus = STAT_WILD_COLOR;
+                                        onStatusChanged(mStatus);
+                                    } // if (card.isWild() && size > 1)
+                                    else {
+                                        play(index, card.getRealColor());
+                                    } // else
+                                } // if (card == mDrawnCard)
+                            } // if (x >= startX && x <= startX + width)
+                        } // if (y >= 520 && y <= 700)
+                        else if (x > 310 && x < 500) {
                             if (y > 220 && y < 315) {
                                 // YES button, play the drawn card
-                                mImmPlayAsk = false;
                                 hand = mUno.getPlayer(mStatus).getHandCards();
                                 size = hand.size();
                                 for (index = 0; index < size; ++index) {
                                     card = hand.get(index);
                                     if (card == mDrawnCard) {
+                                        mImmPlayAsk = false;
                                         if (card.isWild() && size > 1) {
                                             // Store index value as class
                                             // member. This value will be used
@@ -1107,9 +1140,10 @@ public class MainActivity extends AppCompatActivity
                                 mImmPlayAsk = false;
                                 pass(mStatus);
                             } // else if (y > 315 && y < 410)
-                        } // if (x > 310 && x < 500)
+                        } // else if (x > 310 && x < 500)
                     } // else if (mImmPlayAsk)
                     else if (mChallengeAsk) {
+                        // Asking if you want to challenge your previous player
                         if (x > 310 && x < 500) {
                             if (y > 220 && y < 315) {
                                 // YES button, challenge wild +4
