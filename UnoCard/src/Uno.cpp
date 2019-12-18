@@ -104,28 +104,6 @@ const Mat& Card::getDarkImg() {
 } // getDarkImg()
 
 /**
- * @return Card's color.
- * @deprecated Use this->getRealColor() to replace the following expression:
- *             this->isWild() ? this->getWildColor() : this->getColor()
- */
-[[deprecated]] Color Card::getColor() {
-	return isWild() ? NONE : color;
-} // getColor()
-
-/**
- * Valid only when this is a wild card. Get the specified following legal
- * color by the player who played this wild card. For non-wild cards, this
- * function will always return Color::NONE.
- *
- * @return Card's wild color.
- * @deprecated Use this->getRealColor() to replace the following expression:
- *             this->isWild() ? this->getWildColor() : this->getColor()
- */
-[[deprecated]] Color Card::getWildColor() {
-	return isWild() ? color : NONE;
-} // getWildColor()
-
-/**
  * @return For non-wild cards, return card's color. For wild cards, return
  *         the specified wild color by the player who played this card, or
  *         Color::NONE if this card is in hand or card deck.
@@ -195,21 +173,15 @@ const vector<Card*>& Player::getHandCards() {
 } // getHandCards()
 
 /**
- * Normally return Color::NONE, but when this player started an UNO dash
- * with a wild card, call this function to get which color was specified.
+ * When this player played a wild card, record the color specified, as this
+ * player's dangerous color. The dangerous color will be remembered until
+ * this player played a card matching that color. You can use this value to
+ * defend this player's UNO dash.
  *
- * @return This player's dangerous color.
+ * @return This player's dangerous color, or Color::NONE if no available
+ *         dangerous color.
  */
 Color Player::getDangerousColor() {
-	Color dangerousColor;
-
-	if (handCards.size() == 1 && recent->isWild()) {
-		dangerousColor = recent->getRealColor();
-	} // if (handCards.size() == 1 && recent->isWild())
-	else {
-		dangerousColor = NONE;
-	} // else
-
 	return dangerousColor;
 } // getDangerousColor()
 
@@ -688,11 +660,11 @@ int Uno::switchDirection() {
  * @return Specified player's instance.
  */
 Player* Uno::getPlayer(int who) {
-	if (who >= 0 && who < 4) {
+	if (who >= Player::YOU && who <= Player::COM3) {
 		return &player[who];
-	} // if (who >= 0 && who < 4)
+	} // if (who >= Player::YOU && who <= Player::COM3)
 	else {
-		throw "Illegal parameter";
+		return nullptr;
 	} // else
 } // getPlayer()
 
@@ -716,16 +688,6 @@ int Uno::getUsedCount() {
 const vector<Card*>& Uno::getRecent() {
 	return recent;
 } // getRecent()
-
-/**
- * @param whom Get whose hand cards. Must be one of the following values:
- *             Player::YOU, Player::COM1, Player::COM2, Player::COM3.
- * @return Specified player's all hand cards.
- * @deprecated Use getPlayer(whom)->getHandCards() instead.
- */
-[[deprecated]] const vector<Card*>& Uno::getHandCardsOf(int whom) {
-	return getPlayer(whom)->getHandCards();
-} // getHandCardsOf()
 
 /**
  * Start a new Uno game. Shuffle cards, let everyone draw 7 cards,
@@ -850,22 +812,6 @@ Card* Uno::draw(int who) {
 } // draw()
 
 /**
- * Evaluate which color is the best color for the specified player. In our
- * evaluation system, zero cards are worth 2 points, non-zero number cards
- * are worth 4 points, and action cards are worth 5 points. Finally, the
- * color which contains the worthiest cards becomes the best color.
- *
- * @param whom Evaluate for whom. Must be one of the following values:
- *             Player::YOU, Player::COM1, Player::COM2, Player::COM3.
- * @return Best color for the specified player now. Specially, when the
- *         player remains only wild cards, function will return Color::RED.
- * @deprecated Use getPlayer(whom)->calcBestColor() instead.
- */
-[[deprecated]] Color Uno::bestColorFor(int whom) {
-	return getPlayer(whom)->calcBestColor();
-} // bestColorFor()
-
-/**
  * Check whether the specified card is legal to play. It's legal only when
  * it's wild, or it has the same color/content to the previous played card.
  *
@@ -929,8 +875,16 @@ Card* Uno::play(int who, int index, Color color) {
 		card = hand->at(index);
 		hand->erase(hand->begin() + index);
 		if (card->isWild()) {
+			// When a wild card is played, register the specified
+			// following legal color as the player's dangerous color
 			card->color = color;
+			player->dangerousColor = color;
 		} // if (card->isWild())
+		else if (card->color == player->dangerousColor) {
+			// Played a card that matches the registered
+			// dangerous color, unregister it
+			player->dangerousColor = NONE;
+		} // else if (card->color == player->dangerousColor)
 
 		player->recent = card;
 		recent.push_back(card);

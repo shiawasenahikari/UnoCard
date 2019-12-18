@@ -76,24 +76,6 @@ public:
 	const cv::Mat& getDarkImg();
 
 	/**
-	 * @return Card's color.
-	 * @deprecated Use this->getRealColor() to replace the following expression:
-	 *             this->isWild() ? this->getWildColor() : this->getColor()
-	 */
-	[[deprecated]] Color getColor();
-
-	/**
-	 * Valid only when this is a wild card. Get the specified following legal
-	 * color by the player who played this wild card. For non-wild cards, this
-	 * function will always return Color::NONE.
-	 *
-	 * @return Card's wild color.
-	 * @deprecated Use this->getRealColor() to replace the following expression:
-	 *             this->isWild() ? this->getWildColor() : this->getColor()
-	 */
-	[[deprecated]] Color getWildColor();
-
-	/**
 	 * @return For non-wild cards, return card's color. For wild cards, return
 	 *         the specified wild color by the player who played this card, or
 	 *         Color::NONE if this card is in hand or card deck.
@@ -212,10 +194,13 @@ public:
 	const std::vector<Card*>& getHandCards();
 
 	/**
-	 * Normally return Color::NONE, but when this player started an UNO dash
-	 * with a wild card, call this function to get which color was specified.
+	 * When this player played a wild card, record the color specified, as this
+	 * player's dangerous color. The dangerous color will be remembered until
+	 * this player played a card matching that color. You can use this value to
+	 * defend this player's UNO dash.
 	 *
-	 * @return This player's dangerous color.
+	 * @return This player's dangerous color, or Color::NONE if no available
+	 *         dangerous color.
 	 */
 	Color getDangerousColor();
 
@@ -246,6 +231,11 @@ private:
 	 * Hand cards.
 	 */
 	std::vector<Card*> handCards;
+
+	/**
+	 * Dangerous color.
+	 */
+	Color dangerousColor = NONE;
 
 	/**
 	 * Recent played card. If the player drew one or more cards in its last
@@ -367,14 +357,6 @@ public:
 	const std::vector<Card*>& getRecent();
 
 	/**
-	 * @param whom Get whose hand cards. Must be one of the following values:
-	 *             Player::YOU, Player::COM1, Player::COM2, Player::COM3.
-	 * @return Specified player's all hand cards.
-	 * @deprecated Use getPlayer(whom)->getHandCards() instead.
-	 */
-	[[deprecated]] const std::vector<Card*>& getHandCardsOf(int whom);
-
-	/**
 	 * Start a new Uno game. Shuffle cards, let everyone draw 7 cards,
 	 * then determine our start card.
 	 */
@@ -392,20 +374,6 @@ public:
 	 *         didn't draw a card because of the limit.
 	 */
 	Card* draw(int who);
-
-	/**
-	 * Evaluate which color is the best color for the specified player. In our
-	 * evaluation system, zero cards are worth 2 points, non-zero number cards
-	 * are worth 4 points, and action cards are worth 5 points. Finally, the
-	 * color which contains the worthiest cards becomes the best color.
-	 *
-	 * @param whom Evaluate for whom. Must be one of the following values:
-	 *             Player::YOU, Player::COM1, Player::COM2, Player::COM3.
-	 * @return Best color for the specified player now. Specially, when the
-	 *         player remains only wild cards, function will return Color::RED.
-	 * @deprecated Use getPlayer(whom)->calcBestColor() instead.
-	 */
-	[[deprecated]] Color bestColorFor(int whom);
 
 	/**
 	 * Check whether the specified card is legal to play. It's legal only when

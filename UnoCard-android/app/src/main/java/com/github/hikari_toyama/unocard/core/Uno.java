@@ -619,17 +619,6 @@ public class Uno {
     } // getRecent()
 
     /**
-     * @param whom Get whose hand cards. Must be one of the following values:
-     *             Player.YOU, Player.COM1, Player.COM2, Player.COM3.
-     * @return Specified player's all hand cards.
-     * @deprecated Use getPlayer(whom)->getHandCards() instead.
-     */
-    @Deprecated
-    public List<Card> getHandCardsOf(int whom) {
-        return getPlayer(whom).getHandCards();
-    } // getHandCardsOf()
-
-    /**
      * Start a new Uno game. Shuffle cards, let everyone draw 7 cards,
      * then determine our start card.
      */
@@ -751,23 +740,6 @@ public class Uno {
     } // draw()
 
     /**
-     * Evaluate which color is the best color for the specified player. In our
-     * evaluation system, zero cards are worth 2 points, non-zero number cards
-     * are worth 4 points, and action cards are worth 5 points. Finally, the
-     * color which contains the worthiest cards becomes the best color.
-     *
-     * @param whom Evaluate for whom. Must be one of the following values:
-     *             Player.YOU, Player.COM1, Player.COM2, Player.COM3.
-     * @return Best color for the specified player now. Specially, when the
-     * player remains only wild cards, method will return Color.RED.
-     * @deprecated Use getPlayer(whom).calcBestColor() instead.
-     */
-    @Deprecated
-    public Color bestColorFor(int whom) {
-        return getPlayer(whom).calcBestColor();
-    } // bestColorFor()
-
-    /**
      * Check whether the specified card is legal to play. It's legal only when
      * it's wild, or it has the same color/content to the previous played card.
      *
@@ -829,8 +801,16 @@ public class Uno {
             card = handCards.get(index);
             handCards.remove(index);
             if (card.isWild()) {
+                // When a wild card is played, register the specified
+                // following legal color as the player's dangerous color
                 card.color = color;
+                player[who].dangerousColor = color;
             } // if（card.isWild())
+            else if (card.color == player[who].dangerousColor) {
+                // Played a card that matches the registered
+                // dangerous color, unregister it
+                player[who].dangerousColor = NONE;
+            } // else if (card.color == player[who].dangerousColor)
 
             player[who].recent = card;
             recent.add(card);

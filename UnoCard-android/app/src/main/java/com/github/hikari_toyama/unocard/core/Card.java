@@ -10,7 +10,6 @@ package com.github.hikari_toyama.unocard.core;
 
 import org.opencv.core.Mat;
 
-import static com.github.hikari_toyama.unocard.core.Color.NONE;
 import static com.github.hikari_toyama.unocard.core.Content.DRAW2;
 import static com.github.hikari_toyama.unocard.core.Content.NUM0;
 import static com.github.hikari_toyama.unocard.core.Content.NUM1;
@@ -117,30 +116,6 @@ public class Card implements Comparable<Card> {
     public String getName() {
         return name;
     } // getName()
-
-    /**
-     * @return Card's color.
-     * @deprecated Use this.getRealColor() to replace the following
-     * expression: this.isWild() ? this.getWildColor() : this.getColor()
-     */
-    @Deprecated
-    public Color getColor() {
-        return isWild() ? NONE : color;
-    } // getColor()
-
-    /**
-     * Valid only when this is a wild card. Get the specified following legal
-     * color by the player who played this wild card. For non-wild cards, this
-     * method will always return Color.NONE.
-     *
-     * @return Card's wild color.
-     * @deprecated Use this.getRealColor() to replace the following
-     * expression: this.isWild() ? this.getWildColor() : this.getColor()
-     */
-    @Deprecated
-    public Color getWildColor() {
-        return isWild() ? color : NONE;
-    } // getWildColor()
 
     /**
      * @return For non-wild cards, return card's color. For wild cards,

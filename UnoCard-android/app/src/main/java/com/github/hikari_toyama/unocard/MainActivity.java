@@ -200,7 +200,7 @@ public class MainActivity extends AppCompatActivity
     private void pass(int who) {
         Runnable delayedTask;
 
-        if (who >= 0 && who < 4) {
+        if (who >= Player.YOU && who <= Player.COM3) {
             mStatus = STAT_IDLE; // block tap down events when idle
             refreshScreen(NAME[who] + ": Pass");
             delayedTask = () -> {
@@ -208,7 +208,7 @@ public class MainActivity extends AppCompatActivity
                 onStatusChanged(mStatus);
             }; // delayedTask = () -> {}
             mHandler.postDelayed(delayedTask, 750);
-        } // if (who >= 0 && who < 4)
+        } // if (who >= Player.YOU && who <= Player.COM3)
     } // pass()
 
     /**
@@ -917,7 +917,7 @@ public class MainActivity extends AppCompatActivity
      * Challenge failure: next player draw 6 cards.
      *
      * @param challenger Who challenges. Must be one of the following values:
-     *                   Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+     *                   Player.YOU, Player.COM1, Player.COM2, Player.COM3.
      * @param challenged Whether the challenger challenged the [wild +4].
      */
     private void onChallenge(int challenger, boolean challenged) {

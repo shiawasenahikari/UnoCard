@@ -51,21 +51,25 @@ public class Player {
     Card recent = null;
 
     /**
+     * Dangerous color.
+     */
+    Color dangerousColor = NONE;
+
+    /**
      * Hand cards.
      */
-    List<Card> handCards;
+    List<Card> handCards = new ArrayList<>();
 
     /**
      * Hand cards (read only version, provide for external accesses).
      */
-    List<Card> handCards_readOnly;
+    List<Card> handCards_readOnly = Collections.unmodifiableList(handCards);
 
     /**
      * Default constructor.
      */
     Player() {
-        handCards = new ArrayList<>();
-        handCards_readOnly = Collections.unmodifiableList(handCards);
+        // NOP (Only change accessibility to package-private)
     } // Player() (Class Constructor)
 
     /**
@@ -76,21 +80,15 @@ public class Player {
     } // getHandCards()
 
     /**
-     * Normally return Color.NONE, but when this player started an UNO dash
-     * with a wild card, call this method to get which color was specified.
+     * When this player played a wild card, record the color specified, as this
+     * player's dangerous color. The dangerous color will be remembered until
+     * this player played a card matching that color. You can use this value to
+     * defend this player's UNO dash.
      *
-     * @return This player's dangerous color.
+     * @return This player's dangerous color, or
+     * Color.NONE if no available dangerous color.
      */
     public Color getDangerousColor() {
-        Color dangerousColor;
-
-        if (handCards.size() == 1 && recent.isWild()) {
-            dangerousColor = recent.color;
-        } // if (handCards.size() == 1 && recent.isWild())
-        else {
-            dangerousColor = NONE;
-        } // else
-
         return dangerousColor;
     } // getDangerousColor()
 

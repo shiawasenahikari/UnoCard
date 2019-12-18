@@ -216,13 +216,13 @@ static void hardAI() {
  *            Player::YOU, Player::COM1, Player::COM2, Player::COM3.
  */
 static void pass(int who) {
-	if (who >= 0 && who < 4) {
+	if (who >= Player::YOU && who <= Player::COM3) {
 		sStatus = STAT_IDLE; // block mouse click events when idle
 		refreshScreen(NAME[who] + ": Pass");
 		WAIT_MS(750);
 		sStatus = (who + sUno->getDirection()) % 4;
 		onStatusChanged(sStatus);
-	} // if (who >= 0 && who < 4)
+	} // if (who >= Player::YOU && who <= Player::COM3)
 } // pass()
 
 /**
