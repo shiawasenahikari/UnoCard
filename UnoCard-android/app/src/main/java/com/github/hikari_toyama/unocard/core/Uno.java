@@ -628,7 +628,7 @@ public class Uno {
         List<Card> allCards;
 
         // Clear card deck, used card deck, recent played cards,
-        // and everyone's hand cards
+        // everyone's hand cards, and everyone's dangerous colors
         deck.clear();
         used.clear();
         recent.clear();
@@ -636,6 +636,10 @@ public class Uno {
         player[1].handCards.clear();
         player[2].handCards.clear();
         player[3].handCards.clear();
+        player[0].dangerousColor = NONE;
+        player[1].dangerousColor = NONE;
+        player[2].dangerousColor = NONE;
+        player[3].dangerousColor = NONE;
 
         // Reset direction
         direction = DIR_LEFT;

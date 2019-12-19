@@ -703,7 +703,7 @@ void Uno::start() {
 	direction = DIR_LEFT;
 
 	// Clear card deck, used card deck, recent played cards,
-	// and everyone's hand cards
+	// everyone's hand cards, and everyone's dangerous colors
 	deck.clear();
 	used.clear();
 	recent.clear();
@@ -711,6 +711,10 @@ void Uno::start() {
 	player[1].handCards.clear();
 	player[2].handCards.clear();
 	player[3].handCards.clear();
+	player[0].dangerousColor = NONE;
+	player[1].dangerousColor = NONE;
+	player[2].dangerousColor = NONE;
+	player[3].dangerousColor = NONE;
 
 	// Generate a temporary sequenced card deck
 	for (i = 0; i < 108; ++i) {

@@ -709,8 +709,8 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 	} // else if (oppoSize == 1)
 	else if (next->getRecent() == nullptr && yourSize > 2) {
 		// Strategies when your next player drew a card in its last action.
-		// You do not need to play your limitation/wild cards when you are
-		// not ready to start dash. Use them in more dangerous cases.
+		// Unless keeping or changing to your best color, you do not need to
+		// play your limitation/wild cards. Use them in more dangerous cases.
 		if (hasRev && prevSize - nextSize >= 3) {
 			idxBest = idxRev;
 		} // if (hasRev && prevSize - nextSize >= 3)
@@ -720,9 +720,18 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 		else if (hasNum) {
 			idxBest = idxNum;
 		} // else if (hasNum)
-		else if (hasRev && prevSize >= 4) {
+		else if (hasRev &&
+			(prevSize >= 4 || prev->getRecent() == nullptr)) {
 			idxBest = idxRev;
-		} // else if (hasRev && prevSize >= 4)
+		} // else if (hasRev && ...)
+		else if (hasSkip &&
+			hand.at(idxSkip)->getRealColor() == bestColor) {
+			idxBest = idxSkip;
+		} // else if (hasSkip && ...)
+		else if (hasDraw2 &&
+			hand.at(idxDraw2)->getRealColor() == bestColor) {
+			idxBest = idxDraw2;
+		} // else if (hasDraw2 && ...)
 	} // else if (next->getRecent() == nullptr && yourSize > 2)
 	else {
 		// Normal strategies
@@ -748,12 +757,25 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 			// Then consider to play a number card.
 			idxBest = idxNum;
 		} // else if (hasNum)
-		else if (hasRev && prevSize >= 4) {
+		else if (hasRev &&
+			(prevSize >= 4 || prev->getRecent() == nullptr)) {
 			// When you have no more legal number cards to play, you can
 			// play a [reverse] safely when your previous player still has
-			// a number of cards.
+			// a number of cards, or drew a card in its previous action
+			// (this probably makes it draw a card again).
 			idxBest = idxRev;
-		} // else if (hasRev && prevSize >= 4)
+		} // else if (hasRev && ...)
+		else if (hasSkip &&
+			hand.at(idxSkip)->getRealColor() == bestColor) {
+			// Unless keeping or changing to your best color, you do not need to
+			// play your limitation/wild cards when your next player still has a
+			// number of cards. Use them in more dangerous cases.
+			idxBest = idxSkip;
+		} // else if (hasSkip && ...)
+		else if (hasDraw2 &&
+			hand.at(idxDraw2)->getRealColor() == bestColor) {
+			idxBest = idxDraw2;
+		} // else if (hasDraw2 && ...)
 		else if (hasWild && nextSize <= 4) {
 			// When your next player remains only a few cards, and you have
 			// no more legal number/action cards to play, try to play a
@@ -770,32 +792,10 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 			// When you remain only 2 cards, including a wild card, and your
 			// previous player seems no enough power to limit you (has too
 			// few cards), start your UNO dash!
-			if (hasDraw2) {
-				// When you still have a [+2] card, play it, even if it's
-				// not worth to let your next player draw cards.
-				idxBest = idxDraw2;
-			} // if (hasDraw2)
-			else if (hasSkip) {
-				// When you still have a [skip] card, play it, even if it's
-				// not worth to let your next player skip its turn.
-				idxBest = idxSkip;
-			} // else if (hasSkip)
-			else {
-				// When you have no more legal draw2/skip cards, play your
-				// wild card to start your UNO dash.
-				idxBest = idxWild;
-			} // else
+			idxBest = idxWild;
 		} // else if (hasWild && yourSize == 2 && prevSize <= 3)
 		else if (hasWildDraw4 && yourSize == 2 && prevSize <= 3) {
-			if (hasDraw2) {
-				idxBest = idxDraw2;
-			} // if (hasDraw2)
-			else if (hasSkip) {
-				idxBest = idxSkip;
-			} // else if (hasSkip)
-			else {
-				idxBest = idxWildDraw4;
-			} // else
+			idxBest = idxWildDraw4;
 		} // else if (hasWildDraw4 && yourSize == 2 && prevSize <= 3)
 		else if (yourSize == Uno::MAX_HOLD_CARDS) {
 			// When you are holding 14 cards, which means you cannot hold
