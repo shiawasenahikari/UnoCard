@@ -51,6 +51,11 @@ public class Player {
     Card recent = null;
 
     /**
+     * Safe color.
+     */
+    Color safeColor = NONE;
+
+    /**
      * Dangerous color.
      */
     Color dangerousColor = NONE;
@@ -78,6 +83,19 @@ public class Player {
     public List<Card> getHandCards() {
         return handCards_readOnly;
     } // getHandCards()
+
+    /**
+     * When this player draw a card in action, record the previous played card's
+     * color, as this player's safe color. What this player did means that this
+     * player probably do not have cards in that color. You can use this value
+     * to defend this player's UNO dash.
+     *
+     * @return This player's safe color, or
+     * Color.NONE if no available safe color.
+     */
+    public Color getSafeColor() {
+        return safeColor;
+    } // getSafeColor()
 
     /**
      * When this player played a wild card, record the color specified, as this

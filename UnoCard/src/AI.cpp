@@ -305,16 +305,16 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 	Player* next;
 	Player* oppo;
 	Player* prev;
-	Color bestColor;
-	Color lastColor;
 	int i, direction;
-	Color dangerColor;
 	vector<Card*> hand;
-	bool hasZero, hasWild, hasWildDraw4;
-	bool hasNum, hasRev, hasSkip, hasDraw2;
+	Color bestColor, lastColor;
+	bool hasRev, hasSkip, hasDraw2;
+	int idxNumIn[5], idxWild, idxWildDraw4;
 	int idxBest, idxRev, idxSkip, idxDraw2;
-	int idxZero, idxNum, idxWild, idxWildDraw4;
+	bool hasNumIn[5], hasWild, hasWildDraw4;
 	int yourSize, nextSize, oppoSize, prevSize;
+	Color nextSafeColor, oppoSafeColor, prevSafeColor;
+	Color nextDangerColor, oppoDangerColor, prevDangerColor;
 
 	if (outColor == nullptr) {
 		throw "outColor[] cannot be nullptr";
@@ -337,8 +337,13 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 	oppoSize = (int)oppo->getHandCards().size();
 	prev = sUno->getPlayer((4 + whom - direction) % 4);
 	prevSize = (int)prev->getHandCards().size();
-	idxBest = idxRev = idxSkip = idxDraw2 = -1;
-	idxZero = idxNum = idxWild = idxWildDraw4 = -1;
+	hasRev = hasSkip = hasDraw2 = hasWild = hasWildDraw4 = false;
+	idxBest = idxRev = idxSkip = idxDraw2 = idxWild = idxWildDraw4 = -1;
+	for (i = 0; i < 5; ++i) {
+		hasNumIn[i] = false;
+		idxNumIn[i] = -1;
+	} // for (i = 0; i < 5; ++i)
+
 	bestColor = curr->calcBestColor();
 	last = sUno->getRecent().back();
 	lastColor = last->getRealColor();
@@ -354,106 +359,99 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 
 		if (legal) {
 			switch (card->getContent()) {
-			case NUM0:
-				if (idxZero < 0 || card->getRealColor() == bestColor) {
-					idxZero = i;
-				} // if (idxZero < 0 || card->getRealColor() == bestColor)
-				break; // case NUM0
-
 			case DRAW2:
 				if (idxDraw2 < 0 || card->getRealColor() == bestColor) {
 					idxDraw2 = i;
+					hasDraw2 = true;
 				} // if (idxDraw2 < 0 || card->getRealColor() == bestColor)
 				break; // case DRAW2
 
 			case SKIP:
 				if (idxSkip < 0 || card->getRealColor() == bestColor) {
 					idxSkip = i;
+					hasSkip = true;
 				} // if (idxSkip < 0 || card->getRealColor() == bestColor)
 				break; // case SKIP
 
 			case REV:
 				if (idxRev < 0 || card->getRealColor() == bestColor) {
 					idxRev = i;
+					hasRev = true;
 				} // if (idxRev < 0 || card->getRealColor() == bestColor)
 				break; // case REV
 
 			case WILD:
 				idxWild = i;
+				hasWild = true;
 				break; // case WILD
 
 			case WILD_DRAW4:
 				idxWildDraw4 = i;
+				hasWildDraw4 = true;
 				break; // case WILD_DRAW4
 
-			default: // non-zero number cards
-				if (idxNum < 0 || card->getRealColor() == bestColor) {
-					idxNum = i;
-				} // if (idxNum < 0 || card->getRealColor() == bestColor)
+			default: // number cards
+				if (idxNumIn[card->getRealColor()] < 0) {
+					idxNumIn[card->getRealColor()] = i;
+					hasNumIn[card->getRealColor()] = true;
+				} // if (idxNumIn[card->getRealColor()] < 0)
 				break; // default
 			} // switch (card->getContent())
 		} // if (legal)
 	} // for (i = 0; i < yourSize; ++i)
 
 	// Decision tree
-	hasNum = (idxNum >= 0);
-	hasRev = (idxRev >= 0);
-	hasZero = (idxZero >= 0);
-	hasSkip = (idxSkip >= 0);
-	hasWild = (idxWild >= 0);
-	hasDraw2 = (idxDraw2 >= 0);
-	hasWildDraw4 = (idxWildDraw4 >= 0);
+	nextSafeColor = next->getSafeColor();
+	oppoSafeColor = oppo->getSafeColor();
+	prevSafeColor = prev->getSafeColor();
+	nextDangerColor = next->getDangerousColor();
+	oppoDangerColor = oppo->getDangerousColor();
+	prevDangerColor = prev->getDangerousColor();
 	if (nextSize == 1) {
 		// Strategies when your next player remains only one card.
 		// Limit your next player's action as well as you can.
-		dangerColor = next->getDangerousColor();
 		if (hasDraw2) {
 			// Play a [+2] to make your next player draw two cards!
 			idxBest = idxDraw2;
 		} // if (hasDraw2)
-		else if (lastColor == dangerColor) {
+		else if (lastColor == nextDangerColor) {
 			// Your next player played a wild card, started an UNO dash in
 			// its last action, and what's worse is that the legal color has
 			// not been changed yet. You have to change the following legal
 			// color, or you will approximately 100% lose this game.
-			if (hasZero &&
-				hand.at(idxZero)->getRealColor() != dangerColor) {
-				// When you have no [+2] cards, you have to change the legal
-				// color, or use [wild +4] cards. At first, try to change
-				// legal color by playing a number card, instead of using
-				// wild cards.
-				idxBest = idxZero;
-			} // if (hasZero && ...)
-			else if (hasNum &&
-				hand.at(idxNum)->getRealColor() != dangerColor) {
-				idxBest = idxNum;
-			} // else if (hasNum && ...)
+			while (bestColor == nextDangerColor
+				|| oppoSize == 1 && bestColor == oppoDangerColor
+				|| prevSize == 1 && bestColor == prevDangerColor) {
+				// In dangerous cases, you could not just play wild cards
+				// and select your best color. Do not choose any of your
+				// opponents' dangerous color!
+				bestColor = Color(rand() % 4 + 1);
+			} // while (bestColor == nextDangerColor || ...)
+
+			if (hasNumIn[bestColor]) {
+				idxBest = idxNumIn[bestColor];
+			} // if (hasNumIn[bestColor])
+			else if (hasNumIn[RED] && nextDangerColor != RED) {
+				idxBest = idxNumIn[RED];
+			} // else if (hasNumIn[RED] && nextDangerColor != RED)
+			else if (hasNumIn[BLUE] && nextDangerColor != BLUE) {
+				idxBest = idxNumIn[BLUE];
+			} // else if (hasNumIn[BLUE] && nextDangerColor != BLUE)
+			else if (hasNumIn[GREEN] && nextDangerColor != GREEN) {
+				idxBest = idxNumIn[GREEN];
+			} // else if (hasNumIn[GREEN] && nextDangerColor != GREEN)
+			else if (hasNumIn[YELLOW] && nextDangerColor != YELLOW) {
+				idxBest = idxNumIn[YELLOW];
+			} // else if (hasNumIn[YELLOW] && nextDangerColor != YELLOW)
 			else if (hasSkip) {
 				// Play a [skip] to skip its turn and wait for more chances.
 				idxBest = idxSkip;
 			} // else if (hasSkip)
 			else if (hasWildDraw4) {
-				// Now start to use wild cards. Use [wild +4] cards firstly,
-				// because this card makes your next player draw four cards.
-				while (bestColor == dangerColor
-					|| bestColor == oppo->getDangerousColor()
-					|| bestColor == prev->getDangerousColor()) {
-					bestColor = Color(rand() % 4 + 1);
-				} // while (bestColor == dangerColor || ...)
-
+				// Now start to use wild cards.
 				idxBest = idxWildDraw4;
 			} // else if (hasWildDraw4)
 			else if (hasWild) {
-				// If you only have [wild] cards, firstly consider to change
-				// to your best color, but when your next player's last card
-				// has the same color to your best color, you have to change
-				// to another color.
-				while (bestColor == dangerColor
-					|| bestColor == oppo->getDangerousColor()
-					|| bestColor == prev->getDangerousColor()) {
-					bestColor = Color(rand() % 4 + 1);
-				} // while (bestColor == dangerColor || ...)
-
 				idxBest = idxWild;
 			} // else if (hasWild)
 			else if (hasRev) {
@@ -461,251 +459,358 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 				// If you even do not have this choice, you lose this game.
 				idxBest = idxRev;
 			} // else if (hasRev)
-		} // else if (lastColor == dangerColor)
-		else if (dangerColor != NONE) {
+		} // else if (lastColor == nextDangerColor)
+		else if (nextDangerColor != NONE) {
 			// Your next player played a wild card, started an UNO dash in
 			// its last action, but fortunately the legal color has been
 			// changed already. Just be careful not to re-change the legal
 			// color to the dangerous color again.
-			if (hasZero &&
-				hand.at(idxZero)->getRealColor() != dangerColor) {
-				idxBest = idxZero;
-			} // if (hasZero && ...)
-			else if (hasNum &&
-				hand.at(idxNum)->getRealColor() != dangerColor) {
-				idxBest = idxNum;
-			} // else if (hasNum && ...)
+			if (hasNumIn[bestColor] && nextDangerColor != bestColor) {
+				idxBest = idxNumIn[bestColor];
+			} // if (hasNumIn[bestColor] && nextDangerColor != bestColor)
+			else if (hasNumIn[RED] && nextDangerColor != RED) {
+				idxBest = idxNumIn[RED];
+			} // else if (hasNumIn[RED] && nextDangerColor != RED)
+			else if (hasNumIn[BLUE] && nextDangerColor != BLUE) {
+				idxBest = idxNumIn[BLUE];
+			} // else if (hasNumIn[BLUE] && nextDangerColor != BLUE)
+			else if (hasNumIn[GREEN] && nextDangerColor != GREEN) {
+				idxBest = idxNumIn[GREEN];
+			} // else if (hasNumIn[GREEN] && nextDangerColor != GREEN)
+			else if (hasNumIn[YELLOW] && nextDangerColor != YELLOW) {
+				idxBest = idxNumIn[YELLOW];
+			} // else if (hasNumIn[YELLOW] && nextDangerColor != YELLOW)
 			else if (hasRev &&
 				prevSize >= 4 &&
-				hand.at(idxRev)->getRealColor() != dangerColor) {
+				hand.at(idxRev)->getRealColor() != nextDangerColor) {
 				idxBest = idxRev;
 			} // else if (hasRev && ...)
 			else if (hasSkip &&
-				hand.at(idxSkip)->getRealColor() != dangerColor) {
+				hand.at(idxSkip)->getRealColor() != nextDangerColor) {
 				idxBest = idxSkip;
 			} // else if (hasSkip && ...)
-		} // else if (dangerColor != NONE)
-		else if (hasWildDraw4) {
+		} // else if (nextDangerColor != NONE)
+		else {
 			// Your next player started an UNO dash without playing a wild
-			// card, so use normal defense strategies. Firstly play a
-			// [wild +4] to make your next player draw four cards, even if
-			// the legal color is already your best color!
-			idxBest = idxWildDraw4;
-		} // else if (hasWildDraw4)
-		else if (hasSkip) {
-			// Play a [skip] to skip its turn and wait for more chances.
-			idxBest = idxSkip;
-		} // else if (hasSkip)
-		else if (hasRev) {
-			// Play a [reverse] to get help from your opposite player.
-			idxBest = idxRev;
-		} // else if (hasRev)
-		else if (hasWild && lastColor != bestColor) {
-			// Play a [wild] and change the legal color to your best to
-			// decrease its possibility of playing the final card legally.
-			idxBest = idxWild;
-		} // else if (hasWild && lastColor != bestColor)
-		else if (hasZero) {
-			// No more powerful choices. Play a number card.
-			idxBest = idxZero;
-		} // else if (hasZero)
-		else if (hasNum) {
-			idxBest = idxNum;
-		} // else if (hasNum)
+			// card, so use normal defense strategies.
+			if (nextSafeColor != NONE &&
+				(oppoSize > 1 || oppoDangerColor != nextSafeColor) &&
+				(prevSize > 1 || prevDangerColor != nextSafeColor)) {
+				// Determine your best color in dangerous cases. Firstly
+				// choose next player's safe color, but be careful of the
+				// conflict with other opponents' dangerous colors!
+				bestColor = nextSafeColor;
+			} // if (nextSafeColor != NONE && ...)
+			else while (bestColor == nextDangerColor
+				|| oppoSize == 1 && bestColor == oppoDangerColor
+				|| prevSize == 1 && bestColor == prevDangerColor) {
+				bestColor = Color(rand() % 4 + 1);
+			} // else while (bestColor == nextDangerColor || ...)
+
+			if (hasSkip) {
+				// Play a [skip] to skip its turn and wait for more chances.
+				idxBest = idxSkip;
+			} // if (hasSkip)
+			else if (hasWildDraw4 && !hasNumIn[lastColor]) {
+				// Then play a [wild +4] to make your next player draw four
+				// cards (if it's legal to play this card).
+				idxBest = idxWildDraw4;
+			} // else if (hasWildDraw4 && !hasNumIn[lastColor])
+			else if (hasRev) {
+				// Play a [reverse] to get help from your opposite player.
+				idxBest = idxRev;
+			} // else if (hasRev)
+			else if (hasNumIn[bestColor]) {
+				// Play a number card or a wild card to change legal color
+				// to your best as far as you can.
+				idxBest = idxNumIn[bestColor];
+			} // else if (hasNumIn[bestColor])
+			else if (hasWild && lastColor != bestColor) {
+				idxBest = idxWild;
+			} // else if (hasWild && lastColor != bestColor)
+			else if (hasWildDraw4 && lastColor != bestColor) {
+				idxBest = idxWildDraw4;
+			} // else if (hasWildDraw4 && lastColor != bestColor)
+			else if (hasNumIn[RED]) {
+				idxBest = idxNumIn[RED];
+			} // else if (hasNumIn[RED])
+			else if (hasNumIn[BLUE]) {
+				idxBest = idxNumIn[BLUE];
+			} // else if (hasNumIn[BLUE])
+			else if (hasNumIn[GREEN]) {
+				idxBest = idxNumIn[GREEN];
+			} // else if (hasNumIn[GREEN])
+			else if (hasNumIn[YELLOW]) {
+				idxBest = idxNumIn[YELLOW];
+			} // else if (hasNumIn[YELLOW])
+		} // else
 	} // if (nextSize == 1)
 	else if (prevSize == 1) {
 		// Strategies when your previous player remains only one card.
 		// Save your action cards as much as you can. once a reverse card is
 		// played, you can use these cards to limit your previous player's
 		// action.
-		dangerColor = prev->getDangerousColor();
-		if (lastColor == dangerColor) {
+		if (lastColor == prevDangerColor) {
 			// Your previous player played a wild card, started an UNO dash
 			// in its last action. You have to change the following legal
 			// color, or you will approximately 100% lose this game.
+			while (bestColor == prevDangerColor
+				|| oppoSize == 1 && bestColor == oppoDangerColor) {
+				// In dangerous cases, you could not just play wild cards
+				// and select your best color. Do not choose any of your
+				// opponents' dangerous color!
+				bestColor = Color(rand() % 4 + 1);
+			} // while (bestColor == prevDangerColor || ...)
+
 			if (hasSkip &&
-				hand.at(idxSkip)->getRealColor() != dangerColor) {
+				hand.at(idxSkip)->getRealColor() != prevDangerColor) {
 				// When your opposite player played a [skip], and you have a
 				// [skip] with different color, play it.
 				idxBest = idxSkip;
 			} // if (hasSkip && ...)
 			else if (hasWild) {
-				// Now start to use wild cards. Firstly consider to change
-				// to your best color, but when your next player's last card
-				// has the same color to your best color, you have to change
-				// to another color.
-				while (bestColor == dangerColor
-					|| bestColor == next->getDangerousColor()
-					|| bestColor == oppo->getDangerousColor()) {
-					bestColor = Color(rand() % 4 + 1);
-				} // while (bestColor == dangerColor || ...)
-
+				// Now start to use wild cards.
 				idxBest = idxWild;
 			} // else if (hasWild)
 			else if (hasWildDraw4) {
-				while (bestColor == dangerColor
-					|| bestColor == next->getDangerousColor()
-					|| bestColor == oppo->getDangerousColor()) {
-					bestColor = Color(rand() % 4 + 1);
-				} // while (bestColor == dangerColor || ...)
-
-				idxBest = idxWild;
+				idxBest = idxWildDraw4;
 			} // else if (hasWildDraw4)
-			else if (hasNum) {
+			else if (hasNumIn[bestColor]) {
 				// When you have no wild cards, play a number card and try
-				// to get help from other players. In order to increase your
-				// following players' possibility of changing the legal
-				// color, do not play zero cards preferentially.
-				idxBest = idxNum;
-			} // else if (hasNum)
-			else if (hasZero) {
-				idxBest = idxZero;
-			} // else if (hasZero)
-		} // if (lastColor == dangerColor)
-		else if (hasNum) {
+				// to get help from other players.
+				idxBest = idxNumIn[bestColor];
+			} // else if (hasNumIn[bestColor])
+			else if (hasNumIn[RED]) {
+				idxBest = idxNumIn[RED];
+			} // else if (hasNumIn[RED])
+			else if (hasNumIn[BLUE]) {
+				idxBest = idxNumIn[BLUE];
+			} // else if (hasNumIn[BLUE])
+			else if (hasNumIn[GREEN]) {
+				idxBest = idxNumIn[GREEN];
+			} // else if (hasNumIn[GREEN])
+			else if (hasNumIn[YELLOW]) {
+				idxBest = idxNumIn[YELLOW];
+			} // else if (hasNumIn[YELLOW])
+		} // if (lastColor == prevDangerColor)
+		else if (prevDangerColor != NONE) {
+			// Your previous player played a wild card, started an UNO dash
+			// in its last action, but fortunately the legal color has been
+			// changed already. Just be careful not to re-change the legal
+			// color to the dangerous color again.
+			if (hasNumIn[bestColor] && prevDangerColor != bestColor) {
+				idxBest = idxNumIn[bestColor];
+			} // if (hasNumIn[bestColor] && prevDangerColor != bestColor)
+			else if (hasNumIn[RED] && prevDangerColor != RED) {
+				idxBest = idxNumIn[RED];
+			} // else if (hasNumIn[RED] && prevDangerColor != RED)
+			else if (hasNumIn[BLUE] && prevDangerColor != BLUE) {
+				idxBest = idxNumIn[BLUE];
+			} // else if (hasNumIn[BLUE] && prevDangerColor != BLUE)
+			else if (hasNumIn[GREEN] && prevDangerColor != GREEN) {
+				idxBest = idxNumIn[GREEN];
+			} // else if (hasNumIn[GREEN] && prevDangerColor != GREEN)
+			else if (hasNumIn[YELLOW] && prevDangerColor != YELLOW) {
+				idxBest = idxNumIn[YELLOW];
+			} // else if (hasNumIn[YELLOW] && prevDangerColor != YELLOW)
+		} // else if (prevDangerColor != NONE)
+		else {
 			// Your previous player started an UNO dash without playing a
-			// wild card, so use normal defense strategies. In order to
-			// increase your following players' possibility of changing the
-			// legal color, do not play zero cards preferentially.
-			idxBest = idxNum;
-		} // else if (hasNum)
-		else if (hasZero) {
-			idxBest = idxZero;
-		} // else if (hasZero)
-		else if (hasWild && lastColor != bestColor) {
-			idxBest = idxWild;
-		} // else if (hasWild && lastColor != bestColor)
-		else if (hasWildDraw4 && lastColor != bestColor) {
-			idxBest = idxWildDraw4;
-		} // else if (hasWildDraw4 && lastColor != bestColor)
+			// wild card, so use normal defense strategies.
+			if (prevSafeColor != NONE &&
+				(oppoSize > 1 || oppoDangerColor != prevSafeColor)) {
+				// Determine your best color in dangerous cases. Firstly
+				// choose previous player's safe color, but be careful of
+				// the conflict with other opponents' dangerous colors!
+				bestColor = prevSafeColor;
+			} // if (prevSafeColor != NONE && ...)
+			else while (bestColor == prevDangerColor
+				|| oppoSize == 1 && bestColor == oppoDangerColor) {
+				bestColor = Color(rand() % 4 + 1);
+			} // else while (bestColor == prevDangerColor || ...)
+
+			if (hasNumIn[bestColor]) {
+				idxBest = idxNumIn[bestColor];
+			} // if (hasNumIn[bestColor])
+			else if (hasWild && lastColor != bestColor) {
+				idxBest = idxWild;
+			} // else if (hasWild && lastColor != bestColor)
+			else if (hasWildDraw4 && lastColor != bestColor) {
+				idxBest = idxWildDraw4;
+			} // else if (hasWildDraw4 && lastColor != bestColor)
+			else if (hasNumIn[RED]) {
+				idxBest = idxNumIn[RED];
+			} // else if (hasNumIn[RED])
+			else if (hasNumIn[BLUE]) {
+				idxBest = idxNumIn[BLUE];
+			} // else if (hasNumIn[BLUE])
+			else if (hasNumIn[GREEN]) {
+				idxBest = idxNumIn[GREEN];
+			} // else if (hasNumIn[GREEN])
+			else if (hasNumIn[YELLOW]) {
+				idxBest = idxNumIn[YELLOW];
+			} // else if (hasNumIn[YELLOW])
+		} // else
 	} // else if (prevSize == 1)
 	else if (oppoSize == 1) {
 		// Strategies when your opposite player remains only one card.
 		// Give more freedom to your next player, the only one that can
 		// directly limit your opposite player's action.
-		dangerColor = oppo->getDangerousColor();
-		if (lastColor == dangerColor) {
+		if (lastColor == oppoDangerColor) {
 			// Your opposite player played a wild card, started an UNO dash
 			// in its last action, and what's worse is that the legal color
 			// has not been changed yet. You have to change the following
 			// legal color, or you will approximately 100% lose this game.
-			if (hasZero &&
-				hand.at(idxZero)->getRealColor() != dangerColor) {
+			while (bestColor == oppoDangerColor) {
+				// In dangerous cases, you could not just play wild cards
+				// and select your best color. Do not choose any of your
+				// opponents' dangerous color!
+				bestColor = Color(rand() % 4 + 1);
+			} // while (bestColor == oppoDangerColor)
+
+			if (hasNumIn[bestColor]) {
 				// At first, try to change legal color by playing an action
 				// card or a number card, instead of using wild cards.
-				idxBest = idxZero;
-			} // if (hasZero && ...)
-			else if (hasNum &&
-				hand.at(idxNum)->getRealColor() != dangerColor) {
-				idxBest = idxNum;
-			} // else if (hasNum && ...)
+				idxBest = idxNumIn[bestColor];
+			} // if (hasNumIn[bestColor])
+			else if (hasNumIn[RED] && oppoDangerColor != RED) {
+				idxBest = idxNumIn[RED];
+			} // else if (hasNumIn[RED] && oppoDangerColor != RED)
+			else if (hasNumIn[BLUE] && oppoDangerColor != BLUE) {
+				idxBest = idxNumIn[BLUE];
+			} // else if (hasNumIn[BLUE] && oppoDangerColor != BLUE)
+			else if (hasNumIn[GREEN] && oppoDangerColor != GREEN) {
+				idxBest = idxNumIn[GREEN];
+			} // else if (hasNumIn[GREEN] && oppoDangerColor != GREEN)
+			else if (hasNumIn[YELLOW] && oppoDangerColor != YELLOW) {
+				idxBest = idxNumIn[YELLOW];
+			} // else if (hasNumIn[YELLOW] && oppoDangerColor != YELLOW)
 			else if (hasRev &&
-				hand.at(idxRev)->getRealColor() != dangerColor) {
+				hand.at(idxRev)->getRealColor() != oppoDangerColor) {
 				idxBest = idxRev;
 			} // else if (hasRev && ...)
 			else if (hasSkip &&
-				hand.at(idxSkip)->getRealColor() != dangerColor) {
+				hand.at(idxSkip)->getRealColor() != oppoDangerColor) {
 				idxBest = idxSkip;
 			} // else if (hasSkip && ...)
 			else if (hasDraw2 &&
-				hand.at(idxDraw2)->getRealColor() != dangerColor) {
+				hand.at(idxDraw2)->getRealColor() != oppoDangerColor) {
 				idxBest = idxDraw2;
 			} // else if (hasDraw2 && ...)
 			else if (hasWild) {
-				// Now start to use your wild cards. Firstly consider to
-				// change to your best color, but when your next player's
-				// last card has the same color to your best color, you
-				// have to change to another color.
-				while (bestColor == dangerColor
-					|| bestColor == next->getDangerousColor()
-					|| bestColor == prev->getDangerousColor()) {
-					bestColor = Color(rand() % 4 + 1);
-				} // while (bestColor == dangerColor || ...)
-
+				// Now start to use your wild cards.
 				idxBest = idxWild;
 			} // else if (hasWild)
 			else if (hasWildDraw4) {
-				while (bestColor == dangerColor
-					|| bestColor == next->getDangerousColor()
-					|| bestColor == prev->getDangerousColor()) {
-					bestColor = Color(rand() % 4 + 1);
-				} // while (bestColor == dangerColor || ...)
-
 				idxBest = idxWildDraw4;
 			} // else if (hasWildDraw4)
 			else if (hasRev && prevSize - nextSize >= 3) {
 				// Finally try to get help from other players.
 				idxBest = idxRev;
 			} // else if (hasRev && prevSize - nextSize >= 3)
-			else if (hasNum) {
-				idxBest = idxNum;
-			} // else if (hasNum)
-			else if (hasZero) {
-				idxBest = idxZero;
-			} // else if (hasZero)
-		} // if (lastColor == dangerColor)
-		else if (dangerColor != NONE) {
+			else if (hasNumIn[RED]) {
+				idxBest = idxNumIn[RED];
+			} // else if (hasNumIn[RED])
+			else if (hasNumIn[BLUE]) {
+				idxBest = idxNumIn[BLUE];
+			} // else if (hasNumIn[BLUE])
+			else if (hasNumIn[GREEN]) {
+				idxBest = idxNumIn[GREEN];
+			} // else if (hasNumIn[GREEN])
+			else if (hasNumIn[YELLOW]) {
+				idxBest = idxNumIn[YELLOW];
+			} // else if (hasNumIn[YELLOW])
+		} // if (lastColor == oppoDangerColor)
+		else if (oppoDangerColor != NONE) {
 			// Your opposite player played a wild card, started an UNO dash
 			// in its last action, but fortunately the legal color has been
 			// changed already. Just be careful not to re-change the legal
 			// color to the dangerous color again.
-			if (hasZero &&
-				hand.at(idxZero)->getRealColor() != dangerColor) {
-				idxBest = idxZero;
-			} // if (hasZero && ...)
-			else if (hasNum &&
-				hand.at(idxNum)->getRealColor() != dangerColor) {
-				idxBest = idxNum;
-			} // else if (hasNum && ...)
+			if (hasNumIn[bestColor] && oppoDangerColor != bestColor) {
+				idxBest = idxNumIn[bestColor];
+			} // if (hasNumIn[bestColor] && oppoDangerColor != bestColor)
+			else if (hasNumIn[RED] && oppoDangerColor != RED) {
+				idxBest = idxNumIn[RED];
+			} // else if (hasNumIn[RED] && oppoDangerColor != RED)
+			else if (hasNumIn[BLUE] && oppoDangerColor != BLUE) {
+				idxBest = idxNumIn[BLUE];
+			} // else if (hasNumIn[BLUE] && oppoDangerColor != BLUE)
+			else if (hasNumIn[GREEN] && oppoDangerColor != GREEN) {
+				idxBest = idxNumIn[GREEN];
+			} // else if (hasNumIn[GREEN] && oppoDangerColor != GREEN)
+			else if (hasNumIn[YELLOW] && oppoDangerColor != YELLOW) {
+				idxBest = idxNumIn[YELLOW];
+			} // else if (hasNumIn[YELLOW] && oppoDangerColor != YELLOW)
 			else if (hasRev &&
-				prevSize >= 4 &&
-				hand.at(idxRev)->getRealColor() != dangerColor) {
+				hand.at(idxRev)->getRealColor() != oppoDangerColor) {
 				idxBest = idxRev;
 			} // else if (hasRev && ...)
 			else if (hasSkip &&
-				hand.at(idxSkip)->getRealColor() != dangerColor) {
+				nextSize <= 4 &&
+				hand.at(idxSkip)->getRealColor() != oppoDangerColor) {
 				idxBest = idxSkip;
 			} // else if (hasSkip && ...)
 			else if (hasDraw2 &&
-				hand.at(idxDraw2)->getRealColor() != dangerColor) {
+				nextSize <= 4 &&
+				hand.at(idxDraw2)->getRealColor() != oppoDangerColor) {
 				idxBest = idxDraw2;
 			} // else if (hasDraw2 && ...)
-		} // else if (dangerColor != NONE)
-		else if (hasRev && prevSize - nextSize >= 3) {
+		} // else if (oppoDangerColor != NONE)
+		else {
 			// Your opposite player started an UNO dash without playing a
-			// wild card, so use normal defense strategies. Firstly play a
-			// [reverse] when your next player remains only a few cards but
-			// your previous player remains a lot of cards, because your
-			// previous player has more possibility to limit your opposite
-			// player's action.
-			idxBest = idxRev;
-		} // else if (hasRev && prevSize - nextSize >= 3)
-		else if (hasNum) {
-			// Then you can play a number card. In order to increase your
-			// next player's possibility of changing the legal color, do
-			// not play zero cards preferentially.
-			idxBest = idxNum;
-		} // else if (hasNum)
-		else if (hasZero) {
-			idxBest = idxZero;
-		} // else if (hasZero)
-		else if (hasWild && lastColor != bestColor) {
-			// When you have no more legal number/reverse cards to play, try
-			// to play a wild card and change the legal color to your best
-			// color. Do not play any [+2]/[skip] to your next player!
-			idxBest = idxWild;
-		} // else if (hasWild && lastColor != bestColor)
-		else if (hasWildDraw4 && lastColor != bestColor) {
-			// When you have no more legal number/reverse cards to play, try
-			// to play a wild card and change the legal color to your best
-			// color. Specially, for [wild +4] cards, you can only play it
-			// when your next player remains only a few cards, and what you
-			// did can help your next player find more useful cards, such as
-			// action cards, or [wild +4] cards.
-			if (nextSize <= 4) {
-				idxBest = idxWildDraw4;
-			} // if (nextSize <= 4)
-		} // else if (hasWildDraw4 && lastColor != bestColor)
+			// wild card, so use normal defense strategies.
+			if (oppoSafeColor != NONE) {
+				// Determine your best color in dangerous cases. Firstly
+				// choose opposite player's safe color, but be careful of
+				// the conflict with other opponents' dangerous colors!
+				bestColor = oppoSafeColor;
+			} // if (oppoSafeColor != NONE)
+			else while (bestColor == oppoDangerColor) {
+				bestColor = Color(rand() % 4 + 1);
+			} // else while (bestColor == oppoDangerColor)
+
+			if (hasRev && prevSize - nextSize >= 3) {
+				// Firstly play a [reverse] when your next player remains
+				// only a few cards but your previous player remains a lot
+				// of cards, because it seems that your previous player has
+				// more possibility to limit your opposite player's action.
+				idxBest = idxRev;
+			} // if (hasRev && prevSize - nextSize >= 3)
+			else if (hasNumIn[bestColor]) {
+				// Then you can play a number card.
+				idxBest = idxNumIn[bestColor];
+			} // else if (hasNumIn[bestColor])
+			else if (hasNumIn[RED]) {
+				idxBest = idxNumIn[RED];
+			} // else if (hasNumIn[RED])
+			else if (hasNumIn[BLUE]) {
+				idxBest = idxNumIn[BLUE];
+			} // else if (hasNumIn[BLUE])
+			else if (hasNumIn[GREEN]) {
+				idxBest = idxNumIn[GREEN];
+			} // else if (hasNumIn[GREEN])
+			else if (hasNumIn[YELLOW]) {
+				idxBest = idxNumIn[YELLOW];
+			} // else if (hasNumIn[YELLOW])
+			else if (hasWild && lastColor != bestColor) {
+				// When you have no more legal number/reverse cards to play,
+				// try to play a wild card and change the legal color to
+				// your best. Do not play any [+2]/[skip] to your next
+				// player!
+				idxBest = idxWild;
+			} // else if (hasWild && lastColor != bestColor)
+			else if (hasWildDraw4 && lastColor != bestColor) {
+				// When you have no more legal number/reverse cards to play,
+				// try to play a wild card and change the legal color to
+				// your best. Specially, for [wild +4] cards, you can only
+				// play it when your next player remains only a few cards,
+				// and what you did can help your next player find more
+				// useful cards, such as action cards, or [wild +4] cards.
+				if (nextSize <= 4) {
+					idxBest = idxWildDraw4;
+				} // if (nextSize <= 4)
+			} // else if (hasWildDraw4 && lastColor != bestColor)
+		} // else
 	} // else if (oppoSize == 1)
 	else if (next->getRecent() == nullptr && yourSize > 2) {
 		// Strategies when your next player drew a card in its last action.
@@ -714,12 +819,21 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 		if (hasRev && prevSize - nextSize >= 3) {
 			idxBest = idxRev;
 		} // if (hasRev && prevSize - nextSize >= 3)
-		else if (hasZero) {
-			idxBest = idxZero;
-		} // else if (hasZero)
-		else if (hasNum) {
-			idxBest = idxNum;
-		} // else if (hasNum)
+		else if (hasNumIn[bestColor]) {
+			idxBest = idxNumIn[bestColor];
+		} // else if (hasNumIn[bestColor])
+		else if (hasNumIn[RED]) {
+			idxBest = idxNumIn[RED];
+		} // else if (hasNumIn[RED])
+		else if (hasNumIn[BLUE]) {
+			idxBest = idxNumIn[BLUE];
+		} // else if (hasNumIn[BLUE])
+		else if (hasNumIn[GREEN]) {
+			idxBest = idxNumIn[GREEN];
+		} // else if (hasNumIn[GREEN])
+		else if (hasNumIn[YELLOW]) {
+			idxBest = idxNumIn[YELLOW];
+		} // else if (hasNumIn[YELLOW])
 		else if (hasRev &&
 			(prevSize >= 4 || prev->getRecent() == nullptr)) {
 			idxBest = idxRev;
@@ -735,28 +849,36 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 	} // else if (next->getRecent() == nullptr && yourSize > 2)
 	else {
 		// Normal strategies
-		if (hasRev && prevSize - nextSize >= 3) {
-			// Play a [reverse] when your next player remains only a few
-			// cards but your previous player remains a lot of cards, in
-			// order to balance everyone's hand-card amount.
-			idxBest = idxRev;
-		} // if (hasRev && prevSize - nextSize >= 3)
-		else if (hasDraw2 && nextSize <= 4) {
+		if (hasDraw2 && nextSize <= 4) {
 			// Play a [+2] when your next player remains only a few cards.
 			idxBest = idxDraw2;
-		} // else if (hasDraw2 && nextSize <= 4)
+		} // if (hasDraw2 && nextSize <= 4)
 		else if (hasSkip && nextSize <= 4) {
 			// Play a [skip] when your next player remains only a few cards.
 			idxBest = idxSkip;
 		} // else if (hasSkip && nextSize <= 4)
-		else if (hasZero) {
-			// Play zero cards at first because of their rarity.
-			idxBest = idxZero;
-		} // else if (hasZero)
-		else if (hasNum) {
-			// Then consider to play a number card.
-			idxBest = idxNum;
-		} // else if (hasNum)
+		else if (hasRev && prevSize - nextSize >= 3) {
+			// Play a [reverse] when your next player remains only a few
+			// cards but your previous player remains a lot of cards, in
+			// order to balance everyone's hand-card amount.
+			idxBest = idxRev;
+		} // else if (hasRev && prevSize - nextSize >= 3)
+		else if (hasNumIn[bestColor]) {
+			// Play number cards.
+			idxBest = idxNumIn[bestColor];
+		} // else if (hasNumIn[bestColor])
+		else if (hasNumIn[RED]) {
+			idxBest = idxNumIn[RED];
+		} // else if (hasNumIn[RED])
+		else if (hasNumIn[BLUE]) {
+			idxBest = idxNumIn[BLUE];
+		} // else if (hasNumIn[BLUE])
+		else if (hasNumIn[GREEN]) {
+			idxBest = idxNumIn[GREEN];
+		} // else if (hasNumIn[GREEN])
+		else if (hasNumIn[YELLOW]) {
+			idxBest = idxNumIn[YELLOW];
+		} // else if (hasNumIn[YELLOW])
 		else if (hasRev &&
 			(prevSize >= 4 || prev->getRecent() == nullptr)) {
 			// When you have no more legal number cards to play, you can
@@ -767,9 +889,9 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 		} // else if (hasRev && ...)
 		else if (hasSkip &&
 			hand.at(idxSkip)->getRealColor() == bestColor) {
-			// Unless keeping or changing to your best color, you do not need to
-			// play your limitation/wild cards when your next player still has a
-			// number of cards. Use them in more dangerous cases.
+			// Unless keeping or changing to your best color, you do not
+			// need to play your limitation/wild cards when your next player
+			// still has a number of cards. Use them in more dangerous cases.
 			idxBest = idxSkip;
 		} // else if (hasSkip && ...)
 		else if (hasDraw2 &&

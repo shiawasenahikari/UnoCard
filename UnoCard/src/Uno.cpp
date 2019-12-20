@@ -186,6 +186,19 @@ Color Player::getDangerousColor() {
 } // getDangerousColor()
 
 /**
+ * When this player draw a card in action, record the previous played card's
+ * color, as this player's safe color. What this player did means that this
+ * player probably do not have cards in that color. You can use this value
+ * to defend this player's UNO dash.
+ *
+ * @return This player's safe color, or Color::NONE if no available safe
+ *         color.
+ */
+Color Player::getSafeColor() {
+	return safeColor;
+} // getSafeColor()
+
+/**
  * Evaluate which color is the best color for this player. In our evaluation
  * system, zero cards are worth 2 points, non-zero number cards are worth 4
  * points, and action cards are worth 5 points. Finally, the color which
@@ -703,18 +716,15 @@ void Uno::start() {
 	direction = DIR_LEFT;
 
 	// Clear card deck, used card deck, recent played cards,
-	// everyone's hand cards, and everyone's dangerous colors
+	// everyone's hand cards, and everyone's safe/dangerous colors
 	deck.clear();
 	used.clear();
 	recent.clear();
-	player[0].handCards.clear();
-	player[1].handCards.clear();
-	player[2].handCards.clear();
-	player[3].handCards.clear();
-	player[0].dangerousColor = NONE;
-	player[1].dangerousColor = NONE;
-	player[2].dangerousColor = NONE;
-	player[3].dangerousColor = NONE;
+	for (i = Player::YOU; i <= Player::COM3; ++i) {
+		player[i].handCards.clear();
+		player[i].safeColor = NONE;
+		player[i].dangerousColor = NONE;
+	} // for (i = Player::YOU; i <= Player::COM3; ++i)
 
 	// Generate a temporary sequenced card deck
 	for (i = 0; i < 108; ++i) {
@@ -738,7 +748,7 @@ void Uno::start() {
 
 	// Let everyone draw 7 cards
 	for (i = 0; i < 28; ++i) {
-		draw(i % 4);
+		draw(i % 4, /* force */ true);
 	} // for (i = 0; i < 28; ++i)
 
 	// Determine a start card as the previous played card
@@ -764,12 +774,16 @@ void Uno::start() {
  * NOTE: Everyone can hold 15 cards at most in this program, so even if this
  * function is called, the specified player may not draw a card as a result.
  *
- * @param who Who draws a card. Must be one of the following values:
- *            Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+ * @param who   Who draws a card. Must be one of the following values:
+ *              Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+ * @param force Pass true if the specified player is required to draw cards,
+ *              i.e. previous player played a [+2] or [wild +4] to let this
+ *              player draw cards. Or false if the specified player draws a
+ *              card by itself in its action.
  * @return Reference of the drawn card, or nullptr if the specified player
  *         didn't draw a card because of the limit.
  */
-Card* Uno::draw(int who) {
+Card* Uno::draw(int who, bool force) {
 	Card* card;
 	Card* picked;
 	Player* player;
@@ -779,6 +793,15 @@ Card* Uno::draw(int who) {
 
 	card = nullptr;
 	player = getPlayer(who);
+	if (!force) {
+		// Draw a card by player itself, register safe color
+		player->safeColor = recent.back()->color;
+		if (player->safeColor == player->dangerousColor) {
+			// Safe color cannot also be dangerous color
+			player->dangerousColor = NONE;
+		} // if (player->safeColor == player->dangerousColor)
+	} // if (!force)
+
 	hand = &player->handCards;
 	if (hand->size() < MAX_HOLD_CARDS) {
 		// Draw a card from card deck, and put it to an appropriate position
@@ -883,12 +906,21 @@ Card* Uno::play(int who, int index, Color color) {
 			// following legal color as the player's dangerous color
 			card->color = color;
 			player->dangerousColor = color;
+			if (color == player->safeColor) {
+				// Dangerous color cannot also be safe color
+				player->safeColor = NONE;
+			} // if (color == player->safeColor)
 		} // if (card->isWild())
 		else if (card->color == player->dangerousColor) {
 			// Played a card that matches the registered
 			// dangerous color, unregister it
 			player->dangerousColor = NONE;
 		} // else if (card->color == player->dangerousColor)
+		else if (card->color == player->safeColor) {
+			// Played a card that matches the registered
+			// safe color, unregister it
+			player->safeColor = NONE;
+		} // else if (card->color == player->safeColor)
 
 		player->recent = card;
 		recent.push_back(card);

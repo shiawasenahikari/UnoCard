@@ -628,18 +628,15 @@ public class Uno {
         List<Card> allCards;
 
         // Clear card deck, used card deck, recent played cards,
-        // everyone's hand cards, and everyone's dangerous colors
+        // everyone's hand cards, and everyone's safe/dangerous colors
         deck.clear();
         used.clear();
         recent.clear();
-        player[0].handCards.clear();
-        player[1].handCards.clear();
-        player[2].handCards.clear();
-        player[3].handCards.clear();
-        player[0].dangerousColor = NONE;
-        player[1].dangerousColor = NONE;
-        player[2].dangerousColor = NONE;
-        player[3].dangerousColor = NONE;
+        for (i = Player.YOU; i <= Player.COM3; ++i) {
+            player[i].handCards.clear();
+            player[i].safeColor = NONE;
+            player[i].dangerousColor = NONE;
+        } // for (i = Player.YOU; i <= Player.COM3; ++i)
 
         // Reset direction
         direction = DIR_LEFT;
@@ -667,7 +664,7 @@ public class Uno {
 
         // Let everyone draw 7 cards
         for (i = 0; i < 28; ++i) {
-            draw(i % 4);
+            draw(i % 4, /* force */ true);
         } // for (i = 0; i < 28; ++i)
 
         // Determine a start card as the previous played card
@@ -694,17 +691,30 @@ public class Uno {
      * NOTE: Everyone can hold 15 cards at most in this program, so even if this
      * method is called, the specified player may not draw a card as a result.
      *
-     * @param who Who draws a card. Must be one of the following values:
-     *            Player.YOU, Player.COM1, Player.COM2, Player.COM3.
+     * @param who   Who draws a card. Must be one of the following values:
+     *              Player.YOU, Player.COM1, Player.COM2, Player.COM3.
+     * @param force Pass true if the specified player is required to draw cards,
+     *              i.e. previous player played a [+2] or [wild +4] to let this
+     *              player draw cards. Or false if the specified player draws a
+     *              card by itself in its action.
      * @return Reference of the drawn card, or null if the specified player
      * didn't draw a card because of the limit.
      */
-    public Card draw(int who) {
+    public Card draw(int who, boolean force) {
         Card card, picked;
         int i, index, size;
         List<Card> handCards;
 
         card = null;
+        if (!force) {
+            // Draw a card by player itself, register safe color
+            player[who].safeColor = recent.get(recent.size() - 1).color;
+            if (player[who].safeColor == player[who].dangerousColor) {
+                // Safe color cannot also be dangerous color
+                player[who].dangerousColor = NONE;
+            } // if (player[who].safeColor == player[who].dangerousColor)
+        } // if (!force)
+
         handCards = player[who].handCards;
         if (handCards.size() < MAX_HOLD_CARDS) {
             // Draw a card from card deck, and put it to an appropriate position
@@ -809,12 +819,21 @@ public class Uno {
                 // following legal color as the player's dangerous color
                 card.color = color;
                 player[who].dangerousColor = color;
+                if (color == player[who].safeColor) {
+                    // Dangerous color cannot also be safe color
+                    player[who].safeColor = NONE;
+                } // if (color == player[who].safeColor)
             } // if（card.isWild())
             else if (card.color == player[who].dangerousColor) {
                 // Played a card that matches the registered
                 // dangerous color, unregister it
                 player[who].dangerousColor = NONE;
             } // else if (card.color == player[who].dangerousColor)
+            else if (card.color == player[who].safeColor) {
+                // Played a card that matches the registered
+                // safe color, unregister it
+                player[who].safeColor = NONE;
+            } // else if (card.color == player[who].safeColor)
 
             player[who].recent = card;
             recent.add(card);

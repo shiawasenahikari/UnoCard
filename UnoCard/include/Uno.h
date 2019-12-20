@@ -205,6 +205,17 @@ public:
 	Color getDangerousColor();
 
 	/**
+	 * When this player draw a card in action, record the previous played card's
+	 * color, as this player's safe color. What this player did means that this
+	 * player probably do not have cards in that color. You can use this value
+	 * to defend this player's UNO dash.
+	 *
+	 * @return This player's safe color, or Color::NONE if no available safe
+	 *         color.
+	 */
+	Color getSafeColor();
+
+	/**
 	 * Evaluate which color is the best color for this player. In our evaluation
 	 * system, zero cards are worth 2 points, non-zero number cards are worth 4
 	 * points, and action cards are worth 5 points. Finally, the color which
@@ -236,6 +247,11 @@ private:
 	 * Dangerous color.
 	 */
 	Color dangerousColor = NONE;
+
+	/**
+	 * Safe color.
+	 */
+	Color safeColor = NONE;
 
 	/**
 	 * Recent played card. If the player drew one or more cards in its last
@@ -368,12 +384,16 @@ public:
 	 * NOTE: Everyone can hold 15 cards at most in this program, so even if this
 	 * function is called, the specified player may not draw a card as a result.
 	 *
-	 * @param who Who draws a card. Must be one of the following values:
-	 *            Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+	 * @param who   Who draws a card. Must be one of the following values:
+	 *              Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+	 * @param force Pass true if the specified player is required to draw cards,
+	 *              i.e. previous player played a [+2] or [wild +4] to let this
+	 *              player draw cards. Or false if the specified player draws a
+	 *              card by itself in its action.
 	 * @return Reference of the drawn card, or nullptr if the specified player
 	 *         didn't draw a card because of the limit.
 	 */
-	Card* draw(int who);
+	Card* draw(int who, bool force);
 
 	/**
 	 * Check whether the specified card is legal to play. It's legal only when
@@ -401,7 +421,7 @@ public:
 	 *              Pass the specified following legal color.
 	 * @return Reference of the played card.
 	 */
-	Card* play(int who, int index, Color color = NONE);
+	Card* play(int who, int index, Color color);
 
 private:
 	/**

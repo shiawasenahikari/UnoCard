@@ -71,7 +71,7 @@ static void pass(int who);
 static void onStatusChanged(int status);
 static void refreshScreen(string message);
 static void play(int index, Color color = NONE);
-static void draw(int who = sStatus, int count = 1);
+static void draw(int who, int count, bool force);
 static void onChallenge(int challenger, bool challenged);
 static void onMouse(int event, int x, int y, int flags, void* param);
 
@@ -157,7 +157,7 @@ static void easyAI() {
 					pass(sStatus);
 				} // if (sImmPlayAsk)
 				else {
-					draw();
+					draw(sStatus, 1, /* force */ false);
 				} // else
 			} // else
 		} // else
@@ -200,7 +200,7 @@ static void hardAI() {
 					pass(sStatus);
 				} // if (sImmPlayAsk)
 				else {
-					draw();
+					draw(sStatus, 1, /* force */ false);
 				} // else
 			} // else
 		} // else
@@ -378,6 +378,13 @@ static void onStatusChanged(int status) {
 		} // if (sWinner == Player::YOU)
 
 		refreshScreen("Click the card deck to restart");
+		if (sAuto) {
+			WAIT_MS(5000);
+			if (sAuto && sStatus == STAT_GAME_OVER) {
+				sStatus = STAT_NEW_GAME;
+				onStatusChanged(sStatus);
+			} // if (sAuto && sStatus == STAT_GAME_OVER)
+		} // if (sAuto)
 		break; // case STAT_GAME_OVER
 
 	default:
@@ -735,7 +742,7 @@ static void play(int index, Color color) {
 				message += ": Let " + NAME[next] + " draw 2 cards";
 				refreshScreen(message);
 				WAIT_MS(1500);
-				draw(next, 2);
+				draw(next, 2, /* force */ true);
 				break; // case DRAW2
 
 			case SKIP:
@@ -807,10 +814,13 @@ static void play(int index, Color color) {
  *
  * @param who   Who draws cards. Must be one of the following values:
  *              Player::YOU, Player::COM1, Player::COM2, Player::COM3.
- *              Default to the player in turn, i.e. sStatus.
- * @param count How many cards to draw. Default to 1.
+ * @param count How many cards to draw.
+ * @param force Pass true if the specified player is required to draw cards,
+ *              i.e. previous player played a [+2] or [wild +4] to let this
+ *              player draw cards. Or false if the specified player draws a
+ *              card by itself in its action.
  */
-static void draw(int who, int count) {
+static void draw(int who, int count, bool force) {
 	int i;
 	Rect roi;
 	Mat image;
@@ -819,7 +829,7 @@ static void draw(int who, int count) {
 	sStatus = STAT_IDLE; // block mouse click events when idle
 	for (i = 0; i < count; ++i) {
 		buff.str("");
-		sDrawnCard = sUno->draw(who);
+		sDrawnCard = sUno->draw(who, force);
 		if (sDrawnCard != nullptr) {
 			switch (who) {
 			case Player::COM1:
@@ -947,7 +957,7 @@ static void onChallenge(int challenger, bool challenged) {
 			refreshScreen(message);
 			WAIT_MS(1500);
 			sChallenged = false;
-			draw(challenger, 6);
+			draw(challenger, 6, /* force */ true);
 		} // if (draw4IsLegal)
 		else {
 			// Challenge success, who played [wild +4] draws 4 cards
@@ -962,11 +972,11 @@ static void onChallenge(int challenger, bool challenged) {
 			refreshScreen(message);
 			WAIT_MS(1500);
 			sChallenged = false;
-			draw(prev, 4);
+			draw(prev, 4, /* force */ true);
 		} // else
 	} // if (challenged)
 	else {
-		draw(challenger, 4);
+		draw(challenger, 4, /* force */ true);
 	} // else
 } // onChallenge()
 
@@ -1154,7 +1164,7 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 			} // else if (y >= 520 && y <= 700)
 			else if (y >= 270 && y <= 450 && x >= 338 && x <= 458) {
 				// Card deck area, draw a card
-				draw();
+				draw(sStatus, 1, /* force */ false);
 			} // else if (y >= 270 && y <= 450 && x >= 338 && x <= 458)
 			break; // case Player::YOU
 
