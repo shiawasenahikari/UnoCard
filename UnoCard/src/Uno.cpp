@@ -786,54 +786,54 @@ void Uno::start() {
 Card* Uno::draw(int who, bool force) {
 	Card* card;
 	Card* picked;
-	Player* player;
 	int index, size;
 	vector<Card*>* hand;
 	vector<Card*>::iterator i;
 
 	card = nullptr;
-	player = getPlayer(who);
-	if (!force) {
-		// Draw a card by player itself, register safe color
-		player->safeColor = recent.back()->color;
-		if (player->safeColor == player->dangerousColor) {
-			// Safe color cannot also be dangerous color
-			player->dangerousColor = NONE;
-		} // if (player->safeColor == player->dangerousColor)
-	} // if (!force)
+	if (who >= Player::YOU && who <= Player::COM3) {
+		if (!force) {
+			// Draw a card by player itself, register safe color
+			player[who].safeColor = recent.back()->color;
+			if (player[who].safeColor == player[who].dangerousColor) {
+				// Safe color cannot also be dangerous color
+				player[who].dangerousColor = NONE;
+			} // if (player[who].safeColor == player[who].dangerousColor)
+		} // if (!force)
 
-	hand = &player->handCards;
-	if (hand->size() < MAX_HOLD_CARDS) {
-		// Draw a card from card deck, and put it to an appropriate position
-		card = deck.back();
-		deck.pop_back();
-		for (i = hand->begin(); i != hand->end(); ++i) {
-			if (*(*i) > *card) {
-				// Found an appropriate position to insert the new card,
-				// which keeps the player's hand cards sequenced
-				break;
-			} // if (*(*i) > *card)
-		} // for (i = hand->begin(); i != hand->end(); ++i)
+		hand = &(player[who].handCards);
+		if (hand->size() < MAX_HOLD_CARDS) {
+			// Draw a card from card deck, and put it to an appropriate position
+			card = deck.back();
+			deck.pop_back();
+			for (i = hand->begin(); i != hand->end(); ++i) {
+				if (*(*i) > *card) {
+					// Found an appropriate position to insert the new card,
+					// which keeps the player's hand cards sequenced
+					break;
+				} // if (*(*i) > *card)
+			} // for (i = hand->begin(); i != hand->end(); ++i)
 
-		hand->insert(i, card);
-		player->recent = nullptr;
-		if (deck.empty()) {
-			// Re-use the used cards when there are no more cards in deck
-			size = (int)used.size();
-			while (size > 0) {
-				index = rand() % size;
-				picked = used.at(index);
-				if (picked->isWild()) {
-					// reset the used wild cards' colors
-					picked->color = NONE;
-				} // if (picked->isWild())
+			hand->insert(i, card);
+			player[who].recent = nullptr;
+			if (deck.empty()) {
+				// Re-use the used cards when there are no more cards in deck
+				size = (int)used.size();
+				while (size > 0) {
+					index = rand() % size;
+					picked = used.at(index);
+					if (picked->isWild()) {
+						// reset the used wild cards' colors
+						picked->color = NONE;
+					} // if (picked->isWild())
 
-				deck.push_back(picked);
-				used.erase(used.begin() + index);
-				--size;
-			} // while (size > 0)
-		} // if (deck.empty())
-	} // if (hand->size() < MAX_HOLD_CARDS)
+					deck.push_back(picked);
+					used.erase(used.begin() + index);
+					--size;
+				} // while (size > 0)
+			} // if (deck.empty())
+		} // if (hand->size() < MAX_HOLD_CARDS)
+	} // if (who >= Player::YOU && who <= Player::COM3)
 
 	return card;
 } // draw()
@@ -892,47 +892,43 @@ bool Uno::isLegalToPlay(Card* card) {
  */
 Card* Uno::play(int who, int index, Color color) {
 	Card* card;
-	Player* player;
 	vector<Card*>* hand;
 
 	card = nullptr;
-	player = getPlayer(who);
-	hand = &player->handCards;
-	if (index < hand->size()) {
-		card = hand->at(index);
-		hand->erase(hand->begin() + index);
-		if (card->isWild()) {
-			// When a wild card is played, register the specified
-			// following legal color as the player's dangerous color
-			card->color = color;
-			player->dangerousColor = color;
-			if (color == player->safeColor) {
-				// Dangerous color cannot also be safe color
-				player->safeColor = NONE;
-			} // if (color == player->safeColor)
-		} // if (card->isWild())
-		else if (card->color == player->dangerousColor) {
-			// Played a card that matches the registered
-			// dangerous color, unregister it
-			player->dangerousColor = NONE;
-		} // else if (card->color == player->dangerousColor)
-		else if (card->color == player->safeColor) {
-			// Played a card that matches the registered
-			// safe color, unregister it
-			player->safeColor = NONE;
-		} // else if (card->color == player->safeColor)
+	if (who >= Player::YOU && who <= Player::COM3) {
+		hand = &(player[who].handCards);
+		if (index < hand->size()) {
+			card = hand->at(index);
+			hand->erase(hand->begin() + index);
+			if (card->isWild()) {
+				// When a wild card is played, register the specified
+				// following legal color as the player's dangerous color
+				card->color = color;
+				player[who].dangerousColor = color;
+				if (color == player[who].safeColor) {
+					// Dangerous color cannot also be safe color
+					player[who].safeColor = NONE;
+				} // if (color == player[who].safeColor)
+			} // if (card->isWild())
+			else if (card->color == player[who].dangerousColor) {
+				// Played a card that matches the registered
+				// dangerous color, unregister it
+				player[who].dangerousColor = NONE;
+			} // else if (card->color == player[who].dangerousColor)
 
-		player->recent = card;
-		recent.push_back(card);
-		if (recent.size() > 5) {
-			used.push_back(recent.front());
-			recent.erase(recent.begin());
-		} // if (recent.size() > 5)
+			player[who].recent = card;
+			recent.push_back(card);
+			if (recent.size() > 5) {
+				used.push_back(recent.front());
+				recent.erase(recent.begin());
+			} // if (recent.size() > 5)
 
-		if (hand->size() == 0) {
-			direction = 0;
-		} // if (hand->size() == 0)
-	} // if (index < hand->size())
+			if (hand->size() == 0) {
+				// Game over, change background image
+				direction = 0;
+			} // if (hand->size() == 0)
+		} // if (index < hand->size())
+	} // if (who >= Player::YOU && who <= Player::COM3)
 
 	return card;
 } // play()

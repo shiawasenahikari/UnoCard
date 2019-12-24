@@ -829,11 +829,6 @@ public class Uno {
                 // dangerous color, unregister it
                 player[who].dangerousColor = NONE;
             } // else if (card.color == player[who].dangerousColor)
-            else if (card.color == player[who].safeColor) {
-                // Played a card that matches the registered
-                // safe color, unregister it
-                player[who].safeColor = NONE;
-            } // else if (card.color == player[who].safeColor)
 
             player[who].recent = card;
             recent.add(card);
@@ -843,6 +838,7 @@ public class Uno {
             } // if (recent.size() > 5)
 
             if (handCards.size() == 0) {
+                // Game over, change background image
                 direction = 0;
             } // if (handCards.size() == 0)
         } // if (index < handCards.size())

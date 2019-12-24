@@ -548,11 +548,13 @@ public class AI {
                     // Play a [skip] to skip its turn and wait for more chances.
                     idxBest = idxSkip;
                 } // if (hasSkip)
-                else if (hasWildDraw4 && !hasNumIn[lastColor.ordinal()]) {
+                else if (hasWildDraw4 &&
+                        lastColor != bestColor &&
+                        !hasNumIn[lastColor.ordinal()]) {
                     // Then play a [wild +4] to make your next player draw four
                     // cards (if it's legal to play this card).
                     idxBest = idxWildDraw4;
-                } // else if (hasWildDraw4 && !hasNumIn[lastColor.ordinal()])
+                } // else if (hasWildDraw4 && ...)
                 else if (hasRev) {
                     // Play a [reverse] to get help from your opposite player.
                     idxBest = idxRev;
