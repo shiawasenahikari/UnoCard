@@ -16,7 +16,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/releases) page and download the
-   latest version in zip file `(UnoCard-v1.3.zip)`.
+   latest version in zip file `(UnoCard-v1.3.1.zip)`.
 2. Unzip the downloaded zip file, then execute `UnoCard.exe` and have fun!
 
 Download the source code and compile manually
@@ -38,7 +38,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/release) page and download the
-   latest version in apk file `(UnoCard-v1.3.apk)`.
+   latest version in apk file `(UnoCard-v1.3.1.apk)`.
 2. On your Android phone, open [Settings] app, go to [Security] page, then check the [Unknown
    sources] toggle.
 3. Push the downloaded file to your Android phone, then install and launch it to have fun!
