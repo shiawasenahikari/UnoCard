@@ -67,12 +67,11 @@ static bool sChallengeAsk;
 // Functions
 static void easyAI();
 static void hardAI();
-static void pass(int who);
 static void onStatusChanged(int status);
 static void refreshScreen(string message);
 static void play(int index, Color color = NONE);
-static void draw(int who, int count, bool force);
-static void onChallenge(int challenger, bool challenged);
+static void draw(int count = 1, bool force = false);
+static void onChallengeChance(bool challenged = true);
 static void onMouse(int event, int x, int y, int flags, void* param);
 
 // Macros
@@ -127,7 +126,7 @@ int main() {
  * AI Strategies (Difficulty: EASY).
  */
 static void easyAI() {
-	int idxBest;
+	int idxBest, now;
 	Color bestColor[1];
 
 	sAIRunning = true;
@@ -136,14 +135,15 @@ static void easyAI() {
 		|| sStatus == Player::COM3
 		|| sStatus == Player::YOU && sAuto) {
 		if (sChallengeAsk) {
-			onChallenge(sStatus, needToChallenge(sStatus));
+			onChallengeChance(needToChallenge(sStatus));
 		} // if (sChallengeAsk)
 		else {
-			idxBest = easyAI_bestCardIndexFor(
-				/* whom      */ sStatus,
+			now = sStatus;
+			sStatus = STAT_IDLE; // block mouse click events when idle
+			idxBest = easyAI_bestCardIndex4NowPlayer(
 				/* drawnCard */ sImmPlayAsk ? sDrawnCard : nullptr,
 				/* outColor  */ bestColor
-			); // idxBest = easyAI_bestCardIndexFor()
+			); // idxBest = easyAI_bestCardIndex4NowPlayer()
 
 			if (idxBest >= 0) {
 				// Found an appropriate card to play
@@ -154,10 +154,13 @@ static void easyAI() {
 				// No appropriate cards to play, or no card is legal to play
 				if (sImmPlayAsk) {
 					sImmPlayAsk = false;
-					pass(sStatus);
+					refreshScreen(NAME[now] + ": Pass");
+					WAIT_MS(750);
+					sStatus = sUno->switchNow();
+					onStatusChanged(sStatus);
 				} // if (sImmPlayAsk)
 				else {
-					draw(sStatus, 1, /* force */ false);
+					draw();
 				} // else
 			} // else
 		} // else
@@ -170,7 +173,7 @@ static void easyAI() {
  * AI Strategies (Difficulty: HARD).
  */
 static void hardAI() {
-	int idxBest;
+	int idxBest, now;
 	Color bestColor[1];
 
 	sAIRunning = true;
@@ -179,14 +182,15 @@ static void hardAI() {
 		|| sStatus == Player::COM3
 		|| sStatus == Player::YOU && sAuto) {
 		if (sChallengeAsk) {
-			onChallenge(sStatus, needToChallenge(sStatus));
+			onChallengeChance(needToChallenge(sStatus));
 		} // if (sChallengeAsk)
 		else {
-			idxBest = hardAI_bestCardIndexFor(
-				/* whom      */ sStatus,
+			now = sStatus;
+			sStatus = STAT_IDLE; // block mouse click events when idle
+			idxBest = hardAI_bestCardIndex4NowPlayer(
 				/* drawnCard */ sImmPlayAsk ? sDrawnCard : nullptr,
 				/* outColor  */ bestColor
-			); // idxBest = hardAI_bestCardIndexFor()
+			); // idxBest = hardAI_bestCardIndex4NowPlayer()
 
 			if (idxBest >= 0) {
 				// Found an appropriate card to play
@@ -197,10 +201,13 @@ static void hardAI() {
 				// No appropriate cards to play, or no card is legal to play
 				if (sImmPlayAsk) {
 					sImmPlayAsk = false;
-					pass(sStatus);
+					refreshScreen(NAME[now] + ": Pass");
+					WAIT_MS(750);
+					sStatus = sUno->switchNow();
+					onStatusChanged(sStatus);
 				} // if (sImmPlayAsk)
 				else {
-					draw(sStatus, 1, /* force */ false);
+					draw();
 				} // else
 			} // else
 		} // else
@@ -208,22 +215,6 @@ static void hardAI() {
 
 	sAIRunning = false;
 } // hardAI()
-
-/**
- * Pass someone's round.
- *
- * @param who Pass whose round. Must be one of the following values:
- *            Player::YOU, Player::COM1, Player::COM2, Player::COM3.
- */
-static void pass(int who) {
-	if (who >= Player::YOU && who <= Player::COM3) {
-		sStatus = STAT_IDLE; // block mouse click events when idle
-		refreshScreen(NAME[who] + ": Pass");
-		WAIT_MS(750);
-		sStatus = (who + sUno->getDirection()) % 4;
-		onStatusChanged(sStatus);
-	} // if (who >= Player::YOU && who <= Player::COM3)
-} // pass()
 
 /**
  * Triggered when the value of global value [sStatus] changed.
@@ -248,7 +239,7 @@ static void onStatusChanged(int status) {
 		sUno->start();
 		refreshScreen("GET READY");
 		WAIT_MS(2000);
-		sStatus = sWinner;
+		sStatus = sUno->getNow();
 		onStatusChanged(sStatus);
 		break; // case STAT_NEW_GAME
 
@@ -405,8 +396,8 @@ static void refreshScreen(string message) {
 	bool beChallenged;
 	stringstream buff;
 	vector<Card*> hand;
+	int i, status, size, width, height;
 	int remain, used, easyRate, hardRate;
-	int i, status, next, size, width, height;
 
 	// Lock the value of global variable [sStatus]
 	status = sStatus;
@@ -498,8 +489,7 @@ static void refreshScreen(string message) {
 			height = 40 * size + 140;
 			roi.x = 20;
 			roi.y = 360 - height / 2;
-			next = (Player::COM1 + sUno->getDirection()) % 4;
-			beChallenged = sChallenged && status == next;
+			beChallenged = sChallenged && sUno->getNow() == Player::COM1;
 			if (beChallenged || sTest || status == STAT_GAME_OVER) {
 				// Show remained cards to everyone
 				// when being challenged, testing, or game over
@@ -541,8 +531,7 @@ static void refreshScreen(string message) {
 			width = 45 * size + 75;
 			roi.x = 640 - width / 2;
 			roi.y = 20;
-			next = (Player::COM2 + sUno->getDirection()) % 4;
-			beChallenged = sChallenged && status == next;
+			beChallenged = sChallenged && sUno->getNow() == Player::COM2;
 			if (beChallenged || sTest || status == STAT_GAME_OVER) {
 				// Show remained cards to everyone
 				// when being challenged, testing, or game over
@@ -584,8 +573,7 @@ static void refreshScreen(string message) {
 			height = 40 * size + 140;
 			roi.x = 1140;
 			roi.y = 360 - height / 2;
-			next = (Player::COM3 + sUno->getDirection()) % 4;
-			beChallenged = sChallenged && status == next;
+			beChallenged = sChallenged && sUno->getNow() == Player::COM3;
 			if (beChallenged || sTest || status == STAT_GAME_OVER) {
 				// Show remained cards to everyone
 				// when being challenged, testing, or game over
@@ -685,10 +673,10 @@ static void play(int index, Color color) {
 	Mat image;
 	Card* card;
 	string message;
-	int x, y, now, size, width, height, next, direction;
+	int x, y, now, size, width, height, next;
 
-	now = sStatus;
 	sStatus = STAT_IDLE; // block mouse click events when idle
+	now = sUno->getNow();
 	size = (int)sUno->getPlayer(now)->getHandCards().size();
 	card = sUno->play(now, index, color);
 	if (card != nullptr) {
@@ -737,17 +725,15 @@ static void play(int index, Color color) {
 			message = NAME[now];
 			switch (card->getContent()) {
 			case DRAW2:
-				direction = sUno->getDirection();
-				next = (now + direction) % 4;
+				next = sUno->switchNow();
 				message += ": Let " + NAME[next] + " draw 2 cards";
 				refreshScreen(message);
 				WAIT_MS(1500);
-				draw(next, 2, /* force */ true);
+				draw(2, /* force */ true);
 				break; // case DRAW2
 
 			case SKIP:
-				direction = sUno->getDirection();
-				next = (now + direction) % 4;
+				next = sUno->switchNow();
 				if (next == Player::YOU) {
 					message += ": Skip your turn";
 				} // if (next == Player::YOU)
@@ -757,37 +743,34 @@ static void play(int index, Color color) {
 
 				refreshScreen(message);
 				WAIT_MS(1500);
-				sStatus = (next + direction) % 4;
+				sStatus = sUno->switchNow();
 				onStatusChanged(sStatus);
 				break; // case SKIP
 
 			case REV:
-				direction = sUno->switchDirection();
-				if (direction == Uno::DIR_LEFT) {
+				if (sUno->switchDirection() == Uno::DIR_LEFT) {
 					message += ": Change direction to CLOCKWISE";
-				} // if (direction == Uno::DIR_LEFT)
+				} // if (sUno->switchDirection() == Uno::DIR_LEFT)
 				else {
 					message += ": Change direction to COUNTER CLOCKWISE";
 				} // else
 
 				refreshScreen(message);
 				WAIT_MS(1500);
-				sStatus = (now + direction) % 4;
+				sStatus = sUno->switchNow();
 				onStatusChanged(sStatus);
 				break; // case REV
 
 			case WILD:
-				direction = sUno->getDirection();
 				message += ": Change the following legal color";
 				refreshScreen(message);
 				WAIT_MS(1500);
-				sStatus = (now + direction) % 4;
+				sStatus = sUno->switchNow();
 				onStatusChanged(sStatus);
 				break; // case WILD
 
 			case WILD_DRAW4:
-				direction = sUno->getDirection();
-				next = (now + direction) % 4;
+				next = sUno->getNext();
 				message += ": Let " + NAME[next] + " draw 4 cards";
 				refreshScreen(message);
 				WAIT_MS(1500);
@@ -797,11 +780,10 @@ static void play(int index, Color color) {
 				break; // case WILD_DRAW4
 
 			default:
-				direction = sUno->getDirection();
 				message += ": " + card->getName();
 				refreshScreen(message);
 				WAIT_MS(1500);
-				sStatus = (now + direction) % 4;
+				sStatus = sUno->switchNow();
 				onStatusChanged(sStatus);
 				break; // default
 			} // switch (card->getContent())
@@ -810,36 +792,35 @@ static void play(int index, Color color) {
 } // play()
 
 /**
- * Let a player draw one or more cards, and skip its turn.
+ * The player in action draw one or more cards.
  *
- * @param who   Who draws cards. Must be one of the following values:
- *              Player::YOU, Player::COM1, Player::COM2, Player::COM3.
  * @param count How many cards to draw.
  * @param force Pass true if the specified player is required to draw cards,
  *              i.e. previous player played a [+2] or [wild +4] to let this
  *              player draw cards. Or false if the specified player draws a
  *              card by itself in its action.
  */
-static void draw(int who, int count, bool force) {
-	int i;
+static void draw(int count, bool force) {
 	Rect roi;
 	Mat image;
+	int i, now;
 	stringstream buff;
 
 	sStatus = STAT_IDLE; // block mouse click events when idle
+	now = sUno->getNow();
 	for (i = 0; i < count; ++i) {
 		buff.str("");
-		sDrawnCard = sUno->draw(who, force);
+		sDrawnCard = sUno->draw(now, force);
 		if (sDrawnCard != nullptr) {
-			switch (who) {
+			switch (now) {
 			case Player::COM1:
 				image = sUno->getBackImage();
 				roi = Rect(160, 270, 121, 181);
 				if (count == 1) {
-					buff << NAME[who] << ": Draw a card";
+					buff << NAME[now] << ": Draw a card";
 				} // if (count == 1)
 				else {
-					buff << NAME[who] << ": Draw " << count << " cards";
+					buff << NAME[now] << ": Draw " << count << " cards";
 				} // else
 				break; // case Player::COM1
 
@@ -847,10 +828,10 @@ static void draw(int who, int count, bool force) {
 				image = sUno->getBackImage();
 				roi = Rect(580, 70, 121, 181);
 				if (count == 1) {
-					buff << NAME[who] << ": Draw a card";
+					buff << NAME[now] << ": Draw a card";
 				} // if (count == 1)
 				else {
-					buff << NAME[who] << ": Draw " << count << " cards";
+					buff << NAME[now] << ": Draw " << count << " cards";
 				} // else
 				break; // case Player::COM2
 
@@ -858,19 +839,19 @@ static void draw(int who, int count, bool force) {
 				image = sUno->getBackImage();
 				roi = Rect(1000, 270, 121, 181);
 				if (count == 1) {
-					buff << NAME[who] << ": Draw a card";
+					buff << NAME[now] << ": Draw a card";
 				} // if (count == 1)
 				else {
-					buff << NAME[who] << ": Draw " << count << " cards";
+					buff << NAME[now] << ": Draw " << count << " cards";
 				} // else
 				break; // case Player::COM3
 
 			default:
 				image = sDrawnCard->getImage();
 				roi = Rect(580, 470, 121, 181);
-				buff << NAME[who] << ": Draw " + sDrawnCard->getName();
+				buff << NAME[now] << ": Draw " + sDrawnCard->getName();
 				break; // default
-			} // switch (who)
+			} // switch (now)
 
 			// Animation
 			image.copyTo(sScreen(roi), image);
@@ -880,7 +861,7 @@ static void draw(int who, int count, bool force) {
 			WAIT_MS(300);
 		} // if (sDrawnCard != nullptr)
 		else {
-			buff << NAME[who];
+			buff << NAME[now];
 			buff << " cannot hold more than ";
 			buff << Uno::MAX_HOLD_CARDS << " cards";
 			refreshScreen(buff.str());
@@ -894,12 +875,15 @@ static void draw(int who, int count, bool force) {
 		sUno->isLegalToPlay(sDrawnCard)) {
 		// Player drew one card by itself, the drawn card
 		// can be played immediately if it's legal to play
-		sStatus = who;
+		sStatus = now;
 		sImmPlayAsk = true;
 		onStatusChanged(sStatus);
 	} // if (count == 1 && ...)
 	else {
-		pass(who);
+		refreshScreen(NAME[now] + ": Pass");
+		WAIT_MS(750);
+		sStatus = sUno->switchNow();
+		onStatusChanged(sStatus);
 	} // else
 } // draw()
 
@@ -911,38 +895,38 @@ static void draw(int who, int count, bool force) {
  * Challenge success: current player draw 4 cards;
  * Challenge failure: next player draw 6 cards.
  *
- * @param challenger Who challenges. Must be one of the following values:
- *        Player::YOU, Player::COM1, Player::COM2, Player::COM3.
- * @param challenged Whether the challenger challenged the [wild +4].
+ * @param challenged Whether the next player (challenger) challenged current
+ *                   player(be challenged)'s [wild +4].
  */
-static void onChallenge(int challenger, bool challenged) {
-	int prev;
+static void onChallengeChance(bool challenged) {
 	string message;
 	Card* next2last;
 	bool draw4IsLegal;
+	int curr, challenger;
 	vector<Card*> recent;
 	Color colorBeforeDraw4;
 
+	sStatus = STAT_IDLE; // block mouse click events when idle
 	sChallenged = challenged;
 	sChallengeAsk = false;
 	if (challenged) {
-		prev = (challenger + 4 - sUno->getDirection()) % 4;
-		message = NAME[challenger] + " challenged " + NAME[prev];
+		curr = sUno->getNow();
+		challenger = sUno->getNext();
+		message = NAME[challenger] + " challenged " + NAME[curr];
 		refreshScreen(message);
-		sStatus = STAT_IDLE; // block mouse click events when idle
 		WAIT_MS(1500);
 		recent = sUno->getRecent();
 		next2last = recent.at(recent.size() - 2);
 		colorBeforeDraw4 = next2last->getRealColor();
 		draw4IsLegal = true;
-		for (Card* card : sUno->getPlayer(prev)->getHandCards()) {
+		for (Card* card : sUno->getPlayer(curr)->getHandCards()) {
 			if (card->getRealColor() == colorBeforeDraw4) {
 				// Found a card that matches the next-to-last recent
 				// played card's color, [wild +4] is illegally used
 				draw4IsLegal = false;
 				break;
 			} // if (card->getRealColor() == colorBeforeDraw4)
-		} // for (Card* card : sUno->getPlayer(prev)->getHandCards())
+		} // for (Card* card : sUno->getPlayer(curr)->getHandCards())
 
 		if (draw4IsLegal) {
 			// Challenge failure, challenger draws 6 cards
@@ -957,14 +941,15 @@ static void onChallenge(int challenger, bool challenged) {
 			refreshScreen(message);
 			WAIT_MS(1500);
 			sChallenged = false;
-			draw(challenger, 6, /* force */ true);
+			sUno->switchNow();
+			draw(6, /* force */ true);
 		} // if (draw4IsLegal)
 		else {
 			// Challenge success, who played [wild +4] draws 4 cards
-			message = "Challenge success, " + NAME[prev];
-			if (prev == Player::YOU) {
+			message = "Challenge success, " + NAME[curr];
+			if (curr == Player::YOU) {
 				message += " draw 4 cards";
-			} // if (prev == Player::YOU)
+			} // if (curr == Player::YOU)
 			else {
 				message += " draws 4 cards";
 			} // else
@@ -972,13 +957,14 @@ static void onChallenge(int challenger, bool challenged) {
 			refreshScreen(message);
 			WAIT_MS(1500);
 			sChallenged = false;
-			draw(prev, 4, /* force */ true);
+			draw(4, /* force */ true);
 		} // else
 	} // if (challenged)
 	else {
-		draw(challenger, 4, /* force */ true);
+		sUno->switchNow();
+		draw(4, /* force */ true);
 	} // else
-} // onChallenge()
+} // onChallengeChance()
 
 /**
  * Mouse event callback, used by OpenCV GUI windows. When a GUI window
@@ -1120,8 +1106,12 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 					} // if (y > 220 && y < 315)
 					else if (y > 315 && y < 410) {
 						// NO button, go to next player's round
+						sStatus = STAT_IDLE; // block mouse events when idle
 						sImmPlayAsk = false;
-						pass(sStatus);
+						refreshScreen(NAME[Player::YOU] + ": Pass");
+						WAIT_MS(750);
+						sStatus = sUno->switchNow();
+						onStatusChanged(sStatus);
 					} // else if (y > 315 && y < 410)
 				} // else if (x > 310 && x < 500)
 			} // else if (sImmPlayAsk)
@@ -1130,11 +1120,11 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 				if (x > 310 && x < 500) {
 					if (y > 220 && y < 315) {
 						// YES button, challenge wild +4
-						onChallenge(sStatus, true);
+						onChallengeChance(true);
 					} // if (y > 220 && y < 315)
 					else if (y > 315 && y < 410) {
 						// NO button, do not challenge wild +4
-						onChallenge(sStatus, false);
+						onChallengeChance(false);
 					} // else if (y > 315 && y < 410)
 				} // if (x > 310 && x < 500)
 			} // else if (sChallengeAsk)
@@ -1164,7 +1154,7 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 			} // else if (y >= 520 && y <= 700)
 			else if (y >= 270 && y <= 450 && x >= 338 && x <= 458) {
 				// Card deck area, draw a card
-				draw(sStatus, 1, /* force */ false);
+				draw();
 			} // else if (y >= 270 && y <= 450 && x >= 338 && x <= 458)
 			break; // case Player::YOU
 

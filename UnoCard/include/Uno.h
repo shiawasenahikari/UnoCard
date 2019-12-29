@@ -333,13 +333,45 @@ public:
 	const cv::Mat& getColoredWildDraw4Image(Color color);
 
 	/**
-	 * Get current action sequence. You can get the next player by calculating
-	 * (now + this->getDirection()) % 4, or the previous player by calculating
-	 * (now + 4 - this->getDirection()).
+	 * @return Player in turn. Must be one of the following:
+	 *         Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+	 */
+	int getNow();
+
+	/**
+	 * Switch to next player's turn.
 	 *
+	 * @return Player in turn after switched. Must be one of the following:
+	 *         Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+	 */
+	int switchNow();
+
+	/**
+	 * @return Current player's next player. Must be one of the following:
+	 *         Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+	 */
+	int getNext();
+
+	/**
+	 * @return Current player's opposite player. Must be one of the following:
+	 *         Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+	 */
+	int getOppo();
+
+	/**
+	 * @return Current player's previous player. Must be one of the following:
+	 *         Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+	 */
+	int getPrev();
+
+	/**
 	 * @return Current action sequence. DIR_LEFT for clockwise,
 	 *         or DIR_RIGHT for counter-clockwise.
+	 * @deprecated Use getNext() and getPrev() to get your neighbors' player ID,
+	 *             instead of calculating (now + this->getDirection()) % 4, and
+	 *             (4 + now - this->getDirection()) % 4.
 	 */
+	[[deprecated]]
 	int getDirection();
 
 	/**
@@ -351,8 +383,8 @@ public:
 	int switchDirection();
 
 	/**
-	 * @param who Get which player's instance. Must be one of the following
-	 *        values: Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+	 * @param who Get which player's instance. Must be one of the following:
+	 *            Player::YOU, Player::COM1, Player::COM2, Player::COM3.
 	 * @return Specified player's instance.
 	 */
 	Player* getPlayer(int who);
@@ -470,9 +502,15 @@ private:
 	cv::Mat wildDraw4Image[5];
 
 	/**
+	 * Player in turn. Must be one of the following:
+	 * Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+	 */
+	int now;
+
+	/**
 	 * Current action sequence (DIR_LEFT / DIR_RIGHT).
 	 */
-	int direction = 0;
+	int direction;
 
 	/**
 	 * Game players.

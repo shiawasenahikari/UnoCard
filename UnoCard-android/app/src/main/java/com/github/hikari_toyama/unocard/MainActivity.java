@@ -123,19 +123,21 @@ public class MainActivity extends AppCompatActivity
      * AI Strategies (Difficulty: EASY).
      */
     private void easyAI() {
-        int idxBest;
+        int idxBest, now;
         Color[] bestColor;
+        Runnable delayedTask;
 
         if (mChallengeAsk) {
-            onChallenge(mStatus, mAI.needToChallenge(mStatus));
+            onChallengeChance(mAI.needToChallenge(mStatus));
         } // if (mChallengeAsk)
         else {
+            now = mStatus;
+            mStatus = STAT_IDLE; // block tap down events when idle
             bestColor = new Color[1];
-            idxBest = mAI.easyAI_bestCardIndexFor(
-                    /* whom      */ mStatus,
+            idxBest = mAI.easyAI_bestCardIndex4NowPlayer(
                     /* drawnCard */ mImmPlayAsk ? mDrawnCard : null,
                     /* outColor  */ bestColor
-            ); // idxBest = mAI.easyAI_bestCardIndexFor()
+            ); // idxBest = mAI.easyAI_bestCardIndex4NowPlayer()
 
             if (idxBest >= 0) {
                 // Found an appropriate card to play
@@ -146,10 +148,15 @@ public class MainActivity extends AppCompatActivity
                 // No appropriate cards to play, or no card is legal to play
                 if (mImmPlayAsk) {
                     mImmPlayAsk = false;
-                    pass(mStatus);
+                    refreshScreen(NAME[now] + ": Pass");
+                    delayedTask = () -> {
+                        mStatus = mUno.switchNow();
+                        onStatusChanged(mStatus);
+                    }; // delayedTask = () -> {}
+                    mHandler.postDelayed(delayedTask, 750);
                 } // if (mImmPlayAsk)
                 else {
-                    draw(mStatus, 1, /* force */ false);
+                    draw(1, /* force */ false);
                 } // else
             } // else
         } // else
@@ -159,19 +166,21 @@ public class MainActivity extends AppCompatActivity
      * AI Strategies (Difficulty: HARD).
      */
     private void hardAI() {
-        int idxBest;
+        int idxBest, now;
         Color[] bestColor;
+        Runnable delayedTask;
 
         if (mChallengeAsk) {
-            onChallenge(mStatus, mAI.needToChallenge(mStatus));
+            onChallengeChance(mAI.needToChallenge(mStatus));
         } // if (mChallengeAsk)
         else {
+            now = mStatus;
+            mStatus = STAT_IDLE; // block tap down events when idle
             bestColor = new Color[1];
-            idxBest = mAI.hardAI_bestCardIndexFor(
-                    /* whom      */ mStatus,
+            idxBest = mAI.hardAI_bestCardIndex4NowPlayer(
                     /* drawnCard */ mImmPlayAsk ? mDrawnCard : null,
                     /* outColor  */ bestColor
-            ); // idxBest = mAI.hardAI_bestCardIndexFor()
+            ); // idxBest = mAI.hardAI_bestCardIndex4NowPlayer()
 
             if (idxBest >= 0) {
                 // Found an appropriate card to play
@@ -182,34 +191,19 @@ public class MainActivity extends AppCompatActivity
                 // No appropriate cards to play, or no card is legal to play
                 if (mImmPlayAsk) {
                     mImmPlayAsk = false;
-                    pass(mStatus);
+                    refreshScreen(NAME[now] + ": Pass");
+                    delayedTask = () -> {
+                        mStatus = mUno.switchNow();
+                        onStatusChanged(mStatus);
+                    }; // delayedTask = () -> {}
+                    mHandler.postDelayed(delayedTask, 750);
                 } // if (mImmPlayAsk)
                 else {
-                    draw(mStatus, 1, /* force */ false);
+                    draw(1, /* force */ false);
                 } // else
             } // else
         } // else
     } // hardAI()
-
-    /**
-     * Pass someone's round.
-     *
-     * @param who Pass whose round. Must be one of the following values:
-     *            Player.YOU, Player.COM1, Player.COM2, Player.COM3.
-     */
-    private void pass(int who) {
-        Runnable delayedTask;
-
-        if (who >= Player.YOU && who <= Player.COM3) {
-            mStatus = STAT_IDLE; // block tap down events when idle
-            refreshScreen(NAME[who] + ": Pass");
-            delayedTask = () -> {
-                mStatus = (who + mUno.getDirection()) % 4;
-                onStatusChanged(mStatus);
-            }; // delayedTask = () -> {}
-            mHandler.postDelayed(delayedTask, 750);
-        } // if (who >= Player.YOU && who <= Player.COM3)
-    } // pass()
 
     /**
      * Triggered when the value of member [mStatus] changed.
@@ -236,7 +230,7 @@ public class MainActivity extends AppCompatActivity
                 mUno.start();
                 refreshScreen("GET READY");
                 delayedTask = () -> {
-                    mStatus = mWinner;
+                    mStatus = mUno.getNow();
                     onStatusChanged(mStatus);
                 }; // delayedTask = () -> {}
                 mHandler.postDelayed(delayedTask, 2000);
@@ -489,8 +483,8 @@ public class MainActivity extends AppCompatActivity
         Size textSize;
         List<Card> hand;
         boolean beChallenged;
+        int i, status, size, width, height;
         int remain, used, easyRate, hardRate;
-        int i, status, next, size, width, height;
 
         // Lock the value of member [mStatus]
         status = mStatus;
@@ -579,8 +573,7 @@ public class MainActivity extends AppCompatActivity
             height = 40 * size + 140;
             roi.x = 20;
             roi.y = 360 - height / 2;
-            next = (Player.COM1 + mUno.getDirection()) % 4;
-            beChallenged = mChallenged && status == next;
+            beChallenged = mChallenged && mUno.getNow() == Player.COM1;
             if (beChallenged || status == STAT_GAME_OVER) {
                 // Show remained cards to everyone
                 // when being challenged or game over
@@ -620,8 +613,7 @@ public class MainActivity extends AppCompatActivity
             width = 45 * size + 75;
             roi.x = 640 - width / 2;
             roi.y = 20;
-            next = (Player.COM2 + mUno.getDirection()) % 4;
-            beChallenged = mChallenged && status == next;
+            beChallenged = mChallenged && mUno.getNow() == Player.COM2;
             if (beChallenged || status == STAT_GAME_OVER) {
                 // Show remained hand cards
                 // when being challenged or game over
@@ -661,8 +653,7 @@ public class MainActivity extends AppCompatActivity
             height = 40 * size + 140;
             roi.x = 1140;
             roi.y = 360 - height / 2;
-            next = (Player.COM3 + mUno.getDirection()) % 4;
-            beChallenged = mChallenged && status == next;
+            beChallenged = mChallenged && mUno.getNow() == Player.COM3;
             if (beChallenged || status == STAT_GAME_OVER) {
                 // Show remained hand cards
                 // when being challenged or game over
@@ -762,8 +753,8 @@ public class MainActivity extends AppCompatActivity
         Runnable delayedTask;
         int x, y, now, size, width, height;
 
-        now = mStatus;
         mStatus = STAT_IDLE; // block tap down events when idle
+        now = mUno.getNow();
         size = mUno.getPlayer(now).getHandCards().size();
         card = mUno.play(now, index, color);
         if (card != null) {
@@ -800,8 +791,8 @@ public class MainActivity extends AppCompatActivity
             Utils.matToBitmap(mScr, mBmp);
             mImgScreen.setImageBitmap(mBmp);
             delayedTask = () -> {
+                int next;
                 String message;
-                int next, direction;
 
                 if (mUno.getPlayer(now).getHandCards().size() == 0) {
                     // The player in action becomes winner when it played the
@@ -815,20 +806,18 @@ public class MainActivity extends AppCompatActivity
                     // do the necessary things according to the game rule
                     switch (card.getContent()) {
                         case DRAW2:
-                            direction = mUno.getDirection();
-                            next = (now + direction) % 4;
+                            next = mUno.switchNow();
                             message = NAME[now] + ": Let "
                                     + NAME[next] + " draw 2 cards";
                             refreshScreen(message);
                             mHandler.postDelayed(
-                                    () -> draw(next, 2, true),
+                                    () -> draw(2, /* force */ true),
                                     1500
                             ); // mHandler.postDelayed()
                             break; // case DRAW2
 
                         case SKIP:
-                            direction = mUno.getDirection();
-                            next = (now + direction) % 4;
+                            next = mUno.switchNow();
                             if (next == Player.YOU) {
                                 message = NAME[now] + ": Skip your turn";
                             } // if (next == Player.YOU)
@@ -839,17 +828,16 @@ public class MainActivity extends AppCompatActivity
 
                             refreshScreen(message);
                             mHandler.postDelayed(() -> {
-                                mStatus = (next + direction) % 4;
+                                mStatus = mUno.switchNow();
                                 onStatusChanged(mStatus);
                             }, 1500); // mHandler.postDelayed()
                             break; // case SKIP
 
                         case REV:
-                            direction = mUno.switchDirection();
-                            if (direction == Uno.DIR_LEFT) {
+                            if (mUno.switchDirection() == Uno.DIR_LEFT) {
                                 message = NAME[now] + ": Change direction to "
                                         + "CLOCKWISE";
-                            } // if (direction == Uno.DIR_LEFT)
+                            } // if (mUno.switchDirection() == Uno.DIR_LEFT)
                             else {
                                 message = NAME[now] + ": Change direction to "
                                         + "COUNTER CLOCKWISE";
@@ -857,25 +845,23 @@ public class MainActivity extends AppCompatActivity
 
                             refreshScreen(message);
                             mHandler.postDelayed(() -> {
-                                mStatus = (now + direction) % 4;
+                                mStatus = mUno.switchNow();
                                 onStatusChanged(mStatus);
                             }, 1500); // mHandler.postDelayed()
                             break; // case REV
 
                         case WILD:
-                            direction = mUno.getDirection();
                             message = NAME[now]
                                     + ": Change the following legal color";
                             refreshScreen(message);
                             mHandler.postDelayed(() -> {
-                                mStatus = (now + direction) % 4;
+                                mStatus = mUno.switchNow();
                                 onStatusChanged(mStatus);
                             }, 1500); // mHandler.postDelayed()
                             break; // case WILD
 
                         case WILD_DRAW4:
-                            direction = mUno.getDirection();
-                            next = (now + direction) % 4;
+                            next = mUno.getNext();
                             message = NAME[now] + ": Let "
                                     + NAME[next] + " draw 4 cards";
                             refreshScreen(message);
@@ -887,11 +873,10 @@ public class MainActivity extends AppCompatActivity
                             break; // case WILD_DRAW4
 
                         default:
-                            direction = mUno.getDirection();
                             message = NAME[now] + ": " + card.getName();
                             refreshScreen(message);
                             mHandler.postDelayed(() -> {
-                                mStatus = (now + direction) % 4;
+                                mStatus = mUno.switchNow();
                                 onStatusChanged(mStatus);
                             }, 1500); // mHandler.postDelayed()
                             break; // default
@@ -903,10 +888,8 @@ public class MainActivity extends AppCompatActivity
     } // play()
 
     /**
-     * Let a player draw one or more cards, and skip its turn.
+     * The player in action draw one or more cards.
      *
-     * @param who   Who draws cards. Must be one of the following values:
-     *              Player.YOU, Player.COM1, Player.COM2, Player.COM3.
      * @param count How many cards to draw.
      * @param force Pass true if the specified player is required to draw cards,
      *              i.e. previous player played a [+2] or [wild +4] to let this
@@ -914,14 +897,14 @@ public class MainActivity extends AppCompatActivity
      *              card by itself in its action.
      * @see DrawLoop
      */
-    private void draw(int who, int count, boolean force) {
-        mStatus = STAT_IDLE; // block click events when idle
+    private void draw(int count, boolean force) {
+        mStatus = STAT_IDLE; // block tap down events when idle
 
         // This is a time-consuming procedure, so we cannot use the traditional
         // for-loop. We need to create a Runnable object, and make a delayed
         // cycle by executing mHandler.postDelayed(this, delayedMs); in the
         // run() method of the created Runnable object.
-        mHandler.post(new DrawLoop(who, count, force));
+        mHandler.post(new DrawLoop(count, force));
     } // draw()
 
     /**
@@ -932,22 +915,22 @@ public class MainActivity extends AppCompatActivity
      * Challenge success: current player draw 4 cards;
      * Challenge failure: next player draw 6 cards.
      *
-     * @param challenger Who challenges. Must be one of the following values:
-     *                   Player.YOU, Player.COM1, Player.COM2, Player.COM3.
-     * @param challenged Whether the challenger challenged the [wild +4].
+     * @param challenged Whether the next player (challenger) challenged current
+     *                   player(be challenged)'s [wild +4].
      */
-    private void onChallenge(int challenger, boolean challenged) {
-        int prev;
+    private void onChallengeChance(boolean challenged) {
         String message;
+        int curr, challenger;
         Runnable delayedTask;
 
+        mStatus = STAT_IDLE; // block tap down events when idle
         mChallenged = challenged;
         mChallengeAsk = false;
         if (challenged) {
-            prev = (challenger + 4 - mUno.getDirection()) % 4;
-            message = NAME[challenger] + " challenged " + NAME[prev];
+            curr = mUno.getNow();
+            challenger = mUno.getNext();
+            message = NAME[challenger] + " challenged " + NAME[curr];
             refreshScreen(message);
-            mStatus = STAT_IDLE; // block tap down click events when idle
             delayedTask = () -> {
                 Card next2last;
                 StringBuilder sb;
@@ -959,14 +942,14 @@ public class MainActivity extends AppCompatActivity
                 next2last = recent.get(recent.size() - 2);
                 colorBeforeDraw4 = next2last.getRealColor();
                 draw4IsLegal = true;
-                for (Card card : mUno.getPlayer(prev).getHandCards()) {
+                for (Card card : mUno.getPlayer(curr).getHandCards()) {
                     if (card.getRealColor() == colorBeforeDraw4) {
                         // Found a card that matches the next-to-last recent
                         // played card's color, [wild +4] is illegally used
                         draw4IsLegal = false;
                         break;
                     } // if (card.getRealColor() == colorBeforeDraw4)
-                } // for (Card card : mUno.getPlayer(prev).getHandCards())
+                } // for (Card card : mUno.getPlayer(curr).getHandCards())
 
                 if (draw4IsLegal) {
                     // Challenge failure, challenger draws 6 cards
@@ -982,16 +965,17 @@ public class MainActivity extends AppCompatActivity
                     refreshScreen(sb.toString());
                     mHandler.postDelayed(() -> {
                         mChallenged = false;
-                        draw(challenger, 6, /* force */ true);
+                        mUno.switchNow();
+                        draw(6, /* force */ true);
                     }, 1500);
                 } // if (draw4IsLegal)
                 else {
                     // Challenge success, who played [wild +4] draws 4 cards
                     sb = new StringBuilder("Challenge success, ");
-                    sb.append(NAME[prev]);
-                    if (prev == Player.YOU) {
+                    sb.append(NAME[curr]);
+                    if (curr == Player.YOU) {
                         sb.append(" draw 4 cards");
-                    } // if (prev == Player.YOU)
+                    } // if (curr == Player.YOU)
                     else {
                         sb.append(" draws 4 cards");
                     } // else
@@ -999,16 +983,17 @@ public class MainActivity extends AppCompatActivity
                     refreshScreen(sb.toString());
                     mHandler.postDelayed(() -> {
                         mChallenged = false;
-                        draw(prev, 4, /* force */ true);
+                        draw(4, /* force */ true);
                     }, 1500);
                 } // else
             }; // delayedTask = () -> {}
             mHandler.postDelayed(delayedTask, 1500);
         } // if (challenged)
         else {
-            draw(challenger, 4, /* force */ true);
+            mUno.switchNow();
+            draw(4, /* force */ true);
         } // else
-    } // onChallenge()
+    } // onChallengeChance()
 
     /**
      * Triggered when a touch event occurred.
@@ -1023,6 +1008,7 @@ public class MainActivity extends AppCompatActivity
         Card card;
         Point point;
         List<Card> hand;
+        Runnable delayedTask;
         int x, y, index, size, width, startX;
 
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
@@ -1153,8 +1139,14 @@ public class MainActivity extends AppCompatActivity
                             } // if (y > 220 && y < 315)
                             else if (y > 315 && y < 410) {
                                 // NO button, go to next player's round
+                                mStatus = STAT_IDLE;
                                 mImmPlayAsk = false;
-                                pass(mStatus);
+                                refreshScreen(NAME[Player.YOU] + ": Pass");
+                                delayedTask = () -> {
+                                    mStatus = mUno.switchNow();
+                                    onStatusChanged(mStatus);
+                                }; // delayedTask = () -> {}
+                                mHandler.postDelayed(delayedTask, 750);
                             } // else if (y > 315 && y < 410)
                         } // else if (x > 310 && x < 500)
                     } // else if (mImmPlayAsk)
@@ -1163,11 +1155,11 @@ public class MainActivity extends AppCompatActivity
                         if (x > 310 && x < 500) {
                             if (y > 220 && y < 315) {
                                 // YES button, challenge wild +4
-                                onChallenge(mStatus, true);
+                                onChallengeChance(true);
                             } // if (y > 220 && y < 315)
                             else if (y > 315 && y < 410) {
                                 // NO button, do not challenge wild +4
-                                onChallenge(mStatus, false);
+                                onChallengeChance(false);
                             } // else if (y > 315 && y < 410)
                         } // if (x > 310 && x < 500)
                     } // else if (mChallengeAsk)
@@ -1200,7 +1192,7 @@ public class MainActivity extends AppCompatActivity
                     } // if (y >= 520 && y <= 700)
                     else if (y >= 270 && y <= 450 && x >= 338 && x <= 458) {
                         // Card deck area, draw a card
-                        draw(Player.YOU, 1, /* force */ false);
+                        draw(1, /* force */ false);
                     } // else if (y >= 270 && y <= 450 && x >= 338 && x <= 458)
                     break; // case Player.YOU
 
@@ -1375,10 +1367,10 @@ public class MainActivity extends AppCompatActivity
     /**
      * Runnable objects generated by draw() method.
      *
-     * @see MainActivity#draw(int, int, boolean)
+     * @see MainActivity#draw(int, boolean)
      */
     private class DrawLoop implements Runnable {
-        private int who;
+        private int now;
         private int count;
         private int times;
         private boolean force;
@@ -1386,16 +1378,14 @@ public class MainActivity extends AppCompatActivity
         /**
          * DrawLoop Constructor.
          *
-         * @param who   Who draws cards. Must be one of the following values:
-         *              Player.YOU, Player.COM1, Player.COM2, Player.COM3.
          * @param count How many cards to draw.
          * @param force Pass true if the specified player is required to draw
          *              cards, i.e. previous player played a [+2] or [wild +4]
          *              to let this player draw cards. Or false if the specified
          *              player draws a card by itself in its action.
          */
-        private DrawLoop(int who, int count, boolean force) {
-            this.who = who;
+        private DrawLoop(int count, boolean force) {
+            this.now = mUno.getNow();
             this.count = count;
             this.force = force;
             this.times = 0;
@@ -1411,15 +1401,16 @@ public class MainActivity extends AppCompatActivity
             String message;
             Runnable delayedTask;
 
-            mDrawnCard = mUno.draw(who, force);
+            mStatus = STAT_IDLE; // block tap down events when idle
+            mDrawnCard = mUno.draw(now, force);
             if (mDrawnCard != null) {
-                switch (who) {
+                switch (now) {
                     case Player.COM1:
                         if (count == 1) {
-                            message = NAME[who] + ": Draw a card";
+                            message = NAME[now] + ": Draw a card";
                         } // if (count == 1)
                         else {
-                            message = NAME[who] + ": Draw " + count + " cards";
+                            message = NAME[now] + ": Draw " + count + " cards";
                         } // else
 
                         image = mUno.getBackImage();
@@ -1428,10 +1419,10 @@ public class MainActivity extends AppCompatActivity
 
                     case Player.COM2:
                         if (count == 1) {
-                            message = NAME[who] + ": Draw a card";
+                            message = NAME[now] + ": Draw a card";
                         } // if (count == 1)
                         else {
-                            message = NAME[who] + ": Draw " + count + " cards";
+                            message = NAME[now] + ": Draw " + count + " cards";
                         } // else
 
                         image = mUno.getBackImage();
@@ -1440,10 +1431,10 @@ public class MainActivity extends AppCompatActivity
 
                     case Player.COM3:
                         if (count == 1) {
-                            message = NAME[who] + ": Draw a card";
+                            message = NAME[now] + ": Draw a card";
                         } // if (count == 1)
                         else {
-                            message = NAME[who] + ": Draw " + count + " cards";
+                            message = NAME[now] + ": Draw " + count + " cards";
                         } // else
 
                         image = mUno.getBackImage();
@@ -1451,11 +1442,11 @@ public class MainActivity extends AppCompatActivity
                         break; // case Player.COM3
 
                     default:
-                        message = NAME[who] + ": Draw " + mDrawnCard.getName();
+                        message = NAME[now] + ": Draw " + mDrawnCard.getName();
                         image = mDrawnCard.getImage();
                         roi = new Rect(580, 470, 121, 181);
                         break; // default
-                } // switch (who)
+                } // switch (now)
 
                 // Animation
                 image.copyTo(new Mat(mScr, roi), image);
@@ -1476,7 +1467,7 @@ public class MainActivity extends AppCompatActivity
                 mHandler.postDelayed(delayedTask, 300);
             } // if (mDrawnCard != null)
             else {
-                message = NAME[who] + " cannot hold more than "
+                message = NAME[now] + " cannot hold more than "
                         + Uno.MAX_HOLD_CARDS + " cards";
                 refreshScreen(message);
                 mHandler.postDelayed(this::afterDrawn, 750);
@@ -1487,17 +1478,24 @@ public class MainActivity extends AppCompatActivity
          * Triggered when all requested cards are drawn.
          */
         private void afterDrawn() {
+            Runnable delayedTask;
+
             if (count == 1 &&
                     mDrawnCard != null &&
                     mUno.isLegalToPlay(mDrawnCard)) {
                 // Player drew one card by itself, the drawn card
                 // can be played immediately if it's legal to play
-                mStatus = who;
+                mStatus = now;
                 mImmPlayAsk = true;
                 onStatusChanged(mStatus);
             } // if (count == 1 && ...)
             else {
-                pass(who);
+                refreshScreen(NAME[now] + ": Pass");
+                delayedTask = () -> {
+                    mStatus = mUno.switchNow();
+                    onStatusChanged(mStatus);
+                }; // delayedTask = () -> {}
+                mHandler.postDelayed(delayedTask, 750);
             } // else
         } // afterDrawn()
     } // DrawLoop Inner Class

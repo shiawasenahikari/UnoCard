@@ -69,8 +69,38 @@ bool needToChallenge(int challenger) {
  *                  best color.
  * @return Index of the best card to play, in the specified player's hand.
  *         Or a negative number that means no appropriate card to play.
+ * @deprecated Use easyAI_bestCardIndex4NowPlayer(Card*, Color[]) instead.
  */
+[[deprecated]]
 int easyAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
+	if (whom == sUno->getNow()) {
+		return easyAI_bestCardIndex4NowPlayer(drawnCard, outColor);
+	} // if (whom == sUno->getNow())
+	else {
+		throw "DO NOT CALL DEPRECATED API!";
+	} // else
+} // easyAI_bestCardIndexFor()
+
+/**
+ * AI Strategies (Difficulty: EASY). Analyze current player's hand cards,
+ * and calculate which is the best card to play out.
+ *
+ * @param drawnCard When current player drew a card just now, pass the drawn
+ *                  card. If not, pass nullptr. If drew a card from deck,
+ *                  then you can play only the drawn card, but not the other
+ *                  cards in your hand, immediately.
+ * @param outColor  This is a out parameter. Pass a Color array (length>=1)
+ *                  in order to let we pass the return value by assigning
+ *                  outColor[0]. When the best card to play becomes a wild
+ *                  card, outColor[0] will become the following legal color
+ *                  to change. When the best card to play becomes an action
+ *                  or a number card, outColor[0] will become the player's
+ *                  best color.
+ * @return Index of the best card to play, in current player's hand.
+ *         Or a negative number that means no appropriate card to play.
+ */
+int easyAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
+	int i;
 	bool legal;
 	Card* card;
 	Card* last;
@@ -78,7 +108,6 @@ int easyAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 	Player* next;
 	Player* oppo;
 	Player* prev;
-	int i, direction;
 	vector<Card*> hand;
 	Color bestColor, lastColor;
 	bool hasZero, hasWild, hasWildDraw4;
@@ -91,7 +120,7 @@ int easyAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 		throw "outColor[] cannot be nullptr";
 	} // if (outColor == nullptr)
 
-	curr = sUno->getPlayer(whom);
+	curr = sUno->getPlayer(sUno->getNow());
 	hand = curr->getHandCards();
 	yourSize = (int)hand.size();
 	if (yourSize == 1) {
@@ -101,12 +130,11 @@ int easyAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 		return sUno->isLegalToPlay(card) ? 0 : -1;
 	} // if (yourSize == 1)
 
-	direction = sUno->getDirection();
-	next = sUno->getPlayer((whom + direction) % 4);
+	next = sUno->getPlayer(sUno->getNext());
 	nextSize = (int)next->getHandCards().size();
-	oppo = sUno->getPlayer((whom + 2) % 4);
+	oppo = sUno->getPlayer(sUno->getOppo());
 	oppoSize = (int)oppo->getHandCards().size();
-	prev = sUno->getPlayer((4 + whom - direction) % 4);
+	prev = sUno->getPlayer(sUno->getPrev());
 	prevSize = (int)prev->getHandCards().size();
 	idxBest = idxRev = idxSkip = idxDraw2 = -1;
 	idxZero = idxNum = idxWild = idxWildDraw4 = -1;
@@ -276,7 +304,7 @@ int easyAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 
 	outColor[0] = bestColor;
 	return idxBest;
-} // easyAI_bestCardIndexFor()
+} // easyAI_bestCardIndex4NowPlayer()
 
 /**
  * AI Strategies (Difficulty: HARD).
@@ -296,8 +324,38 @@ int easyAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
  *                  best color.
  * @return Index of the best card to play, in the specified player's hand.
  *         Or a negative number that means no appropriate card to play.
+ * @deprecated Use hardAI_bestCardIndex4NowPlayer(Card*, Color[]) instead.
  */
+[[deprecated]]
 int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
+	if (whom == sUno->getNow()) {
+		return hardAI_bestCardIndex4NowPlayer(drawnCard, outColor);
+	} // if (whom == sUno->getNow())
+	else {
+		throw "DO NOT CALL DEPRECATED API!";
+	} // else
+} // hardAI_bestCardIndexFor()
+
+/**
+ * AI Strategies (Difficulty: HARD). Analyze current player's hand cards,
+ * and calculate which is the best card to play.
+ *
+ * @param drawnCard When current player drew a card just now, pass the drawn
+ *                  card. If not, pass nullptr. If drew a card from deck,
+ *                  then you can play only the drawn card, but not the other
+ *                  cards in your hand, immediately.
+ * @param outColor  This is a out parameter. Pass a Color array (length>=1)
+ *                  in order to let we pass the return value by assigning
+ *                  outColor[0]. When the best card to play becomes a wild
+ *                  card, outColor[0] will become the following legal color
+ *                  to change. When the best card to play becomes an action
+ *                  or a number card, outColor[0] will become the player's
+ *                  best color.
+ * @return Index of the best card to play, in current player's hand.
+ *         Or a negative number that means no appropriate card to play.
+ */
+int hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
+	int i;
 	bool legal;
 	Card* card;
 	Card* last;
@@ -305,7 +363,6 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 	Player* next;
 	Player* oppo;
 	Player* prev;
-	int i, direction;
 	vector<Card*> hand;
 	Color bestColor, lastColor;
 	bool hasRev, hasSkip, hasDraw2;
@@ -320,7 +377,7 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 		throw "outColor[] cannot be nullptr";
 	} // if (outColor == nullptr)
 
-	curr = sUno->getPlayer(whom);
+	curr = sUno->getPlayer(sUno->getNow());
 	hand = curr->getHandCards();
 	yourSize = (int)hand.size();
 	if (yourSize == 1) {
@@ -330,12 +387,11 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 		return sUno->isLegalToPlay(card) ? 0 : -1;
 	} // if (yourSize == 1)
 
-	direction = sUno->getDirection();
-	next = sUno->getPlayer((whom + direction) % 4);
+	next = sUno->getPlayer(sUno->getNext());
 	nextSize = (int)next->getHandCards().size();
-	oppo = sUno->getPlayer((whom + 2) % 4);
+	oppo = sUno->getPlayer(sUno->getOppo());
 	oppoSize = (int)oppo->getHandCards().size();
-	prev = sUno->getPlayer((4 + whom - direction) % 4);
+	prev = sUno->getPlayer(sUno->getPrev());
 	prevSize = (int)prev->getHandCards().size();
 	hasRev = hasSkip = hasDraw2 = hasWild = hasWildDraw4 = false;
 	idxBest = idxRev = idxSkip = idxDraw2 = idxWild = idxWildDraw4 = -1;
@@ -945,6 +1001,6 @@ int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]) {
 
 	outColor[0] = bestColor;
 	return idxBest;
-} // hardAI_bestCardIndexFor()
+} // hardAI_bestCardIndex4NowPlayer()
 
 // E.O.F

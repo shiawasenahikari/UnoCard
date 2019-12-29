@@ -571,6 +571,9 @@ Uno::Uno() {
 	table[106] = Card(br[52], dk[52], NONE, WILD, "Wild");
 	table[107] = Card(br[52], dk[52], NONE, WILD, "Wild");
 
+	// Initialize other members
+	now = Player::YOU;
+
 	// Generate a random seed based on the current time stamp
 	srand((unsigned)time(nullptr));
 } // Uno() (Class Constructor)
@@ -645,13 +648,56 @@ const Mat& Uno::getColoredWildDraw4Image(Color color) {
 } // getColoredWildDraw4Image()
 
 /**
- * Get current action sequence. You can get the next player by calculating
- * (now + this->getDirection()) % 4, or the previous player by calculating
- * (now + 4 - this->getDirection()).
+ * @return Player in turn. Must be one of the following:
+ *         Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+ */
+int Uno::getNow() {
+	return now;
+} // getNow()
+
+/**
+ * Switch to next player's turn.
  *
+ * @return Player in turn after switched. Must be one of the following:
+ *         Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+ */
+int Uno::switchNow() {
+	now = getNext();
+	return now;
+} // switchNow()
+
+/**
+ * @return Current player's next player. Must be one of the following:
+ *         Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+ */
+int Uno::getNext() {
+	return (now + direction) % 4;
+} // getNext()
+
+/**
+ * @return Current player's opposite player. Must be one of the following:
+ *         Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+ */
+int Uno::getOppo() {
+	return (now + direction + direction) % 4;
+} // getOppo()
+
+/**
+ * @return Current player's previous player. Must be one of the following:
+ *         Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+ */
+int Uno::getPrev() {
+	return (4 + now - direction) % 4;
+} // getPrev()
+
+/**
  * @return Current action sequence. DIR_LEFT for clockwise,
  *         or DIR_RIGHT for counter-clockwise.
+ * @deprecated Use getNext() and getPrev() to get your neighbors' player ID,
+ *             instead of calculating (now + this->getDirection()) % 4, and
+ *             (4 + now - this->getDirection()) % 4.
  */
+[[deprecated]]
 int Uno::getDirection() {
 	return direction;
 } // getDirection()
@@ -668,8 +714,8 @@ int Uno::switchDirection() {
 } // switchDirection()
 
 /**
- * @param who Get which player's instance. Must be one of the following
- *        values: Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+ * @param who Get which player's instance. Must be one of the following:
+ *            Player::YOU, Player::COM1, Player::COM2, Player::COM3.
  * @return Specified player's instance.
  */
 Player* Uno::getPlayer(int who) {

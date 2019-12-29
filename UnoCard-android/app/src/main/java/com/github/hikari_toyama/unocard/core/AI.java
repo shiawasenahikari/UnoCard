@@ -96,14 +96,44 @@ public class AI {
      *                  best color.
      * @return Index of the best card to play, in the specified player's hand.
      * Or a negative number that means no appropriate card to play.
+     * @deprecated Use easyAI_bestCardIndex4NowPlayer(Card, Color[]) instead.
      */
+    @Deprecated
     public int easyAI_bestCardIndexFor(int whom,
                                        Card drawnCard,
                                        Color[] outColor) {
+        if (whom == mUno.getNow()) {
+            return easyAI_bestCardIndex4NowPlayer(drawnCard, outColor);
+        } // if (whom == mUno.getNow())
+        else {
+            throw new IllegalStateException("DO NOT CALL DEPRECATED API!");
+        } // else
+    } // easyAI_bestCardIndexFor()
+
+    /**
+     * AI Strategies (Difficulty: EASY). Analyze current player's hand cards,
+     * and calculate which is the best card to play out.
+     *
+     * @param drawnCard When current player drew a card just now, pass the drawn
+     *                  card. If not, pass nullptr. If drew a card from deck,
+     *                  then you can play only the drawn card, but not the other
+     *                  cards in your hand, immediately.
+     * @param outColor  This is a out parameter. Pass a Color array (length>=1)
+     *                  in order to let we pass the return value by assigning
+     *                  outColor[0]. When the best card to play becomes a wild
+     *                  card, outColor[0] will become the following legal color
+     *                  to change. When the best card to play becomes an action
+     *                  or a number card, outColor[0] will become the player's
+     *                  best color.
+     * @return Index of the best card to play, in current player's hand.
+     * Or a negative number that means no appropriate card to play.
+     */
+    public int easyAI_bestCardIndex4NowPlayer(Card drawnCard,
+                                              Color[] outColor) {
+        int i;
         boolean legal;
         String errMsg;
         Card card, last;
-        int i, direction;
         List<Card> hand, recent;
         Color bestColor, lastColor;
         Player curr, next, oppo, prev;
@@ -118,7 +148,7 @@ public class AI {
             throw new IllegalArgumentException(errMsg);
         }  // if (outColor == null || outColor.length == 0)
 
-        curr = mUno.getPlayer(whom);
+        curr = mUno.getPlayer(mUno.getNow());
         hand = curr.getHandCards();
         yourSize = hand.size();
         if (yourSize == 1) {
@@ -128,12 +158,11 @@ public class AI {
             return mUno.isLegalToPlay(card) ? 0 : -1;
         } // if (yourSize == 1)
 
-        direction = mUno.getDirection();
-        next = mUno.getPlayer((whom + direction) % 4);
+        next = mUno.getPlayer(mUno.getNext());
         nextSize = next.getHandCards().size();
-        oppo = mUno.getPlayer((whom + 2) % 4);
+        oppo = mUno.getPlayer(mUno.getOppo());
         oppoSize = oppo.getHandCards().size();
-        prev = mUno.getPlayer((4 + whom - direction) % 4);
+        prev = mUno.getPlayer(mUno.getPrev());
         prevSize = prev.getHandCards().size();
         idxBest = idxRev = idxSkip = idxDraw2 = -1;
         idxZero = idxNum = idxWild = idxWildDraw4 = -1;
@@ -304,7 +333,7 @@ public class AI {
 
         outColor[0] = bestColor;
         return idxBest;
-    } // easyAI_bestCardIndexFor()
+    } // easyAI_bestCardIndex4NowPlayer()
 
     /**
      * AI Strategies (Difficulty: HARD).
@@ -324,15 +353,45 @@ public class AI {
      *                  best color.
      * @return Index of the best card to play, in the specified player's hand.
      * Or a negative number that means no appropriate card to play.
+     * @deprecated Use hardAI_bestCardIndex4NowPlayer(Card, Color[]) instead.
      */
+    @Deprecated
     public int hardAI_bestCardIndexFor(int whom,
                                        Card drawnCard,
                                        Color[] outColor) {
+        if (whom == mUno.getNow()) {
+            return hardAI_bestCardIndex4NowPlayer(drawnCard, outColor);
+        } // if (whom == mUno.getNow())
+        else {
+            throw new IllegalStateException("DO NOT CALL DEPRECATED API!");
+        } // else
+    } // hardAI_bestCardIndexFor()
+
+    /**
+     * AI Strategies (Difficulty: HARD). Analyze current player's hand cards,
+     * and calculate which is the best card to play.
+     *
+     * @param drawnCard When current player drew a card just now, pass the drawn
+     *                  card. If not, pass nullptr. If drew a card from deck,
+     *                  then you can play only the drawn card, but not the other
+     *                  cards in your hand, immediately.
+     * @param outColor  This is a out parameter. Pass a Color array (length>=1)
+     *                  in order to let we pass the return value by assigning
+     *                  outColor[0]. When the best card to play becomes a wild
+     *                  card, outColor[0] will become the following legal color
+     *                  to change. When the best card to play becomes an action
+     *                  or a number card, outColor[0] will become the player's
+     *                  best color.
+     * @return Index of the best card to play, in current player's hand.
+     * Or a negative number that means no appropriate card to play.
+     */
+    public int hardAI_bestCardIndex4NowPlayer(Card drawnCard,
+                                              Color[] outColor) {
+        int i;
         boolean legal;
         String errMsg;
         int[] idxNumIn;
         Card card, last;
-        int i, direction;
         boolean[] hasNumIn;
         List<Card> hand, recent;
         Color bestColor, lastColor;
@@ -350,7 +409,7 @@ public class AI {
             throw new IllegalArgumentException(errMsg);
         }  // if (outColor == null || outColor.length == 0)
 
-        curr = mUno.getPlayer(whom);
+        curr = mUno.getPlayer(mUno.getNow());
         hand = curr.getHandCards();
         yourSize = hand.size();
         if (yourSize == 1) {
@@ -360,12 +419,11 @@ public class AI {
             return mUno.isLegalToPlay(card) ? 0 : -1;
         } // if (yourSize == 1)
 
-        direction = mUno.getDirection();
-        next = mUno.getPlayer((whom + direction) % 4);
+        next = mUno.getPlayer(mUno.getNext());
         nextSize = next.getHandCards().size();
-        oppo = mUno.getPlayer((whom + 2) % 4);
+        oppo = mUno.getPlayer(mUno.getOppo());
         oppoSize = oppo.getHandCards().size();
-        prev = mUno.getPlayer((4 + whom - direction) % 4);
+        prev = mUno.getPlayer(mUno.getPrev());
         prevSize = prev.getHandCards().size();
         hasRev = hasSkip = hasDraw2 = hasWild = hasWildDraw4 = false;
         idxBest = idxRev = idxSkip = idxDraw2 = idxWild = idxWildDraw4 = -1;
@@ -996,7 +1054,7 @@ public class AI {
 
         outColor[0] = bestColor;
         return idxBest;
-    } // hardAI_bestCardIndexFor()
+    } // hardAI_bestCardIndex4NowPlayer()
 } // AI Class
 
 // E.O.F

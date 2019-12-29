@@ -39,8 +39,30 @@ bool needToChallenge(int challenger);
  *                  best color.
  * @return Index of the best card to play, in the specified player's hand.
  *         Or a negative number that means no appropriate card to play.
+ * @deprecated Use easyAI_bestCardIndex4NowPlayer(Card*, Color[]) instead.
  */
+[[deprecated]]
 int easyAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]);
+
+/**
+ * AI Strategies (Difficulty: EASY). Analyze current player's hand cards,
+ * and calculate which is the best card to play out.
+ *
+ * @param drawnCard When current player drew a card just now, pass the drawn
+ *                  card. If not, pass nullptr. If drew a card from deck,
+ *                  then you can play only the drawn card, but not the other
+ *                  cards in your hand, immediately.
+ * @param outColor  This is a out parameter. Pass a Color array (length>=1)
+ *                  in order to let we pass the return value by assigning
+ *                  outColor[0]. When the best card to play becomes a wild
+ *                  card, outColor[0] will become the following legal color
+ *                  to change. When the best card to play becomes an action
+ *                  or a number card, outColor[0] will become the player's
+ *                  best color.
+ * @return Index of the best card to play, in current player's hand.
+ *         Or a negative number that means no appropriate card to play.
+ */
+int easyAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]);
 
 /**
  * AI Strategies (Difficulty: HARD).
@@ -60,8 +82,30 @@ int easyAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]);
  *                  best color.
  * @return Index of the best card to play, in the specified player's hand.
  *         Or a negative number that means no appropriate card to play.
+ * @deprecated Use hardAI_bestCardIndex4NowPlayer(Card*, Color[]) instead.
  */
+[[deprecated]]
 int hardAI_bestCardIndexFor(int whom, Card* drawnCard, Color outColor[]);
+
+/**
+ * AI Strategies (Difficulty: HARD). Analyze current player's hand cards,
+ * and calculate which is the best card to play.
+ *
+ * @param drawnCard When current player drew a card just now, pass the drawn
+ *                  card. If not, pass nullptr. If drew a card from deck,
+ *                  then you can play only the drawn card, but not the other
+ *                  cards in your hand, immediately.
+ * @param outColor  This is a out parameter. Pass a Color array (length>=1)
+ *                  in order to let we pass the return value by assigning
+ *                  outColor[0]. When the best card to play becomes a wild
+ *                  card, outColor[0] will become the following legal color
+ *                  to change. When the best card to play becomes an action
+ *                  or a number card, outColor[0] will become the player's
+ *                  best color.
+ * @return Index of the best card to play, in current player's hand.
+ *         Or a negative number that means no appropriate card to play.
+ */
+int hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]);
 
 #endif // __AI_H_494649FDFA62B3C015120BCB9BE17613__
 
