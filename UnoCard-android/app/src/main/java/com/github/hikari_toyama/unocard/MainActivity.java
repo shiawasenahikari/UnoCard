@@ -703,7 +703,7 @@ public class MainActivity extends AppCompatActivity
                                     card.getDarkImg();
                         } // if (mImmPlayAsk)
                         else if (mChallengeAsk || mChallenged) {
-                            image = card.getImage();
+                            image = card.getDarkImg();
                         } // else if (mChallengeAsk || mChallenged)
                         else {
                             image = (mUno.isLegalToPlay(card)) ?
