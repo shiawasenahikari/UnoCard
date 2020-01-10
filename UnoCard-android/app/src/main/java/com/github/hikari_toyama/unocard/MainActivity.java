@@ -230,8 +230,38 @@ public class MainActivity extends AppCompatActivity
                 mUno.start();
                 refreshScreen("GET READY");
                 delayedTask = () -> {
-                    mStatus = mUno.getNow();
-                    onStatusChanged(mStatus);
+                    switch (mUno.getRecent().get(0).getContent()) {
+                        case DRAW2:
+                            // If starting with a [+2], let dealer draw 2 cards.
+                            draw(2, /* force */ true);
+                            break; // case DRAW2
+
+                        case SKIP:
+                            // If starting with a [skip], skip dealer's turn.
+                            refreshScreen(NAME[mUno.getNow()] + ": Skipped");
+                            mHandler.postDelayed(() -> {
+                                mStatus = mUno.switchNow();
+                                onStatusChanged(mStatus);
+                            }, 1500);
+                            break; // case SKIP
+
+                        case REV:
+                            // If starting with a [reverse], change the action
+                            // sequence to COUNTER CLOCKWISE.
+                            mUno.switchDirection();
+                            refreshScreen("Direction changed");
+                            mHandler.postDelayed(() -> {
+                                mStatus = mUno.getNow();
+                                onStatusChanged(mStatus);
+                            }, 1500);
+                            break; // case REV
+
+                        default:
+                            // Otherwise, go to dealer's turn.
+                            mStatus = mUno.getNow();
+                            onStatusChanged(mStatus);
+                            break; // default
+                    } // switch (mUno.getRecent().get(0).getContent())
                 }; // delayedTask = () -> {}
                 mHandler.postDelayed(delayedTask, 2000);
                 break; // case STAT_NEW_GAME

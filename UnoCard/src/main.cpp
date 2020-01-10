@@ -239,8 +239,36 @@ static void onStatusChanged(int status) {
 		sUno->start();
 		refreshScreen("GET READY");
 		WAIT_MS(2000);
-		sStatus = sUno->getNow();
-		onStatusChanged(sStatus);
+		switch (sUno->getRecent().at(0)->getContent()) {
+		case DRAW2:
+			// If starting with a [+2], let dealer draw 2 cards.
+			draw(2, /* force */ true);
+			break; // case DRAW2
+
+		case SKIP:
+			// If starting with a [skip], skip dealer's turn.
+			refreshScreen(NAME[sUno->getNow()] + ": Skipped");
+			WAIT_MS(1500);
+			sStatus = sUno->switchNow();
+			onStatusChanged(sStatus);
+			break; // case SKIP
+
+		case REV:
+			// If starting with a [reverse], change the action
+			// sequence to COUNTER CLOCKWISE.
+			sUno->switchDirection();
+			refreshScreen("Direction changed");
+			WAIT_MS(1500);
+			sStatus = sUno->getNow();
+			onStatusChanged(sStatus);
+			break; // case REV
+
+		default:
+			// Otherwise, go to dealer's turn.
+			sStatus = sUno->getNow();
+			onStatusChanged(sStatus);
+			break; // default
+		} // switch (sUno->getRecent().back()->getContent())
 		break; // case STAT_NEW_GAME
 
 	case Player::YOU:
