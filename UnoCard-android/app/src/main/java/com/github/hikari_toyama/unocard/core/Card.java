@@ -193,7 +193,7 @@ public class Card implements Comparable<Card> {
             result = true;
         } // if (this == another)
         else if (another instanceof Card) {
-            result = (this.order == ((Card) another).order);
+            result = this.order == ((Card) another).order;
         } // else if (another instanceof Card)
         else {
             result = false;

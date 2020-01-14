@@ -164,8 +164,10 @@ public class AI {
         oppoSize = oppo.getHandCards().size();
         prev = mUno.getPlayer(mUno.getPrev());
         prevSize = prev.getHandCards().size();
+        hasRev = hasSkip = hasDraw2 = false;
         idxBest = idxRev = idxSkip = idxDraw2 = -1;
         idxZero = idxNum = idxWild = idxWildDraw4 = -1;
+        hasZero = hasNum = hasWild = hasWildDraw4 = false;
         bestColor = curr.calcBestColor();
         recent = mUno.getRecent();
         last = recent.get(recent.size() - 1);
@@ -183,54 +185,54 @@ public class AI {
             if (legal) {
                 switch (card.getContent()) {
                     case NUM0:
-                        if (idxZero < 0 || card.getRealColor() == bestColor) {
+                        if (!hasZero || card.getRealColor() == bestColor) {
                             idxZero = i;
-                        } // if (idxZero < 0 || ...)
+                            hasZero = true;
+                        } // if (!hasZero || ...)
                         break; // case NUM0
 
                     case DRAW2:
-                        if (idxDraw2 < 0 || card.getRealColor() == bestColor) {
+                        if (!hasDraw2 || card.getRealColor() == bestColor) {
                             idxDraw2 = i;
-                        } // if (idxDraw2 < 0 || ...)
+                            hasDraw2 = true;
+                        } // if (!hasDraw2 || ...)
                         break; // case DRAW2
 
                     case SKIP:
-                        if (idxSkip < 0 || card.getRealColor() == bestColor) {
+                        if (!hasSkip || card.getRealColor() == bestColor) {
                             idxSkip = i;
-                        } // if (idxSkip < 0 || ...)
+                            hasSkip = true;
+                        } // if (!hasSkip || ...)
                         break; // case SKIP
 
                     case REV:
-                        if (idxRev < 0 || card.getRealColor() == bestColor) {
+                        if (!hasRev || card.getRealColor() == bestColor) {
                             idxRev = i;
-                        } // if (idxRev < 0 || ...)
+                            hasRev = true;
+                        } // if (!hasRev || ...)
                         break; // case REV
 
                     case WILD:
                         idxWild = i;
+                        hasWild = true;
                         break; // case WILD
 
                     case WILD_DRAW4:
                         idxWildDraw4 = i;
+                        hasWildDraw4 = true;
                         break; // case WILD_DRAW4
 
                     default: // non-zero number cards
-                        if (idxNum < 0 || card.getRealColor() == bestColor) {
+                        if (!hasNum || card.getRealColor() == bestColor) {
                             idxNum = i;
-                        } // if (idxNum < 0 || ...)
+                            hasNum = true;
+                        } // if (!hasNum || ...)
                         break; // default
                 } // switch (card.getContent())
             } // if (legal)
         } // for (i = 0; i < yourSize; ++i)
 
         // Decision tree
-        hasNum = (idxNum >= 0);
-        hasRev = (idxRev >= 0);
-        hasZero = (idxZero >= 0);
-        hasSkip = (idxSkip >= 0);
-        hasWild = (idxWild >= 0);
-        hasDraw2 = (idxDraw2 >= 0);
-        hasWildDraw4 = (idxWildDraw4 >= 0);
         if (nextSize == 1) {
             // Strategies when your next player remains only one card.
             // Limit your next player's action as well as you can.
@@ -446,24 +448,24 @@ public class AI {
             if (legal) {
                 switch (card.getContent()) {
                     case DRAW2:
-                        if (idxDraw2 < 0 || card.getRealColor() == bestColor) {
+                        if (!hasDraw2 || card.getRealColor() == bestColor) {
                             idxDraw2 = i;
                             hasDraw2 = true;
-                        } // if (idxDraw2 < 0 || ...)
+                        } // if (!hasDraw2 || ...)
                         break; // case DRAW2
 
                     case SKIP:
-                        if (idxSkip < 0 || card.getRealColor() == bestColor) {
+                        if (!hasSkip || card.getRealColor() == bestColor) {
                             idxSkip = i;
                             hasSkip = true;
-                        } // if (idxSkip < 0 || ...)
+                        } // if (!hasSkip || ...)
                         break; // case SKIP
 
                     case REV:
-                        if (idxRev < 0 || card.getRealColor() == bestColor) {
+                        if (!hasRev || card.getRealColor() == bestColor) {
                             idxRev = i;
                             hasRev = true;
-                        } // if (idxRev < 0 || ...)
+                        } // if (!hasRev || ...)
                         break; // case REV
 
                     case WILD:
@@ -477,10 +479,10 @@ public class AI {
                         break; // case WILD_DRAW4
 
                     default: // number cards
-                        if (idxNumIn[card.getRealColor().ordinal()] < 0) {
+                        if (!hasNumIn[card.getRealColor().ordinal()]) {
                             idxNumIn[card.getRealColor().ordinal()] = i;
                             hasNumIn[card.getRealColor().ordinal()] = true;
-                        } // if (idxNumIn[card.getRealColor().ordinal()] < 0)
+                        } // if (!hasNumIn[card.getRealColor().ordinal()])
                         break; // default
                 } // switch (card.getContent())
             } // if (legal)

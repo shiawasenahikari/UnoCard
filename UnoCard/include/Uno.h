@@ -145,11 +145,6 @@ private:
 	std::string name;
 
 	/**
-	 * Default constructor.
-	 */
-	Card();
-
-	/**
 	 * Constructor. Provide parameters for an Uno card and create its instance.
 	 */
 	Card(cv::Mat, cv::Mat, Color, Content, std::string);
@@ -273,6 +268,16 @@ private:
 class Uno {
 public:
 	/**
+	 * Easy level ID.
+	 */
+	static const int LV_EASY = 0;
+
+	/**
+	 * Hard level ID.
+	 */
+	static const int LV_HARD = 1;
+
+	/**
 	 * Direction value (clockwise).
 	 */
 	static const int DIR_LEFT = 1;
@@ -299,13 +304,25 @@ public:
 
 	/**
 	 * @return Difficulty button image resource (EASY).
+	 * @deprecated Use getLevelImage(Uno::LV_EASY, false) instead.
 	 */
+	[[deprecated]]
 	const cv::Mat& getEasyImage();
 
 	/**
 	 * @return Difficulty button image resource (HARD).
+	 * @deprecated Use getLevelImage(Uno::LV_HARD, false) instead.
 	 */
+	[[deprecated]]
 	const cv::Mat& getHardImage();
+
+	/**
+	 * @param level   Pass LV_EASY or LV_HARD.
+	 * @param hiLight Pass true if you want to get a hi-lighted image,
+	 *                or false if you want to get a dark image.
+	 * @return Corresponding difficulty button image.
+	 */
+	const cv::Mat& getLevelImage(int level, bool hiLight);
 
 	/**
 	 * @return Background image resource in current direction.
@@ -390,6 +407,15 @@ public:
 	Player* getPlayer(int who);
 
 	/**
+	 * Find a card instance in card table.
+	 *
+	 * @param color   Color of the card you want to get.
+	 * @param content Content of the card you want to get.
+	 * @return Corresponding card instance.
+	 */
+	Card* findCard(Color color, Content content);
+
+	/**
 	 * @return How many cards in deck (haven't been used yet).
 	 */
 	int getDeckCount();
@@ -457,24 +483,9 @@ public:
 
 private:
 	/**
-	 * Card table.
-	 */
-	Card table[108];
-
-	/**
 	 * Card back image resource.
 	 */
 	cv::Mat backImage;
-
-	/**
-	 * Difficulty button image resource (EASY).
-	 */
-	cv::Mat easyImage;
-
-	/**
-	 * Difficulty button image resource (HARD).
-	 */
-	cv::Mat hardImage;
 
 	/**
 	 * Background image resource (for welcome screen).
@@ -502,6 +513,16 @@ private:
 	cv::Mat wildDraw4Image[5];
 
 	/**
+	 * Difficulty button image resources (EASY).
+	 */
+	cv::Mat easyImage, easyImage_d;
+
+	/**
+	 * Difficulty button image resources (HARD).
+	 */
+	cv::Mat hardImage, hardImage_d;
+
+	/**
 	 * Player in turn. Must be one of the following:
 	 * Player::YOU, Player::COM1, Player::COM2, Player::COM3.
 	 */
@@ -526,6 +547,11 @@ private:
 	 * Used cards.
 	 */
 	std::vector<Card*> used;
+
+	/**
+	 * Card table.
+	 */
+	std::vector<Card> table;
 
 	/**
 	 * Recent played cards.

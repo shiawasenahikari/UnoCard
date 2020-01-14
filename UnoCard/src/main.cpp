@@ -17,24 +17,19 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
-using namespace cv;
-using namespace std;
-
 // Constants
-static const int LV_EASY = 0;
-static const int LV_HARD = 1;
 static const int STAT_IDLE = 0x1111;
 static const int STAT_WELCOME = 0x2222;
 static const int STAT_NEW_GAME = 0x3333;
 static const int STAT_GAME_OVER = 0x4444;
 static const int STAT_WILD_COLOR = 0x5555;
-static const Scalar RGB_RED = CV_RGB(0xFF, 0x55, 0x55);
-static const Scalar RGB_BLUE = CV_RGB(0x55, 0x55, 0xFF);
-static const Scalar RGB_GREEN = CV_RGB(0x55, 0xAA, 0x55);
-static const Scalar RGB_WHITE = CV_RGB(0xCC, 0xCC, 0xCC);
-static const Scalar RGB_YELLOW = CV_RGB(0xFF, 0xAA, 0x11);
-static const string NAME[] = { "YOU", "WEST", "NORTH", "EAST" };
-static const enum HersheyFonts FONT_SANS = FONT_HERSHEY_DUPLEX;
+static const cv::Scalar RGB_RED = CV_RGB(0xFF, 0x55, 0x55);
+static const cv::Scalar RGB_BLUE = CV_RGB(0x55, 0x55, 0xFF);
+static const cv::Scalar RGB_GREEN = CV_RGB(0x55, 0xAA, 0x55);
+static const cv::Scalar RGB_WHITE = CV_RGB(0xCC, 0xCC, 0xCC);
+static const cv::Scalar RGB_YELLOW = CV_RGB(0xFF, 0xAA, 0x11);
+static const std::string NAME[] = { "YOU", "WEST", "NORTH", "EAST" };
+static const enum cv::HersheyFonts FONT_SANS = cv::FONT_HERSHEY_DUPLEX;
 static const char FILE_HEADER[] = {
 	(char)('U' + 'N'),
 	(char)('O' + '@'),
@@ -49,8 +44,6 @@ static const char FILE_HEADER[] = {
 // Global Variables
 static Uno* sUno;
 static bool sAuto;
-static bool sTest;
-static Mat sScreen;
 static int sStatus;
 static int sWinner;
 static int sEasyWin;
@@ -59,6 +52,7 @@ static int sEasyTotal;
 static int sHardTotal;
 static int sDifficulty;
 static bool sAIRunning;
+static cv::Mat sScreen;
 static Card* sDrawnCard;
 static bool sImmPlayAsk;
 static bool sChallenged;
@@ -68,31 +62,28 @@ static bool sChallengeAsk;
 static void easyAI();
 static void hardAI();
 static void onStatusChanged(int status);
-static void refreshScreen(string message);
+static void refreshScreen(std::string message);
 static void play(int index, Color color = NONE);
 static void draw(int count = 1, bool force = false);
 static void onChallengeChance(bool challenged = true);
 static void onMouse(int event, int x, int y, int flags, void* param);
 
-// Macros
-#define WAIT_MS(delay) if (waitKey(delay) == '*') sTest = !sTest
-
 /**
  * Defines the entry point for the console application.
  */
 int main() {
-	ifstream reader;
 	int len, checksum;
+	std::ifstream reader;
 	char header[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 	// Preparations
 	sEasyWin = sHardWin = sEasyTotal = sHardTotal = 0;
-	reader = ifstream("UnoStat.tmp", ios::in | ios::binary);
+	reader = std::ifstream("UnoStat.tmp", std::ios::in | std::ios::binary);
 	if (!reader.fail()) {
 		// Using statistics data in UnoStat.tmp file.
-		reader.seekg(0, ios::end);
-		len = (int)reader.tellg();
-		reader.seekg(0, ios::beg);
+		reader.seekg(0, std::ios::end);
+		len = int(reader.tellg());
+		reader.seekg(0, std::ios::beg);
 		if (len == 8 + 5 * sizeof(int)) {
 			reader.read(header, 8);
 			reader.read((char*)&sEasyWin, sizeof(int));
@@ -114,11 +105,11 @@ int main() {
 	sWinner = Player::YOU;
 	sStatus = STAT_WELCOME;
 	sScreen = sUno->getBackground().clone();
-	namedWindow("Uno");
-	refreshScreen("WELCOME TO UNO CARD GAME");
-	setMouseCallback("Uno", onMouse, nullptr);
+	cv::namedWindow("Uno");
+	onStatusChanged(sStatus);
+	cv::setMouseCallback("Uno", onMouse, nullptr);
 	for (;;) {
-		WAIT_MS(0); // prevent from blocking main thread
+		cv::waitKey(0); // prevent from blocking main thread
 	} // for (;;)
 } // main()
 
@@ -155,7 +146,7 @@ static void easyAI() {
 				if (sImmPlayAsk) {
 					sImmPlayAsk = false;
 					refreshScreen(NAME[now] + ": Pass");
-					WAIT_MS(750);
+					cv::waitKey(750);
 					sStatus = sUno->switchNow();
 					onStatusChanged(sStatus);
 				} // if (sImmPlayAsk)
@@ -202,7 +193,7 @@ static void hardAI() {
 				if (sImmPlayAsk) {
 					sImmPlayAsk = false;
 					refreshScreen(NAME[now] + ": Pass");
-					WAIT_MS(750);
+					cv::waitKey(750);
 					sStatus = sUno->switchNow();
 					onStatusChanged(sStatus);
 				} // if (sImmPlayAsk)
@@ -222,23 +213,27 @@ static void hardAI() {
  * @param status New status value.
  */
 static void onStatusChanged(int status) {
-	Rect rect;
-	Size axes;
-	Point center;
+	cv::Rect rect;
+	cv::Size axes;
+	cv::Point center;
 
 	switch (status) {
+	case STAT_WELCOME:
+		refreshScreen("WELCOME TO UNO CARD GAME, CLICK UNO TO START");
+		break; // case STAT_WELCOME
+
 	case STAT_NEW_GAME:
 		// New game
-		if (sDifficulty == LV_EASY) {
+		if (sDifficulty == Uno::LV_EASY) {
 			++sEasyTotal;
-		} // if (sDifficulty == LV_EASY)
+		} // if (sDifficulty == Uno::LV_EASY)
 		else {
 			++sHardTotal;
 		} // else
 
 		sUno->start();
 		refreshScreen("GET READY");
-		WAIT_MS(2000);
+		cv::waitKey(2000);
 		switch (sUno->getRecent().at(0)->getContent()) {
 		case DRAW2:
 			// If starting with a [+2], let dealer draw 2 cards.
@@ -248,7 +243,7 @@ static void onStatusChanged(int status) {
 		case SKIP:
 			// If starting with a [skip], skip dealer's turn.
 			refreshScreen(NAME[sUno->getNow()] + ": Skipped");
-			WAIT_MS(1500);
+			cv::waitKey(1500);
 			sStatus = sUno->switchNow();
 			onStatusChanged(sStatus);
 			break; // case SKIP
@@ -258,7 +253,7 @@ static void onStatusChanged(int status) {
 			// sequence to COUNTER CLOCKWISE.
 			sUno->switchDirection();
 			refreshScreen("Direction changed");
-			WAIT_MS(1500);
+			cv::waitKey(1500);
 			sStatus = sUno->getNow();
 			onStatusChanged(sStatus);
 			break; // case REV
@@ -275,9 +270,9 @@ static void onStatusChanged(int status) {
 		// Your turn, select a hand card to play, or draw a card
 		if (sAuto) {
 			if (!sAIRunning) {
-				if (sDifficulty == LV_EASY) {
+				if (sDifficulty == Uno::LV_EASY) {
 					easyAI();
-				} // if (sDifficulty == LV_EASY)
+				} // if (sDifficulty == Uno::LV_EASY)
 				else {
 					hardAI();
 				} // else
@@ -285,68 +280,108 @@ static void onStatusChanged(int status) {
 		} // if (sAuto)
 		else if (sImmPlayAsk) {
 			refreshScreen("^ Play " + sDrawnCard->getName() + "?");
-			rect = Rect(338, 270, 121, 181);
+			rect = cv::Rect(338, 270, 121, 181);
 			sUno->getBackground()(rect).copyTo(sScreen(rect));
-			center = Point(405, 315);
-			axes = Size(135, 135);
+			center = cv::Point(405, 315);
+			axes = cv::Size(135, 135);
 
 			// Draw YES button
-			ellipse(sScreen, center, axes, 0, 0, -180, RGB_GREEN, -1, LINE_AA);
-			putText(
+			cv::ellipse(
+				/* img        */ sScreen,
+				/* center     */ center,
+				/* axes       */ axes,
+				/* angle      */ 0,
+				/* startAngle */ 0,
+				/* endAngle   */ -180,
+				/* color      */ RGB_GREEN,
+				/* thickness  */ -1,
+				/* lineType   */ cv::LINE_AA
+			); // cv::ellipse()
+			cv::putText(
 				/* img       */ sScreen,
 				/* text      */ "YES",
-				/* org       */ Point(346, 295),
+				/* org       */ cv::Point(346, 295),
 				/* fontFace  */ FONT_SANS,
 				/* fontScale */ 2.0,
 				/* color     */ RGB_WHITE,
 				/* thickness */ 2
-			); // putText()
+			); // cv::putText()
 
 			// Draw NO button
-			ellipse(sScreen, center, axes, 0, 0, 180, RGB_RED, -1, LINE_AA);
-			putText(
+			cv::ellipse(
+				/* img        */ sScreen,
+				/* center     */ center,
+				/* axes       */ axes,
+				/* angle      */ 0,
+				/* startAngle */ 0,
+				/* endAngle   */ 180,
+				/* color      */ RGB_RED,
+				/* thickness  */ -1,
+				/* lineType   */ cv::LINE_AA
+			); // cv::ellipse()
+			cv::putText(
 				/* img       */ sScreen,
 				/* text      */ "NO",
-				/* org       */ Point(360, 378),
+				/* org       */ cv::Point(360, 378),
 				/* fontFace  */ FONT_SANS,
 				/* fontScale */ 2.0,
 				/* color     */ RGB_WHITE,
 				/* thickness */ 2
-			); // putText()
+			); // cv::putText()
 
 			// Show screen
 			imshow("Uno", sScreen);
 		} // else if (sImmPlayAsk)
 		else if (sChallengeAsk) {
 			refreshScreen("^ Challenge the legality of Wild +4?");
-			rect = Rect(338, 270, 121, 181);
+			rect = cv::Rect(338, 270, 121, 181);
 			sUno->getBackground()(rect).copyTo(sScreen(rect));
-			center = Point(405, 315);
-			axes = Size(135, 135);
+			center = cv::Point(405, 315);
+			axes = cv::Size(135, 135);
 
 			// Draw YES button
-			ellipse(sScreen, center, axes, 0, 0, -180, RGB_GREEN, -1, LINE_AA);
-			putText(
+			cv::ellipse(
+				/* img        */ sScreen,
+				/* center     */ center,
+				/* axes       */ axes,
+				/* angle      */ 0,
+				/* startAngle */ 0,
+				/* endAngle   */ -180,
+				/* color      */ RGB_GREEN,
+				/* thickness  */ -1,
+				/* lineType   */ cv::LINE_AA
+			); // cv::ellipse()
+			cv::putText(
 				/* img       */ sScreen,
 				/* text      */ "YES",
-				/* org       */ Point(346, 295),
+				/* org       */ cv::Point(346, 295),
 				/* fontFace  */ FONT_SANS,
 				/* fontScale */ 2.0,
 				/* color     */ RGB_WHITE,
 				/* thickness */ 2
-			); // putText()
+			); // cv::putText()
 
 			// Draw NO button
-			ellipse(sScreen, center, axes, 0, 0, 180, RGB_RED, -1, LINE_AA);
-			putText(
+			cv::ellipse(
+				/* img        */ sScreen,
+				/* center     */ center,
+				/* axes       */ axes,
+				/* angle      */ 0,
+				/* startAngle */ 0,
+				/* endAngle   */ 180,
+				/* color      */ RGB_RED,
+				/* thickness  */ -1,
+				/* lineType   */ cv::LINE_AA
+			); // cv::ellipse()
+			cv::putText(
 				/* img       */ sScreen,
 				/* text      */ "NO",
-				/* org       */ Point(360, 378),
+				/* org       */ cv::Point(360, 378),
 				/* fontFace  */ FONT_SANS,
 				/* fontScale */ 2.0,
 				/* color     */ RGB_WHITE,
 				/* thickness */ 2
-			); // putText()
+			); // cv::putText()
 
 			// Show screen
 			imshow("Uno", sScreen);
@@ -360,14 +395,64 @@ static void onStatusChanged(int status) {
 		// Need to specify the following legal color after played a
 		// wild card. Draw color sectors in the center of screen
 		refreshScreen("^ Specify the following legal color");
-		rect = Rect(338, 270, 121, 181);
+		rect = cv::Rect(338, 270, 121, 181);
 		sUno->getBackground()(rect).copyTo(sScreen(rect));
-		center = Point(405, 315);
-		axes = Size(135, 135);
-		ellipse(sScreen, center, axes, 0, 0, -90, RGB_BLUE, -1, LINE_AA);
-		ellipse(sScreen, center, axes, 0, 0, 90, RGB_GREEN, -1, LINE_AA);
-		ellipse(sScreen, center, axes, 180, 0, 90, RGB_RED, -1, LINE_AA);
-		ellipse(sScreen, center, axes, 180, 0, -90, RGB_YELLOW, -1, LINE_AA);
+		center = cv::Point(405, 315);
+		axes = cv::Size(135, 135);
+
+		// Draw blue sector
+		cv::ellipse(
+			/* img        */ sScreen,
+			/* center     */ center,
+			/* axes       */ axes,
+			/* angle      */ 0,
+			/* startAngle */ 0,
+			/* endAngle   */ -90,
+			/* color      */ RGB_BLUE,
+			/* thickness  */ -1,
+			/* lineType   */ cv::LINE_AA
+		); // cv::ellipse()
+
+		// Draw green sector
+		cv::ellipse(
+			/* img        */ sScreen,
+			/* center     */ center,
+			/* axes       */ axes,
+			/* angle      */ 0,
+			/* startAngle */ 0,
+			/* endAngle   */ 90,
+			/* color      */ RGB_GREEN,
+			/* thickness  */ -1,
+			/* lineType   */ cv::LINE_AA
+		); // cv::ellipse()
+
+		// Draw red sector
+		cv::ellipse(
+			/* img        */ sScreen,
+			/* center     */ center,
+			/* axes       */ axes,
+			/* angle      */ 180,
+			/* startAngle */ 0,
+			/* endAngle   */ 90,
+			/* color      */ RGB_RED,
+			/* thickness  */ -1,
+			/* lineType   */ cv::LINE_AA
+		); // cv::ellipse()
+
+		// Draw yellow sector
+		cv::ellipse(
+			/* img        */ sScreen,
+			/* center     */ center,
+			/* axes       */ axes,
+			/* angle      */ 180,
+			/* startAngle */ 0,
+			/* endAngle   */ -90,
+			/* color      */ RGB_YELLOW,
+			/* thickness  */ -1,
+			/* lineType   */ cv::LINE_AA
+		); // cv::ellipse()
+
+		// Show screen
 		imshow("Uno", sScreen);
 		break; // case STAT_WILD_COLOR
 
@@ -376,9 +461,9 @@ static void onStatusChanged(int status) {
 	case Player::COM3:
 		// AI players' turn
 		if (!sAIRunning) {
-			if (sDifficulty == LV_EASY) {
+			if (sDifficulty == Uno::LV_EASY) {
 				easyAI();
-			} // if (sDifficulty == LV_EASY)
+			} // if (sDifficulty == Uno::LV_EASY)
 			else {
 				hardAI();
 			} // else
@@ -388,9 +473,9 @@ static void onStatusChanged(int status) {
 	case STAT_GAME_OVER:
 		// Game over
 		if (sWinner == Player::YOU) {
-			if (sDifficulty == LV_EASY) {
+			if (sDifficulty == Uno::LV_EASY) {
 				++sEasyWin;
-			} // if (sDifficulty == LV_EASY)
+			} // if (sDifficulty == Uno::LV_EASY)
 			else {
 				++sHardWin;
 			} // else
@@ -398,7 +483,7 @@ static void onStatusChanged(int status) {
 
 		refreshScreen("Click the card deck to restart");
 		if (sAuto) {
-			WAIT_MS(5000);
+			cv::waitKey(5000);
 			if (sAuto && sStatus == STAT_GAME_OVER) {
 				sStatus = STAT_NEW_GAME;
 				onStatusChanged(sStatus);
@@ -417,13 +502,13 @@ static void onStatusChanged(int status) {
  *
  * @param message Extra message to show.
  */
-static void refreshScreen(string message) {
-	Rect roi;
-	Mat image;
-	Point point;
+static void refreshScreen(std::string message) {
+	cv::Rect roi;
+	cv::Mat image;
+	cv::Point point;
 	bool beChallenged;
-	stringstream buff;
-	vector<Card*> hand;
+	std::stringstream buff;
+	std::vector<Card*> hand;
 	int i, status, size, width, height;
 	int remain, used, easyRate, hardRate;
 
@@ -434,49 +519,89 @@ static void refreshScreen(string message) {
 	sUno->getBackground().copyTo(sScreen);
 
 	// Message area
-	width = getTextSize(message, FONT_SANS, 1.0, 1, nullptr).width;
-	point = Point(640 - width / 2, 480);
-	putText(sScreen, message, point, FONT_SANS, 1.0, RGB_WHITE);
+	width = cv::getTextSize(message, FONT_SANS, 1.0, 1, nullptr).width;
+	point = cv::Point(640 - width / 2, 480);
+	cv::putText(sScreen, message, point, FONT_SANS, 1.0, RGB_WHITE);
 
 	// Right-top corner: <QUIT> button
 	point.x = 1140;
 	point.y = 42;
-	putText(sScreen, "<QUIT>", point, FONT_SANS, 1.0, RGB_WHITE);
+	cv::putText(sScreen, "<QUIT>", point, FONT_SANS, 1.0, RGB_WHITE);
 
 	// Right-bottom corner: <AUTO> button
 	point.x = 1130;
 	point.y = 700;
-	if (sAuto) {
-		putText(sScreen, "<AUTO>", point, FONT_SANS, 1.0, RGB_YELLOW);
-	} // if (sAuto)
-	else {
-		putText(sScreen, "<AUTO>", point, FONT_SANS, 1.0, RGB_WHITE);
-	} // else
+	cv::putText(
+		/* img       */ sScreen,
+		/* text      */ "<AUTO>",
+		/* org       */ point,
+		/* fontFace  */ FONT_SANS,
+		/* fontScale */ 1.0,
+		/* color     */ sAuto ? RGB_YELLOW : RGB_WHITE
+	); // cv::putText()
 
 	// For welcome screen, only show difficulty buttons and winning rates
 	if (status == STAT_WELCOME) {
-		image = sUno->getEasyImage();
-		roi = Rect(490, 270, 121, 181);
+		// [Level] option: easy / hard
+		point.x = 340;
+		point.y = 120;
+		cv::putText(sScreen, "LEVEL", point, FONT_SANS, 1.0, RGB_WHITE);
+		image = sUno->getLevelImage(
+			/* level   */ Uno::LV_EASY,
+			/* hiLight */ sDifficulty == Uno::LV_EASY
+		); // image = sUno->getLevelImage()
+		roi = cv::Rect(490, 20, 121, 181);
 		image.copyTo(sScreen(roi), image);
-		image = sUno->getHardImage();
+		image = sUno->getLevelImage(
+			/* level   */ Uno::LV_HARD,
+			/* hiLight */ sDifficulty == Uno::LV_HARD
+		); // image = sUno->getLevelImage()
 		roi.x = 670;
+		image.copyTo(sScreen(roi), image);
+
+		// Each level's win rate
+		easyRate = sEasyTotal == 0 ? 0 : 100 * sEasyWin / sEasyTotal;
+		hardRate = sHardTotal == 0 ? 0 : 100 * sHardWin / sHardTotal;
+		point.x = 340;
+		point.y = 240;
+		cv::putText(sScreen, "win rate", point, FONT_SANS, 1.0, RGB_WHITE);
+		buff.str("");
+		buff << easyRate << "%";
+		width = cv::getTextSize(buff.str(), FONT_SANS, 1.0, 1, nullptr).width;
+		point.x = 550 - width / 2;
+		cv::putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
+		buff.str("");
+		buff << hardRate << "%";
+		width = cv::getTextSize(buff.str(), FONT_SANS, 1.0, 1, nullptr).width;
+		point.x = 730 - width / 2;
+		cv::putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
+
+		// [Players] option: 3 / 4
+		// TODO: Complete 3-player mode
+		point.x = 340;
+		point.y = 370;
+		cv::putText(sScreen, "PLAYERS", point, FONT_SANS, 1.0, RGB_WHITE);
+		image = sUno->findCard(BLUE, NUM3)->getDarkImg();
+		roi.x = 490;
 		roi.y = 270;
 		image.copyTo(sScreen(roi), image);
-		easyRate = (sEasyTotal == 0 ? 0 : 100 * sEasyWin / sEasyTotal);
-		hardRate = (sHardTotal == 0 ? 0 : 100 * sHardWin / sHardTotal);
-		buff << easyRate << "% WinRate " << hardRate << "%";
-		width = getTextSize(buff.str(), FONT_SANS, 1.0, 1, nullptr).width;
-		point.x = 640 - width / 2;
-		point.y = 250;
-		putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
+		image = sUno->findCard(BLUE, NUM4)->getImage();
+		roi.x = 670;
+		image.copyTo(sScreen(roi), image);
+
+		// [UNO] button: start a new game
+		image = sUno->getBackImage();
+		roi.x = 580;
+		roi.y = 520;
+		image.copyTo(sScreen(roi), image);
 	} // if (status == STAT_WELCOME)
 	else {
 		// Center: card deck & recent played card
 		image = sUno->getBackImage();
-		roi = Rect(338, 270, 121, 181);
+		roi = cv::Rect(338, 270, 121, 181);
 		image.copyTo(sScreen(roi), image);
 		hand = sUno->getRecent();
-		size = (int)hand.size();
+		size = int(hand.size());
 		width = 45 * size + 75;
 		roi.x = 792 - width / 2;
 		roi.y = 270;
@@ -496,21 +621,21 @@ static void refreshScreen(string message) {
 		} // for (Card* recent : hand)
 
 		// Left-top corner: remain / used
-		point = Point(20, 42);
+		point = cv::Point(20, 42);
 		remain = sUno->getDeckCount();
 		used = sUno->getUsedCount();
 		buff << "Remain/Used: " << remain << "/" << used;
-		putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
+		cv::putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
 
 		// Left-center: Hand cards of Player West (COM1)
 		hand = sUno->getPlayer(Player::COM1)->getHandCards();
-		size = (int)hand.size();
+		size = int(hand.size());
 		if (size == 0) {
 			// Played all hand cards, it's winner
 			if (status != STAT_WELCOME) {
 				point.x = 51;
 				point.y = 461;
-				putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
+				cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
 			} // if (status != STAT_WELCOME)
 		} // if (size == 0)
 		else {
@@ -518,15 +643,15 @@ static void refreshScreen(string message) {
 			roi.x = 20;
 			roi.y = 360 - height / 2;
 			beChallenged = sChallenged && sUno->getNow() == Player::COM1;
-			if (beChallenged || sTest || status == STAT_GAME_OVER) {
+			if (beChallenged || status == STAT_GAME_OVER) {
 				// Show remained cards to everyone
-				// when being challenged, testing, or game over
+				// when being challenged or game over
 				for (Card* card : hand) {
 					image = card->getImage();
 					image.copyTo(sScreen(roi), image);
 					roi.y += 40;
 				} // for (Card* card : hand)
-			} // if (beChallenged || sTest || status == STAT_GAME_OVER)
+			} // if (beChallenged || status == STAT_GAME_OVER)
 			else {
 				// Only show card backs in game process
 				image = sUno->getBackImage();
@@ -540,19 +665,19 @@ static void refreshScreen(string message) {
 				// Show "UNO" warning when only one card in hand
 				point.x = 47;
 				point.y = 494;
-				putText(sScreen, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
+				cv::putText(sScreen, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
 			} // if (size == 1)
 		} // else
 
 		// Top-center: Hand cards of Player North (COM2)
 		hand = sUno->getPlayer(Player::COM2)->getHandCards();
-		size = (int)hand.size();
+		size = int(hand.size());
 		if (size == 0) {
 			// Played all hand cards, it's winner
 			if (status != STAT_WELCOME) {
 				point.x = 611;
 				point.y = 121;
-				putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
+				cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
 			} // if (status != STAT_WELCOME)
 		} // if (size == 0)
 		else {
@@ -560,15 +685,15 @@ static void refreshScreen(string message) {
 			roi.x = 640 - width / 2;
 			roi.y = 20;
 			beChallenged = sChallenged && sUno->getNow() == Player::COM2;
-			if (beChallenged || sTest || status == STAT_GAME_OVER) {
+			if (beChallenged || status == STAT_GAME_OVER) {
 				// Show remained cards to everyone
-				// when being challenged, testing, or game over
+				// when being challenged or game over
 				for (Card* card : hand) {
 					image = card->getImage();
 					image.copyTo(sScreen(roi), image);
 					roi.x += 45;
 				} // for (Card* card : hand)
-			} // if (beChallenged || sTest || status == STAT_GAME_OVER)
+			} // if (beChallenged || status == STAT_GAME_OVER)
 			else {
 				// Only show card backs in game process
 				image = sUno->getBackImage();
@@ -582,19 +707,19 @@ static void refreshScreen(string message) {
 				// Show "UNO" warning when only one card in hand
 				point.x = 500;
 				point.y = 121;
-				putText(sScreen, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
+				cv::putText(sScreen, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
 			} // if (size == 1)
 		} // else
 
 		// Right-center: Hand cards of Player East (COM3)
 		hand = sUno->getPlayer(Player::COM3)->getHandCards();
-		size = (int)hand.size();
+		size = int(hand.size());
 		if (size == 0) {
 			// Played all hand cards, it's winner
 			if (status != STAT_WELCOME) {
 				point.x = 1170;
 				point.y = 461;
-				putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
+				cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
 			} // if (status != STAT_WELCOME)
 		} // if (size == 0)
 		else {
@@ -602,15 +727,15 @@ static void refreshScreen(string message) {
 			roi.x = 1140;
 			roi.y = 360 - height / 2;
 			beChallenged = sChallenged && sUno->getNow() == Player::COM3;
-			if (beChallenged || sTest || status == STAT_GAME_OVER) {
+			if (beChallenged || status == STAT_GAME_OVER) {
 				// Show remained cards to everyone
-				// when being challenged, testing, or game over
+				// when being challenged or game over
 				for (Card* card : hand) {
 					image = card->getImage();
 					image.copyTo(sScreen(roi), image);
 					roi.y += 40;
 				} // for (Card* card : hand)
-			} // if (beChallenged || sTest || status == STAT_GAME_OVER)
+			} // if (beChallenged || status == STAT_GAME_OVER)
 			else {
 				// Only show card backs in game process
 				image = sUno->getBackImage();
@@ -624,19 +749,19 @@ static void refreshScreen(string message) {
 				// Show "UNO" warning when only one card in hand
 				point.x = 1166;
 				point.y = 494;
-				putText(sScreen, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
+				cv::putText(sScreen, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
 			} // if (size == 1)
 		} // else
 
 		// Bottom: Your hand cards
 		hand = sUno->getPlayer(Player::YOU)->getHandCards();
-		size = (int)hand.size();
+		size = int(hand.size());
 		if (size == 0) {
 			// Played all hand cards, it's winner
 			if (status != STAT_WELCOME) {
 				point.x = 611;
 				point.y = 621;
-				putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
+				cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
 			} // if (status != STAT_WELCOME)
 		} // if (size == 0)
 		else {
@@ -648,7 +773,7 @@ static void refreshScreen(string message) {
 				switch (status) {
 				case Player::YOU:
 					if (sImmPlayAsk) {
-						image = (card == sDrawnCard) ?
+						image = card == sDrawnCard ?
 							card->getImage() :
 							card->getDarkImg();
 					} // if (sImmPlayAsk)
@@ -656,7 +781,7 @@ static void refreshScreen(string message) {
 						image = card->getDarkImg();
 					} // else if (sChallengeAsk || sChallenged)
 					else {
-						image = (sUno->isLegalToPlay(card)) ?
+						image = sUno->isLegalToPlay(card) ?
 							card->getImage() :
 							card->getDarkImg();
 					} // else
@@ -679,7 +804,7 @@ static void refreshScreen(string message) {
 				// Show "UNO" warning when only one card in hand
 				point.x = 720;
 				point.y = 621;
-				putText(sScreen, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
+				cv::putText(sScreen, "UNO", point, FONT_SANS, 1.0, RGB_YELLOW);
 			} // if (size == 1)
 		} // else
 	} // else
@@ -697,15 +822,15 @@ static void refreshScreen(string message) {
  *              Pass the specified following legal color.
  */
 static void play(int index, Color color) {
-	Rect roi;
-	Mat image;
 	Card* card;
-	string message;
+	cv::Rect roi;
+	cv::Mat image;
+	std::string message;
 	int x, y, now, size, width, height, next;
 
 	sStatus = STAT_IDLE; // block mouse click events when idle
 	now = sUno->getNow();
-	size = (int)sUno->getPlayer(now)->getHandCards().size();
+	size = int(sUno->getPlayer(now)->getHandCards().size());
 	card = sUno->play(now, index, color);
 	if (card != nullptr) {
 		image = card->getImage();
@@ -736,10 +861,10 @@ static void play(int index, Color color) {
 		} // switch (now)
 
 		// Animation
-		roi = Rect(x, y, 121, 181);
+		roi = cv::Rect(x, y, 121, 181);
 		image.copyTo(sScreen(roi), image);
 		imshow("Uno", sScreen);
-		WAIT_MS(300);
+		cv::waitKey(300);
 		if (sUno->getPlayer(now)->getHandCards().size() == 0) {
 			// The player in action becomes winner when it played the
 			// final card in its hand successfully
@@ -756,7 +881,7 @@ static void play(int index, Color color) {
 				next = sUno->switchNow();
 				message += ": Let " + NAME[next] + " draw 2 cards";
 				refreshScreen(message);
-				WAIT_MS(1500);
+				cv::waitKey(1500);
 				draw(2, /* force */ true);
 				break; // case DRAW2
 
@@ -770,7 +895,7 @@ static void play(int index, Color color) {
 				} // else
 
 				refreshScreen(message);
-				WAIT_MS(1500);
+				cv::waitKey(1500);
 				sStatus = sUno->switchNow();
 				onStatusChanged(sStatus);
 				break; // case SKIP
@@ -784,7 +909,7 @@ static void play(int index, Color color) {
 				} // else
 
 				refreshScreen(message);
-				WAIT_MS(1500);
+				cv::waitKey(1500);
 				sStatus = sUno->switchNow();
 				onStatusChanged(sStatus);
 				break; // case REV
@@ -792,7 +917,7 @@ static void play(int index, Color color) {
 			case WILD:
 				message += ": Change the following legal color";
 				refreshScreen(message);
-				WAIT_MS(1500);
+				cv::waitKey(1500);
 				sStatus = sUno->switchNow();
 				onStatusChanged(sStatus);
 				break; // case WILD
@@ -801,7 +926,7 @@ static void play(int index, Color color) {
 				next = sUno->getNext();
 				message += ": Let " + NAME[next] + " draw 4 cards";
 				refreshScreen(message);
-				WAIT_MS(1500);
+				cv::waitKey(1500);
 				sStatus = next;
 				sChallengeAsk = true;
 				onStatusChanged(sStatus);
@@ -810,7 +935,7 @@ static void play(int index, Color color) {
 			default:
 				message += ": " + card->getName();
 				refreshScreen(message);
-				WAIT_MS(1500);
+				cv::waitKey(1500);
 				sStatus = sUno->switchNow();
 				onStatusChanged(sStatus);
 				break; // default
@@ -829,10 +954,10 @@ static void play(int index, Color color) {
  *              card by itself in its action.
  */
 static void draw(int count, bool force) {
-	Rect roi;
-	Mat image;
 	int i, now;
-	stringstream buff;
+	cv::Rect roi;
+	cv::Mat image;
+	std::stringstream buff;
 
 	sStatus = STAT_IDLE; // block mouse click events when idle
 	now = sUno->getNow();
@@ -843,7 +968,7 @@ static void draw(int count, bool force) {
 			switch (now) {
 			case Player::COM1:
 				image = sUno->getBackImage();
-				roi = Rect(160, 270, 121, 181);
+				roi = cv::Rect(160, 270, 121, 181);
 				if (count == 1) {
 					buff << NAME[now] << ": Draw a card";
 				} // if (count == 1)
@@ -854,7 +979,7 @@ static void draw(int count, bool force) {
 
 			case Player::COM2:
 				image = sUno->getBackImage();
-				roi = Rect(580, 70, 121, 181);
+				roi = cv::Rect(580, 70, 121, 181);
 				if (count == 1) {
 					buff << NAME[now] << ": Draw a card";
 				} // if (count == 1)
@@ -865,7 +990,7 @@ static void draw(int count, bool force) {
 
 			case Player::COM3:
 				image = sUno->getBackImage();
-				roi = Rect(1000, 270, 121, 181);
+				roi = cv::Rect(1000, 270, 121, 181);
 				if (count == 1) {
 					buff << NAME[now] << ": Draw a card";
 				} // if (count == 1)
@@ -876,7 +1001,7 @@ static void draw(int count, bool force) {
 
 			default:
 				image = sDrawnCard->getImage();
-				roi = Rect(580, 470, 121, 181);
+				roi = cv::Rect(580, 470, 121, 181);
 				buff << NAME[now] << ": Draw " + sDrawnCard->getName();
 				break; // default
 			} // switch (now)
@@ -884,9 +1009,9 @@ static void draw(int count, bool force) {
 			// Animation
 			image.copyTo(sScreen(roi), image);
 			imshow("Uno", sScreen);
-			WAIT_MS(300);
+			cv::waitKey(300);
 			refreshScreen(buff.str());
-			WAIT_MS(300);
+			cv::waitKey(300);
 		} // if (sDrawnCard != nullptr)
 		else {
 			buff << NAME[now];
@@ -897,7 +1022,7 @@ static void draw(int count, bool force) {
 		} // else
 	} // for (i = 0; i < count; ++i)
 
-	WAIT_MS(750);
+	cv::waitKey(750);
 	if (count == 1 &&
 		sDrawnCard != nullptr &&
 		sUno->isLegalToPlay(sDrawnCard)) {
@@ -909,7 +1034,7 @@ static void draw(int count, bool force) {
 	} // if (count == 1 && ...)
 	else {
 		refreshScreen(NAME[now] + ": Pass");
-		WAIT_MS(750);
+		cv::waitKey(750);
 		sStatus = sUno->switchNow();
 		onStatusChanged(sStatus);
 	} // else
@@ -927,12 +1052,12 @@ static void draw(int count, bool force) {
  *                   player(be challenged)'s [wild +4].
  */
 static void onChallengeChance(bool challenged) {
-	string message;
 	Card* next2last;
 	bool draw4IsLegal;
+	std::string message;
 	int curr, challenger;
-	vector<Card*> recent;
 	Color colorBeforeDraw4;
+	std::vector<Card*> recent;
 
 	sStatus = STAT_IDLE; // block mouse click events when idle
 	sChallenged = challenged;
@@ -942,7 +1067,7 @@ static void onChallengeChance(bool challenged) {
 		challenger = sUno->getNext();
 		message = NAME[challenger] + " challenged " + NAME[curr];
 		refreshScreen(message);
-		WAIT_MS(1500);
+		cv::waitKey(1500);
 		recent = sUno->getRecent();
 		next2last = recent.at(recent.size() - 2);
 		colorBeforeDraw4 = next2last->getRealColor();
@@ -967,7 +1092,7 @@ static void onChallengeChance(bool challenged) {
 			} // else
 
 			refreshScreen(message);
-			WAIT_MS(1500);
+			cv::waitKey(1500);
 			sChallenged = false;
 			sUno->switchNow();
 			draw(6, /* force */ true);
@@ -983,7 +1108,7 @@ static void onChallengeChance(bool challenged) {
 			} // else
 
 			refreshScreen(message);
-			WAIT_MS(1500);
+			cv::waitKey(1500);
 			sChallenged = false;
 			draw(4, /* force */ true);
 		} // else
@@ -1007,17 +1132,16 @@ static void onChallengeChance(bool challenged) {
  */
 static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 	static Card* card;
-	static Point point;
-	static ofstream writer;
-	static vector<Card*> hand;
+	static std::ofstream writer;
+	static std::vector<Card*> hand;
 	static int index, size, width, startX, checksum;
 
-	if (event == EVENT_LBUTTONDOWN) {
+	if (event == cv::EVENT_LBUTTONDOWN) {
 		// Only response to left-click events, and ignore the others
 		if (y >= 21 && y <= 42 && x >= 1140 && x <= 1260) {
 			// <QUIT> button
 			// Store statistics data to UnoStat.tmp file
-			writer = ofstream("UnoStat.tmp", ios::out | ios::binary);
+			writer = std::ofstream("UnoStat.tmp", std::ios::out | std::ios::binary);
 			if (!writer.fail()) {
 				// Store statistics data to file
 				checksum = sEasyWin + sHardWin + sEasyTotal + sHardTotal;
@@ -1030,7 +1154,7 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 				writer.close();
 			} // if (!writer.fail())
 
-			destroyAllWindows();
+			cv::destroyAllWindows();
 			exit(0);
 		} // if (y >= 21 && y <= 42 && x >= 1140 && x <= 1260)
 		else if (y >= 679 && y <= 700 && x >= 1130 && x <= 1260) {
@@ -1048,13 +1172,14 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 				break; // case STAT_WILD_COLOR
 
 			default:
-				point = Point(1130, 700);
-				if (sAuto) {
-					putText(sScreen, "<AUTO>", point, FONT_SANS, 1.0, RGB_YELLOW);
-				} // if (sAuto)
-				else {
-					putText(sScreen, "<AUTO>", point, FONT_SANS, 1.0, RGB_WHITE);
-				} // else
+				cv::putText(
+					/* img       */ sScreen,
+					/* text      */ "<AUTO>",
+					/* org       */ cv::Point(1130, 700),
+					/* fontFace  */ FONT_SANS,
+					/* fontScale */ 1.0,
+					/* color     */ sAuto ? RGB_YELLOW : RGB_WHITE
+				); // cv::putText()
 
 				imshow("Uno", sScreen);
 				break; // default
@@ -1062,20 +1187,37 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 		} // else if (y >= 679 && y <= 700 && x >= 1130 && x <= 1260)
 		else switch (sStatus) {
 		case STAT_WELCOME:
-			if (y >= 270 && y <= 450) {
+			if (y >= 20 && y <= 200) {
 				if (x >= 490 && x <= 610) {
 					// Difficulty: EASY
-					sDifficulty = LV_EASY;
-					sStatus = STAT_NEW_GAME;
+					sDifficulty = Uno::LV_EASY;
 					onStatusChanged(sStatus);
 				} // if (x >= 490 && x <= 610)
 				else if (x >= 670 && x <= 790) {
 					// Difficulty: HARD
-					sDifficulty = LV_HARD;
-					sStatus = STAT_NEW_GAME;
+					sDifficulty = Uno::LV_HARD;
 					onStatusChanged(sStatus);
 				} // else if (x >= 670 && x <= 790)
-			} // if (y >= 270 && y <= 450)
+			} // if (y >= 20 && y <= 200)
+			else if (y >= 270 && y <= 450) {
+				if (x >= 490 && x <= 610) {
+					// 3-player mode
+					// TODO: Complete multi game mode
+					refreshScreen("3-player game mode coming soon...");
+				} // if (x >= 490 && x <= 610)
+				else if (x >= 670 && x <= 790) {
+					// 4-player mode
+					// TODO: Complete multi game mode
+					onStatusChanged(sStatus);
+				} // else if (x >= 670 && x <= 790)
+			} // else if (y >= 270 && y <= 450)
+			else if (y >= 520 && y <= 700) {
+				if (x >= 580 && x <= 700) {
+					// UNO button, start a new game
+					sStatus = STAT_NEW_GAME;
+					onStatusChanged(sStatus);
+				} // if (x >= 580 && x <= 700)
+			} // else if (y >= 520 && y <= 700)
 			break; // case STAT_WELCOME
 
 		case Player::YOU:
@@ -1087,7 +1229,7 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 				// Asking if you want to play the drawn card immediately
 				if (y >= 520 && y <= 700) {
 					hand = sUno->getPlayer(Player::YOU)->getHandCards();
-					size = (int)hand.size();
+					size = int(hand.size());
 					width = 45 * size + 75;
 					startX = 640 - width / 2;
 					if (x >= startX && x <= startX + width) {
@@ -1116,7 +1258,7 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 					if (y > 220 && y < 315) {
 						// YES button, play the drawn card
 						hand = sUno->getPlayer(sStatus)->getHandCards();
-						size = (int)hand.size();
+						size = int(hand.size());
 						for (index = 0; index < size; ++index) {
 							card = hand.at(index);
 							if (card == sDrawnCard) {
@@ -1137,7 +1279,7 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 						sStatus = STAT_IDLE; // block mouse events when idle
 						sImmPlayAsk = false;
 						refreshScreen(NAME[Player::YOU] + ": Pass");
-						WAIT_MS(750);
+						cv::waitKey(750);
 						sStatus = sUno->switchNow();
 						onStatusChanged(sStatus);
 					} // else if (y > 315 && y < 410)
@@ -1158,7 +1300,7 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 			} // else if (sChallengeAsk)
 			else if (y >= 520 && y <= 700) {
 				hand = sUno->getPlayer(Player::YOU)->getHandCards();
-				size = (int)hand.size();
+				size = int(hand.size());
 				width = 45 * size + 75;
 				startX = 640 - width / 2;
 				if (x >= startX && x <= startX + width) {
@@ -1224,7 +1366,7 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 		default:
 			break; // default
 		} // else switch (sStatus)
-	} // if (event == EVENT_LBUTTONDOWN)
+	} // if (event == cv::EVENT_LBUTTONDOWN)
 } // onMouse()
 
 // E.O.F

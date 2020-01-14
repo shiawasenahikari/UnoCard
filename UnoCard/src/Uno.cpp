@@ -15,30 +15,16 @@
 #include <iostream>
 #include <opencv2/highgui.hpp>
 
-using namespace cv;
-using namespace std;
-
-static const string BROKEN_IMAGE_RESOURCES_EXCEPTION =
+static const std::string BROKEN_IMAGE_RESOURCES_EXCEPTION =
 "One or more image resources are broken. Re-install this application.";
 
 /* -------------------- Method Definitions for Card Class ------------------- */
 
 /**
- * Default constructor.
- */
-Card::Card() :
-	name(),
-	image(),
-	darkImg(),
-	color(NONE),
-	content(WILD),
-	order((color << 8) + content) {
-} // Card() (Class Constructor)
-
-/**
  * Constructor. Provide parameters for an Uno card and create its instance.
  */
-Card::Card(Mat image, Mat darkImg, Color color, Content content, string name) :
+Card::Card(cv::Mat image, cv::Mat darkImg,
+	Color color, Content content, std::string name) :
 	name(name),
 	image(image),
 	color(color),
@@ -92,14 +78,14 @@ bool Card::operator!=(const Card& card) {
 /**
  * @return Card's image resource.
  */
-const Mat& Card::getImage() {
+const cv::Mat& Card::getImage() {
 	return image;
 } // getImage()
 
 /**
  * @return Card's dark image resource.
  */
-const Mat& Card::getDarkImg() {
+const cv::Mat& Card::getDarkImg() {
 	return darkImg;
 } // getDarkImg()
 
@@ -122,7 +108,7 @@ Content Card::getContent() {
 /**
  * @return Card's name.
  */
-const string& Card::getName() {
+const std::string& Card::getName() {
 	return name;
 } // getName()
 
@@ -168,7 +154,7 @@ Player::Player() {
 /**
  * @return This player's all hand cards.
  */
-const vector<Card*>& Player::getHandCards() {
+const std::vector<Card*>& Player::getHandCards() {
 	return handCards;
 } // getHandCards()
 
@@ -254,18 +240,18 @@ Card* Player::getRecent() {
  * Singleton, hide default constructor.
  */
 Uno::Uno() {
-	Mat br[54], dk[54];
-	int i, loaded, total;
+	int i, done, total;
+	cv::Mat br[54], dk[54];
 
 	// Preparations
-	loaded = 0;
-	total = 122;
-	cout << "Loading... (" << 100 * loaded / total << "%)" << endl;
+	done = 0;
+	total = 124;
+	std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
 
 	// Load background image resources
-	bgWelcome = imread("resource/bg_welcome.png");
-	bgCounter = imread("resource/bg_counter.png");
-	bgClockwise = imread("resource/bg_clockwise.png");
+	bgWelcome = cv::imread("resource/bg_welcome.png");
+	bgCounter = cv::imread("resource/bg_counter.png");
+	bgClockwise = cv::imread("resource/bg_clockwise.png");
 	if (bgWelcome.empty() ||
 		bgWelcome.rows != 720 ||
 		bgWelcome.cols != 1280 ||
@@ -275,176 +261,184 @@ Uno::Uno() {
 		bgClockwise.empty() ||
 		bgClockwise.rows != 720 ||
 		bgClockwise.cols != 1280) {
-		cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << endl;
+		std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
 		exit(1);
 	} // if (bgWelcome.empty() || ...)
 	else {
-		loaded += 3;
-		cout << "Loading... (" << 100 * loaded / total << "%)" << endl;
+		done += 3;
+		std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
 	} // else
 
 	// Load card back image resource
-	backImage = imread("resource/back.png");
+	backImage = cv::imread("resource/back.png");
 	if (backImage.empty() ||
 		backImage.rows != 181 ||
 		backImage.cols != 121) {
-		cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << endl;
+		std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
 		exit(1);
 	} // if (backImage.empty() || ...)
 	else {
-		++loaded;
-		cout << "Loading... (" << 100 * loaded / total << "%)" << endl;
+		++done;
+		std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
 	} // else
 
 	// Load difficulty image resources
-	easyImage = imread("resource/lv_easy.png");
-	hardImage = imread("resource/lv_hard.png");
+	easyImage = cv::imread("resource/lv_easy.png");
+	hardImage = cv::imread("resource/lv_hard.png");
+	easyImage_d = cv::imread("resource/lv_easy_dark.png");
+	hardImage_d = cv::imread("resource/lv_hard_dark.png");
 	if (easyImage.empty() ||
 		easyImage.rows != 181 ||
 		easyImage.cols != 121 ||
 		hardImage.empty() ||
 		hardImage.rows != 181 ||
-		hardImage.cols != 121) {
-		cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << endl;
+		hardImage.cols != 121 ||
+		easyImage_d.empty() ||
+		easyImage_d.rows != 181 ||
+		easyImage_d.cols != 121 ||
+		hardImage_d.empty() ||
+		hardImage_d.rows != 181 ||
+		hardImage_d.cols != 121) {
+		std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
 		exit(1);
 	} // if (easyImage.empty() || ...)
 	else {
-		loaded += 2;
-		cout << "Loading... (" << 100 * loaded / total << "%)" << endl;
+		done += 4;
+		std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
 	} // else
 
 	// Load cards' front image resources
-	br[0] = imread("resource/front_r0.png");
-	br[1] = imread("resource/front_r1.png");
-	br[2] = imread("resource/front_r2.png");
-	br[3] = imread("resource/front_r3.png");
-	br[4] = imread("resource/front_r4.png");
-	br[5] = imread("resource/front_r5.png");
-	br[6] = imread("resource/front_r6.png");
-	br[7] = imread("resource/front_r7.png");
-	br[8] = imread("resource/front_r8.png");
-	br[9] = imread("resource/front_r9.png");
-	br[10] = imread("resource/front_r+.png");
-	br[11] = imread("resource/front_r@.png");
-	br[12] = imread("resource/front_r$.png");
-	br[13] = imread("resource/front_b0.png");
-	br[14] = imread("resource/front_b1.png");
-	br[15] = imread("resource/front_b2.png");
-	br[16] = imread("resource/front_b3.png");
-	br[17] = imread("resource/front_b4.png");
-	br[18] = imread("resource/front_b5.png");
-	br[19] = imread("resource/front_b6.png");
-	br[20] = imread("resource/front_b7.png");
-	br[21] = imread("resource/front_b8.png");
-	br[22] = imread("resource/front_b9.png");
-	br[23] = imread("resource/front_b+.png");
-	br[24] = imread("resource/front_b@.png");
-	br[25] = imread("resource/front_b$.png");
-	br[26] = imread("resource/front_g0.png");
-	br[27] = imread("resource/front_g1.png");
-	br[28] = imread("resource/front_g2.png");
-	br[29] = imread("resource/front_g3.png");
-	br[30] = imread("resource/front_g4.png");
-	br[31] = imread("resource/front_g5.png");
-	br[32] = imread("resource/front_g6.png");
-	br[33] = imread("resource/front_g7.png");
-	br[34] = imread("resource/front_g8.png");
-	br[35] = imread("resource/front_g9.png");
-	br[36] = imread("resource/front_g+.png");
-	br[37] = imread("resource/front_g@.png");
-	br[38] = imread("resource/front_g$.png");
-	br[39] = imread("resource/front_y0.png");
-	br[40] = imread("resource/front_y1.png");
-	br[41] = imread("resource/front_y2.png");
-	br[42] = imread("resource/front_y3.png");
-	br[43] = imread("resource/front_y4.png");
-	br[44] = imread("resource/front_y5.png");
-	br[45] = imread("resource/front_y6.png");
-	br[46] = imread("resource/front_y7.png");
-	br[47] = imread("resource/front_y8.png");
-	br[48] = imread("resource/front_y9.png");
-	br[49] = imread("resource/front_y+.png");
-	br[50] = imread("resource/front_y@.png");
-	br[51] = imread("resource/front_y$.png");
-	br[52] = imread("resource/front_kw.png");
-	br[53] = imread("resource/front_kw+.png");
-	dk[0] = imread("resource/dark_r0.png");
-	dk[1] = imread("resource/dark_r1.png");
-	dk[2] = imread("resource/dark_r2.png");
-	dk[3] = imread("resource/dark_r3.png");
-	dk[4] = imread("resource/dark_r4.png");
-	dk[5] = imread("resource/dark_r5.png");
-	dk[6] = imread("resource/dark_r6.png");
-	dk[7] = imread("resource/dark_r7.png");
-	dk[8] = imread("resource/dark_r8.png");
-	dk[9] = imread("resource/dark_r9.png");
-	dk[10] = imread("resource/dark_r+.png");
-	dk[11] = imread("resource/dark_r@.png");
-	dk[12] = imread("resource/dark_r$.png");
-	dk[13] = imread("resource/dark_b0.png");
-	dk[14] = imread("resource/dark_b1.png");
-	dk[15] = imread("resource/dark_b2.png");
-	dk[16] = imread("resource/dark_b3.png");
-	dk[17] = imread("resource/dark_b4.png");
-	dk[18] = imread("resource/dark_b5.png");
-	dk[19] = imread("resource/dark_b6.png");
-	dk[20] = imread("resource/dark_b7.png");
-	dk[21] = imread("resource/dark_b8.png");
-	dk[22] = imread("resource/dark_b9.png");
-	dk[23] = imread("resource/dark_b+.png");
-	dk[24] = imread("resource/dark_b@.png");
-	dk[25] = imread("resource/dark_b$.png");
-	dk[26] = imread("resource/dark_g0.png");
-	dk[27] = imread("resource/dark_g1.png");
-	dk[28] = imread("resource/dark_g2.png");
-	dk[29] = imread("resource/dark_g3.png");
-	dk[30] = imread("resource/dark_g4.png");
-	dk[31] = imread("resource/dark_g5.png");
-	dk[32] = imread("resource/dark_g6.png");
-	dk[33] = imread("resource/dark_g7.png");
-	dk[34] = imread("resource/dark_g8.png");
-	dk[35] = imread("resource/dark_g9.png");
-	dk[36] = imread("resource/dark_g+.png");
-	dk[37] = imread("resource/dark_g@.png");
-	dk[38] = imread("resource/dark_g$.png");
-	dk[39] = imread("resource/dark_y0.png");
-	dk[40] = imread("resource/dark_y1.png");
-	dk[41] = imread("resource/dark_y2.png");
-	dk[42] = imread("resource/dark_y3.png");
-	dk[43] = imread("resource/dark_y4.png");
-	dk[44] = imread("resource/dark_y5.png");
-	dk[45] = imread("resource/dark_y6.png");
-	dk[46] = imread("resource/dark_y7.png");
-	dk[47] = imread("resource/dark_y8.png");
-	dk[48] = imread("resource/dark_y9.png");
-	dk[49] = imread("resource/dark_y+.png");
-	dk[50] = imread("resource/dark_y@.png");
-	dk[51] = imread("resource/dark_y$.png");
-	dk[52] = imread("resource/dark_kw.png");
-	dk[53] = imread("resource/dark_kw+.png");
+	br[0] = cv::imread("resource/front_r0.png");
+	br[1] = cv::imread("resource/front_r1.png");
+	br[2] = cv::imread("resource/front_r2.png");
+	br[3] = cv::imread("resource/front_r3.png");
+	br[4] = cv::imread("resource/front_r4.png");
+	br[5] = cv::imread("resource/front_r5.png");
+	br[6] = cv::imread("resource/front_r6.png");
+	br[7] = cv::imread("resource/front_r7.png");
+	br[8] = cv::imread("resource/front_r8.png");
+	br[9] = cv::imread("resource/front_r9.png");
+	br[10] = cv::imread("resource/front_r+.png");
+	br[11] = cv::imread("resource/front_r@.png");
+	br[12] = cv::imread("resource/front_r$.png");
+	br[13] = cv::imread("resource/front_b0.png");
+	br[14] = cv::imread("resource/front_b1.png");
+	br[15] = cv::imread("resource/front_b2.png");
+	br[16] = cv::imread("resource/front_b3.png");
+	br[17] = cv::imread("resource/front_b4.png");
+	br[18] = cv::imread("resource/front_b5.png");
+	br[19] = cv::imread("resource/front_b6.png");
+	br[20] = cv::imread("resource/front_b7.png");
+	br[21] = cv::imread("resource/front_b8.png");
+	br[22] = cv::imread("resource/front_b9.png");
+	br[23] = cv::imread("resource/front_b+.png");
+	br[24] = cv::imread("resource/front_b@.png");
+	br[25] = cv::imread("resource/front_b$.png");
+	br[26] = cv::imread("resource/front_g0.png");
+	br[27] = cv::imread("resource/front_g1.png");
+	br[28] = cv::imread("resource/front_g2.png");
+	br[29] = cv::imread("resource/front_g3.png");
+	br[30] = cv::imread("resource/front_g4.png");
+	br[31] = cv::imread("resource/front_g5.png");
+	br[32] = cv::imread("resource/front_g6.png");
+	br[33] = cv::imread("resource/front_g7.png");
+	br[34] = cv::imread("resource/front_g8.png");
+	br[35] = cv::imread("resource/front_g9.png");
+	br[36] = cv::imread("resource/front_g+.png");
+	br[37] = cv::imread("resource/front_g@.png");
+	br[38] = cv::imread("resource/front_g$.png");
+	br[39] = cv::imread("resource/front_y0.png");
+	br[40] = cv::imread("resource/front_y1.png");
+	br[41] = cv::imread("resource/front_y2.png");
+	br[42] = cv::imread("resource/front_y3.png");
+	br[43] = cv::imread("resource/front_y4.png");
+	br[44] = cv::imread("resource/front_y5.png");
+	br[45] = cv::imread("resource/front_y6.png");
+	br[46] = cv::imread("resource/front_y7.png");
+	br[47] = cv::imread("resource/front_y8.png");
+	br[48] = cv::imread("resource/front_y9.png");
+	br[49] = cv::imread("resource/front_y+.png");
+	br[50] = cv::imread("resource/front_y@.png");
+	br[51] = cv::imread("resource/front_y$.png");
+	br[52] = cv::imread("resource/front_kw.png");
+	br[53] = cv::imread("resource/front_kw+.png");
+	dk[0] = cv::imread("resource/dark_r0.png");
+	dk[1] = cv::imread("resource/dark_r1.png");
+	dk[2] = cv::imread("resource/dark_r2.png");
+	dk[3] = cv::imread("resource/dark_r3.png");
+	dk[4] = cv::imread("resource/dark_r4.png");
+	dk[5] = cv::imread("resource/dark_r5.png");
+	dk[6] = cv::imread("resource/dark_r6.png");
+	dk[7] = cv::imread("resource/dark_r7.png");
+	dk[8] = cv::imread("resource/dark_r8.png");
+	dk[9] = cv::imread("resource/dark_r9.png");
+	dk[10] = cv::imread("resource/dark_r+.png");
+	dk[11] = cv::imread("resource/dark_r@.png");
+	dk[12] = cv::imread("resource/dark_r$.png");
+	dk[13] = cv::imread("resource/dark_b0.png");
+	dk[14] = cv::imread("resource/dark_b1.png");
+	dk[15] = cv::imread("resource/dark_b2.png");
+	dk[16] = cv::imread("resource/dark_b3.png");
+	dk[17] = cv::imread("resource/dark_b4.png");
+	dk[18] = cv::imread("resource/dark_b5.png");
+	dk[19] = cv::imread("resource/dark_b6.png");
+	dk[20] = cv::imread("resource/dark_b7.png");
+	dk[21] = cv::imread("resource/dark_b8.png");
+	dk[22] = cv::imread("resource/dark_b9.png");
+	dk[23] = cv::imread("resource/dark_b+.png");
+	dk[24] = cv::imread("resource/dark_b@.png");
+	dk[25] = cv::imread("resource/dark_b$.png");
+	dk[26] = cv::imread("resource/dark_g0.png");
+	dk[27] = cv::imread("resource/dark_g1.png");
+	dk[28] = cv::imread("resource/dark_g2.png");
+	dk[29] = cv::imread("resource/dark_g3.png");
+	dk[30] = cv::imread("resource/dark_g4.png");
+	dk[31] = cv::imread("resource/dark_g5.png");
+	dk[32] = cv::imread("resource/dark_g6.png");
+	dk[33] = cv::imread("resource/dark_g7.png");
+	dk[34] = cv::imread("resource/dark_g8.png");
+	dk[35] = cv::imread("resource/dark_g9.png");
+	dk[36] = cv::imread("resource/dark_g+.png");
+	dk[37] = cv::imread("resource/dark_g@.png");
+	dk[38] = cv::imread("resource/dark_g$.png");
+	dk[39] = cv::imread("resource/dark_y0.png");
+	dk[40] = cv::imread("resource/dark_y1.png");
+	dk[41] = cv::imread("resource/dark_y2.png");
+	dk[42] = cv::imread("resource/dark_y3.png");
+	dk[43] = cv::imread("resource/dark_y4.png");
+	dk[44] = cv::imread("resource/dark_y5.png");
+	dk[45] = cv::imread("resource/dark_y6.png");
+	dk[46] = cv::imread("resource/dark_y7.png");
+	dk[47] = cv::imread("resource/dark_y8.png");
+	dk[48] = cv::imread("resource/dark_y9.png");
+	dk[49] = cv::imread("resource/dark_y+.png");
+	dk[50] = cv::imread("resource/dark_y@.png");
+	dk[51] = cv::imread("resource/dark_y$.png");
+	dk[52] = cv::imread("resource/dark_kw.png");
+	dk[53] = cv::imread("resource/dark_kw+.png");
 	for (i = 0; i < 54; ++i) {
 		if (br[i].empty() || br[i].rows != 181 || br[i].cols != 121 ||
 			dk[i].empty() || dk[i].rows != 181 || dk[i].cols != 121) {
-			cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << endl;
+			std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
 			exit(1);
 		} // if (br[i].empty() || ...)
 		else {
-			loaded += 2;
-			cout << "Loading... (" << 100 * loaded / total << "%)" << endl;
+			done += 2;
+			std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
 		} // else
 	} // for (i = 0; i < 54; ++i)
 
 	// Load wild & wild +4 image resources
 	wildImage[0] = br[52];
-	wildImage[1] = imread("resource/front_rw.png");
-	wildImage[2] = imread("resource/front_bw.png");
-	wildImage[3] = imread("resource/front_gw.png");
-	wildImage[4] = imread("resource/front_yw.png");
+	wildImage[1] = cv::imread("resource/front_rw.png");
+	wildImage[2] = cv::imread("resource/front_bw.png");
+	wildImage[3] = cv::imread("resource/front_gw.png");
+	wildImage[4] = cv::imread("resource/front_yw.png");
 	wildDraw4Image[0] = br[53];
-	wildDraw4Image[1] = imread("resource/front_rw+.png");
-	wildDraw4Image[2] = imread("resource/front_bw+.png");
-	wildDraw4Image[3] = imread("resource/front_gw+.png");
-	wildDraw4Image[4] = imread("resource/front_yw+.png");
+	wildDraw4Image[1] = cv::imread("resource/front_rw+.png");
+	wildDraw4Image[2] = cv::imread("resource/front_bw+.png");
+	wildDraw4Image[3] = cv::imread("resource/front_gw+.png");
+	wildDraw4Image[4] = cv::imread("resource/front_yw+.png");
 	for (i = 1; i < 5; ++i) {
 		if (wildImage[i].empty() ||
 			wildImage[i].rows != 181 ||
@@ -452,124 +446,124 @@ Uno::Uno() {
 			wildDraw4Image[i].empty() ||
 			wildDraw4Image[i].rows != 181 ||
 			wildDraw4Image[i].cols != 121) {
-			cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << endl;
+			std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
 			exit(1);
 		} // if (wildImage[i].empty() || ...)
 		else {
-			loaded += 2;
-			cout << "Loading... (" << 100 * loaded / total << "%)" << endl;
+			done += 2;
+			std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
 		} // else
 	} // for (i = 1; i < 5; ++i)
 
 	// Generate card table
-	table[0] = Card(br[0], dk[0], RED, NUM0, "Red 0");
-	table[1] = Card(br[1], dk[1], RED, NUM1, "Red 1");
-	table[2] = Card(br[2], dk[2], RED, NUM2, "Red 2");
-	table[3] = Card(br[3], dk[3], RED, NUM3, "Red 3");
-	table[4] = Card(br[4], dk[4], RED, NUM4, "Red 4");
-	table[5] = Card(br[5], dk[5], RED, NUM5, "Red 5");
-	table[6] = Card(br[6], dk[6], RED, NUM6, "Red 6");
-	table[7] = Card(br[7], dk[7], RED, NUM7, "Red 7");
-	table[8] = Card(br[8], dk[8], RED, NUM8, "Red 8");
-	table[9] = Card(br[9], dk[9], RED, NUM9, "Red 9");
-	table[10] = Card(br[10], dk[10], RED, DRAW2, "Red +2");
-	table[11] = Card(br[11], dk[11], RED, SKIP, "Red Skip");
-	table[12] = Card(br[12], dk[12], RED, REV, "Red Reverse");
-	table[13] = Card(br[13], dk[13], BLUE, NUM0, "Blue 0");
-	table[14] = Card(br[14], dk[14], BLUE, NUM1, "Blue 1");
-	table[15] = Card(br[15], dk[15], BLUE, NUM2, "Blue 2");
-	table[16] = Card(br[16], dk[16], BLUE, NUM3, "Blue 3");
-	table[17] = Card(br[17], dk[17], BLUE, NUM4, "Blue 4");
-	table[18] = Card(br[18], dk[18], BLUE, NUM5, "Blue 5");
-	table[19] = Card(br[19], dk[19], BLUE, NUM6, "Blue 6");
-	table[20] = Card(br[20], dk[20], BLUE, NUM7, "Blue 7");
-	table[21] = Card(br[21], dk[21], BLUE, NUM8, "Blue 8");
-	table[22] = Card(br[22], dk[22], BLUE, NUM9, "Blue 9");
-	table[23] = Card(br[23], dk[23], BLUE, DRAW2, "Blue +2");
-	table[24] = Card(br[24], dk[24], BLUE, SKIP, "Blue Skip");
-	table[25] = Card(br[25], dk[25], BLUE, REV, "Blue Reverse");
-	table[26] = Card(br[26], dk[26], GREEN, NUM0, "Green 0");
-	table[27] = Card(br[27], dk[27], GREEN, NUM1, "Green 1");
-	table[28] = Card(br[28], dk[28], GREEN, NUM2, "Green 2");
-	table[29] = Card(br[29], dk[29], GREEN, NUM3, "Green 3");
-	table[30] = Card(br[30], dk[30], GREEN, NUM4, "Green 4");
-	table[31] = Card(br[31], dk[31], GREEN, NUM5, "Green 5");
-	table[32] = Card(br[32], dk[32], GREEN, NUM6, "Green 6");
-	table[33] = Card(br[33], dk[33], GREEN, NUM7, "Green 7");
-	table[34] = Card(br[34], dk[34], GREEN, NUM8, "Green 8");
-	table[35] = Card(br[35], dk[35], GREEN, NUM9, "Green 9");
-	table[36] = Card(br[36], dk[36], GREEN, DRAW2, "Green +2");
-	table[37] = Card(br[37], dk[37], GREEN, SKIP, "Green Skip");
-	table[38] = Card(br[38], dk[38], GREEN, REV, "Green Reverse");
-	table[39] = Card(br[39], dk[39], YELLOW, NUM0, "Yellow 0");
-	table[40] = Card(br[40], dk[40], YELLOW, NUM1, "Yellow 1");
-	table[41] = Card(br[41], dk[41], YELLOW, NUM2, "Yellow 2");
-	table[42] = Card(br[42], dk[42], YELLOW, NUM3, "Yellow 3");
-	table[43] = Card(br[43], dk[43], YELLOW, NUM4, "Yellow 4");
-	table[44] = Card(br[44], dk[44], YELLOW, NUM5, "Yellow 5");
-	table[45] = Card(br[45], dk[45], YELLOW, NUM6, "Yellow 6");
-	table[46] = Card(br[46], dk[46], YELLOW, NUM7, "Yellow 7");
-	table[47] = Card(br[47], dk[47], YELLOW, NUM8, "Yellow 8");
-	table[48] = Card(br[48], dk[48], YELLOW, NUM9, "Yellow 9");
-	table[49] = Card(br[49], dk[49], YELLOW, DRAW2, "Yellow +2");
-	table[50] = Card(br[50], dk[50], YELLOW, SKIP, "Yellow Skip");
-	table[51] = Card(br[51], dk[51], YELLOW, REV, "Yellow Reverse");
-	table[52] = Card(br[52], dk[52], NONE, WILD, "Wild");
-	table[53] = Card(br[52], dk[52], NONE, WILD, "Wild");
-	table[54] = Card(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4");
-	table[55] = Card(br[1], dk[1], RED, NUM1, "Red 1");
-	table[56] = Card(br[2], dk[2], RED, NUM2, "Red 2");
-	table[57] = Card(br[3], dk[3], RED, NUM3, "Red 3");
-	table[58] = Card(br[4], dk[4], RED, NUM4, "Red 4");
-	table[59] = Card(br[5], dk[5], RED, NUM5, "Red 5");
-	table[60] = Card(br[6], dk[6], RED, NUM6, "Red 6");
-	table[61] = Card(br[7], dk[7], RED, NUM7, "Red 7");
-	table[62] = Card(br[8], dk[8], RED, NUM8, "Red 8");
-	table[63] = Card(br[9], dk[9], RED, NUM9, "Red 9");
-	table[64] = Card(br[10], dk[10], RED, DRAW2, "Red +2");
-	table[65] = Card(br[11], dk[11], RED, SKIP, "Red Skip");
-	table[66] = Card(br[12], dk[12], RED, REV, "Red Reverse");
-	table[67] = Card(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4");
-	table[68] = Card(br[14], dk[14], BLUE, NUM1, "Blue 1");
-	table[69] = Card(br[15], dk[15], BLUE, NUM2, "Blue 2");
-	table[70] = Card(br[16], dk[16], BLUE, NUM3, "Blue 3");
-	table[71] = Card(br[17], dk[17], BLUE, NUM4, "Blue 4");
-	table[72] = Card(br[18], dk[18], BLUE, NUM5, "Blue 5");
-	table[73] = Card(br[19], dk[19], BLUE, NUM6, "Blue 6");
-	table[74] = Card(br[20], dk[20], BLUE, NUM7, "Blue 7");
-	table[75] = Card(br[21], dk[21], BLUE, NUM8, "Blue 8");
-	table[76] = Card(br[22], dk[22], BLUE, NUM9, "Blue 9");
-	table[77] = Card(br[23], dk[23], BLUE, DRAW2, "Blue +2");
-	table[78] = Card(br[24], dk[24], BLUE, SKIP, "Blue Skip");
-	table[79] = Card(br[25], dk[25], BLUE, REV, "Blue Reverse");
-	table[80] = Card(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4");
-	table[81] = Card(br[27], dk[27], GREEN, NUM1, "Green 1");
-	table[82] = Card(br[28], dk[28], GREEN, NUM2, "Green 2");
-	table[83] = Card(br[29], dk[29], GREEN, NUM3, "Green 3");
-	table[84] = Card(br[30], dk[30], GREEN, NUM4, "Green 4");
-	table[85] = Card(br[31], dk[31], GREEN, NUM5, "Green 5");
-	table[86] = Card(br[32], dk[32], GREEN, NUM6, "Green 6");
-	table[87] = Card(br[33], dk[33], GREEN, NUM7, "Green 7");
-	table[88] = Card(br[34], dk[34], GREEN, NUM8, "Green 8");
-	table[89] = Card(br[35], dk[35], GREEN, NUM9, "Green 9");
-	table[90] = Card(br[36], dk[36], GREEN, DRAW2, "Green +2");
-	table[91] = Card(br[37], dk[37], GREEN, SKIP, "Green Skip");
-	table[92] = Card(br[38], dk[38], GREEN, REV, "Green Reverse");
-	table[93] = Card(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4");
-	table[94] = Card(br[40], dk[40], YELLOW, NUM1, "Yellow 1");
-	table[95] = Card(br[41], dk[41], YELLOW, NUM2, "Yellow 2");
-	table[96] = Card(br[42], dk[42], YELLOW, NUM3, "Yellow 3");
-	table[97] = Card(br[43], dk[43], YELLOW, NUM4, "Yellow 4");
-	table[98] = Card(br[44], dk[44], YELLOW, NUM5, "Yellow 5");
-	table[99] = Card(br[45], dk[45], YELLOW, NUM6, "Yellow 6");
-	table[100] = Card(br[46], dk[46], YELLOW, NUM7, "Yellow 7");
-	table[101] = Card(br[47], dk[47], YELLOW, NUM8, "Yellow 8");
-	table[102] = Card(br[48], dk[48], YELLOW, NUM9, "Yellow 9");
-	table[103] = Card(br[49], dk[49], YELLOW, DRAW2, "Yellow +2");
-	table[104] = Card(br[50], dk[50], YELLOW, SKIP, "Yellow Skip");
-	table[105] = Card(br[51], dk[51], YELLOW, REV, "Yellow Reverse");
-	table[106] = Card(br[52], dk[52], NONE, WILD, "Wild");
-	table[107] = Card(br[52], dk[52], NONE, WILD, "Wild");
+	table.push_back(Card(br[0], dk[0], RED, NUM0, "Red 0"));
+	table.push_back(Card(br[1], dk[1], RED, NUM1, "Red 1"));
+	table.push_back(Card(br[2], dk[2], RED, NUM2, "Red 2"));
+	table.push_back(Card(br[3], dk[3], RED, NUM3, "Red 3"));
+	table.push_back(Card(br[4], dk[4], RED, NUM4, "Red 4"));
+	table.push_back(Card(br[5], dk[5], RED, NUM5, "Red 5"));
+	table.push_back(Card(br[6], dk[6], RED, NUM6, "Red 6"));
+	table.push_back(Card(br[7], dk[7], RED, NUM7, "Red 7"));
+	table.push_back(Card(br[8], dk[8], RED, NUM8, "Red 8"));
+	table.push_back(Card(br[9], dk[9], RED, NUM9, "Red 9"));
+	table.push_back(Card(br[10], dk[10], RED, DRAW2, "Red +2"));
+	table.push_back(Card(br[11], dk[11], RED, SKIP, "Red Skip"));
+	table.push_back(Card(br[12], dk[12], RED, REV, "Red Reverse"));
+	table.push_back(Card(br[13], dk[13], BLUE, NUM0, "Blue 0"));
+	table.push_back(Card(br[14], dk[14], BLUE, NUM1, "Blue 1"));
+	table.push_back(Card(br[15], dk[15], BLUE, NUM2, "Blue 2"));
+	table.push_back(Card(br[16], dk[16], BLUE, NUM3, "Blue 3"));
+	table.push_back(Card(br[17], dk[17], BLUE, NUM4, "Blue 4"));
+	table.push_back(Card(br[18], dk[18], BLUE, NUM5, "Blue 5"));
+	table.push_back(Card(br[19], dk[19], BLUE, NUM6, "Blue 6"));
+	table.push_back(Card(br[20], dk[20], BLUE, NUM7, "Blue 7"));
+	table.push_back(Card(br[21], dk[21], BLUE, NUM8, "Blue 8"));
+	table.push_back(Card(br[22], dk[22], BLUE, NUM9, "Blue 9"));
+	table.push_back(Card(br[23], dk[23], BLUE, DRAW2, "Blue +2"));
+	table.push_back(Card(br[24], dk[24], BLUE, SKIP, "Blue Skip"));
+	table.push_back(Card(br[25], dk[25], BLUE, REV, "Blue Reverse"));
+	table.push_back(Card(br[26], dk[26], GREEN, NUM0, "Green 0"));
+	table.push_back(Card(br[27], dk[27], GREEN, NUM1, "Green 1"));
+	table.push_back(Card(br[28], dk[28], GREEN, NUM2, "Green 2"));
+	table.push_back(Card(br[29], dk[29], GREEN, NUM3, "Green 3"));
+	table.push_back(Card(br[30], dk[30], GREEN, NUM4, "Green 4"));
+	table.push_back(Card(br[31], dk[31], GREEN, NUM5, "Green 5"));
+	table.push_back(Card(br[32], dk[32], GREEN, NUM6, "Green 6"));
+	table.push_back(Card(br[33], dk[33], GREEN, NUM7, "Green 7"));
+	table.push_back(Card(br[34], dk[34], GREEN, NUM8, "Green 8"));
+	table.push_back(Card(br[35], dk[35], GREEN, NUM9, "Green 9"));
+	table.push_back(Card(br[36], dk[36], GREEN, DRAW2, "Green +2"));
+	table.push_back(Card(br[37], dk[37], GREEN, SKIP, "Green Skip"));
+	table.push_back(Card(br[38], dk[38], GREEN, REV, "Green Reverse"));
+	table.push_back(Card(br[39], dk[39], YELLOW, NUM0, "Yellow 0"));
+	table.push_back(Card(br[40], dk[40], YELLOW, NUM1, "Yellow 1"));
+	table.push_back(Card(br[41], dk[41], YELLOW, NUM2, "Yellow 2"));
+	table.push_back(Card(br[42], dk[42], YELLOW, NUM3, "Yellow 3"));
+	table.push_back(Card(br[43], dk[43], YELLOW, NUM4, "Yellow 4"));
+	table.push_back(Card(br[44], dk[44], YELLOW, NUM5, "Yellow 5"));
+	table.push_back(Card(br[45], dk[45], YELLOW, NUM6, "Yellow 6"));
+	table.push_back(Card(br[46], dk[46], YELLOW, NUM7, "Yellow 7"));
+	table.push_back(Card(br[47], dk[47], YELLOW, NUM8, "Yellow 8"));
+	table.push_back(Card(br[48], dk[48], YELLOW, NUM9, "Yellow 9"));
+	table.push_back(Card(br[49], dk[49], YELLOW, DRAW2, "Yellow +2"));
+	table.push_back(Card(br[50], dk[50], YELLOW, SKIP, "Yellow Skip"));
+	table.push_back(Card(br[51], dk[51], YELLOW, REV, "Yellow Reverse"));
+	table.push_back(Card(br[52], dk[52], NONE, WILD, "Wild"));
+	table.push_back(Card(br[52], dk[52], NONE, WILD, "Wild"));
+	table.push_back(Card(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4"));
+	table.push_back(Card(br[1], dk[1], RED, NUM1, "Red 1"));
+	table.push_back(Card(br[2], dk[2], RED, NUM2, "Red 2"));
+	table.push_back(Card(br[3], dk[3], RED, NUM3, "Red 3"));
+	table.push_back(Card(br[4], dk[4], RED, NUM4, "Red 4"));
+	table.push_back(Card(br[5], dk[5], RED, NUM5, "Red 5"));
+	table.push_back(Card(br[6], dk[6], RED, NUM6, "Red 6"));
+	table.push_back(Card(br[7], dk[7], RED, NUM7, "Red 7"));
+	table.push_back(Card(br[8], dk[8], RED, NUM8, "Red 8"));
+	table.push_back(Card(br[9], dk[9], RED, NUM9, "Red 9"));
+	table.push_back(Card(br[10], dk[10], RED, DRAW2, "Red +2"));
+	table.push_back(Card(br[11], dk[11], RED, SKIP, "Red Skip"));
+	table.push_back(Card(br[12], dk[12], RED, REV, "Red Reverse"));
+	table.push_back(Card(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4"));
+	table.push_back(Card(br[14], dk[14], BLUE, NUM1, "Blue 1"));
+	table.push_back(Card(br[15], dk[15], BLUE, NUM2, "Blue 2"));
+	table.push_back(Card(br[16], dk[16], BLUE, NUM3, "Blue 3"));
+	table.push_back(Card(br[17], dk[17], BLUE, NUM4, "Blue 4"));
+	table.push_back(Card(br[18], dk[18], BLUE, NUM5, "Blue 5"));
+	table.push_back(Card(br[19], dk[19], BLUE, NUM6, "Blue 6"));
+	table.push_back(Card(br[20], dk[20], BLUE, NUM7, "Blue 7"));
+	table.push_back(Card(br[21], dk[21], BLUE, NUM8, "Blue 8"));
+	table.push_back(Card(br[22], dk[22], BLUE, NUM9, "Blue 9"));
+	table.push_back(Card(br[23], dk[23], BLUE, DRAW2, "Blue +2"));
+	table.push_back(Card(br[24], dk[24], BLUE, SKIP, "Blue Skip"));
+	table.push_back(Card(br[25], dk[25], BLUE, REV, "Blue Reverse"));
+	table.push_back(Card(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4"));
+	table.push_back(Card(br[27], dk[27], GREEN, NUM1, "Green 1"));
+	table.push_back(Card(br[28], dk[28], GREEN, NUM2, "Green 2"));
+	table.push_back(Card(br[29], dk[29], GREEN, NUM3, "Green 3"));
+	table.push_back(Card(br[30], dk[30], GREEN, NUM4, "Green 4"));
+	table.push_back(Card(br[31], dk[31], GREEN, NUM5, "Green 5"));
+	table.push_back(Card(br[32], dk[32], GREEN, NUM6, "Green 6"));
+	table.push_back(Card(br[33], dk[33], GREEN, NUM7, "Green 7"));
+	table.push_back(Card(br[34], dk[34], GREEN, NUM8, "Green 8"));
+	table.push_back(Card(br[35], dk[35], GREEN, NUM9, "Green 9"));
+	table.push_back(Card(br[36], dk[36], GREEN, DRAW2, "Green +2"));
+	table.push_back(Card(br[37], dk[37], GREEN, SKIP, "Green Skip"));
+	table.push_back(Card(br[38], dk[38], GREEN, REV, "Green Reverse"));
+	table.push_back(Card(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4"));
+	table.push_back(Card(br[40], dk[40], YELLOW, NUM1, "Yellow 1"));
+	table.push_back(Card(br[41], dk[41], YELLOW, NUM2, "Yellow 2"));
+	table.push_back(Card(br[42], dk[42], YELLOW, NUM3, "Yellow 3"));
+	table.push_back(Card(br[43], dk[43], YELLOW, NUM4, "Yellow 4"));
+	table.push_back(Card(br[44], dk[44], YELLOW, NUM5, "Yellow 5"));
+	table.push_back(Card(br[45], dk[45], YELLOW, NUM6, "Yellow 6"));
+	table.push_back(Card(br[46], dk[46], YELLOW, NUM7, "Yellow 7"));
+	table.push_back(Card(br[47], dk[47], YELLOW, NUM8, "Yellow 8"));
+	table.push_back(Card(br[48], dk[48], YELLOW, NUM9, "Yellow 9"));
+	table.push_back(Card(br[49], dk[49], YELLOW, DRAW2, "Yellow +2"));
+	table.push_back(Card(br[50], dk[50], YELLOW, SKIP, "Yellow Skip"));
+	table.push_back(Card(br[51], dk[51], YELLOW, REV, "Yellow Reverse"));
+	table.push_back(Card(br[52], dk[52], NONE, WILD, "Wild"));
+	table.push_back(Card(br[52], dk[52], NONE, WILD, "Wild"));
 
 	// Initialize other members
 	now = Player::YOU;
@@ -589,28 +583,44 @@ Uno* Uno::getInstance() {
 /**
  * @return Card back image resource.
  */
-const Mat& Uno::getBackImage() {
+const cv::Mat& Uno::getBackImage() {
 	return backImage;
 } // getBackImage()
 
 /**
  * @return Difficulty button image resource (EASY).
+ * @deprecated Use getLevelImage(Uno::LV_EASY, false) instead.
  */
-const Mat& Uno::getEasyImage() {
+[[deprecated]]
+const cv::Mat& Uno::getEasyImage() {
 	return easyImage;
 } // getEasyImage()
 
 /**
  * @return Difficulty button image resource (HARD).
+ * @deprecated Use getLevelImage(Uno::LV_HARD, false) instead.
  */
-const Mat& Uno::getHardImage() {
+[[deprecated]]
+const cv::Mat& Uno::getHardImage() {
 	return hardImage;
 } // getHardImage()
 
 /**
+ * @param level   Pass LV_EASY or LV_HARD.
+ * @param hiLight Pass true if you want to get a hi-lighted image,
+ *                or false if you want to get a dark image.
+ * @return Corresponding difficulty button image.
+ */
+const cv::Mat& Uno::getLevelImage(int level, bool hiLight) {
+	return level == LV_EASY ?
+		/* level == LV_EASY */ (hiLight ? easyImage : easyImage_d) :
+		/* level == LV_HARD */ (hiLight ? hardImage : hardImage_d);
+} // getLevelImage()
+
+/**
  * @return Background image resource in current direction.
  */
-const Mat& Uno::getBackground() {
+const cv::Mat& Uno::getBackground() {
 	switch (direction) {
 	case DIR_LEFT:
 		return bgClockwise; // case DIR_LEFT
@@ -631,7 +641,7 @@ const Mat& Uno::getBackground() {
  * @param color The wild image with which color filled you want to get.
  * @return Corresponding color-filled image.
  */
-const Mat& Uno::getColoredWildImage(Color color) {
+const cv::Mat& Uno::getColoredWildImage(Color color) {
 	return wildImage[color];
 } // getColoredWildImage()
 
@@ -643,7 +653,7 @@ const Mat& Uno::getColoredWildImage(Color color) {
  * @param color The wild +4 image with which color filled you want to get.
  * @return Corresponding color-filled image.
  */
-const Mat& Uno::getColoredWildDraw4Image(Color color) {
+const cv::Mat& Uno::getColoredWildDraw4Image(Color color) {
 	return wildDraw4Image[color];
 } // getColoredWildDraw4Image()
 
@@ -728,23 +738,45 @@ Player* Uno::getPlayer(int who) {
 } // getPlayer()
 
 /**
+ * Find a card instance in card table.
+ *
+ * @param color   Color of the card you want to get.
+ * @param content Content of the card you want to get.
+ * @return Corresponding card instance.
+ */
+Card* Uno::findCard(Color color, Content content) {
+	Card* result;
+	std::vector<Card>::iterator it;
+
+	result = nullptr;
+	for (it = table.begin(); it != table.end(); ++it) {
+		if (it->color == color && it->content == content) {
+			result = &(*it);
+			break;
+		} // if (it->color == color && it->content == content)
+	} // for (it = table.begin(); it != table.end(); ++it)
+
+	return result;
+} // findCard()
+
+/**
  * @return How many cards in deck (haven't been used yet).
  */
 int Uno::getDeckCount() {
-	return (int)deck.size();
+	return int(deck.size());
 } // getDeckCount()
 
 /**
  * @return How many cards have been used.
  */
 int Uno::getUsedCount() {
-	return (int)(used.size() + recent.size());
+	return int((used.size() + recent.size()));
 } // getUsedCount()
 
 /**
  * @return Recent played cards.
  */
-const vector<Card*>& Uno::getRecent() {
+const std::vector<Card*>& Uno::getRecent() {
 	return recent;
 } // getRecent()
 
@@ -755,8 +787,8 @@ const vector<Card*>& Uno::getRecent() {
 void Uno::start() {
 	Card* card;
 	int i, index, size;
-	vector<Card*> allCards;
-	vector<Card>::iterator it;
+	std::vector<Card*> allCards;
+	std::vector<Card>::iterator it;
 
 	// Reset direction
 	direction = DIR_LEFT;
@@ -773,18 +805,18 @@ void Uno::start() {
 	} // for (i = Player::YOU; i <= Player::COM3; ++i)
 
 	// Generate a temporary sequenced card deck
-	for (i = 0; i < 108; ++i) {
-		if (table[i].isWild()) {
+	for (it = table.begin(); it != table.end(); ++it) {
+		if (it->isWild()) {
 			// reset the wild cards' colors
-			table[i].color = NONE;
-		} // if (table[i].isWild())
+			it->color = NONE;
+		} // if (it->isWild())
 
-		allCards.push_back(&table[i]);
-	} // for (i = 0; i < 108; ++i)
+		allCards.push_back(&(*it));
+	} // for (it = table.begin(); it != table.end(); ++it)
 
 	// Keep picking a card from the temporary card deck randomly,
 	// until all cards are picked to the real card deck (shuffle cards)
-	size = (int)allCards.size();
+	size = int(allCards.size());
 	while (size > 0) {
 		index = rand() % size;
 		deck.push_back(allCards.at(index));
@@ -833,8 +865,8 @@ Card* Uno::draw(int who, bool force) {
 	Card* card;
 	Card* picked;
 	int index, size;
-	vector<Card*>* hand;
-	vector<Card*>::iterator i;
+	std::vector<Card*>* hand;
+	std::vector<Card*>::iterator i;
 
 	card = nullptr;
 	if (who >= Player::YOU && who <= Player::COM3) {
@@ -864,7 +896,7 @@ Card* Uno::draw(int who, bool force) {
 			player[who].recent = nullptr;
 			if (deck.empty()) {
 				// Re-use the used cards when there are no more cards in deck
-				size = (int)used.size();
+				size = int(used.size());
 				while (size > 0) {
 					index = rand() % size;
 					picked = used.at(index);
@@ -912,7 +944,7 @@ bool Uno::isLegalToPlay(Card* card) {
 			result = true;
 		} // if (card->content == previous->content)
 		else {
-			result = (card->color == previous->color);
+			result = card->color == previous->color;
 		} // else
 	} // else
 
@@ -938,7 +970,7 @@ bool Uno::isLegalToPlay(Card* card) {
  */
 Card* Uno::play(int who, int index, Color color) {
 	Card* card;
-	vector<Card*>* hand;
+	std::vector<Card*>* hand;
 
 	card = nullptr;
 	if (who >= Player::YOU && who <= Player::COM3) {

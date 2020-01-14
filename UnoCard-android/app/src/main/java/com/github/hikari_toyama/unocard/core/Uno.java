@@ -51,6 +51,16 @@ import static com.github.hikari_toyama.unocard.core.Content.WILD_DRAW4;
 @SuppressWarnings("ALL")
 public class Uno {
     /**
+     * Easy level ID.
+     */
+    public static final int LV_EASY = 0;
+
+    /**
+     * Hard level ID.
+     */
+    public static final int LV_HARD = 1;
+
+    /**
      * Direction value (clockwise).
      */
     public static final int DIR_LEFT = 1;
@@ -101,16 +111,6 @@ public class Uno {
     private Mat backImage;
 
     /**
-     * Difficulty button image resource (EASY).
-     */
-    private Mat easyImage;
-
-    /**
-     * Difficulty button image resource (HARD).
-     */
-    private Mat hardImage;
-
-    /**
      * Background image resource (for welcome screen).
      */
     private Mat bgWelcome;
@@ -124,6 +124,16 @@ public class Uno {
      * Background image resource (Direction: CLOCKWISE).
      */
     private Mat bgClockwise;
+
+    /**
+     * Difficulty button image resources (EASY).
+     */
+    private Mat easyImage, easyImage_d;
+
+    /**
+     * Difficulty button image resources (HARD).
+     */
+    private Mat hardImage, hardImage_d;
 
     /**
      * Player in turn. Must be one of the following:
@@ -169,20 +179,19 @@ public class Uno {
      */
     private Uno(Context context) {
         Mat[] br, dk;
-        Context appContext;
         int i, loaded, total;
 
         // Preparations
-        appContext = context.getApplicationContext();
+        context = context.getApplicationContext();
         loaded = 0;
-        total = 122;
+        total = 124;
         Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
 
         try {
             // Load background image resources
-            bgWelcome = Utils.loadResource(appContext, R.raw.bg_welcome);
-            bgCounter = Utils.loadResource(appContext, R.raw.bg_counter);
-            bgClockwise = Utils.loadResource(appContext, R.raw.bg_clockwise);
+            bgWelcome = Utils.loadResource(context, R.raw.bg_welcome);
+            bgCounter = Utils.loadResource(context, R.raw.bg_counter);
+            bgClockwise = Utils.loadResource(context, R.raw.bg_clockwise);
             Imgproc.cvtColor(bgWelcome, bgWelcome, Imgproc.COLOR_BGR2RGB);
             Imgproc.cvtColor(bgCounter, bgCounter, Imgproc.COLOR_BGR2RGB);
             Imgproc.cvtColor(bgClockwise, bgClockwise, Imgproc.COLOR_BGR2RGB);
@@ -190,131 +199,135 @@ public class Uno {
             Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
 
             // Load card back image resource
-            backImage = Utils.loadResource(appContext, R.raw.back);
+            backImage = Utils.loadResource(context, R.raw.back);
             Imgproc.cvtColor(backImage, backImage, Imgproc.COLOR_BGR2RGB);
             ++loaded;
             Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
 
             // Load difficulty image resources
-            easyImage = Utils.loadResource(appContext, R.raw.lv_easy);
-            hardImage = Utils.loadResource(appContext, R.raw.lv_hard);
+            easyImage = Utils.loadResource(context, R.raw.lv_easy);
+            hardImage = Utils.loadResource(context, R.raw.lv_hard);
+            easyImage_d = Utils.loadResource(context, R.raw.lv_easy_dark);
+            hardImage_d = Utils.loadResource(context, R.raw.lv_hard_dark);
             Imgproc.cvtColor(easyImage, easyImage, Imgproc.COLOR_BGR2RGB);
             Imgproc.cvtColor(hardImage, hardImage, Imgproc.COLOR_BGR2RGB);
-            loaded += 2;
+            Imgproc.cvtColor(easyImage_d, easyImage_d, Imgproc.COLOR_BGR2RGB);
+            Imgproc.cvtColor(hardImage_d, hardImage_d, Imgproc.COLOR_BGR2RGB);
+            loaded += 4;
             Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
 
             // Load cards' front image resources
             br = new Mat[]{
-                    Utils.loadResource(appContext, R.raw.front_r0),
-                    Utils.loadResource(appContext, R.raw.front_r1),
-                    Utils.loadResource(appContext, R.raw.front_r2),
-                    Utils.loadResource(appContext, R.raw.front_r3),
-                    Utils.loadResource(appContext, R.raw.front_r4),
-                    Utils.loadResource(appContext, R.raw.front_r5),
-                    Utils.loadResource(appContext, R.raw.front_r6),
-                    Utils.loadResource(appContext, R.raw.front_r7),
-                    Utils.loadResource(appContext, R.raw.front_r8),
-                    Utils.loadResource(appContext, R.raw.front_r9),
-                    Utils.loadResource(appContext, R.raw.front_rd2),
-                    Utils.loadResource(appContext, R.raw.front_rs),
-                    Utils.loadResource(appContext, R.raw.front_rr),
-                    Utils.loadResource(appContext, R.raw.front_b0),
-                    Utils.loadResource(appContext, R.raw.front_b1),
-                    Utils.loadResource(appContext, R.raw.front_b2),
-                    Utils.loadResource(appContext, R.raw.front_b3),
-                    Utils.loadResource(appContext, R.raw.front_b4),
-                    Utils.loadResource(appContext, R.raw.front_b5),
-                    Utils.loadResource(appContext, R.raw.front_b6),
-                    Utils.loadResource(appContext, R.raw.front_b7),
-                    Utils.loadResource(appContext, R.raw.front_b8),
-                    Utils.loadResource(appContext, R.raw.front_b9),
-                    Utils.loadResource(appContext, R.raw.front_bd2),
-                    Utils.loadResource(appContext, R.raw.front_bs),
-                    Utils.loadResource(appContext, R.raw.front_br),
-                    Utils.loadResource(appContext, R.raw.front_g0),
-                    Utils.loadResource(appContext, R.raw.front_g1),
-                    Utils.loadResource(appContext, R.raw.front_g2),
-                    Utils.loadResource(appContext, R.raw.front_g3),
-                    Utils.loadResource(appContext, R.raw.front_g4),
-                    Utils.loadResource(appContext, R.raw.front_g5),
-                    Utils.loadResource(appContext, R.raw.front_g6),
-                    Utils.loadResource(appContext, R.raw.front_g7),
-                    Utils.loadResource(appContext, R.raw.front_g8),
-                    Utils.loadResource(appContext, R.raw.front_g9),
-                    Utils.loadResource(appContext, R.raw.front_gd2),
-                    Utils.loadResource(appContext, R.raw.front_gs),
-                    Utils.loadResource(appContext, R.raw.front_gr),
-                    Utils.loadResource(appContext, R.raw.front_y0),
-                    Utils.loadResource(appContext, R.raw.front_y1),
-                    Utils.loadResource(appContext, R.raw.front_y2),
-                    Utils.loadResource(appContext, R.raw.front_y3),
-                    Utils.loadResource(appContext, R.raw.front_y4),
-                    Utils.loadResource(appContext, R.raw.front_y5),
-                    Utils.loadResource(appContext, R.raw.front_y6),
-                    Utils.loadResource(appContext, R.raw.front_y7),
-                    Utils.loadResource(appContext, R.raw.front_y8),
-                    Utils.loadResource(appContext, R.raw.front_y9),
-                    Utils.loadResource(appContext, R.raw.front_yd2),
-                    Utils.loadResource(appContext, R.raw.front_ys),
-                    Utils.loadResource(appContext, R.raw.front_yr),
-                    Utils.loadResource(appContext, R.raw.front_kw),
-                    Utils.loadResource(appContext, R.raw.front_kw4)
+                    Utils.loadResource(context, R.raw.front_r0),
+                    Utils.loadResource(context, R.raw.front_r1),
+                    Utils.loadResource(context, R.raw.front_r2),
+                    Utils.loadResource(context, R.raw.front_r3),
+                    Utils.loadResource(context, R.raw.front_r4),
+                    Utils.loadResource(context, R.raw.front_r5),
+                    Utils.loadResource(context, R.raw.front_r6),
+                    Utils.loadResource(context, R.raw.front_r7),
+                    Utils.loadResource(context, R.raw.front_r8),
+                    Utils.loadResource(context, R.raw.front_r9),
+                    Utils.loadResource(context, R.raw.front_rd2),
+                    Utils.loadResource(context, R.raw.front_rs),
+                    Utils.loadResource(context, R.raw.front_rr),
+                    Utils.loadResource(context, R.raw.front_b0),
+                    Utils.loadResource(context, R.raw.front_b1),
+                    Utils.loadResource(context, R.raw.front_b2),
+                    Utils.loadResource(context, R.raw.front_b3),
+                    Utils.loadResource(context, R.raw.front_b4),
+                    Utils.loadResource(context, R.raw.front_b5),
+                    Utils.loadResource(context, R.raw.front_b6),
+                    Utils.loadResource(context, R.raw.front_b7),
+                    Utils.loadResource(context, R.raw.front_b8),
+                    Utils.loadResource(context, R.raw.front_b9),
+                    Utils.loadResource(context, R.raw.front_bd2),
+                    Utils.loadResource(context, R.raw.front_bs),
+                    Utils.loadResource(context, R.raw.front_br),
+                    Utils.loadResource(context, R.raw.front_g0),
+                    Utils.loadResource(context, R.raw.front_g1),
+                    Utils.loadResource(context, R.raw.front_g2),
+                    Utils.loadResource(context, R.raw.front_g3),
+                    Utils.loadResource(context, R.raw.front_g4),
+                    Utils.loadResource(context, R.raw.front_g5),
+                    Utils.loadResource(context, R.raw.front_g6),
+                    Utils.loadResource(context, R.raw.front_g7),
+                    Utils.loadResource(context, R.raw.front_g8),
+                    Utils.loadResource(context, R.raw.front_g9),
+                    Utils.loadResource(context, R.raw.front_gd2),
+                    Utils.loadResource(context, R.raw.front_gs),
+                    Utils.loadResource(context, R.raw.front_gr),
+                    Utils.loadResource(context, R.raw.front_y0),
+                    Utils.loadResource(context, R.raw.front_y1),
+                    Utils.loadResource(context, R.raw.front_y2),
+                    Utils.loadResource(context, R.raw.front_y3),
+                    Utils.loadResource(context, R.raw.front_y4),
+                    Utils.loadResource(context, R.raw.front_y5),
+                    Utils.loadResource(context, R.raw.front_y6),
+                    Utils.loadResource(context, R.raw.front_y7),
+                    Utils.loadResource(context, R.raw.front_y8),
+                    Utils.loadResource(context, R.raw.front_y9),
+                    Utils.loadResource(context, R.raw.front_yd2),
+                    Utils.loadResource(context, R.raw.front_ys),
+                    Utils.loadResource(context, R.raw.front_yr),
+                    Utils.loadResource(context, R.raw.front_kw),
+                    Utils.loadResource(context, R.raw.front_kw4)
             }; // br = new Mat[]{}
             dk = new Mat[]{
-                    Utils.loadResource(appContext, R.raw.dark_r0),
-                    Utils.loadResource(appContext, R.raw.dark_r1),
-                    Utils.loadResource(appContext, R.raw.dark_r2),
-                    Utils.loadResource(appContext, R.raw.dark_r3),
-                    Utils.loadResource(appContext, R.raw.dark_r4),
-                    Utils.loadResource(appContext, R.raw.dark_r5),
-                    Utils.loadResource(appContext, R.raw.dark_r6),
-                    Utils.loadResource(appContext, R.raw.dark_r7),
-                    Utils.loadResource(appContext, R.raw.dark_r8),
-                    Utils.loadResource(appContext, R.raw.dark_r9),
-                    Utils.loadResource(appContext, R.raw.dark_rd2),
-                    Utils.loadResource(appContext, R.raw.dark_rs),
-                    Utils.loadResource(appContext, R.raw.dark_rr),
-                    Utils.loadResource(appContext, R.raw.dark_b0),
-                    Utils.loadResource(appContext, R.raw.dark_b1),
-                    Utils.loadResource(appContext, R.raw.dark_b2),
-                    Utils.loadResource(appContext, R.raw.dark_b3),
-                    Utils.loadResource(appContext, R.raw.dark_b4),
-                    Utils.loadResource(appContext, R.raw.dark_b5),
-                    Utils.loadResource(appContext, R.raw.dark_b6),
-                    Utils.loadResource(appContext, R.raw.dark_b7),
-                    Utils.loadResource(appContext, R.raw.dark_b8),
-                    Utils.loadResource(appContext, R.raw.dark_b9),
-                    Utils.loadResource(appContext, R.raw.dark_bd2),
-                    Utils.loadResource(appContext, R.raw.dark_bs),
-                    Utils.loadResource(appContext, R.raw.dark_br),
-                    Utils.loadResource(appContext, R.raw.dark_g0),
-                    Utils.loadResource(appContext, R.raw.dark_g1),
-                    Utils.loadResource(appContext, R.raw.dark_g2),
-                    Utils.loadResource(appContext, R.raw.dark_g3),
-                    Utils.loadResource(appContext, R.raw.dark_g4),
-                    Utils.loadResource(appContext, R.raw.dark_g5),
-                    Utils.loadResource(appContext, R.raw.dark_g6),
-                    Utils.loadResource(appContext, R.raw.dark_g7),
-                    Utils.loadResource(appContext, R.raw.dark_g8),
-                    Utils.loadResource(appContext, R.raw.dark_g9),
-                    Utils.loadResource(appContext, R.raw.dark_gd2),
-                    Utils.loadResource(appContext, R.raw.dark_gs),
-                    Utils.loadResource(appContext, R.raw.dark_gr),
-                    Utils.loadResource(appContext, R.raw.dark_y0),
-                    Utils.loadResource(appContext, R.raw.dark_y1),
-                    Utils.loadResource(appContext, R.raw.dark_y2),
-                    Utils.loadResource(appContext, R.raw.dark_y3),
-                    Utils.loadResource(appContext, R.raw.dark_y4),
-                    Utils.loadResource(appContext, R.raw.dark_y5),
-                    Utils.loadResource(appContext, R.raw.dark_y6),
-                    Utils.loadResource(appContext, R.raw.dark_y7),
-                    Utils.loadResource(appContext, R.raw.dark_y8),
-                    Utils.loadResource(appContext, R.raw.dark_y9),
-                    Utils.loadResource(appContext, R.raw.dark_yd2),
-                    Utils.loadResource(appContext, R.raw.dark_ys),
-                    Utils.loadResource(appContext, R.raw.dark_yr),
-                    Utils.loadResource(appContext, R.raw.dark_kw),
-                    Utils.loadResource(appContext, R.raw.dark_kw4)
+                    Utils.loadResource(context, R.raw.dark_r0),
+                    Utils.loadResource(context, R.raw.dark_r1),
+                    Utils.loadResource(context, R.raw.dark_r2),
+                    Utils.loadResource(context, R.raw.dark_r3),
+                    Utils.loadResource(context, R.raw.dark_r4),
+                    Utils.loadResource(context, R.raw.dark_r5),
+                    Utils.loadResource(context, R.raw.dark_r6),
+                    Utils.loadResource(context, R.raw.dark_r7),
+                    Utils.loadResource(context, R.raw.dark_r8),
+                    Utils.loadResource(context, R.raw.dark_r9),
+                    Utils.loadResource(context, R.raw.dark_rd2),
+                    Utils.loadResource(context, R.raw.dark_rs),
+                    Utils.loadResource(context, R.raw.dark_rr),
+                    Utils.loadResource(context, R.raw.dark_b0),
+                    Utils.loadResource(context, R.raw.dark_b1),
+                    Utils.loadResource(context, R.raw.dark_b2),
+                    Utils.loadResource(context, R.raw.dark_b3),
+                    Utils.loadResource(context, R.raw.dark_b4),
+                    Utils.loadResource(context, R.raw.dark_b5),
+                    Utils.loadResource(context, R.raw.dark_b6),
+                    Utils.loadResource(context, R.raw.dark_b7),
+                    Utils.loadResource(context, R.raw.dark_b8),
+                    Utils.loadResource(context, R.raw.dark_b9),
+                    Utils.loadResource(context, R.raw.dark_bd2),
+                    Utils.loadResource(context, R.raw.dark_bs),
+                    Utils.loadResource(context, R.raw.dark_br),
+                    Utils.loadResource(context, R.raw.dark_g0),
+                    Utils.loadResource(context, R.raw.dark_g1),
+                    Utils.loadResource(context, R.raw.dark_g2),
+                    Utils.loadResource(context, R.raw.dark_g3),
+                    Utils.loadResource(context, R.raw.dark_g4),
+                    Utils.loadResource(context, R.raw.dark_g5),
+                    Utils.loadResource(context, R.raw.dark_g6),
+                    Utils.loadResource(context, R.raw.dark_g7),
+                    Utils.loadResource(context, R.raw.dark_g8),
+                    Utils.loadResource(context, R.raw.dark_g9),
+                    Utils.loadResource(context, R.raw.dark_gd2),
+                    Utils.loadResource(context, R.raw.dark_gs),
+                    Utils.loadResource(context, R.raw.dark_gr),
+                    Utils.loadResource(context, R.raw.dark_y0),
+                    Utils.loadResource(context, R.raw.dark_y1),
+                    Utils.loadResource(context, R.raw.dark_y2),
+                    Utils.loadResource(context, R.raw.dark_y3),
+                    Utils.loadResource(context, R.raw.dark_y4),
+                    Utils.loadResource(context, R.raw.dark_y5),
+                    Utils.loadResource(context, R.raw.dark_y6),
+                    Utils.loadResource(context, R.raw.dark_y7),
+                    Utils.loadResource(context, R.raw.dark_y8),
+                    Utils.loadResource(context, R.raw.dark_y9),
+                    Utils.loadResource(context, R.raw.dark_yd2),
+                    Utils.loadResource(context, R.raw.dark_ys),
+                    Utils.loadResource(context, R.raw.dark_yr),
+                    Utils.loadResource(context, R.raw.dark_kw),
+                    Utils.loadResource(context, R.raw.dark_kw4)
             }; // dk = new Mat[]{}
             for (i = 0; i < 54; ++i) {
                 Imgproc.cvtColor(br[i], br[i], Imgproc.COLOR_BGR2RGB);
@@ -326,17 +339,17 @@ public class Uno {
             // Load wild & wild +4 image resources
             wImage = new Mat[]{
                     br[52],
-                    Utils.loadResource(appContext, R.raw.front_rw),
-                    Utils.loadResource(appContext, R.raw.front_bw),
-                    Utils.loadResource(appContext, R.raw.front_gw),
-                    Utils.loadResource(appContext, R.raw.front_yw)
+                    Utils.loadResource(context, R.raw.front_rw),
+                    Utils.loadResource(context, R.raw.front_bw),
+                    Utils.loadResource(context, R.raw.front_gw),
+                    Utils.loadResource(context, R.raw.front_yw)
             }; // wImage = new Mat[]{}
             w4Image = new Mat[]{
                     br[53],
-                    Utils.loadResource(appContext, R.raw.front_rw4),
-                    Utils.loadResource(appContext, R.raw.front_bw4),
-                    Utils.loadResource(appContext, R.raw.front_gw4),
-                    Utils.loadResource(appContext, R.raw.front_yw4)
+                    Utils.loadResource(context, R.raw.front_rw4),
+                    Utils.loadResource(context, R.raw.front_bw4),
+                    Utils.loadResource(context, R.raw.front_gw4),
+                    Utils.loadResource(context, R.raw.front_yw4)
             }; // w4Image = new Mat[]{}
             for (i = 1; i < 5; ++i) {
                 Imgproc.cvtColor(wImage[i], wImage[i], Imgproc.COLOR_BGR2RGB);
@@ -506,17 +519,33 @@ public class Uno {
 
     /**
      * @return Difficulty button image resource (EASY).
+     * @deprecated Use getLevelImage(Uno.LV_EASY, false) instead.
      */
+    @Deprecated
     public Mat getEasyImage() {
         return easyImage;
     } // getEasyImage()
 
     /**
      * @return Difficulty button image resource (HARD).
+     * @deprecated Use getLevelImage(Uno.LV_HARD, false) instead.
      */
+    @Deprecated
     public Mat getHardImage() {
         return hardImage;
     } // getHardImage()
+
+    /**
+     * @param level   Pass LV_EASY or LV_HARD.
+     * @param hiLight Pass true if you want to get a hi-lighted image,
+     *                or false if you want to get a dark image.
+     * @return Corresponding difficulty button image.
+     */
+    public Mat getLevelImage(int level, boolean hiLight) {
+        return level == LV_EASY ?
+                /* level == LV_EASY */ (hiLight ? easyImage : easyImage_d) :
+                /* level == LV_HARD */ (hiLight ? hardImage : hardImage_d);
+    } // getLevelImage()
 
     /**
      * @return Background image resource in current direction.
@@ -646,6 +675,27 @@ public class Uno {
     public Player getPlayer(int who) {
         return player[who];
     } // getPlayer()
+
+    /**
+     * Find a card instance in card table.
+     *
+     * @param color   Color of the card you want to get.
+     * @param content Content of the card you want to get.
+     * @return Corresponding card instance.
+     */
+    public Card findCard(Color color, Content content) {
+        Card result;
+
+        result = null;
+        for (Card card : table) {
+            if (card.color == color && card.content == content) {
+                result = card;
+                break;
+            } // if (card.color == color && card.content == content)
+        } // for (Card card : table)
+
+        return result;
+    } // findCard()
 
     /**
      * @return How many cards in deck (haven't been used yet).
@@ -831,7 +881,7 @@ public class Uno {
                 result = true;
             } // if (card.content == previous.content)
             else {
-                result = (card.color == previous.color);
+                result = card.color == previous.color;
             } // else
         } // else
 
