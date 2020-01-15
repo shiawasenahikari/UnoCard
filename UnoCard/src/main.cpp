@@ -577,15 +577,19 @@ static void refreshScreen(std::string message) {
 		cv::putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
 
 		// [Players] option: 3 / 4
-		// TODO: Complete 3-player mode
 		point.x = 340;
 		point.y = 370;
 		cv::putText(sScreen, "PLAYERS", point, FONT_SANS, 1.0, RGB_WHITE);
-		image = sUno->findCard(BLUE, NUM3)->getDarkImg();
+		image = sUno->getPlayers() == 3 ?
+			sUno->findCard(BLUE, NUM3)->getImage() :
+			sUno->findCard(BLUE, NUM3)->getDarkImg();
 		roi.x = 490;
 		roi.y = 270;
 		image.copyTo(sScreen(roi), image);
-		image = sUno->findCard(BLUE, NUM4)->getImage();
+
+		image = sUno->getPlayers() == 4 ?
+			sUno->findCard(BLUE, NUM4)->getImage() :
+			sUno->findCard(BLUE, NUM4)->getDarkImg();
 		roi.x = 670;
 		image.copyTo(sScreen(roi), image);
 
@@ -632,11 +636,9 @@ static void refreshScreen(std::string message) {
 		size = int(hand.size());
 		if (size == 0) {
 			// Played all hand cards, it's winner
-			if (status != STAT_WELCOME) {
-				point.x = 51;
-				point.y = 461;
-				cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
-			} // if (status != STAT_WELCOME)
+			point.x = 51;
+			point.y = 461;
+			cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
 		} // if (size == 0)
 		else {
 			height = 40 * size + 140;
@@ -674,11 +676,11 @@ static void refreshScreen(std::string message) {
 		size = int(hand.size());
 		if (size == 0) {
 			// Played all hand cards, it's winner
-			if (status != STAT_WELCOME) {
+			if (sUno->getPlayers() == 4) {
 				point.x = 611;
 				point.y = 121;
 				cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
-			} // if (status != STAT_WELCOME)
+			} // if (sUno->getPlayers() == 4)
 		} // if (size == 0)
 		else {
 			width = 45 * size + 75;
@@ -716,11 +718,9 @@ static void refreshScreen(std::string message) {
 		size = int(hand.size());
 		if (size == 0) {
 			// Played all hand cards, it's winner
-			if (status != STAT_WELCOME) {
-				point.x = 1170;
-				point.y = 461;
-				cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
-			} // if (status != STAT_WELCOME)
+			point.x = 1170;
+			point.y = 461;
+			cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
 		} // if (size == 0)
 		else {
 			height = 40 * size + 140;
@@ -758,11 +758,9 @@ static void refreshScreen(std::string message) {
 		size = int(hand.size());
 		if (size == 0) {
 			// Played all hand cards, it's winner
-			if (status != STAT_WELCOME) {
-				point.x = 611;
-				point.y = 621;
-				cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
-			} // if (status != STAT_WELCOME)
+			point.x = 611;
+			point.y = 621;
+			cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
 		} // if (size == 0)
 		else {
 			// Show your all hand cards
@@ -1202,12 +1200,12 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 			else if (y >= 270 && y <= 450) {
 				if (x >= 490 && x <= 610) {
 					// 3-player mode
-					// TODO: Complete multi game mode
-					refreshScreen("3-player game mode coming soon...");
+					sUno->setPlayers(3);
+					onStatusChanged(sStatus);
 				} // if (x >= 490 && x <= 610)
 				else if (x >= 670 && x <= 790) {
 					// 4-player mode
-					// TODO: Complete multi game mode
+					sUno->setPlayers(4);
 					onStatusChanged(sStatus);
 				} // else if (x >= 670 && x <= 790)
 			} // else if (y >= 270 && y <= 450)

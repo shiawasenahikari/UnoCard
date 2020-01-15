@@ -372,6 +372,7 @@ public:
 	/**
 	 * @return Current player's opposite player. Must be one of the following:
 	 *         Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+	 *         NOTE: When only 3 players in game, getOppo() == getPrev().
 	 */
 	int getOppo();
 
@@ -380,6 +381,18 @@ public:
 	 *         Player::YOU, Player::COM1, Player::COM2, Player::COM3.
 	 */
 	int getPrev();
+
+	/**
+	 * @return How many players in game (3 or 4).
+	 */
+	int getPlayers();
+
+	/**
+	 * Set the amount of players in game.
+	 *
+	 * @param players Supports 3 and 4.
+	 */
+	void setPlayers(int players);
 
 	/**
 	 * @return Current action sequence. DIR_LEFT for clockwise,
@@ -527,6 +540,11 @@ private:
 	 * Player::YOU, Player::COM1, Player::COM2, Player::COM3.
 	 */
 	int now;
+
+	/**
+	 * How many players in game. Supports 3 or 4.
+	 */
+	int players;
 
 	/**
 	 * Current action sequence (DIR_LEFT / DIR_RIGHT).

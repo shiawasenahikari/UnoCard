@@ -566,6 +566,8 @@ Uno::Uno() {
 	table.push_back(Card(br[52], dk[52], NONE, WILD, "Wild"));
 
 	// Initialize other members
+	players = 3;
+	direction = 0;
 	now = Player::YOU;
 
 	// Generate a random seed based on the current time stamp
@@ -681,15 +683,26 @@ int Uno::switchNow() {
  *         Player::YOU, Player::COM1, Player::COM2, Player::COM3.
  */
 int Uno::getNext() {
-	return (now + direction) % 4;
+	int next = (now + direction) % 4;
+	if (players == 3 && next == Player::COM2) {
+		next = (next + direction) % 4;
+	} // if (players == 3 && next == Player::COM2)
+
+	return next;
 } // getNext()
 
 /**
  * @return Current player's opposite player. Must be one of the following:
  *         Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+ *         NOTE: When only 3 players in game, getOppo() == getPrev().
  */
 int Uno::getOppo() {
-	return (now + direction + direction) % 4;
+	int oppo = (getNext() + direction) % 4;
+	if (players == 3 && oppo == Player::COM2) {
+		oppo = (oppo + direction) % 4;
+	} // if (players == 3 && oppo == Player::COM2)
+
+	return oppo;
 } // getOppo()
 
 /**
@@ -697,8 +710,31 @@ int Uno::getOppo() {
  *         Player::YOU, Player::COM1, Player::COM2, Player::COM3.
  */
 int Uno::getPrev() {
-	return (4 + now - direction) % 4;
+	int prev = (4 + now - direction) % 4;
+	if (players == 3 && prev == Player::COM2) {
+		prev = (4 + prev - direction) % 4;
+	} // if (players == 3 && prev == Player::COM2)
+
+	return prev;
 } // getPrev()
+
+/**
+ * @return How many players in game (3 or 4).
+ */
+int Uno::getPlayers() {
+	return players;
+} // getPlayers()
+
+/**
+ * Set the amount of players in game.
+ *
+ * @param players Supports 3 and 4.
+ */
+void Uno::setPlayers(int players) {
+	if (players == 3 || players == 4) {
+		this->players = players;
+	} // if (players == 3 || players == 4)
+} // setPlayers()
 
 /**
  * @return Current action sequence. DIR_LEFT for clockwise,
@@ -825,9 +861,21 @@ void Uno::start() {
 	} // while (size > 0)
 
 	// Let everyone draw 7 cards
-	for (i = 0; i < 28; ++i) {
-		draw(i % 4, /* force */ true);
-	} // for (i = 0; i < 28; ++i)
+	if (players == 3) {
+		for (i = 0; i < 7; ++i) {
+			draw(Player::YOU,  /* force */ true);
+			draw(Player::COM1, /* force */ true);
+			draw(Player::COM3, /* force */ true);
+		} // for (i = 0; i < 7; ++i)
+	} // if (players == 3)
+	else {
+		for (i = 0; i < 7; ++i) {
+			draw(Player::YOU,  /* force */ true);
+			draw(Player::COM1, /* force */ true);
+			draw(Player::COM2, /* force */ true);
+			draw(Player::COM3, /* force */ true);
+		} // for (i = 0; i < 7; ++i)
+	} // else
 
 	// Determine a start card as the previous played card
 	do {

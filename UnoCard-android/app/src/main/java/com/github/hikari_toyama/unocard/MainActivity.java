@@ -576,15 +576,19 @@ public class MainActivity extends AppCompatActivity
             Imgproc.putText(mScr, info, point, FONT_SANS, 1.0, RGB_WHITE);
 
             // [Players] option: 3 / 4
-            // TODO: Complete 3-player mode
             point.x = 340;
             point.y = 370;
             Imgproc.putText(mScr, "PLAYERS", point, FONT_SANS, 1.0, RGB_WHITE);
-            image = mUno.findCard(Color.BLUE, Content.NUM3).getDarkImg();
+            image = mUno.getPlayers() == 3 ?
+                    mUno.findCard(Color.BLUE, Content.NUM3).getImage() :
+                    mUno.findCard(Color.BLUE, Content.NUM3).getDarkImg();
             roi.x = 490;
             roi.y = 270;
             image.copyTo(new Mat(mScr, roi), image);
-            image = mUno.findCard(Color.BLUE, Content.NUM4).getImage();
+
+            image = mUno.getPlayers() == 4 ?
+                    mUno.findCard(Color.BLUE, Content.NUM4).getImage() :
+                    mUno.findCard(Color.BLUE, Content.NUM4).getDarkImg();
             roi.x = 670;
             image.copyTo(new Mat(mScr, roi), image);
 
@@ -677,9 +681,11 @@ public class MainActivity extends AppCompatActivity
         size = hand.size();
         if (size == 0) {
             // Played all hand cards, it's winner
-            point.x = 611;
-            point.y = 121;
-            Imgproc.putText(mScr, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
+            if (mUno.getPlayers() == 4) {
+                point.x = 611;
+                point.y = 121;
+                Imgproc.putText(mScr, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
+            } // if (mUno.getPlayers() == 4)
         } // if (size == 0)
         else {
             width = 45 * size + 75;
@@ -1129,12 +1135,12 @@ public class MainActivity extends AppCompatActivity
                     else if (y >= 270 && y <= 450) {
                         if (x >= 490 && x <= 610) {
                             // 3-player mode
-                            // TODO: Complete multi game mode
-                            refreshScreen("3-player game mode coming soon...");
+                            mUno.setPlayers(3);
+                            onStatusChanged(mStatus);
                         } // if (x >= 490 && x <= 610)
                         else if (x >= 670 && x <= 790) {
                             // 4-player mode
-                            // TODO: Complete multi game mode
+                            mUno.setPlayers(4);
                             onStatusChanged(mStatus);
                         } // else if (x >= 670 && x <= 790)
                     } // else if (y >= 270 && y <= 450)

@@ -142,6 +142,11 @@ public class Uno {
     private int now;
 
     /**
+     * How many players in game. Supports 3 or 4.
+     */
+    private int players;
+
+    /**
      * Current action sequence (DIR_LEFT / DIR_RIGHT).
      */
     private int direction;
@@ -478,16 +483,19 @@ public class Uno {
         }; // table = new Card[]{}
 
         // Initialize other members
+        players = 3;
+        direction = 0;
         now = Player.YOU;
         used = new ArrayList<>();
         deck = new LinkedList<>();
         recent = new ArrayList<>();
         recent_readOnly = Collections.unmodifiableList(recent);
-        player = new Player[4];
-        player[0] = new Player(); // Player.YOU
-        player[1] = new Player(); // Player.COM1
-        player[2] = new Player(); // Player.COM2
-        player[3] = new Player(); // Player.COM3
+        player = new Player[]{
+                new Player(), // YOU
+                new Player(), // COM1
+                new Player(), // COM2
+                new Player()  // COM3
+        }; // player = new Player[]{}
 
         // Generate a random seed based on the current time stamp
         rand = new Random();
@@ -625,15 +633,26 @@ public class Uno {
      * Player::YOU, Player::COM1, Player::COM2, Player::COM3.
      */
     public int getNext() {
-        return (now + direction) % 4;
+        int next = (now + direction) % 4;
+        if (players == 3 && next == Player.COM2) {
+            next = (next + direction) % 4;
+        } // if (players == 3 && next == Player.COM2)
+
+        return next;
     } // getNext()
 
     /**
      * @return Current player's opposite player. Must be one of the following:
      * Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+     * NOTE: When only 3 players in game, getOppo() == getPrev().
      */
     public int getOppo() {
-        return (now + direction + direction) % 4;
+        int oppo = (getNext() + direction) % 4;
+        if (players == 3 && oppo == Player.COM2) {
+            oppo = (oppo + direction) % 4;
+        } // if (players == 3 && oppo == Player.COM2)
+
+        return oppo;
     } // getOppo()
 
     /**
@@ -641,8 +660,31 @@ public class Uno {
      * Player::YOU, Player::COM1, Player::COM2, Player::COM3.
      */
     public int getPrev() {
-        return (4 + now - direction) % 4;
+        int prev = (4 + now - direction) % 4;
+        if (players == 3 && prev == Player.COM2) {
+            prev = (4 + prev - direction) % 4;
+        } // if (players == 3 && prev == Player.COM2)
+
+        return prev;
     } // getPrev()
+
+    /**
+     * @return How many players in game (3 or 4).
+     */
+    public int getPlayers() {
+        return players;
+    } // getPlayers()
+
+    /**
+     * Set the amount of players in game.
+     *
+     * @param players Supports 3 and 4.
+     */
+    public void setPlayers(int players) {
+        if (players == 3 || players == 4) {
+            this.players = players;
+        } // if (players == 3 || players == 4)
+    } // setPlayers()
 
     /**
      * @return Current action sequence. DIR_LEFT for clockwise,
@@ -763,9 +805,21 @@ public class Uno {
         } // while (size > 0)
 
         // Let everyone draw 7 cards
-        for (i = 0; i < 28; ++i) {
-            draw(i % 4, /* force */ true);
-        } // for (i = 0; i < 28; ++i)
+        if (players == 3) {
+            for (i = 0; i < 7; ++i) {
+                draw(Player.YOU,  /* force */ true);
+                draw(Player.COM1, /* force */ true);
+                draw(Player.COM3, /* force */ true);
+            } // for (i = 0; i < 7; ++i)
+        } // if (players == 3)
+        else {
+            for (i = 0; i < 7; ++i) {
+                draw(Player.YOU,  /* force */ true);
+                draw(Player.COM1, /* force */ true);
+                draw(Player.COM2, /* force */ true);
+                draw(Player.COM3, /* force */ true);
+            } // for (i = 0; i < 7; ++i)
+        } // else
 
         // Determine a start card as the previous played card
         index = deck.size() - 1;
