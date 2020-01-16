@@ -131,17 +131,17 @@ public class AI {
     public int easyAI_bestCardIndex4NowPlayer(Card drawnCard,
                                               Color[] outColor) {
         int i;
+        Card card;
         boolean legal;
         String errMsg;
-        Card card, last;
-        List<Card> hand, recent;
-        Color bestColor, lastColor;
-        Player curr, next, oppo, prev;
+        Color bestColor;
+        List<Card> hand;
+        Player curr, next, prev;
+        int yourSize, nextSize, prevSize;
         int idxBest, idxRev, idxSkip, idxDraw2;
         boolean hasZero, hasWild, hasWildDraw4;
         boolean hasNum, hasRev, hasSkip, hasDraw2;
         int idxZero, idxNum, idxWild, idxWildDraw4;
-        int yourSize, nextSize, oppoSize, prevSize;
 
         if (outColor == null || outColor.length == 0) {
             errMsg = "outColor cannot be null or Color[0]";
@@ -160,8 +160,6 @@ public class AI {
 
         next = mUno.getPlayer(mUno.getNext());
         nextSize = next.getHandCards().size();
-        oppo = mUno.getPlayer(mUno.getOppo());
-        oppoSize = oppo.getHandCards().size();
         prev = mUno.getPlayer(mUno.getPrev());
         prevSize = prev.getHandCards().size();
         hasRev = hasSkip = hasDraw2 = false;
@@ -169,9 +167,6 @@ public class AI {
         idxZero = idxNum = idxWild = idxWildDraw4 = -1;
         hasZero = hasNum = hasWild = hasWildDraw4 = false;
         bestColor = curr.calcBestColor();
-        recent = mUno.getRecent();
-        last = recent.get(recent.size() - 1);
-        lastColor = last.getRealColor();
         for (i = 0; i < yourSize; ++i) {
             // Index of any kind
             card = hand.get(i);
@@ -233,105 +228,27 @@ public class AI {
         } // for (i = 0; i < yourSize; ++i)
 
         // Decision tree
-        if (nextSize == 1) {
-            // Strategies when your next player remains only one card.
-            // Limit your next player's action as well as you can.
-            if (hasDraw2) {
-                // Play a [+2] to make your next player draw two cards!
-                idxBest = idxDraw2;
-            } // if (hasDraw2)
-            else if (hasWildDraw4) {
-                // Play a [wild +4] to make your next player draw four cards,
-                // even if the legal color is already your best color!
-                idxBest = idxWildDraw4;
-            } // else if (hasWildDraw4)
-            else if (hasSkip) {
-                // Play a [skip] to skip its turn and wait for more chances.
-                idxBest = idxSkip;
-            } // else if (hasSkip)
-            else if (hasRev) {
-                // Play a [reverse] to get help from your opposite player.
-                idxBest = idxRev;
-            } // else if (hasRev)
-            else if (hasWild && lastColor != bestColor) {
-                // Play a [wild] and change the legal color to your best to
-                // decrease its possibility of playing the final card legally.
-                idxBest = idxWild;
-            } // else if (hasWild && lastColor != bestColor)
-            else if (hasZero) {
-                // No more powerful choices. Play a number card.
-                idxBest = idxZero;
-            } // else if (hasZero)
-            else if (hasNum) {
-                idxBest = idxNum;
-            } // else if (hasNum)
-        } // if (nextSize == 1)
-        else if (oppoSize == 1) {
-            // Strategies when your opposite player remains only one card.
-            // Give more freedom to your next player, the only one that can
-            // directly limit your opposite player's action.
-            if (hasRev && prevSize - nextSize >= 3) {
-                // Play a [reverse] when your next player remains only a few
-                // cards but your previous player remains a lot of cards,
-                // because your previous player has more possibility to limit
-                // your opposite player's action.
-                idxBest = idxRev;
-            } // if (hasRev && prevSize - nextSize >= 3)
-            else if (hasNum) {
-                // Then you can play a number card. In order to increase your
-                // next player's possibility of changing the legal color, do
-                // not play zero cards preferentially this time.
-                idxBest = idxNum;
-            } // else if (hasNum)
-            else if (hasZero) {
-                idxBest = idxZero;
-            } // else if (hasZero)
-            else if (hasWild && lastColor != bestColor) {
-                // When you have no more legal number/reverse cards to play, try
-                // to play a wild card and change the legal color to your best
-                // color. Do not play any [+2]/[skip] to your next player!
-                idxBest = idxWild;
-            } // else if (hasWild && lastColor != bestColor)
-            else if (hasWildDraw4 && lastColor != bestColor) {
-                // When you have no more legal number/reverse cards to play, try
-                // to play a wild card and change the legal color to your best
-                // color. Specially, for [wild +4] cards, you can only play it
-                // when your next player remains only a few cards, and what you
-                // did can help your next player find more useful cards, such as
-                // action cards, or [wild +4] cards.
-                if (nextSize <= 4) {
-                    idxBest = idxWildDraw4;
-                } // if (nextSize <= 4)
-            } // else if (hasWildDraw4 && lastColor != bestColor)
-        } // else if (oppoSize == 1)
-        else {
-            // Normal strategies
-            if (hasZero) {
-                // Play zero cards at first because of their rarity.
-                idxBest = idxZero;
-            } // if (hasZero)
-            else if (hasNum) {
-                // Then consider to play a number card.
-                idxBest = idxNum;
-            } // else if (hasNum)
-            else if (hasRev && prevSize >= 3) {
-                // Then consider to play an action card.
-                idxBest = idxRev;
-            } // else if (hasRev && prevSize >= 3)
-            else if (hasSkip) {
-                idxBest = idxSkip;
-            } // else if (hasSkip)
-            else if (hasDraw2) {
-                idxBest = idxDraw2;
-            } // else if (hasDraw2)
-            else if (hasWild) {
-                // Then consider to play a wild card.
-                idxBest = idxWild;
-            } // else if (hasWild)
-            else if (hasWildDraw4) {
-                idxBest = idxWildDraw4;
-            } // else if (hasWildDraw4)
-        } // else
+        if (hasDraw2) {
+            idxBest = idxDraw2;
+        } // if (hasDraw2)
+        else if (hasSkip) {
+            idxBest = idxSkip;
+        } // else if (hasSkip)
+        else if (hasRev && prevSize > nextSize) {
+            idxBest = idxRev;
+        } // else if (hasRev && prevSize > nextSize)
+        else if (hasZero) {
+            idxBest = idxZero;
+        } // else if (hasZero)
+        else if (hasNum) {
+            idxBest = idxNum;
+        } // else if (hasNum)
+        else if (hasWildDraw4) {
+            idxBest = idxWildDraw4;
+        } // else if (hasWildDraw4)
+        else if (hasWild) {
+            idxBest = idxWild;
+        } // else if (hasWild)
 
         outColor[0] = bestColor;
         return idxBest;
@@ -495,18 +412,17 @@ public class AI {
         nextDangerColor = next.getDangerousColor();
         oppoDangerColor = oppo.getDangerousColor();
         prevDangerColor = prev.getDangerousColor();
-        if (nextSize == 1) {
-            // Strategies when your next player remains only one card.
+        if (nextSize <= 2) {
+            // Strategies when your next player remains less than 3 cards.
             // Limit your next player's action as well as you can.
             if (hasDraw2) {
                 // Play a [+2] to make your next player draw two cards!
                 idxBest = idxDraw2;
             } // if (hasDraw2)
             else if (lastColor == nextDangerColor) {
-                // Your next player played a wild card, started an UNO dash in
-                // its last action, and what's worse is that the legal color has
-                // not been changed yet. You have to change the following legal
-                // color, or you will approximately 100% lose this game.
+                // Your next player only remains less than 3 cards, and what's
+                // worse is that the legal color is still its dangerous color.
+                // You have to change the following legal color.
                 while (bestColor == nextDangerColor
                         || oppoSize == 1 && bestColor == oppoDangerColor
                         || prevSize == 1 && bestColor == prevDangerColor) {
@@ -546,17 +462,28 @@ public class AI {
                 else if (hasWild) {
                     idxBest = idxWild;
                 } // else if (hasWild)
-                else if (hasRev) {
+                else if (hasRev && prevSize >= nextSize) {
                     // Finally play a [reverse] to get help from other players.
-                    // If you even do not have this choice, you lose this game.
                     idxBest = idxRev;
-                } // else if (hasRev)
+                } // else if (hasRev && prevSize >= nextSize)
+                else if (hasNumIn[RED.ordinal()]) {
+                    idxBest = idxNumIn[RED.ordinal()];
+                } // else if (hasNumIn[RED.ordinal()])
+                else if (hasNumIn[BLUE.ordinal()]) {
+                    idxBest = idxNumIn[BLUE.ordinal()];
+                } // else if (hasNumIn[BLUE.ordinal()])
+                else if (hasNumIn[GREEN.ordinal()]) {
+                    idxBest = idxNumIn[GREEN.ordinal()];
+                } // else if (hasNumIn[GREEN.ordinal()])
+                else if (hasNumIn[YELLOW.ordinal()]) {
+                    idxBest = idxNumIn[YELLOW.ordinal()];
+                } // else if (hasNumIn[YELLOW.ordinal()])
             } // else if (lastColor == nextDangerColor)
             else if (nextDangerColor != NONE) {
-                // Your next player played a wild card, started an UNO dash in
-                // its last action, but fortunately the legal color has been
-                // changed already. Just be careful not to re-change the legal
-                // color to the dangerous color again.
+                // Your next player only remains less than 3 cards, but
+                // fortunately, current legal color is not its dangerous color.
+                // Be careful not to re-change the legal color to its dangerous
+                // color again.
                 if (hasNumIn[bestColor.ordinal()] &&
                         nextDangerColor != bestColor) {
                     idxBest = idxNumIn[bestColor.ordinal()];
@@ -643,7 +570,7 @@ public class AI {
                     idxBest = idxNumIn[YELLOW.ordinal()];
                 } // else if (hasNumIn[YELLOW.ordinal()])
             } // else
-        } // if (nextSize == 1)
+        } // if (nextSize <= 2)
         else if (prevSize == 1) {
             // Strategies when your previous player remains only one card.
             // Save your action cards as much as you can. once a reverse card is
@@ -1011,18 +938,22 @@ public class AI {
                     hand.get(idxDraw2).getRealColor() == bestColor) {
                 idxBest = idxDraw2;
             } // else if (hasDraw2 && ...)
-            else if (hasWild && nextSize <= 4) {
+            else if (hasWild &&
+                    nextSize <= 4 &&
+                    lastColor != nextSafeColor) {
                 // When your next player remains only a few cards, and you have
                 // no more legal number/action cards to play, try to play a
                 // wild card and change the legal color to your best color.
                 idxBest = idxWild;
-            } // else if (hasWild && nextSize <= 4)
-            else if (hasWildDraw4 && nextSize <= 4) {
+            } // else if (hasWild && ...)
+            else if (hasWildDraw4 &&
+                    nextSize <= 4 &&
+                    lastColor != nextSafeColor) {
                 // When your next player remains only a few cards, and you have
                 // no more legal number/action cards to play, try to play a
                 // wild card and change the legal color to your best color.
                 idxBest = idxWildDraw4;
-            } // else if (hasWildDraw4 && nextSize <= 4)
+            } // else if (hasWildDraw4 && ...)
             else if (hasWild && yourSize == 2 && prevSize <= 3) {
                 // When you remain only 2 cards, including a wild card, and your
                 // previous player seems no enough power to limit you (has too
