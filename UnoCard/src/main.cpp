@@ -30,6 +30,7 @@ static const cv::Scalar RGB_WHITE = CV_RGB(0xCC, 0xCC, 0xCC);
 static const cv::Scalar RGB_YELLOW = CV_RGB(0xFF, 0xAA, 0x11);
 static const std::string NAME[] = { "YOU", "WEST", "NORTH", "EAST" };
 static const enum cv::HersheyFonts FONT_SANS = cv::FONT_HERSHEY_DUPLEX;
+static const std::string CL[] = { "", "RED", "BLUE", "GREEN", "YELLOW" };
 static const char FILE_HEADER[] = {
 	(char)('U' + 'N'),
 	(char)('O' + '@'),
@@ -48,9 +49,12 @@ static int sStatus;
 static int sWinner;
 static int sEasyWin;
 static int sHardWin;
+static int sEasyWin3;
+static int sHardWin3;
 static int sEasyTotal;
 static int sHardTotal;
-static int sDifficulty;
+static int sEasyTotal3;
+static int sHardTotal3;
 static bool sAIRunning;
 static cv::Mat sScreen;
 static Card* sDrawnCard;
@@ -72,31 +76,59 @@ static void onMouse(int event, int x, int y, int flags, void* param);
  * Defines the entry point for the console application.
  */
 int main() {
-	int len, checksum;
+	int len, dw[11], sum;
 	std::ifstream reader;
 	char header[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 	// Preparations
+	sUno = Uno::getInstance();
 	sEasyWin = sHardWin = sEasyTotal = sHardTotal = 0;
+	sEasyWin3 = sHardWin3 = sEasyTotal3 = sHardTotal3 = 0;
 	reader = std::ifstream("UnoStat.tmp", std::ios::in | std::ios::binary);
 	if (!reader.fail()) {
 		// Using statistics data in UnoStat.tmp file.
 		reader.seekg(0, std::ios::end);
 		len = int(reader.tellg());
 		reader.seekg(0, std::ios::beg);
-		if (len == 8 + 5 * sizeof(int)) {
+		switch (len) {
+		case 8 + 5 * sizeof(int) :
+			// old version
 			reader.read(header, 8);
-			reader.read((char*)&sEasyWin, sizeof(int));
-			reader.read((char*)&sHardWin, sizeof(int));
-			reader.read((char*)&sEasyTotal, sizeof(int));
-			reader.read((char*)&sHardTotal, sizeof(int));
-			reader.read((char*)&checksum, sizeof(int));
-			if (strcmp(header, FILE_HEADER) != 0 ||
-				checksum != sEasyWin + sHardWin + sEasyTotal + sHardTotal) {
-				// File verification error. Use default statistics data.
-				sEasyWin = sHardWin = sEasyTotal = sHardTotal = 0;
-			} // if (strcmp(header, FILE_HEADER) != 0 || ...)
-		} // if (len == 8 + 5 * sizeof(int))
+			reader.read((char*)dw, 5 * sizeof(int));
+			sum = dw[0] + dw[1] + dw[2] + dw[3];
+			if (strcmp(header, FILE_HEADER) == 0 && sum == dw[4]) {
+				// File verification success
+				sEasyWin = dw[0];
+				sHardWin = dw[1];
+				sEasyTotal = dw[2];
+				sHardTotal = dw[3];
+			} // if (strcmp(header, FILE_HEADER) == 0 && sum == dw[4])
+			break; // case 8 + 5 * sizeof(int)
+
+		case 8 + 11 * sizeof(int) :
+			// new version
+			reader.read(header, 8);
+			reader.read((char*)dw, 11 * sizeof(int));
+			sum = dw[0] + dw[1] + dw[2] + dw[3] + dw[4]
+				+ dw[5] + dw[6] + dw[7] + dw[8] + dw[9];
+			if (strcmp(header, FILE_HEADER) == 0 && sum == dw[10]) {
+				// File verification success
+				sEasyWin = dw[0];
+				sHardWin = dw[1];
+				sEasyWin3 = dw[2];
+				sHardWin3 = dw[3];
+				sEasyTotal = dw[4];
+				sHardTotal = dw[5];
+				sEasyTotal3 = dw[6];
+				sHardTotal3 = dw[7];
+				sUno->setPlayers(dw[8]);
+				sUno->setDifficulty(dw[9]);
+			} // if (strcmp(header, FILE_HEADER) == 0 && sum == dw[10])
+			break; // case 8 + 11 * sizeof(int)
+
+		default:
+			break; // default
+		} // switch (len)
 
 		reader.close();
 	} // if (!reader.fail())
@@ -215,7 +247,10 @@ static void hardAI() {
 static void onStatusChanged(int status) {
 	cv::Rect rect;
 	cv::Size axes;
+	Card* next2last;
 	cv::Point center;
+	std::string message;
+	std::vector<Card*> recent;
 
 	switch (status) {
 	case STAT_WELCOME:
@@ -224,12 +259,30 @@ static void onStatusChanged(int status) {
 
 	case STAT_NEW_GAME:
 		// New game
-		if (sDifficulty == Uno::LV_EASY) {
+		switch (sUno->getDifficulty() << 4 | sUno->getPlayers()) {
+		case 0x03:
+			// Difficulty = EASY(0), Players = 3
+			++sEasyTotal3;
+			break; // case 0x03
+
+		case 0x04:
+			// Difficulty = EASY(0), Players = 4
 			++sEasyTotal;
-		} // if (sDifficulty == Uno::LV_EASY)
-		else {
+			break; // case 0x04
+
+		case 0x13:
+			// Difficulty = HARD(1), Players = 3
+			++sHardTotal3;
+			break; // case 0x13
+
+		case 0x14:
+			// Difficulty = HARD(1), Players = 4
 			++sHardTotal;
-		} // else
+			break; // case 0x14
+
+		default:
+			break; // default
+		} // switch (sUno->getDifficulty() << 4 | sUno->getPlayers())
 
 		sUno->start();
 		refreshScreen("GET READY");
@@ -270,9 +323,9 @@ static void onStatusChanged(int status) {
 		// Your turn, select a hand card to play, or draw a card
 		if (sAuto) {
 			if (!sAIRunning) {
-				if (sDifficulty == Uno::LV_EASY) {
+				if (sUno->getDifficulty() == Uno::LV_EASY) {
 					easyAI();
-				} // if (sDifficulty == Uno::LV_EASY)
+				} // if (sUno->getDifficulty() == Uno::LV_EASY)
 				else {
 					hardAI();
 				} // else
@@ -333,7 +386,12 @@ static void onStatusChanged(int status) {
 			imshow("Uno", sScreen);
 		} // else if (sImmPlayAsk)
 		else if (sChallengeAsk) {
-			refreshScreen("^ Challenge the legality of Wild +4?");
+			recent = sUno->getRecent();
+			next2last = recent.at(recent.size() - 2);
+			message = "^ Do you think"
+				+ NAME[sUno->getNow()] + " still has "
+				+ CL[next2last->getRealColor()] + "?";
+			refreshScreen(message);
 			rect = cv::Rect(338, 270, 121, 181);
 			sUno->getBackground()(rect).copyTo(sScreen(rect));
 			center = cv::Point(405, 315);
@@ -461,9 +519,9 @@ static void onStatusChanged(int status) {
 	case Player::COM3:
 		// AI players' turn
 		if (!sAIRunning) {
-			if (sDifficulty == Uno::LV_EASY) {
+			if (sUno->getDifficulty() == Uno::LV_EASY) {
 				easyAI();
-			} // if (sDifficulty == Uno::LV_EASY)
+			} // if (sUno->getDifficulty() == Uno::LV_EASY)
 			else {
 				hardAI();
 			} // else
@@ -473,12 +531,30 @@ static void onStatusChanged(int status) {
 	case STAT_GAME_OVER:
 		// Game over
 		if (sWinner == Player::YOU) {
-			if (sDifficulty == Uno::LV_EASY) {
+			switch (sUno->getDifficulty() << 4 | sUno->getPlayers()) {
+			case 0x03:
+				// Difficulty = EASY(0), Players = 3
+				++sEasyWin3;
+				break; // case 0x03
+
+			case 0x04:
+				// Difficulty = EASY(0), Players = 4
 				++sEasyWin;
-			} // if (sDifficulty == Uno::LV_EASY)
-			else {
+				break; // case 0x04
+
+			case 0x13:
+				// Difficulty = HARD(1), Players = 3
+				++sHardWin3;
+				break; // case 0x13
+
+			case 0x14:
+				// Difficulty = HARD(1), Players = 4
 				++sHardWin;
-			} // else
+				break; // case 0x14
+
+			default:
+				break; // default
+			} // switch (sUno->getDifficulty() << 4 | sUno->getPlayers())
 		} // if (sWinner == Player::YOU)
 
 		refreshScreen("Click the card deck to restart");
@@ -509,8 +585,8 @@ static void refreshScreen(std::string message) {
 	bool beChallenged;
 	std::stringstream buff;
 	std::vector<Card*> hand;
-	int i, status, size, width, height;
-	int remain, used, easyRate, hardRate;
+	int i, remain, used, rate;
+	int status, size, width, height;
 
 	// Lock the value of global variable [sStatus]
 	status = sStatus;
@@ -544,37 +620,20 @@ static void refreshScreen(std::string message) {
 	if (status == STAT_WELCOME) {
 		// [Level] option: easy / hard
 		point.x = 340;
-		point.y = 120;
+		point.y = 160;
 		cv::putText(sScreen, "LEVEL", point, FONT_SANS, 1.0, RGB_WHITE);
 		image = sUno->getLevelImage(
 			/* level   */ Uno::LV_EASY,
-			/* hiLight */ sDifficulty == Uno::LV_EASY
+			/* hiLight */ sUno->getDifficulty() == Uno::LV_EASY
 		); // image = sUno->getLevelImage()
-		roi = cv::Rect(490, 20, 121, 181);
+		roi = cv::Rect(490, 60, 121, 181);
 		image.copyTo(sScreen(roi), image);
 		image = sUno->getLevelImage(
 			/* level   */ Uno::LV_HARD,
-			/* hiLight */ sDifficulty == Uno::LV_HARD
+			/* hiLight */ sUno->getDifficulty() == Uno::LV_HARD
 		); // image = sUno->getLevelImage()
 		roi.x = 670;
 		image.copyTo(sScreen(roi), image);
-
-		// Each level's win rate
-		easyRate = sEasyTotal == 0 ? 0 : 100 * sEasyWin / sEasyTotal;
-		hardRate = sHardTotal == 0 ? 0 : 100 * sHardWin / sHardTotal;
-		point.x = 340;
-		point.y = 240;
-		cv::putText(sScreen, "win rate", point, FONT_SANS, 1.0, RGB_WHITE);
-		buff.str("");
-		buff << easyRate << "%";
-		width = cv::getTextSize(buff.str(), FONT_SANS, 1.0, 1, nullptr).width;
-		point.x = 550 - width / 2;
-		cv::putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
-		buff.str("");
-		buff << hardRate << "%";
-		width = cv::getTextSize(buff.str(), FONT_SANS, 1.0, 1, nullptr).width;
-		point.x = 730 - width / 2;
-		cv::putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
 
 		// [Players] option: 3 / 4
 		point.x = 340;
@@ -586,12 +645,43 @@ static void refreshScreen(std::string message) {
 		roi.x = 490;
 		roi.y = 270;
 		image.copyTo(sScreen(roi), image);
-
 		image = sUno->getPlayers() == 4 ?
 			sUno->findCard(BLUE, NUM4)->getImage() :
 			sUno->findCard(BLUE, NUM4)->getDarkImg();
 		roi.x = 670;
 		image.copyTo(sScreen(roi), image);
+
+		// Win rate
+		switch (sUno->getDifficulty() << 4 | sUno->getPlayers()) {
+		case 0x03:
+			// Difficulty = EASY(0), Players = 3
+			rate = sEasyTotal3 == 0 ? 0 : 100 * sEasyWin3 / sEasyTotal3;
+			break; // case 0x03
+
+		case 0x04:
+			// Difficulty = EASY(0), Players = 4
+			rate = sEasyTotal == 0 ? 0 : 100 * sEasyWin / sEasyTotal;
+			break; // case 0x04
+
+		case 0x13:
+			// Difficulty = HARD(1), Players = 3
+			rate = sHardTotal3 == 0 ? 0 : 100 * sHardWin3 / sHardTotal3;
+			break; // case 0x13
+
+		case 0x14:
+			// Difficulty = HARD(1), Players = 4
+			rate = sHardTotal == 0 ? 0 : 100 * sHardWin / sHardTotal;
+			break; // case 0x14
+
+		default:
+			rate = 0;
+			break; // default
+		} // switch (sUno->getDifficulty() << 4 | sUno->getPlayers())
+
+		buff << "win rate: " << rate << "%";
+		width = cv::getTextSize(buff.str(), FONT_SANS, 1.0, 1, nullptr).width;
+		point.x = 930 - width / 2;
+		cv::putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
 
 		// [UNO] button: start a new game
 		image = sUno->getBackImage();
@@ -1063,12 +1153,22 @@ static void onChallengeChance(bool challenged) {
 	if (challenged) {
 		curr = sUno->getNow();
 		challenger = sUno->getNext();
-		message = NAME[challenger] + " challenged " + NAME[curr];
-		refreshScreen(message);
-		cv::waitKey(1500);
 		recent = sUno->getRecent();
 		next2last = recent.at(recent.size() - 2);
 		colorBeforeDraw4 = next2last->getRealColor();
+		if (curr == Player::YOU) {
+			message = NAME[challenger]
+				+ " doubted that you still have "
+				+ CL[colorBeforeDraw4];
+		} // if (curr == Player::YOU)
+		else {
+			message = NAME[challenger]
+				+ " doubted that " + NAME[curr]
+				+ " still has " + CL[colorBeforeDraw4];
+		} // else
+
+		refreshScreen(message);
+		cv::waitKey(1500);
 		draw4IsLegal = true;
 		for (Card* card : sUno->getPlayer(curr)->getHandCards()) {
 			if (card->getRealColor() == colorBeforeDraw4) {
@@ -1081,12 +1181,12 @@ static void onChallengeChance(bool challenged) {
 
 		if (draw4IsLegal) {
 			// Challenge failure, challenger draws 6 cards
-			message = "Challenge failure, " + NAME[challenger];
 			if (challenger == Player::YOU) {
-				message += " draw 6 cards";
+				message = "Challenge failure, you draw 6 cards";
 			} // if (challenger == Player::YOU)
 			else {
-				message += " draws 6 cards";
+				message = "Challenge failure, "
+					+ NAME[challenger] + " draws 6 cards";
 			} // else
 
 			refreshScreen(message);
@@ -1097,12 +1197,12 @@ static void onChallengeChance(bool challenged) {
 		} // if (draw4IsLegal)
 		else {
 			// Challenge success, who played [wild +4] draws 4 cards
-			message = "Challenge success, " + NAME[curr];
 			if (curr == Player::YOU) {
-				message += " draw 4 cards";
+				message = "Challenge success, you draw 4 cards";
 			} // if (curr == Player::YOU)
 			else {
-				message += " draws 4 cards";
+				message = "Challenge success, "
+					+ NAME[curr] + "draws 4 cards";
 			} // else
 
 			refreshScreen(message);
@@ -1129,10 +1229,11 @@ static void onChallengeChance(bool challenged) {
  * @param param [UNUSED IN THIS CALLBACK]
  */
 static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
+	static int dw[11];
 	static Card* card;
 	static std::ofstream writer;
 	static std::vector<Card*> hand;
-	static int index, size, width, startX, checksum;
+	static int i, index, size, width, startX;
 
 	if (event == cv::EVENT_LBUTTONDOWN) {
 		// Only response to left-click events, and ignore the others
@@ -1142,13 +1243,22 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 			writer = std::ofstream("UnoStat.tmp", std::ios::out | std::ios::binary);
 			if (!writer.fail()) {
 				// Store statistics data to file
-				checksum = sEasyWin + sHardWin + sEasyTotal + sHardTotal;
+				dw[0] = sEasyWin;
+				dw[1] = sHardWin;
+				dw[2] = sEasyWin3;
+				dw[3] = sHardWin3;
+				dw[4] = sEasyTotal;
+				dw[5] = sHardTotal;
+				dw[6] = sEasyTotal3;
+				dw[7] = sHardTotal3;
+				dw[8] = sUno->getPlayers();
+				dw[9] = sUno->getDifficulty();
+				for (dw[0] = 0, i = 0; i < 10; ++i) {
+					dw[10] += dw[i];
+				} // for (dw[0] = 0, i = 0; i < 10; ++i)
+
 				writer.write(FILE_HEADER, 8);
-				writer.write((char*)&sEasyWin, sizeof(int));
-				writer.write((char*)&sHardWin, sizeof(int));
-				writer.write((char*)&sEasyTotal, sizeof(int));
-				writer.write((char*)&sHardTotal, sizeof(int));
-				writer.write((char*)&checksum, sizeof(int));
+				writer.write((char*)dw, 11 * sizeof(int));
 				writer.close();
 			} // if (!writer.fail())
 
@@ -1185,18 +1295,18 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 		} // else if (y >= 679 && y <= 700 && x >= 1130 && x <= 1260)
 		else switch (sStatus) {
 		case STAT_WELCOME:
-			if (y >= 20 && y <= 200) {
+			if (y >= 60 && y <= 240) {
 				if (x >= 490 && x <= 610) {
 					// Difficulty: EASY
-					sDifficulty = Uno::LV_EASY;
+					sUno->setDifficulty(Uno::LV_EASY);
 					onStatusChanged(sStatus);
 				} // if (x >= 490 && x <= 610)
 				else if (x >= 670 && x <= 790) {
 					// Difficulty: HARD
-					sDifficulty = Uno::LV_HARD;
+					sUno->setDifficulty(Uno::LV_HARD);
 					onStatusChanged(sStatus);
 				} // else if (x >= 670 && x <= 790)
-			} // if (y >= 20 && y <= 200)
+			} // if (y >= 60 && y <= 240)
 			else if (y >= 270 && y <= 450) {
 				if (x >= 490 && x <= 610) {
 					// 3-player mode

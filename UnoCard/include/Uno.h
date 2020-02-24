@@ -420,6 +420,19 @@ public:
 	Player* getPlayer(int who);
 
 	/**
+	 * @return Current difficulty (LV_EASY / LV_HARD).
+	 */
+	int getDifficulty();
+
+	/**
+	 * Set game difficulty.
+	 *
+	 * @param difficulty Pass target difficulty value.
+	 *                   Only LV_EASY and LV_HARD are available.
+	 */
+	void setDifficulty(int difficulty);
+
+	/**
 	 * Find a card instance in card table.
 	 *
 	 * @param color   Color of the card you want to get.
@@ -550,6 +563,11 @@ private:
 	 * Current action sequence (DIR_LEFT / DIR_RIGHT).
 	 */
 	int direction;
+
+	/**
+	 * Current difficulty (LV_EASY / LV_HARD).
+	 */
+	int difficulty;
 
 	/**
 	 * Game players.

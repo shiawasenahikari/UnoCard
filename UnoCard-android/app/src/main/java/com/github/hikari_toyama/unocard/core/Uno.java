@@ -152,6 +152,11 @@ public class Uno {
     private int direction;
 
     /**
+     * Current difficulty (LV_EASY / LV_HARD).
+     */
+    private int difficulty;
+
+    /**
      * Game players.
      */
     private Player[] player;
@@ -486,6 +491,7 @@ public class Uno {
         players = 3;
         direction = 0;
         now = Player.YOU;
+        difficulty = LV_EASY;
         used = new ArrayList<>();
         deck = new LinkedList<>();
         recent = new ArrayList<>();
@@ -708,6 +714,25 @@ public class Uno {
         direction = 4 - direction;
         return direction;
     } // switchDirection()
+
+    /**
+     * @return Current difficulty (LV_EASY / LV_HARD).
+     */
+    public int getDifficulty() {
+        return difficulty;
+    } // getDifficulty()
+
+    /**
+     * Set game difficulty.
+     *
+     * @param difficulty Pass target difficulty value.
+     *                   Only LV_EASY and LV_HARD are available.
+     */
+    public void setDifficulty(int difficulty) {
+        if (difficulty == LV_EASY || difficulty == LV_HARD) {
+            this.difficulty = difficulty;
+        } // if (difficulty == LV_EASY || difficulty == LV_HARD)
+    } // setDifficulty()
 
     /**
      * @param who Get which player's instance. Must be one of the following:

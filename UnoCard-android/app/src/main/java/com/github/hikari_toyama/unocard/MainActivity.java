@@ -51,6 +51,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity
         implements View.OnTouchListener {
     private static final boolean OPENCV_INIT_SUCCESS = OpenCVLoader.initDebug();
+    private static final String[] CL = {"", "RED", "BLUE", "GREEN", "YELLOW"};
     private static final String[] NAME = {"YOU", "WEST", "NORTH", "EAST"};
     private static final Scalar RGB_YELLOW = new Scalar(0xFF, 0xAA, 0x11);
     private static final Scalar RGB_WHITE = new Scalar(0xCC, 0xCC, 0xCC);
@@ -69,11 +70,14 @@ public class MainActivity extends AppCompatActivity
     private boolean mImmPlayAsk;
     private Handler mHandler;
     private Card mDrawnCard;
-    private int mDifficulty;
-    private int mWildIndex;
+    private int mHardTotal3;
+    private int mEasyTotal3;
     private int mHardTotal;
     private int mEasyTotal;
+    private int mWildIndex;
     private boolean mAuto;
+    private int mHardWin3;
+    private int mEasyWin3;
     private int mHardWin;
     private int mEasyWin;
     private int mStatus;
@@ -98,11 +102,17 @@ public class MainActivity extends AppCompatActivity
         mHandler = new Handler();
         mEasyWin = sp.getInt("easyWin", 0);
         mHardWin = sp.getInt("hardWin", 0);
+        mEasyWin3 = sp.getInt("easyWin3", 0);
+        mHardWin3 = sp.getInt("hardWin3", 0);
         mEasyTotal = sp.getInt("easyTotal", 0);
         mHardTotal = sp.getInt("hardTotal", 0);
+        mEasyTotal3 = sp.getInt("easyTotal3", 0);
+        mHardTotal3 = sp.getInt("hardTotal3", 0);
         if (OPENCV_INIT_SUCCESS) {
-            mAI = new AI(this);
             mUno = Uno.getInstance(this);
+            mUno.setPlayers(sp.getInt("players", 3));
+            mUno.setDifficulty(sp.getInt("difficulty", Uno.LV_EASY));
+            mAI = new AI(this);
             mWinner = Player.YOU;
             mStatus = STAT_WELCOME;
             mScr = mUno.getBackground().clone();
@@ -212,7 +222,10 @@ public class MainActivity extends AppCompatActivity
         Rect rect;
         Size axes;
         Point center;
+        Card next2last;
+        String message;
         Mat areaToErase;
+        List<Card> recent;
         Runnable delayedTask;
 
         switch (status) {
@@ -222,12 +235,30 @@ public class MainActivity extends AppCompatActivity
 
             case STAT_NEW_GAME:
                 // New game
-                if (mDifficulty == Uno.LV_EASY) {
-                    ++mEasyTotal;
-                } // if (mDifficulty == Uno.LV_EASY)
-                else {
-                    ++mHardTotal;
-                } // else
+                switch (mUno.getDifficulty() << 4 | mUno.getPlayers()) {
+                    case 0x03:
+                        // Difficulty = EASY(0), Players = 3
+                        ++mEasyTotal3;
+                        break; // case 0x03
+
+                    case 0x04:
+                        // Difficulty = EASY(0), Players = 4
+                        ++mEasyTotal;
+                        break; // case 0x04
+
+                    case 0x13:
+                        // Difficulty = HARD(1), Players = 3
+                        ++mHardTotal3;
+                        break; // case 0x13
+
+                    case 0x14:
+                        // Difficulty = HARD(1), Players = 4
+                        ++mHardTotal;
+                        break; // case 0x14
+
+                    default:
+                        break; // default
+                } // switch (mUno.getDifficulty() << 4 | mUno.getPlayers())
 
                 mUno.start();
                 refreshScreen("GET READY");
@@ -271,9 +302,9 @@ public class MainActivity extends AppCompatActivity
             case Player.YOU:
                 // Your turn, select a hand card to play, or draw a card
                 if (mAuto) {
-                    if (mDifficulty == Uno.LV_EASY) {
+                    if (mUno.getDifficulty() == Uno.LV_EASY) {
                         easyAI();
-                    } // if (mDifficulty == Uno.LV_EASY)
+                    } // if (mUno.getDifficulty() == Uno.LV_EASY)
                     else {
                         hardAI();
                     } // else
@@ -335,7 +366,12 @@ public class MainActivity extends AppCompatActivity
                     mImgScreen.setImageBitmap(mBmp);
                 } // else if (mImmPlayAsk)
                 else if (mChallengeAsk) {
-                    refreshScreen("^ Challenge the legality of Wild +4?");
+                    recent = mUno.getRecent();
+                    next2last = recent.get(recent.size() - 2);
+                    message = "^ Do you think "
+                            + NAME[mUno.getNow()] + " still has "
+                            + CL[next2last.getRealColor().ordinal()] + "?";
+                    refreshScreen(message);
                     rect = new Rect(338, 270, 121, 181);
                     areaToErase = new Mat(mUno.getBackground(), rect);
                     areaToErase.copyTo(new Mat(mScr, rect));
@@ -466,9 +502,9 @@ public class MainActivity extends AppCompatActivity
             case Player.COM2:
             case Player.COM3:
                 // AI players' turn
-                if (mDifficulty == Uno.LV_EASY) {
+                if (mUno.getDifficulty() == Uno.LV_EASY) {
                     easyAI();
-                } // if (mDifficulty == Uno.LV_EASY)
+                } // if (mUno.getDifficulty() == Uno.LV_EASY)
                 else {
                     hardAI();
                 } // else
@@ -477,12 +513,30 @@ public class MainActivity extends AppCompatActivity
             case STAT_GAME_OVER:
                 // Game over
                 if (mWinner == Player.YOU) {
-                    if (mDifficulty == Uno.LV_EASY) {
-                        ++mEasyWin;
-                    } // if (mDifficulty == Uno.LV_EASY)
-                    else {
-                        ++mHardWin;
-                    } // else
+                    switch (mUno.getDifficulty() << 4 | mUno.getPlayers()) {
+                        case 0x03:
+                            // Difficulty = EASY(0), Players = 3
+                            ++mEasyWin3;
+                            break; // case 0x03
+
+                        case 0x04:
+                            // Difficulty = EASY(0), Players = 4
+                            ++mEasyWin;
+                            break; // case 0x04
+
+                        case 0x13:
+                            // Difficulty = HARD(1), Players = 3
+                            ++mHardWin3;
+                            break; // case 0x13
+
+                        case 0x14:
+                            // Difficulty = HARD(1), Players = 4
+                            ++mHardWin;
+                            break; // case 0x14
+
+                        default:
+                            break; // default
+                    } // switch (mUno.getDifficulty() << 4 | mUno.getPlayers())
                 } // if (mWinner == Player.YOU)
 
                 refreshScreen("Click the card deck to restart");
@@ -515,8 +569,8 @@ public class MainActivity extends AppCompatActivity
         Size textSize;
         List<Card> hand;
         boolean beChallenged;
-        int i, status, size, width, height;
-        int remain, used, easyRate, hardRate;
+        int i, remain, used, rate;
+        int status, size, width, height;
 
         // Lock the value of member [mStatus]
         status = mStatus;
@@ -545,35 +599,20 @@ public class MainActivity extends AppCompatActivity
         if (status == STAT_WELCOME) {
             // [Level] option: easy / hard
             point.x = 340;
-            point.y = 120;
+            point.y = 160;
             Imgproc.putText(mScr, "LEVEL", point, FONT_SANS, 1.0, RGB_WHITE);
             image = mUno.getLevelImage(
                     /* level   */ Uno.LV_EASY,
-                    /* hiLight */ mDifficulty == Uno.LV_EASY
+                    /* hiLight */ mUno.getDifficulty() == Uno.LV_EASY
             ); // image = mUno.getLevelImage()
-            roi = new Rect(490, 20, 121, 181);
+            roi = new Rect(490, 60, 121, 181);
             image.copyTo(new Mat(mScr, roi), image);
             image = mUno.getLevelImage(
                     /* level   */ Uno.LV_HARD,
-                    /* hiLight */ mDifficulty == Uno.LV_HARD
+                    /* hiLight */ mUno.getDifficulty() == Uno.LV_HARD
             ); // image = mUno.getLevelImage()
             roi.x = 670;
             image.copyTo(new Mat(mScr, roi), image);
-
-            // Each level's win rate
-            easyRate = mEasyTotal == 0 ? 0 : 100 * mEasyWin / mEasyTotal;
-            hardRate = mHardTotal == 0 ? 0 : 100 * mHardWin / mHardTotal;
-            point.x = 340;
-            point.y = 240;
-            Imgproc.putText(mScr, "win rate", point, FONT_SANS, 1.0, RGB_WHITE);
-            info = easyRate + "%";
-            textSize = Imgproc.getTextSize(info, FONT_SANS, 1.0, 1, null);
-            point.x = 550 - textSize.width / 2;
-            Imgproc.putText(mScr, info, point, FONT_SANS, 1.0, RGB_WHITE);
-            info = hardRate + "%";
-            textSize = Imgproc.getTextSize(info, FONT_SANS, 1.0, 1, null);
-            point.x = 730 - textSize.width / 2;
-            Imgproc.putText(mScr, info, point, FONT_SANS, 1.0, RGB_WHITE);
 
             // [Players] option: 3 / 4
             point.x = 340;
@@ -585,12 +624,43 @@ public class MainActivity extends AppCompatActivity
             roi.x = 490;
             roi.y = 270;
             image.copyTo(new Mat(mScr, roi), image);
-
             image = mUno.getPlayers() == 4 ?
                     mUno.findCard(Color.BLUE, Content.NUM4).getImage() :
                     mUno.findCard(Color.BLUE, Content.NUM4).getDarkImg();
             roi.x = 670;
             image.copyTo(new Mat(mScr, roi), image);
+
+            // Win rate
+            switch (mUno.getDifficulty() << 4 | mUno.getPlayers()) {
+                case 0x03:
+                    // Difficulty = EASY(0), Players = 3
+                    rate = mEasyTotal3 == 0 ? 0 : 100 * mEasyWin3 / mEasyTotal3;
+                    break; // case 0x03
+
+                case 0x04:
+                    // Difficulty = EASY(0), Players = 4
+                    rate = mEasyTotal == 0 ? 0 : 100 * mEasyWin / mEasyTotal;
+                    break; // case 0x04
+
+                case 0x13:
+                    // Difficulty = HARD(1), Players = 3
+                    rate = mHardTotal3 == 0 ? 0 : 100 * mHardWin3 / mHardTotal3;
+                    break; // case 0x13
+
+                case 0x14:
+                    // Difficulty = HARD(1), Players = 4
+                    rate = mHardTotal == 0 ? 0 : 100 * mHardWin / mHardTotal;
+                    break; // case 0x14
+
+                default:
+                    rate = 0;
+                    break; // default
+            } // switch (mUno.getDifficulty() << 4 | mUno.getPlayers())
+
+            info = "win rate: " + rate + "%";
+            textSize = Imgproc.getTextSize(info, FONT_SANS, 1.0, 1, null);
+            point.x = 930 - textSize.width / 2;
+            Imgproc.putText(mScr, info, point, FONT_SANS, 1.0, RGB_WHITE);
 
             // [UNO] button: start a new game
             image = mUno.getBackImage();
@@ -994,9 +1064,12 @@ public class MainActivity extends AppCompatActivity
      *                   player(be challenged)'s [wild +4].
      */
     private void onChallengeChance(boolean challenged) {
+        Card next2last;
         String message;
+        List<Card> recent;
         int curr, challenger;
         Runnable delayedTask;
+        Color colorBeforeDraw4;
 
         mStatus = STAT_IDLE; // block tap down events when idle
         mChallenged = challenged;
@@ -1004,18 +1077,25 @@ public class MainActivity extends AppCompatActivity
         if (challenged) {
             curr = mUno.getNow();
             challenger = mUno.getNext();
-            message = NAME[challenger] + " challenged " + NAME[curr];
+            recent = mUno.getRecent();
+            next2last = recent.get(recent.size() - 2);
+            colorBeforeDraw4 = next2last.getRealColor();
+            if (curr == Player.YOU) {
+                message = NAME[challenger]
+                        + " doubted that you still have "
+                        + CL[colorBeforeDraw4.ordinal()];
+            } // if (curr == Player.YOU)
+            else {
+                message = NAME[challenger]
+                        + " doubted that " + NAME[curr]
+                        + " still has " + CL[colorBeforeDraw4.ordinal()];
+            } // else
+
             refreshScreen(message);
             delayedTask = () -> {
-                Card next2last;
-                StringBuilder sb;
-                List<Card> recent;
+                String message2;
                 boolean draw4IsLegal;
-                Color colorBeforeDraw4;
 
-                recent = mUno.getRecent();
-                next2last = recent.get(recent.size() - 2);
-                colorBeforeDraw4 = next2last.getRealColor();
                 draw4IsLegal = true;
                 for (Card card : mUno.getPlayer(curr).getHandCards()) {
                     if (card.getRealColor() == colorBeforeDraw4) {
@@ -1028,16 +1108,15 @@ public class MainActivity extends AppCompatActivity
 
                 if (draw4IsLegal) {
                     // Challenge failure, challenger draws 6 cards
-                    sb = new StringBuilder("Challenge failure, ");
-                    sb.append(NAME[challenger]);
                     if (challenger == Player.YOU) {
-                        sb.append(" draw 6 cards");
+                        message2 = "Challenge failure, you draw 6 cards";
                     } // if (challenger == Player.YOU)
                     else {
-                        sb.append(" draws 6 cards");
+                        message2 = "Challenge failure, "
+                                + NAME[challenger] + " draws 6 cards";
                     } // else
 
-                    refreshScreen(sb.toString());
+                    refreshScreen(message2);
                     mHandler.postDelayed(() -> {
                         mChallenged = false;
                         mUno.switchNow();
@@ -1046,16 +1125,15 @@ public class MainActivity extends AppCompatActivity
                 } // if (draw4IsLegal)
                 else {
                     // Challenge success, who played [wild +4] draws 4 cards
-                    sb = new StringBuilder("Challenge success, ");
-                    sb.append(NAME[curr]);
                     if (curr == Player.YOU) {
-                        sb.append(" draw 4 cards");
+                        message2 = "Challenge success, you draw 4 cards";
                     } // if (curr == Player.YOU)
                     else {
-                        sb.append(" draws 4 cards");
+                        message2 = "Challenge success, "
+                                + NAME[curr] + " draws 4 cards";
                     } // else
 
-                    refreshScreen(sb.toString());
+                    refreshScreen(message2);
                     mHandler.postDelayed(() -> {
                         mChallenged = false;
                         draw(4, /* force */ true);
@@ -1120,18 +1198,18 @@ public class MainActivity extends AppCompatActivity
             } // if (y >= 679 && y <= 700 && x >= 1130 && x <= 1260)
             else switch (mStatus) {
                 case STAT_WELCOME:
-                    if (y >= 20 && y <= 200) {
+                    if (y >= 60 && y <= 240) {
                         if (x >= 490 && x <= 610) {
                             // Difficulty: EASY
-                            mDifficulty = Uno.LV_EASY;
+                            mUno.setDifficulty(Uno.LV_EASY);
                             onStatusChanged(mStatus);
                         } // if (x >= 490 && x <= 610)
                         else if (x >= 670 && x <= 790) {
                             // Difficulty: HARD
-                            mDifficulty = Uno.LV_HARD;
+                            mUno.setDifficulty(Uno.LV_HARD);
                             onStatusChanged(mStatus);
                         } // else if (x >= 670 && x <= 790)
-                    } // if (y >= 20 && y <= 200)
+                    } // if (y >= 60 && y <= 240)
                     else if (y >= 270 && y <= 450) {
                         if (x >= 490 && x <= 610) {
                             // 3-player mode
@@ -1350,8 +1428,14 @@ public class MainActivity extends AppCompatActivity
         editor = sp.edit();
         editor.putInt("easyWin", mEasyWin);
         editor.putInt("hardWin", mHardWin);
+        editor.putInt("easyWin3", mEasyWin3);
+        editor.putInt("hardWin3", mHardWin3);
         editor.putInt("easyTotal", mEasyTotal);
         editor.putInt("hardTotal", mHardTotal);
+        editor.putInt("easyTotal3", mEasyTotal3);
+        editor.putInt("hardTotal3", mHardTotal3);
+        editor.putInt("players", mUno.getPlayers());
+        editor.putInt("difficulty", mUno.getDifficulty());
         editor.apply();
         super.onPause();
     } // onPause()

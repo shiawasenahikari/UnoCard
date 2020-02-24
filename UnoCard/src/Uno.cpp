@@ -569,6 +569,7 @@ Uno::Uno() {
 	players = 3;
 	direction = 0;
 	now = Player::YOU;
+	difficulty = LV_EASY;
 
 	// Generate a random seed based on the current time stamp
 	srand((unsigned)time(nullptr));
@@ -758,6 +759,25 @@ int Uno::switchDirection() {
 	direction = 4 - direction;
 	return direction;
 } // switchDirection()
+
+/**
+ * @return Current difficulty (LV_EASY / LV_HARD).
+ */
+int Uno::getDifficulty() {
+	return difficulty;
+} // getDifficulty()
+
+/**
+ * Set game difficulty.
+ *
+ * @param difficulty Pass target difficulty value.
+ *                   Only LV_EASY and LV_HARD are available.
+ */
+void Uno::setDifficulty(int difficulty) {
+	if (difficulty == LV_EASY || difficulty == LV_HARD) {
+		this->difficulty = difficulty;
+	} // if (difficulty == LV_EASY || difficulty == LV_HARD)
+} // setDifficulty()
 
 /**
  * @param who Get which player's instance. Must be one of the following:
