@@ -94,22 +94,28 @@ public:
 
 	/**
 	 * @return Whether the card is an action card.
+	 * @deprecated This function is no longer used.
 	 */
+	[[deprecated]]
 	bool isAction();
 
 	/**
-	 * @return Whether the card is a wild card.
+	 * @return Whether the card is a [wild] or [wild +4].
 	 */
 	bool isWild();
 
 	/**
 	 * @return Whether the card is a zero card.
+	 * @deprecated This function is no longer used.
 	 */
+	[[deprecated]]
 	bool isZero();
 
 	/**
 	 * @return Whether the card is a non-zero number card.
+	 * @deprecated This function is no longer used.
 	 */
+	[[deprecated]]
 	bool isNonZeroNumber();
 
 private:

@@ -114,13 +114,15 @@ const std::string& Card::getName() {
 
 /**
  * @return Whether the card is an action card.
+ * @deprecated This function is no longer used.
  */
+[[deprecated]]
 bool Card::isAction() {
 	return content == DRAW2 || content == SKIP || content == REV;
 } // isAction()
 
 /**
- * @return Whether the card is a wild card.
+ * @return Whether the card is a [wild] or [wild +4].
  */
 bool Card::isWild() {
 	return content == WILD || content == WILD_DRAW4;
@@ -128,14 +130,18 @@ bool Card::isWild() {
 
 /**
  * @return Whether the card is a zero card.
+ * @deprecated This function is no longer used.
  */
+[[deprecated]]
 bool Card::isZero() {
 	return content == NUM0;
 } // isZero()
 
 /**
  * @return Whether the card is a non-zero number card.
+ * @deprecated This function is no longer used.
  */
+[[deprecated]]
 bool Card::isNonZeroNumber() {
 	return content == NUM1 || content == NUM2 || content == NUM3
 		|| content == NUM4 || content == NUM5 || content == NUM6
@@ -186,9 +192,9 @@ Color Player::getSafeColor() {
 
 /**
  * Evaluate which color is the best color for this player. In our evaluation
- * system, zero cards are worth 2 points, non-zero number cards are worth 4
- * points, and action cards are worth 5 points. Finally, the color which
- * contains the worthiest cards becomes the best color.
+ * system, zero/reverse cards are worth 2 points, non-zero number cards are
+ * worth 4 points, and skip/+2 cards are worth 5 points. Finally, the color
+ * which contains the worthiest cards becomes the best color.
  *
  * @return This player's best color. Specially, when the player remains only
  *         wild cards, function will return a default value, Color::RED.
@@ -198,19 +204,25 @@ Color Player::calcBestColor() {
 	int score[5] = { 0, 0, 0, 0, 0 };
 
 	for (Card* card : handCards) {
-		if (card->isZero()) {
+		switch (card->getContent()) {
+		case REV:
+		case NUM0:
 			score[card->getRealColor()] += 2;
-		} // if (card->isZero())
-		else if (card->isAction()) {
+			break; // case REV, NUM0
+
+		case SKIP:
+		case DRAW2:
 			score[card->getRealColor()] += 5;
-		} // else if (card->isAction())
-		else {
+			break; // case SKIP, DRAW2
+
+		default:
 			score[card->getRealColor()] += 4;
-		} // else
+			break; // default
+		} // switch (card->getContent())
 	} // for (Card* card : handCards)
 
-	  // default to red, when only wild cards in hand,
-	  // function will return Color::RED
+	// default to red, when only wild cards in hand,
+	// function will return Color::RED
 	if (score[BLUE] > score[best]) {
 		best = BLUE;
 	} // if (score[BLUE] > score[best]

@@ -135,13 +135,15 @@ public class Card implements Comparable<Card> {
 
     /**
      * @return Whether the card is an action card.
+     * @deprecated This method is no longer used.
      */
+    @Deprecated
     public boolean isAction() {
         return (content == DRAW2 || content == SKIP || content == REV);
     } // isAction()
 
     /**
-     * @return Whether the card is a wild card.
+     * @return Whether the card is a [wild] or [wild +4].
      */
     public boolean isWild() {
         return (content == WILD || content == WILD_DRAW4);
@@ -149,14 +151,18 @@ public class Card implements Comparable<Card> {
 
     /**
      * @return Whether the card is a zero card.
+     * @deprecated This method is no longer used.
      */
+    @Deprecated
     public boolean isZero() {
         return (content == NUM0);
     } // isZero()
 
     /**
      * @return Whether the card is a non-zero number card.
+     * @deprecated This method is no longer used.
      */
+    @Deprecated
     public boolean isNonZeroNumber() {
         return (content == NUM1 || content == NUM2 || content == NUM3 ||
                 content == NUM4 || content == NUM5 || content == NUM6 ||

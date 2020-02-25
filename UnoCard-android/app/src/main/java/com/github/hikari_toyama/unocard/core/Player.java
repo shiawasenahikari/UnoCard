@@ -112,9 +112,9 @@ public class Player {
 
     /**
      * Evaluate which color is the best color for this player. In our evaluation
-     * system, zero cards are worth 2 points, non-zero number cards are worth 4
-     * points, and action cards are worth 5 points. Finally, the color which
-     * contains the worthiest cards becomes the best color.
+     * system, zero/reverse cards are worth 2 points, non-zero number cards are
+     * worth 4 points, and skip/+2 cards are worth 5 points. Finally, the color
+     * which contains the worthiest cards becomes the best color.
      *
      * @return This player's best color. Specially, when the player remains only
      * wild cards, method will return a default value, Color.RED.
@@ -126,15 +126,21 @@ public class Player {
         best = RED;
         score = new int[]{0, 0, 0, 0, 0};
         for (Card card : handCards) {
-            if (card.isZero()) {
-                score[card.color.ordinal()] += 2;
-            } // if (card.isZero())
-            else if (card.isAction()) {
-                score[card.color.ordinal()] += 5;
-            } // else if (card.isAction())
-            else {
-                score[card.color.ordinal()] += 4;
-            } // else
+            switch (card.content) {
+                case REV:
+                case NUM0:
+                    score[card.color.ordinal()] += 2;
+                    break; // case REV, NUM0
+
+                case SKIP:
+                case DRAW2:
+                    score[card.color.ordinal()] += 5;
+                    break; // case SKIP, DRAW2
+
+                default:
+                    score[card.color.ordinal()] += 4;
+                    break; // default
+            } // switch (card.content)
         } // for (Card card : handCards)
 
         // default to red, when only wild cards in hand,

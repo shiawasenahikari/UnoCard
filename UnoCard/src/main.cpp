@@ -66,9 +66,9 @@ static bool sChallengeAsk;
 static void easyAI();
 static void hardAI();
 static void onStatusChanged(int status);
-static void refreshScreen(std::string message);
 static void play(int index, Color color = NONE);
 static void draw(int count = 1, bool force = false);
+static void refreshScreen(const std::string& message);
 static void onChallengeChance(bool challenged = true);
 static void onMouse(int event, int x, int y, int flags, void* param);
 
@@ -578,7 +578,7 @@ static void onStatusChanged(int status) {
  *
  * @param message Extra message to show.
  */
-static void refreshScreen(std::string message) {
+static void refreshScreen(const std::string& message) {
 	cv::Rect roi;
 	cv::Mat image;
 	cv::Point point;
