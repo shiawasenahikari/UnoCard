@@ -16,7 +16,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/releases) page and download the
-   latest version in zip file `(UnoCard-v1.3.1.zip)`.
+   latest version in zip file `(UnoCard-v1.4.zip)`.
 2. Unzip the downloaded zip file, then execute `UnoCard.exe` and have fun!
 
 Download the source code and compile manually
@@ -38,7 +38,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/release) page and download the
-   latest version in apk file `(UnoCard-v1.3.1.apk)`.
+   latest version in apk file `(UnoCard-v1.4.apk)`.
 2. On your Android phone, open [Settings] app, go to [Security] page, then check the [Unknown
    sources] toggle.
 3. Push the downloaded file to your Android phone, then install and launch it to have fun!
@@ -58,7 +58,7 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
    in version 28, do the following things: a) expand `Gradle scripts` directory in left-side drawer,
    open `build.gradle (Module: app)` file; b) Change the values of `compileSdkVersion` and
    `buildToolsVersion` properties to your existed components' version; c) Do the same things to
-   `build.gradle (Module: openCVLibrary347)` file; d) Sync project.
+   `build.gradle (Module: opencv410)` file; d) Sync project.
 4. Enable USB debugging function on your Android phone, connect your phone to computer, then execute
    [Run]->[Run 'app'] menu command to run this application on your phone. (NOTE: You cannot run this
    app via x86 simulators, since this app does not support devices based on x86 architecture.)
@@ -70,7 +70,7 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
    Play passes to the left to start (YOU->WEST->NORTH->EAST).
 
 2. Match the top card on the DISCARD pile either by color or content. For example, if the card is a
-   Green 7 (pic #1), you must play a Green card (pic #2), or a 7 color with another color (pic #3).
+   Green 7 (pic #1), you must play a Green card (pic #2), or a 7 card with another color (pic #3).
    Or, you may play any [wild] (pic #4) or [wild +4] (pic #5) card. If you don't have anything that
    matches, or you just don't want to play any of your playable cards, you must pick a card from the
    DRAW pile. If you draw a card you can play, you may play it immediately. Otherwise, play moves to
@@ -143,7 +143,7 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/releases) 页面下载最新版本的 zip 包
-   `(UnoCard-v1.3.zip)`.
+   `(UnoCard-v1.4.zip)`.
 2. 解压并执行 `UnoCard.exe` 开始游戏。
 
 下载源码并手动编译
@@ -165,7 +165,7 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/release) 页面下载最新版本的 apk 包
-   `(UnoCard-v1.3.apk)`.
+   `(UnoCard-v1.4.apk)`.
 2. 打开您的 Android 设备中的 [设置] 应用，进入 [安全] 页面，勾选 [未知来源] 复选框。
 3. 将已下载的安装包传到手机中，安装并运行即可开始游戏。
 
@@ -182,8 +182,8 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 3. 在项目生成过程中，您可能需要安装缺失的组件，诸如 Android SDK 28 以及 Android Build Tools 28.0.3。
    如果您想使用已有的非 28 版本的 Android SDK，请执行下列操作：a) 展开左侧抽屉里的 `Gradle scripts`
    目录并打开 `build.gradle (Module: app)` 文件；b) 更改 `compileSdkVersion` 和 `buildToolsVersion`
-   属性的值，使它们和您已有组件的版本一致；c) 在 `build.gradle (Module: openCVLibrary347)`
-   文件中做同样的修改；d) 同步整个项目 (点击 IDE 右上角的 Sync project)。
+   属性的值，使它们和您已有组件的版本一致；c) 在 `build.gradle (Module: opencv410)` 文件中做同样的
+   修改；d) 同步整个项目 (点击 IDE 右上角的 Sync project)。
 4. 打开您 Android 设备中的 USB 调试功能，然后将您的 Android 设备连接到电脑，执行 [Run]->[Run 'app']
    菜单命令以便在您的 Android 设备上运行此应用。
    注意：您不能在 x86 模拟器上运行此应用。我们的应用不支持基于 x86 架构的设备。
@@ -258,7 +258,7 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 📄License
 =========
 
-    Copyright 2019 Hikari Toyama
+    Copyright 2020 Hikari Toyama
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
