@@ -34,7 +34,6 @@ import com.github.hikari_toyama.unocard.core.Uno;
 
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
-import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
@@ -58,7 +57,7 @@ public class MainActivity extends AppCompatActivity
     private static final Scalar RGB_GREEN = new Scalar(0x55, 0xAA, 0x55);
     private static final Scalar RGB_BLUE = new Scalar(0x55, 0x55, 0xFF);
     private static final Scalar RGB_RED = new Scalar(0xFF, 0x55, 0x55);
-    private static final int FONT_SANS = Core.FONT_HERSHEY_DUPLEX;
+    private static final int FONT_SANS = Imgproc.FONT_HERSHEY_DUPLEX;
     private static final int STAT_WILD_COLOR = 0x5555;
     private static final int STAT_GAME_OVER = 0x4444;
     private static final int STAT_NEW_GAME = 0x3333;
@@ -98,17 +97,17 @@ public class MainActivity extends AppCompatActivity
         // Preparations
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        sp = getSharedPreferences("UnoStat", Context.MODE_PRIVATE);
         mHandler = new Handler();
-        mEasyWin = sp.getInt("easyWin", 0);
-        mHardWin = sp.getInt("hardWin", 0);
-        mEasyWin3 = sp.getInt("easyWin3", 0);
-        mHardWin3 = sp.getInt("hardWin3", 0);
-        mEasyTotal = sp.getInt("easyTotal", 0);
-        mHardTotal = sp.getInt("hardTotal", 0);
-        mEasyTotal3 = sp.getInt("easyTotal3", 0);
-        mHardTotal3 = sp.getInt("hardTotal3", 0);
         if (OPENCV_INIT_SUCCESS) {
+            sp = getSharedPreferences("UnoStat", Context.MODE_PRIVATE);
+            mEasyWin = sp.getInt("easyWin", 0);
+            mHardWin = sp.getInt("hardWin", 0);
+            mEasyWin3 = sp.getInt("easyWin3", 0);
+            mHardWin3 = sp.getInt("hardWin3", 0);
+            mEasyTotal = sp.getInt("easyTotal", 0);
+            mHardTotal = sp.getInt("hardTotal", 0);
+            mEasyTotal3 = sp.getInt("easyTotal3", 0);
+            mHardTotal3 = sp.getInt("hardTotal3", 0);
             mUno = Uno.getInstance(this);
             mUno.setPlayers(sp.getInt("players", 3));
             mUno.setDifficulty(sp.getInt("difficulty", Uno.LV_EASY));
@@ -1424,19 +1423,22 @@ public class MainActivity extends AppCompatActivity
         SharedPreferences sp;
         SharedPreferences.Editor editor;
 
-        sp = getSharedPreferences("UnoStat", Context.MODE_PRIVATE);
-        editor = sp.edit();
-        editor.putInt("easyWin", mEasyWin);
-        editor.putInt("hardWin", mHardWin);
-        editor.putInt("easyWin3", mEasyWin3);
-        editor.putInt("hardWin3", mHardWin3);
-        editor.putInt("easyTotal", mEasyTotal);
-        editor.putInt("hardTotal", mHardTotal);
-        editor.putInt("easyTotal3", mEasyTotal3);
-        editor.putInt("hardTotal3", mHardTotal3);
-        editor.putInt("players", mUno.getPlayers());
-        editor.putInt("difficulty", mUno.getDifficulty());
-        editor.apply();
+        if (OPENCV_INIT_SUCCESS) {
+            sp = getSharedPreferences("UnoStat", Context.MODE_PRIVATE);
+            editor = sp.edit();
+            editor.putInt("easyWin", mEasyWin);
+            editor.putInt("hardWin", mHardWin);
+            editor.putInt("easyWin3", mEasyWin3);
+            editor.putInt("hardWin3", mHardWin3);
+            editor.putInt("easyTotal", mEasyTotal);
+            editor.putInt("hardTotal", mHardTotal);
+            editor.putInt("easyTotal3", mEasyTotal3);
+            editor.putInt("hardTotal3", mHardTotal3);
+            editor.putInt("players", mUno.getPlayers());
+            editor.putInt("difficulty", mUno.getDifficulty());
+            editor.apply();
+        } // if (OPENCV_INIT_SUCCESS)
+
         super.onPause();
     } // onPause()
 
