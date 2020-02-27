@@ -532,24 +532,6 @@ public class Uno {
     } // getBackImage()
 
     /**
-     * @return Difficulty button image resource (EASY).
-     * @deprecated Use getLevelImage(Uno.LV_EASY, false) instead.
-     */
-    @Deprecated
-    public Mat getEasyImage() {
-        return easyImage;
-    } // getEasyImage()
-
-    /**
-     * @return Difficulty button image resource (HARD).
-     * @deprecated Use getLevelImage(Uno.LV_HARD, false) instead.
-     */
-    @Deprecated
-    public Mat getHardImage() {
-        return hardImage;
-    } // getHardImage()
-
-    /**
      * @param level   Pass LV_EASY or LV_HARD.
      * @param hiLight Pass true if you want to get a hi-lighted image,
      *                or false if you want to get a dark image.
@@ -691,18 +673,6 @@ public class Uno {
             this.players = players;
         } // if (players == 3 || players == 4)
     } // setPlayers()
-
-    /**
-     * @return Current action sequence. DIR_LEFT for clockwise,
-     * or DIR_RIGHT for counter-clockwise.
-     * @deprecated Use getNext() and getPrev() to get your neighbors' player ID,
-     * instead of calculating (now + this.getDirection()) % 4, and
-     * (4 + now - this.getDirection()) % 4.
-     */
-    @Deprecated
-    public int getDirection() {
-        return direction;
-    } // getDirection()
 
     /**
      * Switch current action sequence.

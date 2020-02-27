@@ -10,19 +10,6 @@ package com.github.hikari_toyama.unocard.core;
 
 import org.opencv.core.Mat;
 
-import static com.github.hikari_toyama.unocard.core.Content.DRAW2;
-import static com.github.hikari_toyama.unocard.core.Content.NUM0;
-import static com.github.hikari_toyama.unocard.core.Content.NUM1;
-import static com.github.hikari_toyama.unocard.core.Content.NUM2;
-import static com.github.hikari_toyama.unocard.core.Content.NUM3;
-import static com.github.hikari_toyama.unocard.core.Content.NUM4;
-import static com.github.hikari_toyama.unocard.core.Content.NUM5;
-import static com.github.hikari_toyama.unocard.core.Content.NUM6;
-import static com.github.hikari_toyama.unocard.core.Content.NUM7;
-import static com.github.hikari_toyama.unocard.core.Content.NUM8;
-import static com.github.hikari_toyama.unocard.core.Content.NUM9;
-import static com.github.hikari_toyama.unocard.core.Content.REV;
-import static com.github.hikari_toyama.unocard.core.Content.SKIP;
 import static com.github.hikari_toyama.unocard.core.Content.WILD;
 import static com.github.hikari_toyama.unocard.core.Content.WILD_DRAW4;
 
@@ -31,6 +18,11 @@ import static com.github.hikari_toyama.unocard.core.Content.WILD_DRAW4;
  */
 @SuppressWarnings("ALL")
 public class Card implements Comparable<Card> {
+    /**
+     * Whether the card is a [wild] or [wild +4].
+     */
+    boolean wild;
+
     /**
      * Card's order. Used in the hand card sorting procedure.
      * Everyone's hand cards will be sorted based on the order sequence.
@@ -94,6 +86,7 @@ public class Card implements Comparable<Card> {
         this.content = content;
         this.darkImg = darkImg;
         this.order = color.ordinal() << 8 | content.ordinal();
+        this.wild = content == WILD || content == WILD_DRAW4;
     } // Card(Mat, Mat, Color, Content, String) (Class Constructor)
 
     /**
@@ -134,40 +127,11 @@ public class Card implements Comparable<Card> {
     } // getContent()
 
     /**
-     * @return Whether the card is an action card.
-     * @deprecated This method is no longer used.
-     */
-    @Deprecated
-    public boolean isAction() {
-        return (content == DRAW2 || content == SKIP || content == REV);
-    } // isAction()
-
-    /**
      * @return Whether the card is a [wild] or [wild +4].
      */
     public boolean isWild() {
-        return (content == WILD || content == WILD_DRAW4);
+        return wild;
     } // isWild()
-
-    /**
-     * @return Whether the card is a zero card.
-     * @deprecated This method is no longer used.
-     */
-    @Deprecated
-    public boolean isZero() {
-        return (content == NUM0);
-    } // isZero()
-
-    /**
-     * @return Whether the card is a non-zero number card.
-     * @deprecated This method is no longer used.
-     */
-    @Deprecated
-    public boolean isNonZeroNumber() {
-        return (content == NUM1 || content == NUM2 || content == NUM3 ||
-                content == NUM4 || content == NUM5 || content == NUM6 ||
-                content == NUM7 || content == NUM8 || content == NUM9);
-    } // isNonZeroNumber()
 
     /**
      * @return Card's name.

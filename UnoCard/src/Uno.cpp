@@ -30,7 +30,8 @@ Card::Card(cv::Mat image, cv::Mat darkImg,
 	color(color),
 	content(content),
 	darkImg(darkImg),
-	order((color << 8) + content) {
+	order((color << 8) + content),
+	wild(content == WILD || content == WILD_DRAW4) {
 } // Card(Mat, Mat, Color, Content, string) (Class Constructor)
 
 /**
@@ -113,40 +114,11 @@ const std::string& Card::getName() {
 } // getName()
 
 /**
- * @return Whether the card is an action card.
- * @deprecated This function is no longer used.
- */
-[[deprecated]]
-bool Card::isAction() {
-	return content == DRAW2 || content == SKIP || content == REV;
-} // isAction()
-
-/**
  * @return Whether the card is a [wild] or [wild +4].
  */
 bool Card::isWild() {
-	return content == WILD || content == WILD_DRAW4;
+	return wild;
 } // isWild()
-
-/**
- * @return Whether the card is a zero card.
- * @deprecated This function is no longer used.
- */
-[[deprecated]]
-bool Card::isZero() {
-	return content == NUM0;
-} // isZero()
-
-/**
- * @return Whether the card is a non-zero number card.
- * @deprecated This function is no longer used.
- */
-[[deprecated]]
-bool Card::isNonZeroNumber() {
-	return content == NUM1 || content == NUM2 || content == NUM3
-		|| content == NUM4 || content == NUM5 || content == NUM6
-		|| content == NUM7 || content == NUM8 || content == NUM9;
-} // isNonZeroNumber()
 
 /* ------------------ Method Definitions for Player Class ------------------ */
 
@@ -603,24 +575,6 @@ const cv::Mat& Uno::getBackImage() {
 } // getBackImage()
 
 /**
- * @return Difficulty button image resource (EASY).
- * @deprecated Use getLevelImage(Uno::LV_EASY, false) instead.
- */
-[[deprecated]]
-const cv::Mat& Uno::getEasyImage() {
-	return easyImage;
-} // getEasyImage()
-
-/**
- * @return Difficulty button image resource (HARD).
- * @deprecated Use getLevelImage(Uno::LV_HARD, false) instead.
- */
-[[deprecated]]
-const cv::Mat& Uno::getHardImage() {
-	return hardImage;
-} // getHardImage()
-
-/**
  * @param level   Pass LV_EASY or LV_HARD.
  * @param hiLight Pass true if you want to get a hi-lighted image,
  *                or false if you want to get a dark image.
@@ -748,18 +702,6 @@ void Uno::setPlayers(int players) {
 		this->players = players;
 	} // if (players == 3 || players == 4)
 } // setPlayers()
-
-/**
- * @return Current action sequence. DIR_LEFT for clockwise,
- *         or DIR_RIGHT for counter-clockwise.
- * @deprecated Use getNext() and getPrev() to get your neighbors' player ID,
- *             instead of calculating (now + this->getDirection()) % 4, and
- *             (4 + now - this->getDirection()) % 4.
- */
-[[deprecated]]
-int Uno::getDirection() {
-	return direction;
-} // getDirection()
 
 /**
  * Switch current action sequence.

@@ -93,32 +93,16 @@ public:
 	const std::string& getName();
 
 	/**
-	 * @return Whether the card is an action card.
-	 * @deprecated This function is no longer used.
-	 */
-	[[deprecated]]
-	bool isAction();
-
-	/**
 	 * @return Whether the card is a [wild] or [wild +4].
 	 */
 	bool isWild();
 
-	/**
-	 * @return Whether the card is a zero card.
-	 * @deprecated This function is no longer used.
-	 */
-	[[deprecated]]
-	bool isZero();
-
-	/**
-	 * @return Whether the card is a non-zero number card.
-	 * @deprecated This function is no longer used.
-	 */
-	[[deprecated]]
-	bool isNonZeroNumber();
-
 private:
+	/**
+	 * Whether the card is a [wild] or [wild +4].
+	 */
+	bool wild;
+
 	/**
 	 * Card's order. Used in the hand card sorting procedure.
 	 * Everyone's hand cards will be sorted based on the order sequence.
@@ -309,20 +293,6 @@ public:
 	const cv::Mat& getBackImage();
 
 	/**
-	 * @return Difficulty button image resource (EASY).
-	 * @deprecated Use getLevelImage(Uno::LV_EASY, false) instead.
-	 */
-	[[deprecated]]
-	const cv::Mat& getEasyImage();
-
-	/**
-	 * @return Difficulty button image resource (HARD).
-	 * @deprecated Use getLevelImage(Uno::LV_HARD, false) instead.
-	 */
-	[[deprecated]]
-	const cv::Mat& getHardImage();
-
-	/**
 	 * @param level   Pass LV_EASY or LV_HARD.
 	 * @param hiLight Pass true if you want to get a hi-lighted image,
 	 *                or false if you want to get a dark image.
@@ -399,16 +369,6 @@ public:
 	 * @param players Supports 3 and 4.
 	 */
 	void setPlayers(int players);
-
-	/**
-	 * @return Current action sequence. DIR_LEFT for clockwise,
-	 *         or DIR_RIGHT for counter-clockwise.
-	 * @deprecated Use getNext() and getPrev() to get your neighbors' player ID,
-	 *             instead of calculating (now + this->getDirection()) % 4, and
-	 *             (4 + now - this->getDirection()) % 4.
-	 */
-	[[deprecated]]
-	int getDirection();
 
 	/**
 	 * Switch current action sequence.
