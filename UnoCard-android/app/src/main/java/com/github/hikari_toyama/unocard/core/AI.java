@@ -26,19 +26,19 @@ public class AI {
     /**
      * Random number generator.
      */
-    private Random mRnd;
+    private Random rnd;
 
     /**
      * Uno runtime singleton.
      */
-    private Uno mUno;
+    private Uno uno;
 
     /**
      * Constructor.
      */
     public AI(Context context) {
-        mRnd = new Random();
-        mUno = Uno.getInstance(context);
+        rnd = new Random();
+        uno = Uno.getInstance(context);
     } // AI() (Class Constructor)
 
     /**
@@ -56,7 +56,7 @@ public class AI {
         Color colorBeforeDraw4;
         List<Card> hand, recent;
 
-        hand = mUno.getPlayer(challenger).getHandCards();
+        hand = uno.getPlayer(challenger).getHandCards();
         if (hand.size() == 1) {
             // Challenge when defending my UNO dash
             challenge = true;
@@ -68,7 +68,7 @@ public class AI {
         } // else if (hand.size() >= Uno.MAX_HOLD_CARDS - 4)
         else {
             // Challenge when legal color has not been changed
-            recent = mUno.getRecent();
+            recent = uno.getRecent();
             next2last = recent.get(recent.size() - 2);
             colorBeforeDraw4 = next2last.getRealColor();
             draw4Color = recent.get(recent.size() - 1).getRealColor();
@@ -102,9 +102,9 @@ public class AI {
         Card card;
         boolean legal;
         String errMsg;
-        Color bestColor;
-        List<Card> hand;
         Player curr, next, prev;
+        List<Card> hand, recent;
+        Color bestColor, lastColor;
         int yourSize, nextSize, prevSize;
         boolean hasNum, hasRev, hasSkip, hasDraw2, hasWild, hasWD4;
         int idxBest, idxNum, idxRev, idxSkip, idxDraw2, idxWild, idxWD4;
@@ -114,35 +114,37 @@ public class AI {
             throw new IllegalArgumentException(errMsg);
         }  // if (outColor == null || outColor.length == 0)
 
-        curr = mUno.getPlayer(mUno.getNow());
+        curr = uno.getPlayer(uno.getNow());
         hand = curr.getHandCards();
         yourSize = hand.size();
         if (yourSize == 1) {
             // Only one card remained. Play it when it's legal.
             card = hand.get(0);
             outColor[0] = card.getRealColor();
-            return mUno.isLegalToPlay(card) ? 0 : -1;
+            return uno.isLegalToPlay(card) ? 0 : -1;
         } // if (yourSize == 1)
 
-        next = mUno.getPlayer(mUno.getNext());
+        next = uno.getPlayer(uno.getNext());
         nextSize = next.getHandCards().size();
-        prev = mUno.getPlayer(mUno.getPrev());
+        prev = uno.getPlayer(uno.getPrev());
         prevSize = prev.getHandCards().size();
         hasNum = hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
         idxBest = idxNum = idxRev = idxSkip = idxDraw2 = idxWild = idxWD4 = -1;
         bestColor = curr.calcBestColor();
+        recent = uno.getRecent();
+        lastColor = recent.get(recent.size() - 1).getRealColor();
         for (i = 0; i < yourSize; ++i) {
             // Index of any kind
             card = hand.get(i);
             if (drawnCard == null) {
-                legal = mUno.isLegalToPlay(card);
+                legal = uno.isLegalToPlay(card);
             } // if (drawnCard == null)
             else {
                 legal = card == drawnCard;
             } // else
 
             if (legal) {
-                switch (card.getContent()) {
+                switch (card.content) {
                     case DRAW2:
                         if (!hasDraw2 || card.getRealColor() == bestColor) {
                             idxDraw2 = i;
@@ -180,29 +182,57 @@ public class AI {
                             hasNum = true;
                         } // if (!hasNum || ...)
                         break; // default
-                } // switch (card.getContent())
+                } // switch (card.content)
             } // if (legal)
         } // for (i = 0; i < yourSize; ++i)
 
         // Decision tree
-        if (hasDraw2) {
-            idxBest = idxDraw2;
-        } // if (hasDraw2)
-        else if (hasSkip) {
-            idxBest = idxSkip;
-        } // else if (hasSkip)
-        else if (hasRev && (prevSize > nextSize || prevSize >= 4)) {
-            idxBest = idxRev;
-        } // else if (hasRev && (prevSize > nextSize || prevSize >= 4))
-        else if (hasNum) {
-            idxBest = idxNum;
-        } // else if (hasNum)
-        else if (hasWild) {
-            idxBest = idxWild;
-        } // else if (hasWild)
-        else if (hasWD4) {
-            idxBest = idxWD4;
-        } // else if (hasWD4)
+        if (nextSize == 1) {
+            // Strategies when your next player remains only one card.
+            // Limit your next player's action as well as you can.
+            if (hasDraw2) {
+                idxBest = idxDraw2;
+            } // if (hasDraw2)
+            else if (hasSkip) {
+                idxBest = idxSkip;
+            } // else if (hasSkip)
+            else if (hasRev) {
+                idxBest = idxRev;
+            } // else if (hasRev)
+            else if (hasWD4) {
+                idxBest = idxWD4;
+            } // else if (hasWD4)
+            else if (hasWild && lastColor != bestColor) {
+                idxBest = idxWild;
+            } // else if (hasWild && lastColor != bestColor)
+            else if (hasNum) {
+                idxBest = idxNum;
+            } // else if (hasNum)
+        } // if (nextSize == 1)
+        else {
+            // Normal strategies
+            if (hasRev && prevSize > nextSize) {
+                idxBest = idxRev;
+            } // if (hasRev && prevSize > nextSize)
+            else if (hasNum) {
+                idxBest = idxNum;
+            } // else if (hasNum)
+            else if (hasSkip) {
+                idxBest = idxSkip;
+            } // else if (hasSkip)
+            else if (hasDraw2) {
+                idxBest = idxDraw2;
+            } // else if (hasDraw2)
+            else if (hasRev && prevSize >= 4) {
+                idxBest = idxRev;
+            } // else if (hasRev && prevSize >= 4)
+            else if (hasWild) {
+                idxBest = idxWild;
+            } // else if (hasWild)
+            else if (hasWD4) {
+                idxBest = idxWD4;
+            } // else if (hasWD4)
+        } // else
 
         outColor[0] = bestColor;
         return idxBest;
@@ -247,28 +277,28 @@ public class AI {
             throw new IllegalArgumentException(errMsg);
         }  // if (outColor == null || outColor.length == 0)
 
-        curr = mUno.getPlayer(mUno.getNow());
+        curr = uno.getPlayer(uno.getNow());
         hand = curr.getHandCards();
         yourSize = hand.size();
         if (yourSize == 1) {
             // Only one card remained. Play it when it's legal.
             card = hand.get(0);
             outColor[0] = card.getRealColor();
-            return mUno.isLegalToPlay(card) ? 0 : -1;
+            return uno.isLegalToPlay(card) ? 0 : -1;
         } // if (yourSize == 1)
 
-        next = mUno.getPlayer(mUno.getNext());
+        next = uno.getPlayer(uno.getNext());
         nextSize = next.getHandCards().size();
-        oppo = mUno.getPlayer(mUno.getOppo());
+        oppo = uno.getPlayer(uno.getOppo());
         oppoSize = oppo.getHandCards().size();
-        prev = mUno.getPlayer(mUno.getPrev());
+        prev = uno.getPlayer(uno.getPrev());
         prevSize = prev.getHandCards().size();
         hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
         idxBest = idxRev = idxSkip = idxDraw2 = idxWild = idxWD4 = -1;
         hasNumIn = new boolean[]{false, false, false, false, false};
         idxNumIn = new int[]{-1, -1, -1, -1, -1};
         bestColor = curr.calcBestColor();
-        recent = mUno.getRecent();
+        recent = uno.getRecent();
         last = recent.get(recent.size() - 1);
         lastColor = last.getRealColor();
         allWild = true;
@@ -277,14 +307,14 @@ public class AI {
             card = hand.get(i);
             allWild = allWild && card.isWild();
             if (drawnCard == null) {
-                legal = mUno.isLegalToPlay(card);
+                legal = uno.isLegalToPlay(card);
             } // if (drawnCard == null)
             else {
                 legal = card == drawnCard;
             } // else
 
             if (legal) {
-                switch (card.getContent()) {
+                switch (card.content) {
                     case DRAW2:
                         if (!hasDraw2 || card.getRealColor() == bestColor) {
                             idxDraw2 = i;
@@ -322,7 +352,7 @@ public class AI {
                             hasNumIn[card.getRealColor().ordinal()] = true;
                         } // if (!hasNumIn[card.getRealColor().ordinal()])
                         break; // default
-                } // switch (card.getContent())
+                } // switch (card.content)
             } // if (legal)
         } // for (i = 0; i < yourSize; ++i)
 
@@ -350,7 +380,7 @@ public class AI {
                 // Determine your best color in dangerous cases. Firstly
                 // choose next player's safe color, but be careful of the
                 // conflict with other opponents' dangerous colors!
-                safeColor = Color.values()[mRnd.nextInt(4) + 1];
+                safeColor = Color.values()[rnd.nextInt(4) + 1];
             } // while (safeColor == nextDangerColor || ...)
 
             if (hasDraw2) {
@@ -523,7 +553,7 @@ public class AI {
                 // Determine your best color in dangerous cases. Firstly
                 // choose previous player's safe color, but be careful of
                 // the conflict with other opponents' dangerous colors!
-                safeColor = Color.values()[mRnd.nextInt(4) + 1];
+                safeColor = Color.values()[rnd.nextInt(4) + 1];
             } // while (safeColor == prevDangerColor || ...)
 
             if (lastColor == prevDangerColor) {
@@ -639,7 +669,7 @@ public class AI {
                 // Determine your best color in dangerous cases. Firstly
                 // choose opposite player's safe color, but be careful of
                 // the conflict with other opponents' dangerous colors!
-                safeColor = Color.values()[mRnd.nextInt(4) + 1];
+                safeColor = Color.values()[rnd.nextInt(4) + 1];
             } // while (safeColor == oppoDangerColor || ...)
 
             if (lastColor == oppoDangerColor) {
@@ -819,7 +849,7 @@ public class AI {
                 while (bestColor == prevDangerColor
                         || bestColor == oppoDangerColor
                         || bestColor == nextDangerColor) {
-                    bestColor = Color.values()[mRnd.nextInt(4) + 1];
+                    bestColor = Color.values()[rnd.nextInt(4) + 1];
                 } // while (bestColor == prevDangerColor || ...)
             } // else
 

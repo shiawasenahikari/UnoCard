@@ -54,6 +54,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\Card.h" />
+    <ClInclude Include="include\Color.h" />
+    <ClInclude Include="include\Content.h" />
+    <ClInclude Include="include\Player.h" />
     <ClInclude Include="include\Uno.h" />
     <ClInclude Include="include\AI.h" />
     <ClInclude Include="resource.h" />
@@ -65,7 +69,9 @@
     <Image Include="resource\icon_128x128.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Card.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Player.cpp" />
     <ClCompile Include="src\Uno.cpp" />
     <ClCompile Include="src\AI.cpp" />
   </ItemGroup>

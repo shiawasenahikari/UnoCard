@@ -19,42 +19,37 @@ import static com.github.hikari_toyama.unocard.core.Content.WILD_DRAW4;
 @SuppressWarnings("ALL")
 public class Card implements Comparable<Card> {
     /**
-     * Whether the card is a [wild] or [wild +4].
-     */
-    boolean wild;
-
-    /**
-     * Card's order. Used in the hand card sorting procedure.
-     * Everyone's hand cards will be sorted based on the order sequence.
-     */
-    int order;
-
-    /**
      * Card's image resource ID, e.g. Imgcodecs.imread
      * ("/sdcard/Android/data/com.github.hikari_toyama/files/front_b3.png")
      */
-    Mat image;
+    public final Mat image;
 
     /**
      * Card's dark image resource, e.g. Imgcodecs.imread
      * ("/sdcard/Android/data/com.github.hikari_toyama/files/dark_b3.png")
      */
-    Mat darkImg;
+    public final Mat darkImg;
 
     /**
      * Card's name, e.g. "Blue 3"
      */
-    String name;
+    public final String name;
+
+    /**
+     * Card's content, e.g. Content.NUM3
+     */
+    public final Content content;
+
+    /**
+     * Card's order. Used in the hand card sorting procedure.
+     * Everyone's hand cards will be sorted based on the order sequence.
+     */
+    final int order;
 
     /**
      * Card's color, e.g. Color.BLUE
      */
     Color color;
-
-    /**
-     * Card's content, e.g. Content.NUM3
-     */
-    Content content;
 
     /**
      * Constructor. Provide parameters for an Uno card and create its instance.
@@ -86,26 +81,31 @@ public class Card implements Comparable<Card> {
         this.content = content;
         this.darkImg = darkImg;
         this.order = color.ordinal() << 8 | content.ordinal();
-        this.wild = content == WILD || content == WILD_DRAW4;
     } // Card(Mat, Mat, Color, Content, String) (Class Constructor)
 
     /**
      * @return Card's image resource.
+     * @deprecated Please directly access this field (this.image).
      */
+    @Deprecated
     public Mat getImage() {
         return image;
     } // getImage()
 
     /**
      * @return Card's dark image resource.
+     * @deprecated Please directly access this field (this.darkImg).
      */
+    @Deprecated
     public Mat getDarkImg() {
         return darkImg;
     } // getDarkImg()
 
     /**
      * @return Card's name.
+     * @deprecated Please directly access this field (this.getName).
      */
+    @Deprecated
     public String getName() {
         return name;
     } // getName()
@@ -121,7 +121,9 @@ public class Card implements Comparable<Card> {
 
     /**
      * @return Card's content.
+     * @deprecated Please directly access this field (this.content).
      */
+    @Deprecated
     public Content getContent() {
         return content;
     } // getContent()
@@ -130,7 +132,7 @@ public class Card implements Comparable<Card> {
      * @return Whether the card is a [wild] or [wild +4].
      */
     public boolean isWild() {
-        return wild;
+        return content == WILD || content == WILD_DRAW4;
     } // isWild()
 
     /**

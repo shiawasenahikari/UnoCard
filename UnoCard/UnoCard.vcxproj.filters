@@ -24,6 +24,18 @@
     <ClInclude Include="include\AI.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="include\Card.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Color.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Player.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Content.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="UnoCard.rc">
@@ -43,6 +55,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\AI.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Card.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Player.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

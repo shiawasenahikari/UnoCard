@@ -10,10 +10,15 @@
 #include <Uno.h>
 #include <string>
 #include <vector>
+#include <Card.h>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <sstream>
+#include <Color.h>
+#include <Player.h>
+#include <Content.h>
+#include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
@@ -43,6 +48,7 @@ static const char FILE_HEADER[] = {
 }; // FILE_HEADER[]
 
 // Global Variables
+static AI sAI;
 static Uno* sUno;
 static bool sAuto;
 static int sStatus;
@@ -158,15 +164,15 @@ static void easyAI() {
 		|| sStatus == Player::COM3
 		|| sStatus == Player::YOU && sAuto) {
 		if (sChallengeAsk) {
-			onChallengeChance(needToChallenge(sStatus));
+			onChallengeChance(sAI.needToChallenge(sStatus));
 		} // if (sChallengeAsk)
 		else {
 			now = sStatus;
 			sStatus = STAT_IDLE; // block mouse click events when idle
-			idxBest = easyAI_bestCardIndex4NowPlayer(
+			idxBest = sAI.easyAI_bestCardIndex4NowPlayer(
 				/* drawnCard */ sImmPlayAsk ? sDrawnCard : nullptr,
 				/* outColor  */ bestColor
-			); // idxBest = easyAI_bestCardIndex4NowPlayer()
+			); // idxBest = sAI.easyAI_bestCardIndex4NowPlayer()
 
 			if (idxBest >= 0) {
 				// Found an appropriate card to play
@@ -205,15 +211,15 @@ static void hardAI() {
 		|| sStatus == Player::COM3
 		|| sStatus == Player::YOU && sAuto) {
 		if (sChallengeAsk) {
-			onChallengeChance(needToChallenge(sStatus));
+			onChallengeChance(sAI.needToChallenge(sStatus));
 		} // if (sChallengeAsk)
 		else {
 			now = sStatus;
 			sStatus = STAT_IDLE; // block mouse click events when idle
-			idxBest = hardAI_bestCardIndex4NowPlayer(
+			idxBest = sAI.hardAI_bestCardIndex4NowPlayer(
 				/* drawnCard */ sImmPlayAsk ? sDrawnCard : nullptr,
 				/* outColor  */ bestColor
-			); // idxBest = hardAI_bestCardIndex4NowPlayer()
+			); // idxBest = sAI.hardAI_bestCardIndex4NowPlayer()
 
 			if (idxBest >= 0) {
 				// Found an appropriate card to play
@@ -287,7 +293,7 @@ static void onStatusChanged(int status) {
 		sUno->start();
 		refreshScreen("GET READY");
 		cv::waitKey(2000);
-		switch (sUno->getRecent().at(0)->getContent()) {
+		switch (sUno->getRecent().at(0)->content) {
 		case DRAW2:
 			// If starting with a [+2], let dealer draw 2 cards.
 			draw(2, /* force */ true);
@@ -316,7 +322,7 @@ static void onStatusChanged(int status) {
 			sStatus = sUno->getNow();
 			onStatusChanged(sStatus);
 			break; // default
-		} // switch (sUno->getRecent().back()->getContent())
+		} // switch (sUno->getRecent().back()->content)
 		break; // case STAT_NEW_GAME
 
 	case Player::YOU:
@@ -332,7 +338,7 @@ static void onStatusChanged(int status) {
 			} // if (!sAIRunning)
 		} // if (sAuto)
 		else if (sImmPlayAsk) {
-			refreshScreen("^ Play " + sDrawnCard->getName() + "?");
+			refreshScreen("^ Play " + sDrawnCard->name + "?");
 			rect = cv::Rect(338, 270, 121, 181);
 			sUno->getBackground()(rect).copyTo(sScreen(rect));
 			center = cv::Point(405, 315);
@@ -640,14 +646,14 @@ static void refreshScreen(const std::string& message) {
 		point.y = 370;
 		cv::putText(sScreen, "PLAYERS", point, FONT_SANS, 1.0, RGB_WHITE);
 		image = sUno->getPlayers() == 3 ?
-			sUno->findCard(BLUE, NUM3)->getImage() :
-			sUno->findCard(BLUE, NUM3)->getDarkImg();
+			sUno->findCard(BLUE, NUM3)->image :
+			sUno->findCard(BLUE, NUM3)->darkImg;
 		roi.x = 490;
 		roi.y = 270;
 		image.copyTo(sScreen(roi), image);
 		image = sUno->getPlayers() == 4 ?
-			sUno->findCard(BLUE, NUM4)->getImage() :
-			sUno->findCard(BLUE, NUM4)->getDarkImg();
+			sUno->findCard(BLUE, NUM4)->image :
+			sUno->findCard(BLUE, NUM4)->darkImg;
 		roi.x = 670;
 		image.copyTo(sScreen(roi), image);
 
@@ -700,14 +706,14 @@ static void refreshScreen(const std::string& message) {
 		roi.x = 792 - width / 2;
 		roi.y = 270;
 		for (Card* recent : hand) {
-			if (recent->getContent() == WILD) {
+			if (recent->content == WILD) {
 				image = sUno->getColoredWildImage(recent->getRealColor());
-			} // if (recent->getContent() == WILD)
-			else if (recent->getContent() == WILD_DRAW4) {
+			} // if (recent->content == WILD)
+			else if (recent->content == WILD_DRAW4) {
 				image = sUno->getColoredWildDraw4Image(recent->getRealColor());
-			} // else if (recent->getContent() == WILD_DRAW4)
+			} // else if (recent->content == WILD_DRAW4)
 			else {
-				image = recent->getImage();
+				image = recent->image;
 			} // else
 
 			image.copyTo(sScreen(roi), image);
@@ -739,7 +745,7 @@ static void refreshScreen(const std::string& message) {
 				// Show remained cards to everyone
 				// when being challenged or game over
 				for (Card* card : hand) {
-					image = card->getImage();
+					image = card->image;
 					image.copyTo(sScreen(roi), image);
 					roi.y += 40;
 				} // for (Card* card : hand)
@@ -781,7 +787,7 @@ static void refreshScreen(const std::string& message) {
 				// Show remained cards to everyone
 				// when being challenged or game over
 				for (Card* card : hand) {
-					image = card->getImage();
+					image = card->image;
 					image.copyTo(sScreen(roi), image);
 					roi.x += 45;
 				} // for (Card* card : hand)
@@ -821,7 +827,7 @@ static void refreshScreen(const std::string& message) {
 				// Show remained cards to everyone
 				// when being challenged or game over
 				for (Card* card : hand) {
-					image = card->getImage();
+					image = card->image;
 					image.copyTo(sScreen(roi), image);
 					roi.y += 40;
 				} // for (Card* card : hand)
@@ -862,25 +868,25 @@ static void refreshScreen(const std::string& message) {
 				case Player::YOU:
 					if (sImmPlayAsk) {
 						image = card == sDrawnCard ?
-							card->getImage() :
-							card->getDarkImg();
+							card->image :
+							card->darkImg;
 					} // if (sImmPlayAsk)
 					else if (sChallengeAsk || sChallenged) {
-						image = card->getDarkImg();
+						image = card->darkImg;
 					} // else if (sChallengeAsk || sChallenged)
 					else {
 						image = sUno->isLegalToPlay(card) ?
-							card->getImage() :
-							card->getDarkImg();
+							card->image :
+							card->darkImg;
 					} // else
 					break; // case Player::YOU
 
 				case STAT_GAME_OVER:
-					image = card->getImage();
+					image = card->image;
 					break; // case STAT_GAME_OVER
 
 				default:
-					image = card->getDarkImg();
+					image = card->darkImg;
 					break; // default
 				} // switch (status)
 
@@ -921,7 +927,7 @@ static void play(int index, Color color) {
 	size = int(sUno->getPlayer(now)->getHandCards().size());
 	card = sUno->play(now, index, color);
 	if (card != nullptr) {
-		image = card->getImage();
+		image = card->image;
 		switch (now) {
 		case Player::COM1:
 			height = 40 * size + 140;
@@ -964,7 +970,7 @@ static void play(int index, Color color) {
 			// When the played card is an action card or a wild card,
 			// do the necessary things according to the game rule
 			message = NAME[now];
-			switch (card->getContent()) {
+			switch (card->content) {
 			case DRAW2:
 				next = sUno->switchNow();
 				message += ": Let " + NAME[next] + " draw 2 cards";
@@ -1021,13 +1027,13 @@ static void play(int index, Color color) {
 				break; // case WILD_DRAW4
 
 			default:
-				message += ": " + card->getName();
+				message += ": " + card->name;
 				refreshScreen(message);
 				cv::waitKey(1500);
 				sStatus = sUno->switchNow();
 				onStatusChanged(sStatus);
 				break; // default
-			} // switch (card->getContent())
+			} // switch (card->content)
 		} // else
 	} // if (card != nullptr)
 } // play()
@@ -1088,9 +1094,9 @@ static void draw(int count, bool force) {
 				break; // case Player::COM3
 
 			default:
-				image = sDrawnCard->getImage();
+				image = sDrawnCard->image;
 				roi = cv::Rect(580, 470, 121, 181);
-				buff << NAME[now] << ": Draw " + sDrawnCard->getName();
+				buff << NAME[now] << ": Draw " + sDrawnCard->name;
 				break; // default
 			} // switch (now)
 

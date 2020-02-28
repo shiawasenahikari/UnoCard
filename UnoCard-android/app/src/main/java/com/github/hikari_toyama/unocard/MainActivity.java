@@ -262,7 +262,7 @@ public class MainActivity extends AppCompatActivity
                 mUno.start();
                 refreshScreen("GET READY");
                 delayedTask = () -> {
-                    switch (mUno.getRecent().get(0).getContent()) {
+                    switch (mUno.getRecent().get(0).content) {
                         case DRAW2:
                             // If starting with a [+2], let dealer draw 2 cards.
                             draw(2, /* force */ true);
@@ -293,7 +293,7 @@ public class MainActivity extends AppCompatActivity
                             mStatus = mUno.getNow();
                             onStatusChanged(mStatus);
                             break; // default
-                    } // switch (mUno.getRecent().get(0).getContent())
+                    } // switch (mUno.getRecent().get(0).content)
                 }; // delayedTask = () -> {}
                 mHandler.postDelayed(delayedTask, 2000);
                 break; // case STAT_NEW_GAME
@@ -309,7 +309,7 @@ public class MainActivity extends AppCompatActivity
                     } // else
                 } // if (mAuto)
                 else if (mImmPlayAsk) {
-                    refreshScreen("^ Play " + mDrawnCard.getName() + "?");
+                    refreshScreen("^ Play " + mDrawnCard + "?");
                     rect = new Rect(338, 270, 121, 181);
                     areaToErase = new Mat(mUno.getBackground(), rect);
                     areaToErase.copyTo(new Mat(mScr, rect));
@@ -618,14 +618,14 @@ public class MainActivity extends AppCompatActivity
             point.y = 370;
             Imgproc.putText(mScr, "PLAYERS", point, FONT_SANS, 1.0, RGB_WHITE);
             image = mUno.getPlayers() == 3 ?
-                    mUno.findCard(Color.BLUE, Content.NUM3).getImage() :
-                    mUno.findCard(Color.BLUE, Content.NUM3).getDarkImg();
+                    mUno.findCard(Color.BLUE, Content.NUM3).image :
+                    mUno.findCard(Color.BLUE, Content.NUM3).darkImg;
             roi.x = 490;
             roi.y = 270;
             image.copyTo(new Mat(mScr, roi), image);
             image = mUno.getPlayers() == 4 ?
-                    mUno.findCard(Color.BLUE, Content.NUM4).getImage() :
-                    mUno.findCard(Color.BLUE, Content.NUM4).getDarkImg();
+                    mUno.findCard(Color.BLUE, Content.NUM4).image :
+                    mUno.findCard(Color.BLUE, Content.NUM4).darkImg;
             roi.x = 670;
             image.copyTo(new Mat(mScr, roi), image);
 
@@ -683,14 +683,14 @@ public class MainActivity extends AppCompatActivity
         roi.x = 792 - width / 2;
         roi.y = 270;
         for (Card recent : hand) {
-            if (recent.getContent() == Content.WILD) {
+            if (recent.content == Content.WILD) {
                 image = mUno.getColoredWildImage(recent.getRealColor());
-            } // if (recent.getContent() == Content.WILD)
-            else if (recent.getContent() == Content.WILD_DRAW4) {
+            } // if (recent.content == Content.WILD)
+            else if (recent.content == Content.WILD_DRAW4) {
                 image = mUno.getColoredWildDraw4Image(recent.getRealColor());
-            } // else if (recent.getContent() == Content.WILD_DRAW4)
+            } // else if (recent.content == Content.WILD_DRAW4)
             else {
-                image = recent.getImage();
+                image = recent.image;
             } // else
 
             image.copyTo(new Mat(mScr, roi), image);
@@ -723,7 +723,7 @@ public class MainActivity extends AppCompatActivity
                 // Show remained cards to everyone
                 // when being challenged or game over
                 for (Card card : hand) {
-                    image = card.getImage();
+                    image = card.image;
                     image.copyTo(new Mat(mScr, roi), image);
                     roi.y += 40;
                 } // for (Card card : hand)
@@ -765,7 +765,7 @@ public class MainActivity extends AppCompatActivity
                 // Show remained hand cards
                 // when being challenged or game over
                 for (Card card : hand) {
-                    image = card.getImage();
+                    image = card.image;
                     image.copyTo(new Mat(mScr, roi), image);
                     roi.x += 45;
                 } // for (Card card : hand)
@@ -805,7 +805,7 @@ public class MainActivity extends AppCompatActivity
                 // Show remained hand cards
                 // when being challenged or game over
                 for (Card card : hand) {
-                    image = card.getImage();
+                    image = card.image;
                     image.copyTo(new Mat(mScr, roi), image);
                     roi.y += 40;
                 } // for (Card card : hand)
@@ -846,25 +846,25 @@ public class MainActivity extends AppCompatActivity
                     case Player.YOU:
                         if (mImmPlayAsk) {
                             image = card == mDrawnCard ?
-                                    card.getImage() :
-                                    card.getDarkImg();
+                                    card.image :
+                                    card.darkImg;
                         } // if (mImmPlayAsk)
                         else if (mChallengeAsk || mChallenged) {
-                            image = card.getDarkImg();
+                            image = card.darkImg;
                         } // else if (mChallengeAsk || mChallenged)
                         else {
                             image = mUno.isLegalToPlay(card) ?
-                                    card.getImage() :
-                                    card.getDarkImg();
+                                    card.image :
+                                    card.darkImg;
                         } // else
                         break; // case Player.YOU
 
                     case STAT_GAME_OVER:
-                        image = card.getImage();
+                        image = card.image;
                         break; // case STAT_GAME_OVER
 
                     default:
-                        image = card.getDarkImg();
+                        image = card.darkImg;
                         break; // default
                 } // switch (status)
 
@@ -905,7 +905,7 @@ public class MainActivity extends AppCompatActivity
         size = mUno.getPlayer(now).getHandCards().size();
         card = mUno.play(now, index, color);
         if (card != null) {
-            image = card.getImage();
+            image = card.image;
             switch (now) {
                 case Player.COM1:
                     height = 40 * size + 140;
@@ -951,7 +951,7 @@ public class MainActivity extends AppCompatActivity
                 else {
                     // When the played card is an action card or a wild card,
                     // do the necessary things according to the game rule
-                    switch (card.getContent()) {
+                    switch (card.content) {
                         case DRAW2:
                             next = mUno.switchNow();
                             message = NAME[now] + ": Let "
@@ -1017,14 +1017,14 @@ public class MainActivity extends AppCompatActivity
                             break; // case WILD_DRAW4
 
                         default:
-                            message = NAME[now] + ": " + card.getName();
+                            message = NAME[now] + ": " + card;
                             refreshScreen(message);
                             mHandler.postDelayed(() -> {
                                 mStatus = mUno.switchNow();
                                 onStatusChanged(mStatus);
                             }, 1500); // mHandler.postDelayed()
                             break; // default
-                    } // switch (card.getContent())
+                    } // switch (card.content)
                 } // else
             }; // delayedTask = () -> {}
             mHandler.postDelayed(delayedTask, 300);
@@ -1606,8 +1606,8 @@ public class MainActivity extends AppCompatActivity
                         break; // case Player.COM3
 
                     default:
-                        message = NAME[now] + ": Draw " + mDrawnCard.getName();
-                        image = mDrawnCard.getImage();
+                        message = NAME[now] + ": Draw " + mDrawnCard;
+                        image = mDrawnCard.image;
                         roi = new Rect(580, 470, 121, 181);
                         break; // default
                 } // switch (now)
