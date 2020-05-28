@@ -70,39 +70,11 @@ public:
 	bool operator!=(const Card& card);
 
 	/**
-	 * @return Card's image resource.
-	 * @deprecated Please directly access this field (this->image).
-	 */
-	[[deprecated]]
-	const cv::Mat& getImage();
-
-	/**
-	 * @return Card's dark image resource.
-	 * @deprecated Please directly access this field (this->darkImg).
-	 */
-	[[deprecated]]
-	const cv::Mat& getDarkImg();
-
-	/**
 	 * @return For non-wild cards, return card's color. For wild cards, return
 	 *         the specified wild color by the player who played this card, or
 	 *         Color::NONE if this card is in hand or card deck.
 	 */
 	Color getRealColor();
-
-	/**
-	 * @return Card's content.
-	 * @deprecated Please directly access this field (this->content).
-	 */
-	[[deprecated]]
-	Content getContent();
-
-	/**
-	 * @return Card's name.
-	 * @deprecated Please directly access this field (this->name).
-	 */
-	[[deprecated]]
-	const std::string& getName();
 
 	/**
 	 * @return Whether the card is a [wild] or [wild +4].

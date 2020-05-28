@@ -84,33 +84,6 @@ public class Card implements Comparable<Card> {
     } // Card(Mat, Mat, Color, Content, String) (Class Constructor)
 
     /**
-     * @return Card's image resource.
-     * @deprecated Please directly access this field (this.image).
-     */
-    @Deprecated
-    public Mat getImage() {
-        return image;
-    } // getImage()
-
-    /**
-     * @return Card's dark image resource.
-     * @deprecated Please directly access this field (this.darkImg).
-     */
-    @Deprecated
-    public Mat getDarkImg() {
-        return darkImg;
-    } // getDarkImg()
-
-    /**
-     * @return Card's name.
-     * @deprecated Please directly access this field (this.getName).
-     */
-    @Deprecated
-    public String getName() {
-        return name;
-    } // getName()
-
-    /**
      * @return For non-wild cards, return card's color. For wild cards,
      * return the specified wild color by the player who played this
      * card, or Color.NONE if this card is in hand or card deck.
@@ -118,15 +91,6 @@ public class Card implements Comparable<Card> {
     public Color getRealColor() {
         return color;
     } // getRealColor()
-
-    /**
-     * @return Card's content.
-     * @deprecated Please directly access this field (this.content).
-     */
-    @Deprecated
-    public Content getContent() {
-        return content;
-    } // getContent()
 
     /**
      * @return Whether the card is a [wild] or [wild +4].
