@@ -67,6 +67,7 @@ public class MainActivity extends AppCompatActivity
     private ImageView mImgScreen;
     private boolean mChallenged;
     private boolean mImmPlayAsk;
+    private Card mSelectedCard;
     private Handler mHandler;
     private Card mDrawnCard;
     private int mHardTotal3;
@@ -260,6 +261,7 @@ public class MainActivity extends AppCompatActivity
                 } // switch (mUno.getDifficulty() << 4 | mUno.getPlayers())
 
                 mUno.start();
+                mSelectedCard = null;
                 refreshScreen("GET READY");
                 delayedTask = () -> {
                     switch (mUno.getRecent().get(0).content) {
@@ -309,6 +311,7 @@ public class MainActivity extends AppCompatActivity
                     } // else
                 } // if (mAuto)
                 else if (mImmPlayAsk) {
+                    mSelectedCard = mDrawnCard;
                     refreshScreen("^ Play " + mDrawnCard + "?");
                     rect = new Rect(338, 270, 121, 181);
                     areaToErase = new Mat(mUno.getBackground(), rect);
@@ -425,8 +428,11 @@ public class MainActivity extends AppCompatActivity
                     Utils.matToBitmap(mScr, mBmp);
                     mImgScreen.setImageBitmap(mBmp);
                 } // else if (mChallengeAsk)
+                else if (mSelectedCard == null) {
+                    refreshScreen("Play a card, or click deck to draw a card");
+                } // else if (mSelectedCard == null)
                 else {
-                    refreshScreen("Your turn, play or draw a card");
+                    refreshScreen("Click again to play");
                 } // else
                 break; // case Player.YOU
 
@@ -840,31 +846,44 @@ public class MainActivity extends AppCompatActivity
             // Show your all hand cards
             width = 60 * size + 60;
             roi.x = 640 - width / 2;
-            roi.y = 520;
             for (Card card : hand) {
                 switch (status) {
                     case Player.YOU:
                         if (mImmPlayAsk) {
-                            image = card == mDrawnCard ?
-                                    card.image :
-                                    card.darkImg;
+                            if (card == mDrawnCard) {
+                                image = card.image;
+                                roi.y = 490;
+                            } // if (card == mDrawnCard)
+                            else {
+                                image = card.darkImg;
+                                roi.y = 520;
+                            } // else
                         } // if (mImmPlayAsk)
                         else if (mChallengeAsk || mChallenged) {
                             image = card.darkImg;
+                            roi.y = 520;
                         } // else if (mChallengeAsk || mChallenged)
                         else {
                             image = mUno.isLegalToPlay(card) ?
                                     card.image :
                                     card.darkImg;
+                            roi.y = card == mSelectedCard ? 490 : 520;
                         } // else
                         break; // case Player.YOU
 
+                    case STAT_WILD_COLOR:
+                        image = card.darkImg;
+                        roi.y = card == mSelectedCard ? 490 : 520;
+                        break; // case STAT_WILD_COLOR
+
                     case STAT_GAME_OVER:
                         image = card.image;
+                        roi.y = 520;
                         break; // case STAT_GAME_OVER
 
                     default:
                         image = card.darkImg;
+                        roi.y = 520;
                         break; // default
                 } // switch (status)
 
@@ -898,45 +917,55 @@ public class MainActivity extends AppCompatActivity
         Mat image;
         Card card;
         Runnable delayedTask;
-        int x, y, now, size, width, height;
+        int x, y, now, size, width, height, delayedMs;
 
         mStatus = STAT_IDLE; // block tap down events when idle
         now = mUno.getNow();
         size = mUno.getPlayer(now).getHandCards().size();
         card = mUno.play(now, index, color);
+        mSelectedCard = null;
         if (card != null) {
+            // Animation
             image = card.image;
             switch (now) {
                 case Player.COM1:
                     height = 40 * size + 140;
                     x = 160;
                     y = 360 - height / 2 + 40 * index;
+                    roi = new Rect(x, y, 121, 181);
+                    image.copyTo(new Mat(mScr, roi), image);
+                    Utils.matToBitmap(mScr, mBmp);
+                    mImgScreen.setImageBitmap(mBmp);
+                    delayedMs = 300;
                     break; // case Player.COM1
 
                 case Player.COM2:
                     width = 45 * size + 75;
                     x = 640 - width / 2 + 45 * index;
-                    y = 70;
+                    y = 50;
+                    roi = new Rect(x, y, 121, 181);
+                    image.copyTo(new Mat(mScr, roi), image);
+                    Utils.matToBitmap(mScr, mBmp);
+                    mImgScreen.setImageBitmap(mBmp);
+                    delayedMs = 300;
                     break; // case Player.COM2
 
                 case Player.COM3:
                     height = 40 * size + 140;
                     x = 1000;
                     y = 360 - height / 2 + 40 * index;
+                    roi = new Rect(x, y, 121, 181);
+                    image.copyTo(new Mat(mScr, roi), image);
+                    Utils.matToBitmap(mScr, mBmp);
+                    mImgScreen.setImageBitmap(mBmp);
+                    delayedMs = 300;
                     break; // case Player.COM3
 
                 default:
-                    width = 60 * size + 60;
-                    x = 640 - width / 2 + 60 * index;
-                    y = 470;
+                    delayedMs = 0;
                     break; // default
             } // switch (now)
 
-            // Animation
-            roi = new Rect(x, y, 121, 181);
-            image.copyTo(new Mat(mScr, roi), image);
-            Utils.matToBitmap(mScr, mBmp);
-            mImgScreen.setImageBitmap(mBmp);
             delayedTask = () -> {
                 int next;
                 String message;
@@ -1027,7 +1056,7 @@ public class MainActivity extends AppCompatActivity
                     } // switch (card.content)
                 } // else
             }; // delayedTask = () -> {}
-            mHandler.postDelayed(delayedTask, 300);
+            mHandler.postDelayed(delayedTask, delayedMs);
         } // if (card != null)
     } // play()
 
@@ -1043,6 +1072,7 @@ public class MainActivity extends AppCompatActivity
      */
     private void draw(int count, boolean force) {
         mStatus = STAT_IDLE; // block tap down events when idle
+        mSelectedCard = null;
 
         // This is a time-consuming procedure, so we cannot use the traditional
         // for-loop. We need to create a Runnable object, and make a delayed
@@ -1333,17 +1363,29 @@ public class MainActivity extends AppCompatActivity
 
                             // Try to play it
                             card = hand.get(index);
-                            if (card.isWild() && size > 1) {
+                            if (card != mSelectedCard) {
+                                mSelectedCard = card;
+                                onStatusChanged(mStatus);
+                            } // if (card != mSelectedCard)
+                            else if (card.isWild() && size > 1) {
                                 // Store index value as class member. This value
                                 // will be used after the wild color determined.
                                 mWildIndex = index;
                                 mStatus = STAT_WILD_COLOR;
                                 onStatusChanged(mStatus);
-                            } // if (card.isWild() && size > 1)
+                            } // else if (card.isWild() && size > 1)
                             else if (mUno.isLegalToPlay(card)) {
                                 play(index, card.getRealColor());
                             } // else if (mUno.isLegalToPlay(card))
+                            else {
+                                refreshScreen("Cannot play this card now");
+                            } // else
                         } // if (x >= startX && x <= startX + width)
+                        else {
+                            // Blank area, cancel your selection
+                            mSelectedCard = null;
+                            onStatusChanged(mStatus);
+                        } // else
                     } // if (y >= 520 && y <= 700)
                     else if (y >= 270 && y <= 450 && x >= 338 && x <= 458) {
                         // Card deck area, draw a card
@@ -1590,7 +1632,7 @@ public class MainActivity extends AppCompatActivity
                         } // else
 
                         image = mUno.getBackImage();
-                        roi = new Rect(580, 70, 121, 181);
+                        roi = new Rect(580, 50, 121, 181);
                         break; // case Player.COM2
 
                     case Player.COM3:
@@ -1608,7 +1650,7 @@ public class MainActivity extends AppCompatActivity
                     default:
                         message = NAME[now] + ": Draw " + mDrawnCard;
                         image = mDrawnCard.image;
-                        roi = new Rect(580, 470, 121, 181);
+                        roi = new Rect(580, 490, 121, 181);
                         break; // default
                 } // switch (now)
 

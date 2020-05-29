@@ -18,7 +18,6 @@
 #include <Color.h>
 #include <Player.h>
 #include <Content.h>
-#include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
@@ -67,6 +66,7 @@ static Card* sDrawnCard;
 static bool sImmPlayAsk;
 static bool sChallenged;
 static bool sChallengeAsk;
+static Card* sSelectedCard;
 
 // Functions
 static void easyAI();
@@ -139,7 +139,6 @@ int main() {
 		reader.close();
 	} // if (!reader.fail())
 
-	sUno = Uno::getInstance();
 	sWinner = Player::YOU;
 	sStatus = STAT_WELCOME;
 	sScreen = sUno->getBackground().clone();
@@ -291,6 +290,7 @@ static void onStatusChanged(int status) {
 		} // switch (sUno->getDifficulty() << 4 | sUno->getPlayers())
 
 		sUno->start();
+		sSelectedCard = nullptr;
 		refreshScreen("GET READY");
 		cv::waitKey(2000);
 		switch (sUno->getRecent().at(0)->content) {
@@ -338,6 +338,7 @@ static void onStatusChanged(int status) {
 			} // if (!sAIRunning)
 		} // if (sAuto)
 		else if (sImmPlayAsk) {
+			sSelectedCard = sDrawnCard;
 			refreshScreen("^ Play " + sDrawnCard->name + "?");
 			rect = cv::Rect(338, 270, 121, 181);
 			sUno->getBackground()(rect).copyTo(sScreen(rect));
@@ -450,8 +451,11 @@ static void onStatusChanged(int status) {
 			// Show screen
 			imshow("Uno", sScreen);
 		} // else if (sChallengeAsk)
+		else if (sSelectedCard == nullptr) {
+			refreshScreen("Play a card, or click deck to draw a card");
+		} // else if (sSelectedCard == nullptr)
 		else {
-			refreshScreen("Your turn, play or draw a card");
+			refreshScreen("Click again to play");
 		} // else
 		break; // case Player::YOU
 
@@ -862,31 +866,44 @@ static void refreshScreen(const std::string& message) {
 			// Show your all hand cards
 			width = 45 * size + 75;
 			roi.x = 640 - width / 2;
-			roi.y = 520;
 			for (Card* card : hand) {
 				switch (status) {
 				case Player::YOU:
 					if (sImmPlayAsk) {
-						image = card == sDrawnCard ?
-							card->image :
-							card->darkImg;
+						if (card == sDrawnCard) {
+							image = card->image;
+							roi.y = 490;
+						} // if (card == sDrawnCard)
+						else {
+							image = card->darkImg;
+							roi.y = 520;
+						} // else
 					} // if (sImmPlayAsk)
 					else if (sChallengeAsk || sChallenged) {
 						image = card->darkImg;
+						roi.y = 520;
 					} // else if (sChallengeAsk || sChallenged)
 					else {
 						image = sUno->isLegalToPlay(card) ?
 							card->image :
 							card->darkImg;
+						roi.y = card == sSelectedCard ? 490 : 520;
 					} // else
 					break; // case Player::YOU
 
+				case STAT_WILD_COLOR:
+					image = card->darkImg;
+					roi.y = card == sSelectedCard ? 490 : 520;
+					break; // case STAT_WILD_COLOR
+
 				case STAT_GAME_OVER:
 					image = card->image;
+					roi.y = 520;
 					break; // case STAT_GAME_OVER
 
 				default:
 					image = card->darkImg;
+					roi.y = 520;
 					break; // default
 				} // switch (status)
 
@@ -926,39 +943,45 @@ static void play(int index, Color color) {
 	now = sUno->getNow();
 	size = int(sUno->getPlayer(now)->getHandCards().size());
 	card = sUno->play(now, index, color);
+	sSelectedCard = nullptr;
 	if (card != nullptr) {
+		// Animation
 		image = card->image;
 		switch (now) {
 		case Player::COM1:
 			height = 40 * size + 140;
 			x = 160;
 			y = 360 - height / 2 + 40 * index;
+			roi = cv::Rect(x, y, 121, 181);
+			image.copyTo(sScreen(roi), image);
+			imshow("Uno", sScreen);
+			cv::waitKey(300);
 			break; // case Player::COM1
 
 		case Player::COM2:
 			width = 45 * size + 75;
 			x = 640 - width / 2 + 45 * index;
-			y = 70;
+			y = 50;
+			roi = cv::Rect(x, y, 121, 181);
+			image.copyTo(sScreen(roi), image);
+			imshow("Uno", sScreen);
+			cv::waitKey(300);
 			break; // case Player::COM2
 
 		case Player::COM3:
 			height = 40 * size + 140;
 			x = 1000;
 			y = 360 - height / 2 + 40 * index;
+			roi = cv::Rect(x, y, 121, 181);
+			image.copyTo(sScreen(roi), image);
+			imshow("Uno", sScreen);
+			cv::waitKey(300);
 			break; // case Player::COM3
 
 		default:
-			width = 45 * size + 75;
-			x = 640 - width / 2 + 45 * index;
-			y = 470;
 			break; // default
 		} // switch (now)
 
-		// Animation
-		roi = cv::Rect(x, y, 121, 181);
-		image.copyTo(sScreen(roi), image);
-		imshow("Uno", sScreen);
-		cv::waitKey(300);
 		if (sUno->getPlayer(now)->getHandCards().size() == 0) {
 			// The player in action becomes winner when it played the
 			// final card in its hand successfully
@@ -1055,6 +1078,7 @@ static void draw(int count, bool force) {
 
 	sStatus = STAT_IDLE; // block mouse click events when idle
 	now = sUno->getNow();
+	sSelectedCard = nullptr;
 	for (i = 0; i < count; ++i) {
 		buff.str("");
 		sDrawnCard = sUno->draw(now, force);
@@ -1073,7 +1097,7 @@ static void draw(int count, bool force) {
 
 			case Player::COM2:
 				image = sUno->getBackImage();
-				roi = cv::Rect(580, 70, 121, 181);
+				roi = cv::Rect(580, 50, 121, 181);
 				if (count == 1) {
 					buff << NAME[now] << ": Draw a card";
 				} // if (count == 1)
@@ -1095,7 +1119,7 @@ static void draw(int count, bool force) {
 
 			default:
 				image = sDrawnCard->image;
-				roi = cv::Rect(580, 470, 121, 181);
+				roi = cv::Rect(580, 490, 121, 181);
 				buff << NAME[now] << ": Draw " + sDrawnCard->name;
 				break; // default
 			} // switch (now)
@@ -1241,7 +1265,7 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 	static std::vector<Card*> hand;
 	static int i, index, size, width, startX;
 
-	if (event == cv::EVENT_LBUTTONDOWN) {
+	if (event == cv::EVENT_LBUTTONDOWN || event == cv::EVENT_LBUTTONDBLCLK) {
 		// Only response to left-click events, and ignore the others
 		if (y >= 21 && y <= 42 && x >= 1140 && x <= 1260) {
 			// <QUIT> button
@@ -1427,14 +1451,26 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 
 					// Try to play it
 					card = hand.at(index);
-					if (card->isWild() && size > 1) {
+					if (card != sSelectedCard) {
+						sSelectedCard = card;
+						onStatusChanged(sStatus);
+					} // if (card != sSelectedCard)
+					else if (card->isWild() && size > 1) {
 						sStatus = STAT_WILD_COLOR;
 						onStatusChanged(sStatus);
-					} // if (card->isWild() && size > 1)
+					} // else if (card->isWild() && size > 1)
 					else if (sUno->isLegalToPlay(card)) {
 						play(index);
 					} // else if (sUno->isLegalToPlay(card))
+					else {
+						refreshScreen("Cannot play this card now");
+					} // else
 				} // if (x >= startX && x <= startX + width)
+				else {
+					// Blank area, cancel your selection
+					sSelectedCard = nullptr;
+					onStatusChanged(sStatus);
+				} // else
 			} // else if (y >= 520 && y <= 700)
 			else if (y >= 270 && y <= 450 && x >= 338 && x <= 458) {
 				// Card deck area, draw a card
@@ -1480,7 +1516,7 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 		default:
 			break; // default
 		} // else switch (sStatus)
-	} // if (event == cv::EVENT_LBUTTONDOWN)
+	} // if (event == cv::EVENT_LBUTTONDOWN || event == cv::EVENT_LBUTTONDBLCLK)
 } // onMouse()
 
 // E.O.F
