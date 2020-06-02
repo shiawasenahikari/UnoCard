@@ -459,14 +459,16 @@ int AI::hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
 				// Play a [skip] to skip its turn and wait for more chances.
 				idxBest = idxSkip;
 			} // if (hasSkip)
-			else if (hasWD4 &&
-				lastColor != safeColor &&
-				!hasNumIn[lastColor]) {
+			else if (hasWD4 && !hasNumIn[lastColor]) {
 				// Then play a [wild +4] to make your next player draw four
 				// cards (if it's legal to play this card).
-				bestColor = safeColor;
+				if (oppoSize == 1 || prevSize == 1) {
+					// Be careful when multiple opponents UNOed.
+					bestColor = safeColor;
+				} // if (oppoSize == 1 || prevSize == 1)
+
 				idxBest = idxWD4;
-			} // else if (hasWD4 && ...)
+			} // else if (hasWD4 && !hasNumIn[lastColor])
 			else if (hasRev) {
 				// Play a [reverse] to get help from your opposite player.
 				idxBest = idxRev;
