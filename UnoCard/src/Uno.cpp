@@ -793,13 +793,15 @@ bool Uno::isLegalToPlay(Card* card) {
  * @return Reference of the played card.
  */
 Card* Uno::play(int who, int index, Color color) {
+	int size;
 	Card* card;
 	std::vector<Card*>* hand;
 
 	card = nullptr;
 	if (who >= Player::YOU && who <= Player::COM3) {
 		hand = &(player[who].handCards);
-		if (index < hand->size()) {
+		size = int(hand->size());
+		if (index < size) {
 			card = hand->at(index);
 			hand->erase(hand->begin() + index);
 			if (card->isWild()) {
@@ -807,6 +809,7 @@ Card* Uno::play(int who, int index, Color color) {
 				// following legal color as the player's dangerous color
 				card->color = color;
 				player[who].dangerousColor = color;
+				player[who].dangerousCount = 1 + size / 3;
 				if (color == player[who].safeColor) {
 					// Dangerous color cannot also be safe color
 					player[who].safeColor = NONE;
@@ -814,9 +817,16 @@ Card* Uno::play(int who, int index, Color color) {
 			} // if (card->isWild())
 			else if (card->color == player[who].dangerousColor) {
 				// Played a card that matches the registered
-				// dangerous color, unregister it
-				player[who].dangerousColor = NONE;
+				// dangerous color, dangerous counter counts down
+				--player[who].dangerousCount;
+				if (player[who].dangerousCount == 0) {
+					player[who].dangerousColor = NONE;
+				} // if (player[who].dangerousCount == 0)
 			} // else if (card->color == player[who].dangerousColor)
+			else if (player[who].dangerousCount > size - 1) {
+				// Correct the value of dangerous counter when necessary
+				player[who].dangerousCount = size - 1;
+			} // else if (player[who].dangerousCount > size - 1)
 
 			player[who].recent = card;
 			recent.push_back(card);
@@ -829,7 +839,7 @@ Card* Uno::play(int who, int index, Color color) {
 				// Game over, change background image
 				direction = 0;
 			} // if (hand->size() == 0)
-		} // if (index < hand->size())
+		} // if (index < size)
 	} // if (who >= Player::YOU && who <= Player::COM3)
 
 	return card;

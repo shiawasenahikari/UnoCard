@@ -61,6 +61,14 @@ public class Player {
     Color dangerousColor = NONE;
 
     /**
+     * How many dangerous cards (cards in dangerous color) in hand. THIS IS AN
+     * ESTIMATED VALUE, NOT A REAL VALUE! This value is estimated by player's
+     * actions, such as which color this player selected when playing a wild
+     * card, and how many dangerous cards are played after that wild card.
+     */
+    int dangerousCount = 0;
+
+    /**
      * Hand cards.
      */
     List<Card> handCards = new ArrayList<>();

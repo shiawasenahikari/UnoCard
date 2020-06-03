@@ -955,12 +955,14 @@ public class Uno {
      * @return Reference of the played card.
      */
     public Card play(int who, int index, Color color) {
+        int size;
         Card card;
         List<Card> handCards;
 
         card = null;
         handCards = player[who].handCards;
-        if (index < handCards.size()) {
+        size = handCards.size();
+        if (index < size) {
             card = handCards.get(index);
             handCards.remove(index);
             if (card.isWild()) {
@@ -968,6 +970,7 @@ public class Uno {
                 // following legal color as the player's dangerous color
                 card.color = color;
                 player[who].dangerousColor = color;
+                player[who].dangerousCount = 1 + size / 3;
                 if (color == player[who].safeColor) {
                     // Dangerous color cannot also be safe color
                     player[who].safeColor = NONE;
@@ -975,9 +978,16 @@ public class Uno {
             } // if（card.isWild())
             else if (card.color == player[who].dangerousColor) {
                 // Played a card that matches the registered
-                // dangerous color, unregister it
-                player[who].dangerousColor = NONE;
+                // dangerous color, dangerous counter counts down
+                --player[who].dangerousCount;
+                if (player[who].dangerousCount == 0) {
+                    player[who].dangerousColor = NONE;
+                } // if (player[who].dangerousCount == 0)
             } // else if (card.color == player[who].dangerousColor)
+            else if (player[who].dangerousCount > size - 1) {
+                // Correct the value of dangerous counter when necessary
+                player[who].dangerousCount = size - 1;
+            } // else if (player[who].dangerousCount > size - 1)
 
             player[who].recent = card;
             recent.add(card);
@@ -990,7 +1000,7 @@ public class Uno {
                 // Game over, change background image
                 direction = 0;
             } // if (handCards.size() == 0)
-        } // if (index < handCards.size())
+        } // if (index < size)
 
         return card;
     } // play()

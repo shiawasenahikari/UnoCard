@@ -111,6 +111,14 @@ private:
 	Card* recent = nullptr;
 
 	/**
+	 * How many dangerous cards (cards in dangerous color) in hand. THIS IS AN
+	 * ESTIMATED VALUE, NOT A REAL VALUE! This value is estimated by player's
+	 * actions, such as which color this player selected when playing a wild
+	 * card, and how many dangerous cards are played after that wild card.
+	 */
+	int dangerousCount = 0;
+
+	/**
 	 * Grant Uno class to access our constructors (to create Player instances)
 	 * and our private fields (to change players' real-time information).
 	 */
