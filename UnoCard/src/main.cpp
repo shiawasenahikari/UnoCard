@@ -1283,9 +1283,9 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 				dw[7] = sHardTotal3;
 				dw[8] = sUno->getPlayers();
 				dw[9] = sUno->getDifficulty();
-				for (dw[0] = 0, i = 0; i < 10; ++i) {
+				for (dw[10] = 0, i = 0; i < 10; ++i) {
 					dw[10] += dw[i];
-				} // for (dw[0] = 0, i = 0; i < 10; ++i)
+				} // for (dw[10] = 0, i = 0; i < 10; ++i)
 
 				writer.write(FILE_HEADER, 8);
 				writer.write((char*)dw, 11 * sizeof(int));
