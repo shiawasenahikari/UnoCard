@@ -130,7 +130,7 @@ public class AI {
         prevSize = prev.getHandCards().size();
         hasNum = hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
         idxBest = idxNum = idxRev = idxSkip = idxDraw2 = idxWild = idxWD4 = -1;
-        bestColor = curr.calcBestColor();
+        bestColor = calcBestColor4NowPlayer();
         recent = uno.getRecent();
         lastColor = recent.get(recent.size() - 1).getRealColor();
         for (i = 0; i < yourSize; ++i) {
@@ -297,7 +297,7 @@ public class AI {
         idxBest = idxRev = idxSkip = idxDraw2 = idxWild = idxWD4 = -1;
         hasNumIn = new boolean[]{false, false, false, false, false};
         idxNumIn = new int[]{-1, -1, -1, -1, -1};
-        bestColor = curr.calcBestColor();
+        bestColor = calcBestColor4NowPlayer();
         recent = uno.getRecent();
         last = recent.get(recent.size() - 1);
         lastColor = last.getRealColor();
@@ -1009,6 +1009,56 @@ public class AI {
         outColor[0] = bestColor;
         return idxBest;
     } // hardAI_bestCardIndex4NowPlayer()
+
+
+    /**
+     * Evaluate which color is the best for current player. In our evaluation
+     * system, zero cards are worth 2 points, non-zero number cards are worth
+     * 4 points, and action cards are worth 5 points. Finally, the color which
+     * contains the worthiest cards becomes the best color.
+     *
+     * @return Current player's best color.
+     */
+    private Color calcBestColor4NowPlayer() {
+        Color best;
+        int[] score;
+
+        best = RED;
+        score = new int[]{0, 0, 0, 0, 0};
+        for (Card card : uno.getPlayer(uno.getNow()).handCards) {
+            switch (card.content) {
+                case REV:
+                case NUM0:
+                    score[card.color.ordinal()] += 2;
+                    break; // case REV, NUM0
+
+                case SKIP:
+                case DRAW2:
+                    score[card.color.ordinal()] += 5;
+                    break; // case SKIP, DRAW2
+
+                default:
+                    score[card.color.ordinal()] += 4;
+                    break; // default
+            } // switch (card.content)
+        } // for (Card card : uno.getPlayer(uno.getNow()).handCards)
+
+        // default to red, when only wild cards in hand,
+        // method will return Color.RED
+        if (score[BLUE.ordinal()] > score[best.ordinal()]) {
+            best = BLUE;
+        } // if (score[BLUE.ordinal()] > score[best.ordinal()])
+
+        if (score[GREEN.ordinal()] > score[best.ordinal()]) {
+            best = GREEN;
+        } // if (score[GREEN.ordinal()] > score[best.ordinal()])
+
+        if (score[YELLOW.ordinal()] > score[best.ordinal()]) {
+            best = YELLOW;
+        } // if (score[YELLOW.ordinal()] > score[best.ordinal()])
+
+        return best;
+    } // calcBestColor4NowPlayer()
 } // AI Class
 
 // E.O.F

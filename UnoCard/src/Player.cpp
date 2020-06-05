@@ -53,7 +53,9 @@ Color Player::getSafeColor() {
  *
  * @return This player's best color. Specially, when the player remains only
  *         wild cards, function will return a default value, Color::RED.
+ * @deprecated Call AI::calcBestColor4NowPlayer() instead.
  */
+[[deprecated]]
 Color Player::calcBestColor() {
 	Color best = RED;
 	int score[5] = { 0, 0, 0, 0, 0 };

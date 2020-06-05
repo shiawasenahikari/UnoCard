@@ -104,7 +104,7 @@ int AI::easyAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
 	prevSize = int(prev->getHandCards().size());
 	hasNum = hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
 	idxBest = idxNum = idxRev = idxSkip = idxDraw2 = idxWild = idxWD4 = -1;
-	bestColor = curr->calcBestColor();
+	bestColor = calcBestColor4NowPlayer();
 	last = uno->getRecent().back();
 	lastColor = last->getRealColor();
 	for (i = 0; i < yourSize; ++i) {
@@ -271,7 +271,7 @@ int AI::hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
 	idxBest = idxRev = idxSkip = idxDraw2 = idxWild = idxWD4 = -1;
 	idxNumIn[0] = idxNumIn[1] = idxNumIn[2] = idxNumIn[3] = idxNumIn[4] = -1;
 	hasNumIn[0] = hasNumIn[1] = hasNumIn[2] = hasNumIn[3] = hasNumIn[4] = false;
-	bestColor = curr->calcBestColor();
+	bestColor = calcBestColor4NowPlayer();
 	last = uno->getRecent().back();
 	lastColor = last->getRealColor();
 	allWild = true;
@@ -972,5 +972,53 @@ int AI::hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
 	outColor[0] = bestColor;
 	return idxBest;
 } // hardAI_bestCardIndex4NowPlayer()
+
+/**
+ * Evaluate which color is the best for current player. In our evaluation
+ * system, zero cards are worth 2 points, non-zero number cards are worth
+ * 4 points, and action cards are worth 5 points. Finally, the color which
+ * contains the worthiest cards becomes the best color.
+ *
+ * @return Current player's best color.
+ */
+Color AI::calcBestColor4NowPlayer() {
+	Color best = RED;
+	int score[5] = { 0, 0, 0, 0, 0 };
+	Player* curr = uno->getPlayer(uno->getNow());
+
+	for (Card* card : curr->getHandCards()) {
+		switch (card->content) {
+		case REV:
+		case NUM0:
+			score[card->getRealColor()] += 2;
+			break; // case REV, NUM0
+
+		case SKIP:
+		case DRAW2:
+			score[card->getRealColor()] += 5;
+			break; // case SKIP, DRAW2
+
+		default:
+			score[card->getRealColor()] += 4;
+			break; // default
+		} // switch (card->content)
+	} // for (Card* card : curr->getHandCards())
+
+	// default to red, when only wild cards in hand,
+	// function will return Color::RED
+	if (score[BLUE] > score[best]) {
+		best = BLUE;
+	} // if (score[BLUE] > score[best]
+
+	if (score[GREEN] > score[best]) {
+		best = GREEN;
+	} // if (score[GREEN] > score[best])
+
+	if (score[YELLOW] > score[best]) {
+		best = YELLOW;
+	} // if (score[YELLOW] > score[best])
+
+	return best;
+} // calcBestColor4NowPlayer()
 
 // E.O.F

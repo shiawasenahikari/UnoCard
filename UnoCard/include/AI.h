@@ -73,6 +73,16 @@ private:
 	 * Uno runtime.
 	 */
 	Uno* uno = Uno::getInstance();
+
+	/**
+	 * Evaluate which color is the best for current player. In our evaluation
+	 * system, zero cards are worth 2 points, non-zero number cards are worth
+	 * 4 points, and action cards are worth 5 points. Finally, the color which
+	 * contains the worthiest cards becomes the best color.
+	 *
+	 * @return Current player's best color.
+	 */
+	Color calcBestColor4NowPlayer();
 }; // AI Class
 
 #endif // __AI_H_494649FDFA62B3C015120BCB9BE17613__

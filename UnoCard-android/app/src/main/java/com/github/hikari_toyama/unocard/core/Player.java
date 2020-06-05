@@ -126,7 +126,9 @@ public class Player {
      *
      * @return This player's best color. Specially, when the player remains only
      * wild cards, method will return a default value, Color.RED.
+     * @deprecated Call AI.calcBestColor4NowPlayer() instead.
      */
+    @Deprecated
     public Color calcBestColor() {
         Color best;
         int[] score;

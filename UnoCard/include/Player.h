@@ -74,7 +74,9 @@ public:
 	 *
 	 * @return This player's best color. Specially, when the player remains only
 	 *         wild cards, function will return a default value, Color::RED.
+	 * @deprecated Call AI::calcBestColor4NowPlayer() instead.
 	 */
+	[[deprecated]]
 	Color calcBestColor();
 
 	/**
