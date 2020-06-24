@@ -220,6 +220,12 @@ public:
 	bool isLegalToPlay(Card* card);
 
 	/**
+	 * @return How many legal cards (the cards that can be played legally)
+	 *         in now player's hand.
+	 */
+	int legalCardsCount4NowPlayer();
+
+	/**
 	 * Call this function when someone needs to play a card. The played card
 	 * replaces the "previous played card", and the original "previous played
 	 * card" becomes a used card at the same time.

@@ -428,8 +428,15 @@ public class MainActivity extends AppCompatActivity
                     Utils.matToBitmap(mScr, mBmp);
                     mImgScreen.setImageBitmap(mBmp);
                 } // else if (mChallengeAsk)
+                else if (mUno.legalCardsCount4NowPlayer() == 0) {
+                    refreshScreen(
+                            "No card can be played... Draw a card from deck"
+                    ); // refreshScreen()
+                } // else if (mUno.legalCardsCount4NowPlayer() == 0)
                 else if (mSelectedCard == null) {
-                    refreshScreen("Play a card, or click deck to draw a card");
+                    refreshScreen(
+                            "Select a card to play or draw a card from deck"
+                    ); // refreshScreen()
                 } // else if (mSelectedCard == null)
                 else {
                     refreshScreen("Click again to play");
@@ -1378,7 +1385,7 @@ public class MainActivity extends AppCompatActivity
                                 play(index, card.getRealColor());
                             } // else if (mUno.isLegalToPlay(card))
                             else {
-                                refreshScreen("Cannot play this card now");
+                                refreshScreen("Cannot play " + card.name);
                             } // else
                         } // if (x >= startX && x <= startX + width)
                         else {

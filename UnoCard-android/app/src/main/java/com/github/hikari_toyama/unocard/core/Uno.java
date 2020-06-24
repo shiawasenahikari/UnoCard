@@ -938,6 +938,21 @@ public class Uno {
     } // isLegalToPlay()
 
     /**
+     * @return How many legal cards in now player's hand.
+     */
+    public int legalCardsCount4NowPlayer() {
+        int count = 0;
+
+        for (Card card : player[now].handCards) {
+            if (isLegalToPlay(card)) {
+                ++count;
+            } // if (isLegalToPlay(card))
+        } // for (Card card : player[now].handCards)
+
+        return count;
+    } // legalCardsCount4NowPlayer()
+
+    /**
      * Call this method when someone needs to play a card. The played card
      * replaces the "previous played card", and the original "previous played
      * card" becomes a used card at the same time.

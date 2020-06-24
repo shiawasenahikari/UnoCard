@@ -451,8 +451,15 @@ static void onStatusChanged(int status) {
 			// Show screen
 			imshow("Uno", sScreen);
 		} // else if (sChallengeAsk)
+		else if (sUno->legalCardsCount4NowPlayer() == 0) {
+			refreshScreen(
+				"No card can be played... Draw a card from deck"
+			); // refreshScreen()
+		} // else if (sUno->legalCardsCount4NowPlayer() == 0)
 		else if (sSelectedCard == nullptr) {
-			refreshScreen("Play a card, or click deck to draw a card");
+			refreshScreen(
+				"Select a card to play or draw a card from deck"
+			); // refreshScreen()
 		} // else if (sSelectedCard == nullptr)
 		else {
 			refreshScreen("Click again to play");
@@ -1463,7 +1470,7 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 						play(index);
 					} // else if (sUno->isLegalToPlay(card))
 					else {
-						refreshScreen("Cannot play this card now");
+						refreshScreen("Cannot play " + card->name);
 					} // else
 				} // if (x >= startX && x <= startX + width)
 				else {

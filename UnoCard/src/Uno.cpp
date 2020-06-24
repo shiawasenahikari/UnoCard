@@ -776,6 +776,22 @@ bool Uno::isLegalToPlay(Card* card) {
 } // isLegalToPlay()
 
 /**
+ * @return How many legal cards (the cards that can be played legally)
+ *         in now player's hand.
+ */
+int Uno::legalCardsCount4NowPlayer() {
+	int count = 0;
+
+	for (Card* card : player[now].handCards) {
+		if (isLegalToPlay(card)) {
+			++count;
+		} // if (isLegalToPlay(card))
+	} // for (Card* card : player[now].handCards)
+
+	return count;
+} // legalCardsCount4NowPlayer()
+
+/**
  * Call this function when someone needs to play a card. The played card
  * replaces the "previous played card", and the original "previous played
  * card" becomes a used card at the same time.
