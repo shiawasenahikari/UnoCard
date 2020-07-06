@@ -904,24 +904,26 @@ public class AI {
                 idxBest = idxRev;
             } // else if (hasRev && ...)
             else if (hasSkip &&
+                    oppoSize >= 3 &&
                     hand.get(idxSkip).getRealColor() == bestColor) {
                 idxBest = idxSkip;
             } // else if (hasSkip && ...)
             else if (hasDraw2 &&
+                    oppoSize >= 3 &&
                     hand.get(idxDraw2).getRealColor() == bestColor) {
                 idxBest = idxDraw2;
             } // else if (hasDraw2 && ...)
         } // else if (lastColor == nextSafeColor && yourSize > 2)
         else {
             // Normal strategies
-            if (hasDraw2 && nextSize <= 4) {
+            if (hasDraw2 && nextSize <= 4 && nextSize - oppoSize <= 1) {
                 // Play a [+2] when your next player remains only a few cards.
                 idxBest = idxDraw2;
-            } // if (hasDraw2 && nextSize <= 4)
-            else if (hasSkip && nextSize <= 4) {
+            } // if (hasDraw2 && nextSize <= 4 && nextSize - oppoSize <= 1)
+            else if (hasSkip && nextSize <= 4 && nextSize - oppoSize <= 1) {
                 // Play a [skip] when your next player remains only a few cards.
                 idxBest = idxSkip;
-            } // else if (hasSkip && nextSize <= 4)
+            } // else if (hasSkip && nextSize <= 4 && nextSize - oppoSize <= 1)
             else if (hasRev && prevSize - nextSize >= 3) {
                 // Play a [reverse] when your next player remains only a few
                 // cards but your previous player remains a lot of cards, in
@@ -953,6 +955,7 @@ public class AI {
                 idxBest = idxRev;
             } // else if (hasRev && ...)
             else if (hasSkip &&
+                    oppoSize >= 3 &&
                     hand.get(idxSkip).getRealColor() == bestColor) {
                 // Unless keeping or changing to your best color, you do not
                 // need to play your limitation/wild cards when your next player
@@ -960,6 +963,7 @@ public class AI {
                 idxBest = idxSkip;
             } // else if (hasSkip && ...)
             else if (hasDraw2 &&
+                    oppoSize >= 3 &&
                     hand.get(idxDraw2).getRealColor() == bestColor) {
                 idxBest = idxDraw2;
             } // else if (hasDraw2 && ...)
