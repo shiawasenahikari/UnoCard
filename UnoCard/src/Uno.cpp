@@ -3,10 +3,10 @@
 // Uno Card Game
 // Author: Hikari Toyama
 // Compile Environment: Visual Studio 2015, Windows 10 x64
+// COPYRIGHT HIKARI TOYAMA, 1992-2021. ALL RIGHTS RESERVED.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <list>
 #include <ctime>
 #include <Uno.h>
 #include <string>
@@ -19,7 +19,7 @@
 #include <Content.h>
 #include <opencv2/highgui.hpp>
 
-static const std::string BROKEN_IMAGE_RESOURCES_EXCEPTION =
+static const char* BROKEN_IMAGE_RESOURCES_EXCEPTION =
 "One or more image resources are broken. Re-install this application.";
 
 /**
@@ -386,7 +386,7 @@ const cv::Mat& Uno::getLevelImage(int level, bool hiLight) {
 	return level == LV_EASY ?
 		/* level == LV_EASY */ (hiLight ? easyImage : easyImage_d) :
 		/* level == LV_HARD */ (hiLight ? hardImage : hardImage_d);
-} // getLevelImage()
+} // getLevelImage(int, bool)
 
 /**
  * @return Background image resource in current direction.
@@ -414,7 +414,7 @@ const cv::Mat& Uno::getBackground() {
  */
 const cv::Mat& Uno::getColoredWildImage(Color color) {
 	return wildImage[color];
-} // getColoredWildImage()
+} // getColoredWildImage(Color)
 
 /**
  * When a player played a wild +4 card and specified a following legal
@@ -426,7 +426,7 @@ const cv::Mat& Uno::getColoredWildImage(Color color) {
  */
 const cv::Mat& Uno::getColoredWildDraw4Image(Color color) {
 	return wildDraw4Image[color];
-} // getColoredWildDraw4Image()
+} // getColoredWildDraw4Image(Color)
 
 /**
  * @return Player in turn. Must be one of the following:
@@ -443,8 +443,7 @@ int Uno::getNow() {
  *         Player::YOU, Player::COM1, Player::COM2, Player::COM3.
  */
 int Uno::switchNow() {
-	now = getNext();
-	return now;
+	return (now = getNext());
 } // switchNow()
 
 /**
@@ -503,7 +502,7 @@ void Uno::setPlayers(int players) {
 	if (players == 3 || players == 4) {
 		this->players = players;
 	} // if (players == 3 || players == 4)
-} // setPlayers()
+} // setPlayers(int)
 
 /**
  * Switch current action sequence.
@@ -512,9 +511,17 @@ void Uno::setPlayers(int players) {
  *         or DIR_RIGHT for counter-clockwise.
  */
 int Uno::switchDirection() {
-	direction = 4 - direction;
-	return direction;
+	return (direction = 4 - direction);
 } // switchDirection()
+
+/**
+ * @param who Get which player's instance. Must be one of the following:
+ *            Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+ * @return Specified player's instance.
+ */
+Player* Uno::getPlayer(int who) {
+	return who < Player::YOU || who > Player::COM3 ? nullptr : &player[who];
+} // getPlayer(int)
 
 /**
  * @return Current difficulty (LV_EASY / LV_HARD).
@@ -533,21 +540,7 @@ void Uno::setDifficulty(int difficulty) {
 	if (difficulty == LV_EASY || difficulty == LV_HARD) {
 		this->difficulty = difficulty;
 	} // if (difficulty == LV_EASY || difficulty == LV_HARD)
-} // setDifficulty()
-
-/**
- * @param who Get which player's instance. Must be one of the following:
- *            Player::YOU, Player::COM1, Player::COM2, Player::COM3.
- * @return Specified player's instance.
- */
-Player* Uno::getPlayer(int who) {
-	if (who >= Player::YOU && who <= Player::COM3) {
-		return &player[who];
-	} // if (who >= Player::YOU && who <= Player::COM3)
-	else {
-		return nullptr;
-	} // else
-} // getPlayer()
+} // setDifficulty(int)
 
 /**
  * Find a card instance in card table.
@@ -557,19 +550,19 @@ Player* Uno::getPlayer(int who) {
  * @return Corresponding card instance.
  */
 Card* Uno::findCard(Color color, Content content) {
+	int i;
 	Card* result;
-	std::vector<Card>::iterator it;
 
 	result = nullptr;
-	for (it = table.begin(); it != table.end(); ++it) {
-		if (it->color == color && it->content == content) {
-			result = &(*it);
+	for (i = 0; i < 108; ++i) {
+		if (table[i].color == color && table[i].content == content) {
+			result = &table[i];
 			break;
-		} // if (it->color == color && it->content == content)
-	} // for (it = table.begin(); it != table.end(); ++it)
+		} // if (table[i].color == color && table[i].content == content)
+	} // for (i = 0; i < 108; ++i)
 
 	return result;
-} // findCard()
+} // findCard(Color, Content)
 
 /**
  * @return How many cards in deck (haven't been used yet).
@@ -598,9 +591,7 @@ const std::vector<Card*>& Uno::getRecent() {
  */
 void Uno::start() {
 	Card* card;
-	int i, index, size;
-	std::vector<Card*> allCards;
-	std::vector<Card>::iterator it;
+	int i, size;
 
 	// Reset direction
 	direction = DIR_LEFT;
@@ -617,23 +608,20 @@ void Uno::start() {
 	} // for (i = Player::YOU; i <= Player::COM3; ++i)
 
 	// Generate a temporary sequenced card deck
-	for (it = table.begin(); it != table.end(); ++it) {
-		if (it->isWild()) {
+	for (i = 0; i < 108; ++i) {
+		if (table[i].isWild()) {
 			// reset the wild cards' colors
-			it->color = NONE;
-		} // if (it->isWild())
+			table[i].color = NONE;
+		} // if (table[i].isWild())
 
-		allCards.push_back(&(*it));
-	} // for (it = table.begin(); it != table.end(); ++it)
+		deck.push_back(&table[i]);
+	} // for (i = 0; i < 108; ++i)
 
-	// Keep picking a card from the temporary card deck randomly,
-	// until all cards are picked to the real card deck (shuffle cards)
-	size = int(allCards.size());
+	// Shuffle cards
+	size = int(deck.size());
 	while (size > 0) {
-		index = rand() % size;
-		deck.push_back(allCards.at(index));
-		allCards.erase(allCards.begin() + index);
-		--size;
+		i = rand() % size--;
+		card = deck[i]; deck[i] = deck[size]; deck[size] = card;
 	} // while (size > 0)
 
 	// Let everyone draw 7 cards
@@ -660,7 +648,7 @@ void Uno::start() {
 		if (card->isWild()) {
 			// Start card cannot be a wild card, so return it
 			// to the bottom of card deck and pick another card
-			deck.push_front(card);
+			deck.insert(deck.begin(), card);
 		} // if (card->isWild())
 		else {
 			// Any non-wild card can be start card
@@ -673,7 +661,7 @@ void Uno::start() {
 /**
  * Call this function when someone needs to draw a card.
  * <p>
- * NOTE: Everyone can hold 15 cards at most in this program, so even if this
+ * NOTE: Everyone can hold 14 cards at most in this program, so even if this
  * function is called, the specified player may not draw a card as a result.
  *
  * @param who   Who draws a card. Must be one of the following values:
@@ -683,7 +671,7 @@ void Uno::start() {
  *              player draw cards. Or false if the specified player draws a
  *              card by itself in its action.
  * @return Reference of the drawn card, or nullptr if the specified player
- *         didn't draw a card because of the limit.
+ *         didn't draw a card because of the limitation.
  */
 Card* Uno::draw(int who, bool force) {
 	Card* card;
@@ -709,11 +697,11 @@ Card* Uno::draw(int who, bool force) {
 			card = deck.back();
 			deck.pop_back();
 			for (i = hand->begin(); i != hand->end(); ++i) {
-				if (*(*i) > *card) {
+				if ((*i)->order > card->order) {
 					// Found an appropriate position to insert the new card,
 					// which keeps the player's hand cards sequenced
 					break;
-				} // if (*(*i) > *card)
+				} // if ((*i)->order > card->order)
 			} // for (i = hand->begin(); i != hand->end(); ++i)
 
 			hand->insert(i, card);
@@ -738,7 +726,7 @@ Card* Uno::draw(int who, bool force) {
 	} // if (who >= Player::YOU && who <= Player::COM3)
 
 	return card;
-} // draw()
+} // draw(int, bool)
 
 /**
  * Check whether the specified card is legal to play. It's legal only when
@@ -764,16 +752,12 @@ bool Uno::isLegalToPlay(Card* card) {
 		// Same color to previous: LEGAL
 		// Other cards: ILLEGAL
 		previous = recent.back();
-		if (card->content == previous->content) {
-			result = true;
-		} // if (card->content == previous->content)
-		else {
-			result = card->color == previous->color;
-		} // else
+		result = card->color == previous->color
+			|| card->content == previous->content;
 	} // else
 
 	return result;
-} // isLegalToPlay()
+} // isLegalToPlay(Card*)
 
 /**
  * @return How many legal cards (the cards that can be played legally)
@@ -859,6 +843,6 @@ Card* Uno::play(int who, int index, Color color) {
 	} // if (who >= Player::YOU && who <= Player::COM3)
 
 	return card;
-} // play()
+} // play(int, int, Color)
 
 // E.O.F

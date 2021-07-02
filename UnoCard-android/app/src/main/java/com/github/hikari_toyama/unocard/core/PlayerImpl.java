@@ -9,74 +9,33 @@
 
 package com.github.hikari_toyama.unocard.core;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * Store an Uno player's real-time information,
  * such as hand cards, and recent played card.
  */
-public abstract class Player {
+class PlayerImpl extends Player {
     /**
-     * Your player ID.
+     * Hand cards (read only version, provide for external accesses).
      */
-    public static final int YOU = 0;
-
-    /**
-     * WEST's player ID.
-     */
-    public static final int COM1 = 1;
-
-    /**
-     * NORTH's player ID.
-     */
-    public static final int COM2 = 2;
-
-    /**
-     * EAST's player ID.
-     */
-    public static final int COM3 = 3;
-
-    /**
-     * Hand cards.
-     */
-    List<Card> handCards;
-
-    /**
-     * Dangerous color.
-     */
-    Color dangerousColor = Color.NONE;
-
-    /**
-     * Safe color.
-     */
-    Color safeColor = Color.NONE;
-
-    /**
-     * Recent played card. If the player drew one or more cards in its last
-     * action, this member will be null.
-     */
-    Card recent = null;
-
-    /**
-     * How many dangerous cards (cards in dangerous color) in hand. THIS IS AN
-     * ESTIMATED VALUE, NOT A REAL VALUE! This value is estimated by player's
-     * actions, such as which color this player selected when playing a wild
-     * card, and how many dangerous cards are played after that wild card.
-     */
-    int dangerousCount = 0;
+    private final List<Card> handCards_readOnly;
 
     /**
      * Default constructor.
      */
-    Player() {
-        handCards = new ArrayList<>();
-    } // Player()
+    PlayerImpl() {
+        handCards_readOnly = Collections.unmodifiableList(handCards);
+    } // PlayerImpl() (Class Constructor)
 
     /**
      * @return This player's all hand cards.
      */
-    public abstract List<Card> getHandCards();
+    @Override
+    public List<Card> getHandCards() {
+        return handCards_readOnly;
+    } // getHandCards()
 
     /**
      * When this player played a wild card, record the color specified, as this
@@ -87,7 +46,10 @@ public abstract class Player {
      * @return This player's dangerous color, or Color.NONE if no available
      * dangerous color.
      */
-    public abstract Color getDangerousColor();
+    @Override
+    public Color getDangerousColor() {
+        return dangerousColor;
+    } // getDangerousColor()
 
     /**
      * When this player draw a card in action, record the previous played card's
@@ -98,13 +60,19 @@ public abstract class Player {
      * @return This player's safe color, or Color.NONE if no available safe
      * color.
      */
-    public abstract Color getSafeColor();
+    @Override
+    public Color getSafeColor() {
+        return safeColor;
+    } // getSafeColor()
 
     /**
      * @return This player's recent played card, or null if this player drew
      * one or more cards in its previous action.
      */
-    public abstract Card getRecent();
-} // Player Abstract Class
+    @Override
+    public Card getRecent() {
+        return recent;
+    } // getRecent()
+} // PlayerImpl Class
 
 // E.O.F

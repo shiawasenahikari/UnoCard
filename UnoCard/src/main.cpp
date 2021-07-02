@@ -3,6 +3,7 @@
 // Uno Card Game
 // Author: Hikari Toyama
 // Compile Environment: Visual Studio 2015, Windows 10 x64
+// COPYRIGHT HIKARI TOYAMA, 1992-2021. ALL RIGHTS RESERVED.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -339,7 +340,8 @@ static void onStatusChanged(int status) {
 		} // if (sAuto)
 		else if (sImmPlayAsk) {
 			sSelectedCard = sDrawnCard;
-			refreshScreen("^ Play " + sDrawnCard->name + "?");
+			message = "^ Play " + std::string(sDrawnCard->name) + "?";
+			refreshScreen(message);
 			rect = cv::Rect(338, 270, 121, 181);
 			sUno->getBackground()(rect).copyTo(sScreen(rect));
 			center = cv::Point(405, 315);
@@ -395,7 +397,7 @@ static void onStatusChanged(int status) {
 		else if (sChallengeAsk) {
 			recent = sUno->getRecent();
 			next2last = recent.at(recent.size() - 2);
-			message = "^ Do you think"
+			message = "^ Do you think "
 				+ NAME[sUno->getNow()] + " still has "
 				+ CL[next2last->getRealColor()] + "?";
 			refreshScreen(message);
@@ -587,7 +589,7 @@ static void onStatusChanged(int status) {
 	default:
 		break; // default
 	} // switch (status)
-} // onStatusChanged()
+} // onStatusChanged(int)
 
 /**
  * Refresh the screen display. The content of global variable [sScreen]
@@ -599,8 +601,8 @@ static void refreshScreen(const std::string& message) {
 	cv::Rect roi;
 	cv::Mat image;
 	cv::Point point;
+	std::string info;
 	bool beChallenged;
-	std::stringstream buff;
 	std::vector<Card*> hand;
 	int i, remain, used, rate;
 	int status, size, width, height;
@@ -695,10 +697,10 @@ static void refreshScreen(const std::string& message) {
 			break; // default
 		} // switch (sUno->getDifficulty() << 4 | sUno->getPlayers())
 
-		buff << "win rate: " << rate << "%";
-		width = cv::getTextSize(buff.str(), FONT_SANS, 1.0, 1, nullptr).width;
+		info = "win rate: " + std::to_string(rate) + "%";
+		width = cv::getTextSize(info, FONT_SANS, 1.0, 1, nullptr).width;
 		point.x = 930 - width / 2;
-		cv::putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
+		cv::putText(sScreen, info, point, FONT_SANS, 1.0, RGB_WHITE);
 
 		// [UNO] button: start a new game
 		image = sUno->getBackImage();
@@ -735,8 +737,9 @@ static void refreshScreen(const std::string& message) {
 		point = cv::Point(20, 42);
 		remain = sUno->getDeckCount();
 		used = sUno->getUsedCount();
-		buff << "Remain/Used: " << remain << "/" << used;
-		cv::putText(sScreen, buff.str(), point, FONT_SANS, 1.0, RGB_WHITE);
+		info = "Remain/Used: "
+			+ std::to_string(remain) + "/" + std::to_string(used);
+		cv::putText(sScreen, info, point, FONT_SANS, 1.0, RGB_WHITE);
 
 		// Left-center: Hand cards of Player West (COM1)
 		hand = sUno->getPlayer(Player::COM1)->getHandCards();
@@ -929,7 +932,7 @@ static void refreshScreen(const std::string& message) {
 
 	// Show screen
 	imshow("Uno", sScreen);
-} // refreshScreen()
+} // refreshScreen(const std::string&)
 
 /**
  * The player in action play a card.
@@ -1057,7 +1060,7 @@ static void play(int index, Color color) {
 				break; // case WILD_DRAW4
 
 			default:
-				message += ": " + card->name;
+				message += ": " + std::string(card->name);
 				refreshScreen(message);
 				cv::waitKey(1500);
 				sStatus = sUno->switchNow();
@@ -1066,7 +1069,7 @@ static void play(int index, Color color) {
 			} // switch (card->content)
 		} // else
 	} // if (card != nullptr)
-} // play()
+} // play(int, Color)
 
 /**
  * The player in action draw one or more cards.
@@ -1081,13 +1084,12 @@ static void draw(int count, bool force) {
 	int i, now;
 	cv::Rect roi;
 	cv::Mat image;
-	std::stringstream buff;
+	std::string message;
 
 	sStatus = STAT_IDLE; // block mouse click events when idle
 	now = sUno->getNow();
 	sSelectedCard = nullptr;
 	for (i = 0; i < count; ++i) {
-		buff.str("");
 		sDrawnCard = sUno->draw(now, force);
 		if (sDrawnCard != nullptr) {
 			switch (now) {
@@ -1095,10 +1097,11 @@ static void draw(int count, bool force) {
 				image = sUno->getBackImage();
 				roi = cv::Rect(160, 270, 121, 181);
 				if (count == 1) {
-					buff << NAME[now] << ": Draw a card";
+					message = NAME[now] + ": Draw a card";
 				} // if (count == 1)
 				else {
-					buff << NAME[now] << ": Draw " << count << " cards";
+					message = NAME[now] + ": Draw "
+						+ std::to_string(count) + " cards";
 				} // else
 				break; // case Player::COM1
 
@@ -1106,10 +1109,11 @@ static void draw(int count, bool force) {
 				image = sUno->getBackImage();
 				roi = cv::Rect(580, 50, 121, 181);
 				if (count == 1) {
-					buff << NAME[now] << ": Draw a card";
+					message = NAME[now] + ": Draw a card";
 				} // if (count == 1)
 				else {
-					buff << NAME[now] << ": Draw " << count << " cards";
+					message = NAME[now] + ": Draw "
+						+ std::to_string(count) + " cards";
 				} // else
 				break; // case Player::COM2
 
@@ -1117,17 +1121,18 @@ static void draw(int count, bool force) {
 				image = sUno->getBackImage();
 				roi = cv::Rect(1000, 270, 121, 181);
 				if (count == 1) {
-					buff << NAME[now] << ": Draw a card";
+					message = NAME[now] + ": Draw a card";
 				} // if (count == 1)
 				else {
-					buff << NAME[now] << ": Draw " << count << " cards";
+					message = NAME[now] + ": Draw "
+						+ std::to_string(count) + " cards";
 				} // else
 				break; // case Player::COM3
 
 			default:
 				image = sDrawnCard->image;
 				roi = cv::Rect(580, 490, 121, 181);
-				buff << NAME[now] << ": Draw " + sDrawnCard->name;
+				message = NAME[now] + ": Draw " + sDrawnCard->name;
 				break; // default
 			} // switch (now)
 
@@ -1135,14 +1140,14 @@ static void draw(int count, bool force) {
 			image.copyTo(sScreen(roi), image);
 			imshow("Uno", sScreen);
 			cv::waitKey(300);
-			refreshScreen(buff.str());
+			refreshScreen(message);
 			cv::waitKey(300);
 		} // if (sDrawnCard != nullptr)
 		else {
-			buff << NAME[now];
-			buff << " cannot hold more than ";
-			buff << Uno::MAX_HOLD_CARDS << " cards";
-			refreshScreen(buff.str());
+			message = NAME[now]
+				+ " cannot hold more than "
+				+ std::to_string(Uno::MAX_HOLD_CARDS) + " cards";
+			refreshScreen(message);
 			break;
 		} // else
 	} // for (i = 0; i < count; ++i)
@@ -1163,7 +1168,7 @@ static void draw(int count, bool force) {
 		sStatus = sUno->switchNow();
 		onStatusChanged(sStatus);
 	} // else
-} // draw()
+} // draw(int, bool)
 
 /**
  * Triggered on challenge chance. When a player played a [wild +4], the next
@@ -1252,7 +1257,7 @@ static void onChallengeChance(bool challenged) {
 		sUno->switchNow();
 		draw(4, /* force */ true);
 	} // else
-} // onChallengeChance()
+} // onChallengeChance(bool)
 
 /**
  * Mouse event callback, used by OpenCV GUI windows. When a GUI window
@@ -1470,7 +1475,7 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 						play(index);
 					} // else if (sUno->isLegalToPlay(card))
 					else {
-						refreshScreen("Cannot play " + card->name);
+						refreshScreen("Cannot play " + std::string(card->name));
 					} // else
 				} // if (x >= startX && x <= startX + width)
 				else {
@@ -1524,6 +1529,6 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 			break; // default
 		} // else switch (sStatus)
 	} // if (event == cv::EVENT_LBUTTONDOWN || event == cv::EVENT_LBUTTONDBLCLK)
-} // onMouse()
+} // onMouse(int * 4, void*)
 
 // E.O.F

@@ -3,13 +3,13 @@
 // Uno Card Game
 // Author: Hikari Toyama
 // Compile Environment: Visual Studio 2015, Windows 10 x64
+// COPYRIGHT HIKARI TOYAMA, 1992-2021. ALL RIGHTS RESERVED.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef __UNO_H_494649FDFA62B3C015120BCB9BE17613__
 #define __UNO_H_494649FDFA62B3C015120BCB9BE17613__
 
-#include <list>
 #include <vector>
 #include <Card.h>
 #include <Color.h>
@@ -21,6 +21,98 @@
  * Uno Runtime Class (Singleton).
  */
 class Uno {
+private:
+	/**
+	 * Card back image resource.
+	 */
+	cv::Mat backImage;
+
+	/**
+	 * Background image resource (for welcome screen).
+	 */
+	cv::Mat bgWelcome;
+
+	/**
+	 * Background image resource (Direction: COUNTER CLOCKWISE).
+	 */
+	cv::Mat bgCounter;
+
+	/**
+	 * Background image resource (Direction: CLOCKWISE).
+	 */
+	cv::Mat bgClockwise;
+
+	/**
+	 * Image resources for wild cards.
+	 */
+	cv::Mat wildImage[5];
+
+	/**
+	 * Image resources for wild +4 cards.
+	 */
+	cv::Mat wildDraw4Image[5];
+
+	/**
+	 * Difficulty button image resources (EASY).
+	 */
+	cv::Mat easyImage, easyImage_d;
+
+	/**
+	 * Difficulty button image resources (HARD).
+	 */
+	cv::Mat hardImage, hardImage_d;
+
+	/**
+	 * Player in turn. Must be one of the following:
+	 * Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+	 */
+	int now;
+
+	/**
+	 * How many players in game. Supports 3 or 4.
+	 */
+	int players;
+
+	/**
+	 * Current action sequence (DIR_LEFT / DIR_RIGHT).
+	 */
+	int direction;
+
+	/**
+	 * Current difficulty (LV_EASY / LV_HARD).
+	 */
+	int difficulty;
+
+	/**
+	 * Game players.
+	 */
+	Player player[4];
+
+	/**
+	 * Card deck (ready to use).
+	 */
+	std::vector<Card*> deck;
+
+	/**
+	 * Used cards.
+	 */
+	std::vector<Card*> used;
+
+	/**
+	 * Card table.
+	 */
+	std::vector<Card> table;
+
+	/**
+	 * Recent played cards.
+	 */
+	std::vector<Card*> recent;
+
+	/**
+	 * Singleton, hide default constructor.
+	 */
+	Uno();
+
 public:
 	/**
 	 * Easy level ID.
@@ -196,7 +288,7 @@ public:
 	/**
 	 * Call this function when someone needs to draw a card.
 	 * <p>
-	 * NOTE: Everyone can hold 15 cards at most in this program, so even if this
+	 * NOTE: Everyone can hold 14 cards at most in this program, so even if this
 	 * function is called, the specified player may not draw a card as a result.
 	 *
 	 * @param who   Who draws a card. Must be one of the following values:
@@ -206,7 +298,7 @@ public:
 	 *              player draw cards. Or false if the specified player draws a
 	 *              card by itself in its action.
 	 * @return Reference of the drawn card, or nullptr if the specified player
-	 *         didn't draw a card because of the limit.
+	 *         didn't draw a card because of the limitation.
 	 */
 	Card* draw(int who, bool force);
 
@@ -243,98 +335,6 @@ public:
 	 * @return Reference of the played card.
 	 */
 	Card* play(int who, int index, Color color);
-
-private:
-	/**
-	 * Card back image resource.
-	 */
-	cv::Mat backImage;
-
-	/**
-	 * Background image resource (for welcome screen).
-	 */
-	cv::Mat bgWelcome;
-
-	/**
-	 * Background image resource (Direction: COUTNER CLOCKWISE).
-	 */
-	cv::Mat bgCounter;
-
-	/**
-	 * Background image resource (Direction: CLOCKWISE).
-	 */
-	cv::Mat bgClockwise;
-
-	/**
-	 * Image resources for wild cards.
-	 */
-	cv::Mat wildImage[5];
-
-	/**
-	 * Image resources for wild +4 cards.
-	 */
-	cv::Mat wildDraw4Image[5];
-
-	/**
-	 * Difficulty button image resources (EASY).
-	 */
-	cv::Mat easyImage, easyImage_d;
-
-	/**
-	 * Difficulty button image resources (HARD).
-	 */
-	cv::Mat hardImage, hardImage_d;
-
-	/**
-	 * Player in turn. Must be one of the following:
-	 * Player::YOU, Player::COM1, Player::COM2, Player::COM3.
-	 */
-	int now;
-
-	/**
-	 * How many players in game. Supports 3 or 4.
-	 */
-	int players;
-
-	/**
-	 * Current action sequence (DIR_LEFT / DIR_RIGHT).
-	 */
-	int direction;
-
-	/**
-	 * Current difficulty (LV_EASY / LV_HARD).
-	 */
-	int difficulty;
-
-	/**
-	 * Game players.
-	 */
-	Player player[4];
-
-	/**
-	 * Card deck (ready to use).
-	 */
-	std::list<Card*> deck;
-
-	/**
-	 * Used cards.
-	 */
-	std::vector<Card*> used;
-
-	/**
-	 * Card table.
-	 */
-	std::vector<Card> table;
-
-	/**
-	 * Recent played cards.
-	 */
-	std::vector<Card*> recent;
-
-	/**
-	 * Singleton, hide default constructor.
-	 */
-	Uno();
 }; // Uno Class
 
 #endif // __UNO_H_494649FDFA62B3C015120BCB9BE17613__

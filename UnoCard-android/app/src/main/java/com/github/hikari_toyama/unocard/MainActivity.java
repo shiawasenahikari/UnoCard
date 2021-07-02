@@ -3,6 +3,7 @@
 // Uno Card Game
 // Author: Hikari Toyama
 // Compile Environment: Android Studio 3.4, with Android SDK 28
+// COPYRIGHT HIKARI TOYAMA, 1992-2021. ALL RIGHTS RESERVED.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -112,7 +113,7 @@ public class MainActivity extends AppCompatActivity
             mUno = Uno.getInstance(this);
             mUno.setPlayers(sp.getInt("players", 3));
             mUno.setDifficulty(sp.getInt("difficulty", Uno.LV_EASY));
-            mAI = new AI(this);
+            mAI = AI.getInstance(this);
             mWinner = Player.YOU;
             mStatus = STAT_WELCOME;
             mScr = mUno.getBackground().clone();
@@ -125,7 +126,7 @@ public class MainActivity extends AppCompatActivity
             dialog = new UnsupportedDeviceDialog();
             dialog.show(getSupportFragmentManager(), "UnsupportedDeviceDialog");
         } // else
-    } // onCreate()
+    } // onCreate(Bundle)
 
     /**
      * AI Strategies (Difficulty: EASY).
@@ -566,7 +567,7 @@ public class MainActivity extends AppCompatActivity
             default:
                 break; // default
         } // switch (status)
-    } // onStatusChanged()
+    } // onStatusChanged(int)
 
     /**
      * Refresh the screen display.
@@ -909,7 +910,7 @@ public class MainActivity extends AppCompatActivity
         // Show screen
         Utils.matToBitmap(mScr, mBmp);
         mImgScreen.setImageBitmap(mBmp);
-    } // refreshScreen()
+    } // refreshScreen(String)
 
     /**
      * The player in action play a card.
@@ -1065,7 +1066,7 @@ public class MainActivity extends AppCompatActivity
             }; // delayedTask = () -> {}
             mHandler.postDelayed(delayedTask, delayedMs);
         } // if (card != null)
-    } // play()
+    } // play(int, Color)
 
     /**
      * The player in action draw one or more cards.
@@ -1086,7 +1087,7 @@ public class MainActivity extends AppCompatActivity
         // cycle by executing mHandler.postDelayed(this, delayedMs); in the
         // run() method of the created Runnable object.
         mHandler.post(new DrawLoop(count, force));
-    } // draw()
+    } // draw(int, boolean)
 
     /**
      * Triggered on challenge chance. When a player played a [wild +4], the next
@@ -1182,7 +1183,7 @@ public class MainActivity extends AppCompatActivity
             mUno.switchNow();
             draw(4, /* force */ true);
         } // else
-    } // onChallengeChance()
+    } // onChallengeChance(boolean)
 
     /**
      * Triggered when a touch event occurred.
@@ -1197,12 +1198,14 @@ public class MainActivity extends AppCompatActivity
         Card card;
         List<Card> hand;
         Runnable delayedTask;
-        int x, y, index, size, width, startX;
+        int x, y, index, size, width, height, startX;
 
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             // Only response to tap down events, and ignore the others
-            x = (int) (event.getX() * mUno.getBgWidth() / v.getWidth());
-            y = (int) (event.getY() * mUno.getBgHeight() / v.getHeight());
+            width = mUno.getBackground().width();
+            height = mUno.getBackground().height();
+            x = (int) (event.getX() * width / v.getWidth());
+            y = (int) (event.getY() * height / v.getHeight());
             if (y >= 679 && y <= 700 && x >= 1130 && x <= 1260) {
                 // <AUTO> button
                 // In player's action, automatically play or draw cards by AI
@@ -1583,10 +1586,10 @@ public class MainActivity extends AppCompatActivity
      * @see MainActivity#draw(int, boolean)
      */
     private class DrawLoop implements Runnable {
-        private int now;
-        private int count;
+        private final boolean force;
+        private final int count;
+        private final int now;
         private int times;
-        private boolean force;
 
         /**
          * DrawLoop Constructor.
@@ -1602,7 +1605,7 @@ public class MainActivity extends AppCompatActivity
             this.count = count;
             this.force = force;
             this.times = 0;
-        } // DrawLoop() (Class Constructor)
+        } // DrawLoop(int, boolean) (Class Constructor)
 
         /**
          * Loop task.

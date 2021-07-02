@@ -3,6 +3,7 @@
 // Uno Card Game
 // Author: Hikari Toyama
 // Compile Environment: Visual Studio 2015, Windows 10 x64
+// COPYRIGHT HIKARI TOYAMA, 1992-2021. ALL RIGHTS RESERVED.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -15,13 +16,64 @@
 #include <Player.h>
 #include <Content.h>
 
+static Uno* uno = Uno::getInstance();
+
+/**
+ * Evaluate which color is the best for current player. In our evaluation
+ * system, zero cards / reverse cards are worth 2 points, non-zero number
+ * cards are worth 4 points, and skip / draw two cards are worth 5 points.
+ * Finally, the color which contains the worthiest cards becomes the best
+ * color.
+ *
+ * @return Current player's best color.
+ */
+static Color calcBestColor4NowPlayer() {
+	Color best = RED;
+	int score[5] = { 0, 0, 0, 0, 0 };
+	Player* curr = uno->getPlayer(uno->getNow());
+
+	for (Card* card : curr->getHandCards()) {
+		switch (card->content) {
+		case REV:
+		case NUM0:
+			score[card->getRealColor()] += 2;
+			break; // case REV, NUM0
+
+		case SKIP:
+		case DRAW2:
+			score[card->getRealColor()] += 5;
+			break; // case SKIP, DRAW2
+
+		default:
+			score[card->getRealColor()] += 4;
+			break; // default
+		} // switch (card->content)
+	} // for (Card* card : curr->getHandCards())
+
+	  // default to red, when only wild cards in hand,
+	  // function will return Color::RED
+	if (score[BLUE] > score[best]) {
+		best = BLUE;
+	} // if (score[BLUE] > score[best]
+
+	if (score[GREEN] > score[best]) {
+		best = GREEN;
+	} // if (score[GREEN] > score[best])
+
+	if (score[YELLOW] > score[best]) {
+		best = YELLOW;
+	} // if (score[YELLOW] > score[best])
+
+	return best;
+} // calcBestColor4NowPlayer()
+
 /**
  * AI strategies of determining if it's necessary to challenge previous
  * player's [wild +4] card's legality.
  *
  * @param challenger Who challenges. Must be one of the following values:
  *                   Player::YOU, Player::COM1, Player::COM2, Player::COM3.
- * @return Whether the challenger needs to make a challenge.
+ * @return True if it's necessary to make a challenge.
  */
 bool AI::needToChallenge(int challenger) {
 	bool challenge;
@@ -36,8 +88,8 @@ bool AI::needToChallenge(int challenger) {
 		challenge = true;
 	} // if (hand.size() == 1)
 	else if (hand.size() >= Uno::MAX_HOLD_CARDS - 4) {
-		// Challenge when I have 10 or more cards already, thus even if
-		// challenge failed, I draw at most 4 cards.
+		// Challenge when I have 10 or more cards already.
+		// Even if challenge failed, I draw at most 4 cards.
 		challenge = true;
 	} // else if (hand.size() >= Uno::MAX_HOLD_CARDS - 4)
 	else {
@@ -50,7 +102,7 @@ bool AI::needToChallenge(int challenger) {
 	} // else
 
 	return challenge;
-} // needToChallenge()
+} // needToChallenge(int)
 
 /**
  * AI Strategies (Difficulty: EASY). Analyze current player's hand cards,
@@ -61,7 +113,7 @@ bool AI::needToChallenge(int challenger) {
  *                  then you can play only the drawn card, but not the other
  *                  cards in your hand, immediately.
  * @param outColor  This is a out parameter. Pass a Color array (length>=1)
- *                  in order to let we pass the return value by assigning
+ *                  in order to let us pass the return value by assigning
  *                  outColor[0]. When the best card to play becomes a wild
  *                  card, outColor[0] will become the following legal color
  *                  to change. When the best card to play becomes an action
@@ -210,7 +262,7 @@ int AI::easyAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
 
 	outColor[0] = bestColor;
 	return idxBest;
-} // easyAI_bestCardIndex4NowPlayer()
+} // easyAI_bestCardIndex4NowPlayer(Card*, Color[])
 
 /**
  * AI Strategies (Difficulty: HARD). Analyze current player's hand cards,
@@ -221,7 +273,7 @@ int AI::easyAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
  *                  then you can play only the drawn card, but not the other
  *                  cards in your hand, immediately.
  * @param outColor  This is a out parameter. Pass a Color array (length>=1)
- *                  in order to let we pass the return value by assigning
+ *                  in order to let us pass the return value by assigning
  *                  outColor[0]. When the best card to play becomes a wild
  *                  card, outColor[0] will become the following legal color
  *                  to change. When the best card to play becomes an action
@@ -339,10 +391,20 @@ int AI::hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
 	if (nextSize == 1) {
 		// Strategies when your next player remains only one card.
 		// Limit your next player's action as well as you can.
-		if (nextSafeColor == NONE ||
-			nextDangerColor != NONE && nextDangerColor != bestColor) {
+		if (hasDraw2) {
+			// Play a [+2] to make your next player draw two cards!
+			outColor[0] = bestColor;
+			return idxDraw2;
+		} // if (hasDraw2)
+
+		// Now calculate your safe color, which can make your
+		// next player NOT to win the game.
+		if (nextDangerColor != NONE && nextDangerColor != bestColor) {
 			safeColor = bestColor;
-		} // if (nextSafeColor == NONE || ...)
+		} // if (nextDangerColor != NONE && nextDangerColor != bestColor)
+		else if (nextSafeColor == NONE) {
+			safeColor = bestColor;
+		} // else if (nextSafeColor == NONE)
 		else {
 			safeColor = nextSafeColor;
 		} // else
@@ -356,14 +418,11 @@ int AI::hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
 			safeColor = Color(rand() % 4 + 1);
 		} // while (safeColor == nextDangerColor || ...)
 
-		if (hasDraw2) {
-			// Play a [+2] to make your next player draw two cards!
-			idxBest = idxDraw2;
-		} // if (hasDraw2)
-		else if (lastColor == nextDangerColor) {
-			// Your next player played a wild card, started an UNO dash in
-			// its last action. You have to change the following legal
-			// color, or you will approximately 100% lose this game.
+		if (lastColor == nextDangerColor) {
+			// Your next player played a wild card, started an UNO dash
+			// in its last action, and what's worse is that the legal color
+			// has not been changed yet. You have to change the following
+			// legal color, or you will approximately 100% lose this game.
 			if (hasNumIn[safeColor]) {
 				idxBest = idxNumIn[safeColor];
 			} // if (hasNumIn[safeColor])
@@ -409,10 +468,10 @@ int AI::hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
 				// If you even do not have this choice, you lose this game.
 				idxBest = idxRev;
 			} // else if (hasRev)
-		} // else if (lastColor == nextDangerColor)
+		} // if (lastColor == nextDangerColor)
 		else if (nextDangerColor != NONE) {
-			// Your next player played a wild card, started an UNO dash in
-			// its last action, but fortunately the legal color has been
+			// Your next player played a wild card, started an UNO dash
+			// in its last action, but fortunately the legal color has been
 			// changed already. Just be careful not to re-change the legal
 			// color to the dangerous color again.
 			if (hasNumIn[safeColor]) {
@@ -514,11 +573,14 @@ int AI::hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
 		// Strategies when your previous player remains only one card.
 		// Save your action cards as much as you can. once a reverse card is
 		// played, you can use these cards to limit your previous player's
-		// action.
-		if (prevSafeColor == NONE ||
-			prevDangerColor != NONE && prevDangerColor != bestColor) {
+		// action. Now calculate your safe color, which can make your
+		// previous player NOT to win the game.
+		if (prevDangerColor != NONE && prevDangerColor != bestColor) {
 			safeColor = bestColor;
-		} // if (prevSafeColor == NONE || ...)
+		} // if (prevDangerColor != NONE && prevDangerColor != bestColor)
+		else if (prevSafeColor == NONE) {
+			safeColor = bestColor;
+		} // else if (prevSafeColor == NONE)
 		else {
 			safeColor = prevSafeColor;
 		} // else
@@ -631,11 +693,15 @@ int AI::hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
 	else if (oppoSize == 1) {
 		// Strategies when your opposite player remains only one card.
 		// Give more freedom to your next player, the only one that can
-		// directly limit your opposite player's action.
-		if (oppoSafeColor == NONE ||
-			oppoDangerColor != NONE && oppoDangerColor != bestColor) {
+		// directly limit your opposite player's action. Now calculate
+		// your safe color, which can make your opposite player NOT to
+		// win the game.
+		if (oppoDangerColor != NONE && oppoDangerColor != bestColor) {
 			safeColor = bestColor;
-		} // if (oppoSafeColor == NONE || ...)
+		} // if (oppoDangerColor != NONE && oppoDangerColor != bestColor)
+		else if (oppoSafeColor == NONE) {
+			safeColor = bestColor;
+		} // else if (oppoSafeColor == NONE)
 		else {
 			safeColor = oppoSafeColor;
 		} // else
@@ -645,7 +711,7 @@ int AI::hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
 			// choose opposite player's safe color, but be careful of
 			// the conflict with other opponents' dangerous colors!
 			safeColor = Color(rand() % 4 + 1);
-		} // while (safeColor == oppoDangerColor || ...)
+		} // while (safeColor == oppoDangerColor)
 
 		if (lastColor == oppoDangerColor) {
 			// Your opposite player played a wild card, started an UNO dash
@@ -821,20 +887,10 @@ int AI::hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
 		// When your next player remains only a few cards, use [Wild +4]
 		// cards at first. Otherwise, use [Wild] cards at first.
 		if (nextSize <= 4) {
-			if (hasWD4) {
-				idxBest = idxWD4;
-			} // if (hasWD4)
-			else {
-				idxBest = idxWild;
-			} // else
+			idxBest = hasWD4 ? idxWD4 : idxWild;
 		} // if (nextSize <= 4)
 		else {
-			if (hasWild) {
-				idxBest = idxWild;
-			} // if (hasWild)
-			else {
-				idxBest = idxWD4;
-			} // else
+			idxBest = hasWild ? idxWild : idxWD4;
 		} // else
 	} // else if (allWild)
 	else if (lastColor == nextSafeColor && yourSize > 2) {
@@ -975,54 +1031,6 @@ int AI::hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
 
 	outColor[0] = bestColor;
 	return idxBest;
-} // hardAI_bestCardIndex4NowPlayer()
-
-/**
- * Evaluate which color is the best for current player. In our evaluation
- * system, zero cards are worth 2 points, non-zero number cards are worth
- * 4 points, and action cards are worth 5 points. Finally, the color which
- * contains the worthiest cards becomes the best color.
- *
- * @return Current player's best color.
- */
-Color AI::calcBestColor4NowPlayer() {
-	Color best = RED;
-	int score[5] = { 0, 0, 0, 0, 0 };
-	Player* curr = uno->getPlayer(uno->getNow());
-
-	for (Card* card : curr->getHandCards()) {
-		switch (card->content) {
-		case REV:
-		case NUM0:
-			score[card->getRealColor()] += 2;
-			break; // case REV, NUM0
-
-		case SKIP:
-		case DRAW2:
-			score[card->getRealColor()] += 5;
-			break; // case SKIP, DRAW2
-
-		default:
-			score[card->getRealColor()] += 4;
-			break; // default
-		} // switch (card->content)
-	} // for (Card* card : curr->getHandCards())
-
-	// default to red, when only wild cards in hand,
-	// function will return Color::RED
-	if (score[BLUE] > score[best]) {
-		best = BLUE;
-	} // if (score[BLUE] > score[best]
-
-	if (score[GREEN] > score[best]) {
-		best = GREEN;
-	} // if (score[GREEN] > score[best])
-
-	if (score[YELLOW] > score[best]) {
-		best = YELLOW;
-	} // if (score[YELLOW] > score[best])
-
-	return best;
-} // calcBestColor4NowPlayer()
+} // hardAI_bestCardIndex4NowPlayer(Card*, Color[])
 
 // E.O.F

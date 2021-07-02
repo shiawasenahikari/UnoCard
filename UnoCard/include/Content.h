@@ -3,6 +3,7 @@
 // Uno Card Game
 // Author: Hikari Toyama
 // Compile Environment: Visual Studio 2015, Windows 10 x64
+// COPYRIGHT HIKARI TOYAMA, 1992-2021. ALL RIGHTS RESERVED.
 //
 ////////////////////////////////////////////////////////////////////////////////
 

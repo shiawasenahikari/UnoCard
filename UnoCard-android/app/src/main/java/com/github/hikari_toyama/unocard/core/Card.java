@@ -3,6 +3,7 @@
 // Uno Card Game
 // Author: Hikari Toyama
 // Compile Environment: Android Studio 3.4, with Android SDK 28
+// COPYRIGHT HIKARI TOYAMA, 1992-2021. ALL RIGHTS RESERVED.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -10,14 +11,10 @@ package com.github.hikari_toyama.unocard.core;
 
 import org.opencv.core.Mat;
 
-import static com.github.hikari_toyama.unocard.core.Content.WILD;
-import static com.github.hikari_toyama.unocard.core.Content.WILD_DRAW4;
-
 /**
  * Uno Card Class.
  */
-@SuppressWarnings("ALL")
-public class Card implements Comparable<Card> {
+public abstract class Card {
     /**
      * Card's image resource ID, e.g. Imgcodecs.imread
      * ("/sdcard/Android/data/com.github.hikari_toyama/files/front_b3.png")
@@ -41,15 +38,15 @@ public class Card implements Comparable<Card> {
     public final Content content;
 
     /**
-     * Card's order. Used in the hand card sorting procedure.
-     * Everyone's hand cards will be sorted based on the order sequence.
-     */
-    final int order;
-
-    /**
      * Card's color, e.g. Color.BLUE
      */
     Color color;
+
+    /**
+     * Card's order. Used in the hand card sorting procedure.
+     * Everyone's hand cards will be sorted based on the order sequence.
+     */
+    int order;
 
     /**
      * Constructor. Provide parameters for an Uno card and create its instance.
@@ -84,73 +81,16 @@ public class Card implements Comparable<Card> {
     } // Card(Mat, Mat, Color, Content, String) (Class Constructor)
 
     /**
-     * @return For non-wild cards, return card's color. For wild cards,
-     * return the specified wild color by the player who played this
-     * card, or Color.NONE if this card is in hand or card deck.
+     * @return For non-wild cards, return card's color. For wild cards, return
+     * the specified wild color by the player who played this card, or
+     * Color.NONE if this card is in hand or card deck.
      */
-    public Color getRealColor() {
-        return color;
-    } // getRealColor()
+    public abstract Color getRealColor();
 
     /**
      * @return Whether the card is a [wild] or [wild +4].
      */
-    public boolean isWild() {
-        return content == WILD || content == WILD_DRAW4;
-    } // isWild()
-
-    /**
-     * @return Card's name.
-     */
-    @Override
-    public String toString() {
-        return name;
-    } // toString()
-
-    /**
-     * @return Card's order.
-     */
-    @Override
-    public int hashCode() {
-        return order;
-    } // hashCode()
-
-    /**
-     * Whether this card has the same color & content to another card.
-     *
-     * @param another Compare to which Card instance.
-     * @return true if the two cards are same, or false if not.
-     */
-    @Override
-    public boolean equals(Object another) {
-        boolean result;
-
-        if (this == another) {
-            result = true;
-        } // if (this == another)
-        else if (another instanceof Card) {
-            result = this.order == ((Card) another).order;
-        } // else if (another instanceof Card)
-        else {
-            result = false;
-        } // else
-
-        return result;
-    } // equals()
-
-    /**
-     * Used in the hand card sorting procedure. The "larger" the card is,
-     * the righter the card will be hold in hand.
-     *
-     * @param another Compare to which Card instance.
-     * @return 0 if the two cards are same,
-     * or a positive number if current card is "larger",
-     * or a negative number if current card is "smaller".
-     */
-    @Override
-    public int compareTo(Card another) {
-        return this.order - another.order;
-    } // compareTo()
-} // Card Class
+    public abstract boolean isWild();
+} // Card Abstract Class
 
 // E.O.F

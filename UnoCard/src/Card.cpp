@@ -3,10 +3,10 @@
 // Uno Card Game
 // Author: Hikari Toyama
 // Compile Environment: Visual Studio 2015, Windows 10 x64
+// COPYRIGHT HIKARI TOYAMA, 1992-2021. ALL RIGHTS RESERVED.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <string>
 #include <Card.h>
 #include <Color.h>
 #include <Content.h>
@@ -16,56 +16,14 @@
  * Constructor. Provide parameters for an Uno card and create its instance.
  */
 Card::Card(cv::Mat image, cv::Mat darkImg,
-	Color color, Content content, std::string name) :
+	Color color, Content content, const char* name) :
 	name(name),
 	image(image),
 	color(color),
 	content(content),
 	darkImg(darkImg),
 	order((color << 8) + content) {
-} // Card(Mat, Mat, Color, Content, string) (Class Constructor)
-
-/**
- * Override relational operator (<).
- */
-bool Card::operator<(const Card& card) {
-	return order < card.order;
-} // operator<()
-
-/**
- * Override relational operator (<=).
- */
-bool Card::operator<=(const Card& card) {
-	return order <= card.order;
-} // operator<=()
-
-/**
- * Override relational operator (==).
- */
-bool Card::operator==(const Card& card) {
-	return order == card.order;
-} // operator==()
-
-/**
- * Override relational operator (>=).
- */
-bool Card::operator>=(const Card& card) {
-	return order >= card.order;
-} // operator>=()
-
-/**
- * Override relational operator (>).
- */
-bool Card::operator>(const Card& card) {
-	return order > card.order;
-} // operator>()
-
-/**
- * Override relational operator (!=).
- */
-bool Card::operator!=(const Card& card) {
-	return order != card.order;
-} // operator!=()
+} // Card(Mat, Mat, Color, Content, const char*) (Class Constructor)
 
 /**
  * @return For non-wild cards, return card's color. For wild cards, return
