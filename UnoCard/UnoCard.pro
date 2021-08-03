@@ -30,6 +30,12 @@ SOURCES += \
     src/Uno.cpp \
     src/main.cpp
 
+macx {
+    DEPENDPATH += /opt/homebrew/include $$PWD/include
+    INCLUDEPATH += /opt/homebrew/include $$PWD/include
+    LIBS += -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs
+} # end of macx
+
 unix:!macx {
     DEPENDPATH += /usr/local/include $$PWD/include
     INCLUDEPATH += /usr/local/include $$PWD/include

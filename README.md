@@ -31,19 +31,18 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 3. Execute [BUILD]->[Build Solution] menu command (or press F6) to build this project.
 4. Execute [DEBUG]->[Start Without Debugging] menu command (or press Ctrl+F5) to run this program.
 
-💻For Linux x86_64 PC Devices
-=============================
+💻For MAC OS X PC Devices
+=========================
 
-Download the source code and compile manually
----------------------------------------------
-
-1. Ensure that you have installed OpenCV 3.x/4.x library on your computer. If not, install it
-   according to the following steps:
-   [OpenCV: Installation in Linux](https://docs.opencv.org/4.5.3/d7/d9f/tutorial_linux_install.html)
-2. After installation, Add `/usr/local/lib` directory to your `LD_LIBRARY_PATH` environment variable
-   by executing the following commands in your bash terminal:
+1. Ensure that you have installed OpenCV library and Qt Toolkit on your computer. If not, install
+   them by executing the following command in your bash terminal:
 ```Bash
-sudo echo -e "\nexprt LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH" >> /etc/profile
+brew install opencv qt5
+```
+2. After installation, add `/opt/homebrew/lib` directory to your `LD_LIBRARY_PATH` environment
+   variable by executing the following commands in your bash terminal:
+```Bash
+sudo echo -e "\nexprt LD_LIBRARY_PATH=/opt/homebrew/lib:$LD_LIBRARY_PATH" >> /etc/profile
 source /etc/profile
 ```
 3. Clone this repository by executing the following command in your bash terminal (replace
@@ -51,14 +50,37 @@ source /etc/profile
 ```Bash
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
-4. Ensure that you have installed Qt Toolkit on your computer. If not, install it by executing the
-   following command in your bash terminal
+4. Build and run
+```Bash
+cd <proj_root>/UnoCard
+qmake && make && ./UnoCard
+```
+
+💻For Linux x86_64 PC Devices
+=============================
+
+1. Ensure that you have installed Qt Toolkit on your computer. If not, install it by executing the
+   following command in your bash terminal:
 ```Bash
 # For Ubuntu/Debian users:
 sudo apt install qt5-default
 
 # For Fedora/CentOS/RHEL users:
 sudo yum install qt5-devel
+```
+2. Ensure that you have installed OpenCV 3.x/4.x library on your computer. If not, install it
+   according to the following steps:
+   [OpenCV: Installation in Linux](https://docs.opencv.org/4.5.3/d7/d9f/tutorial_linux_install.html)
+3. After installation, add `/usr/local/lib` directory to your `LD_LIBRARY_PATH` environment variable
+   by executing the following commands in your bash terminal:
+```Bash
+sudo echo -e "\nexprt LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH" >> /etc/profile
+source /etc/profile
+```
+4. Clone this repository by executing the following command in your bash terminal (replace
+   `<proj_root>` with a directory path where you want to store this repository):
+```Bash
+git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
 5. Build and run
 ```Bash
@@ -193,31 +215,51 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 3. 执行 [生成]->[生成解决方案] 菜单命令 (或按 F6) 生成项目的可执行文件。
 4. 执行 [调试]->[开始执行 (不调试)] 菜单命令 (或按 Ctrl+F5) 运行本程序。
 
-💻在 Linux x86_64 PC 设备上运行
-===============================
+💻在 MAC OS X PC 设备上运行
+===========================
 
-下载源码并手动编译
-------------------
-
-1. 请确认您的电脑上已安装 OpenCV 3.x 或 4.x 的库。若您尚未安装，则请按照下述指示安装：
-   [OpenCV: Installation in Linux](https://docs.opencv.org/4.5.3/d7/d9f/tutorial_linux_install.html)
-2. 安装完毕后，将 `/usr/local/lib` 目录添加到您的 `LD_LIBRARY_PATH` 环境变量中。
+1. 请确认您的电脑上已安装 OpenCV 库和 Qt 工具包。若您尚未安装，则在 Bash 终端中执行如下命令安装：
+```Bash
+brew install opencv qt5
+```
+2. 安装完毕后，将 `/opt/homebrew/lib` 目录添加到您的 `LD_LIBRARY_PATH` 环境变量中。
    您需要在 Bash 终端中执行如下命令：
 ```Bash
-sudo echo -e "\nexprt LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH" >> /etc/profile
+sudo echo -e "\nexprt LD_LIBRARY_PATH=/opt/homebrew/lib:$LD_LIBRARY_PATH" >> /etc/profile
 source /etc/profile
 ```
 3. 在 Bash 中执行如下命令以克隆本仓库 (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
 ```Bash
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
-4. 请确认您的电脑上已安装 Qt 工具包。若您尚未安装，则在 Bash 终端中执行如下命令以安装：
+4. 编译并运行
+```Bash
+cd <proj_root>/UnoCard
+qmake && make && ./UnoCard
+```
+
+💻在 Linux x86_64 PC 设备上运行
+===============================
+
+1. 请确认您的电脑上已安装 Qt 工具包。若您尚未安装，则在 Bash 终端中执行如下命令以安装：
 ```Bash
 # Ubuntu/Debian 发行版用户执行该条
 sudo apt install qt5-default
 
 # Fedora/CentOS/RHEL 发行版用户执行该条
 sudo yum install qt5-devel
+```
+2. 请确认您的电脑上已安装 OpenCV 3.x 或 4.x 的库。若您尚未安装，则请按照下述指示安装：
+   [OpenCV: Installation in Linux](https://docs.opencv.org/4.5.3/d7/d9f/tutorial_linux_install.html)
+3. 安装完毕后，将 `/usr/local/lib` 目录添加到您的 `LD_LIBRARY_PATH` 环境变量中。
+   您需要在 Bash 终端中执行如下命令：
+```Bash
+sudo echo -e "\nexprt LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH" >> /etc/profile
+source /etc/profile
+```
+4. 在 Bash 中执行如下命令以克隆本仓库 (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
+```Bash
+git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
 5. 编译并运行
 ```Bash
