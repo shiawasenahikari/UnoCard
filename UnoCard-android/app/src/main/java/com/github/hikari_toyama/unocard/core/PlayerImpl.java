@@ -38,32 +38,50 @@ class PlayerImpl extends Player {
     } // getHandCards()
 
     /**
-     * When this player played a wild card, record the color specified, as this
-     * player's dangerous color. The dangerous color will be remembered until
-     * this player played a number of card matching that color. You can use
-     * this value to defend this player's UNO dash.
-     *
-     * @return This player's dangerous color, or Color.NONE if no available
-     * dangerous color.
+     * @deprecated Use getStrongColor() instead.
      */
     @Override
+    @Deprecated
     public Color getDangerousColor() {
-        return dangerousColor;
+        return getStrongColor();
     } // getDangerousColor()
 
     /**
+     * When this player played a wild card, record the color specified, as this
+     * player's strong color. The strong color will be remembered until this
+     * player played a number of card matching that color. You can use this
+     * value to defend this player's UNO dash.
+     *
+     * @return This player's strong color, or Color.NONE if no available
+     * strong color.
+     */
+    @Override
+    public Color getStrongColor() {
+        return strongColor;
+    } // getStrongColor()
+
+    /**
+     * @deprecated Use getWeakColor() instead.
+     */
+    @Override
+    @Deprecated
+    public Color getSafeColor() {
+        return getWeakColor();
+    } // getSafeColor()
+
+    /**
      * When this player draw a card in action, record the previous played card's
-     * color, as this player's safe color. What this player did means that this
+     * color, as this player's weak color. What this player did means that this
      * player probably do not have cards in that color. You can use this value
      * to defend this player's UNO dash.
      *
-     * @return This player's safe color, or Color.NONE if no available safe
+     * @return This player's weak color, or Color.NONE if no available weak
      * color.
      */
     @Override
-    public Color getSafeColor() {
-        return safeColor;
-    } // getSafeColor()
+    public Color getWeakColor() {
+        return weakColor;
+    } // getWeakColor()
 
     /**
      * @return This player's recent played card, or null if this player drew

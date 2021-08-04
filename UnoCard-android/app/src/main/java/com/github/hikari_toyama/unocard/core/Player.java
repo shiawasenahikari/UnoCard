@@ -43,14 +43,14 @@ public abstract class Player {
     List<Card> handCards;
 
     /**
-     * Dangerous color.
+     * Strong color.
      */
-    Color dangerousColor = Color.NONE;
+    Color strongColor = Color.NONE;
 
     /**
-     * Safe color.
+     * Weak color.
      */
-    Color safeColor = Color.NONE;
+    Color weakColor = Color.NONE;
 
     /**
      * Recent played card. If the player drew one or more cards in its last
@@ -59,12 +59,12 @@ public abstract class Player {
     Card recent = null;
 
     /**
-     * How many dangerous cards (cards in dangerous color) in hand. THIS IS AN
+     * How many dangerous cards (cards in strong color) in hand. THIS IS AN
      * ESTIMATED VALUE, NOT A REAL VALUE! This value is estimated by player's
      * actions, such as which color this player selected when playing a wild
      * card, and how many dangerous cards are played after that wild card.
      */
-    int dangerousCount = 0;
+    int strongCount = 0;
 
     /**
      * Default constructor.
@@ -79,26 +79,38 @@ public abstract class Player {
     public abstract List<Card> getHandCards();
 
     /**
-     * When this player played a wild card, record the color specified, as this
-     * player's dangerous color. The dangerous color will be remembered until
-     * this player played a number of card matching that color. You can use
-     * this value to defend this player's UNO dash.
-     *
-     * @return This player's dangerous color, or Color.NONE if no available
-     * dangerous color.
+     * @deprecated Use getStrongColor() instead.
      */
+    @Deprecated
     public abstract Color getDangerousColor();
 
     /**
+     * When this player played a wild card, record the color specified, as this
+     * player's strong color. The strong color will be remembered until this
+     * player played a number of card matching that color. You can use this
+     * value to defend this player's UNO dash.
+     *
+     * @return This player's strong color, or Color.NONE if no available
+     * strong color.
+     */
+    public abstract Color getStrongColor();
+
+    /**
+     * @deprecated Use getWeakColor() instead.
+     */
+    @Deprecated
+    public abstract Color getSafeColor();
+
+    /**
      * When this player draw a card in action, record the previous played card's
-     * color, as this player's safe color. What this player did means that this
+     * color, as this player's weak color. What this player did means that this
      * player probably do not have cards in that color. You can use this value
      * to defend this player's UNO dash.
      *
-     * @return This player's safe color, or Color.NONE if no available safe
+     * @return This player's weak color, or Color.NONE if no available weak
      * color.
      */
-    public abstract Color getSafeColor();
+    public abstract Color getWeakColor();
 
     /**
      * @return This player's recent played card, or null if this player drew

@@ -636,14 +636,14 @@ class UnoImpl extends Uno {
         direction = DIR_LEFT;
 
         // Clear card deck, used card deck, recent played cards,
-        // everyone's hand cards, and everyone's safe/dangerous colors
+        // everyone's hand cards, and everyone's strong/weak colors
         deck.clear();
         used.clear();
         recent.clear();
         for (i = Player.YOU; i <= Player.COM3; ++i) {
             player[i].handCards.clear();
-            player[i].safeColor = NONE;
-            player[i].dangerousColor = NONE;
+            player[i].weakColor = NONE;
+            player[i].strongColor = NONE;
         } // for (i = Player.YOU; i <= Player.COM3; ++i)
 
         // Generate a temporary sequenced card deck
@@ -723,12 +723,12 @@ class UnoImpl extends Uno {
         card = null;
         if (who >= Player.YOU && who <= Player.COM3) {
             if (!force) {
-                // Draw a card by player itself, register safe color
-                player[who].safeColor = recent.get(recent.size() - 1).color;
-                if (player[who].safeColor == player[who].dangerousColor) {
-                    // Safe color cannot also be dangerous color
-                    player[who].dangerousColor = NONE;
-                } // if (player[who].safeColor == player[who].dangerousColor)
+                // Draw a card by player itself, register weak color
+                player[who].weakColor = recent.get(recent.size() - 1).color;
+                if (player[who].weakColor == player[who].strongColor) {
+                    // Weak color cannot also be strong color
+                    player[who].strongColor = NONE;
+                } // if (player[who].weakColor == player[who].strongColor)
             } // if (!force)
 
             hand = player[who].handCards;
@@ -849,27 +849,27 @@ class UnoImpl extends Uno {
                 hand.remove(index);
                 if (card.isWild()) {
                     // When a wild card is played, register the specified
-                    // following legal color as the player's dangerous color
+                    // following legal color as the player's strong color
                     card.color = color;
-                    player[who].dangerousColor = color;
-                    player[who].dangerousCount = 1 + size / 3;
-                    if (color == player[who].safeColor) {
-                        // Dangerous color cannot also be safe color
-                        player[who].safeColor = NONE;
-                    } // if (color == player[who].safeColor)
+                    player[who].strongColor = color;
+                    player[who].strongCount = 1 + size / 3;
+                    if (color == player[who].weakColor) {
+                        // Strong color cannot also be weak color
+                        player[who].weakColor = NONE;
+                    } // if (color == player[who].weakColor)
                 } // if (card.isWild())
-                else if (card.color == player[who].dangerousColor) {
+                else if (card.color == player[who].strongColor) {
                     // Played a card that matches the registered
-                    // dangerous color, dangerous counter counts down
-                    --player[who].dangerousCount;
-                    if (player[who].dangerousCount == 0) {
-                        player[who].dangerousColor = NONE;
-                    } // if (player[who].dangerousCount == 0)
-                } // else if (card.color == player[who].dangerousColor)
-                else if (player[who].dangerousCount > size - 1) {
-                    // Correct the value of dangerous counter when necessary
-                    player[who].dangerousCount = size - 1;
-                } // else if (player[who].dangerousCount > size - 1)
+                    // strong color, strong counter counts down
+                    --player[who].strongCount;
+                    if (player[who].strongCount == 0) {
+                        player[who].strongColor = NONE;
+                    } // if (player[who].strongCount == 0)
+                } // else if (card.color == player[who].strongColor)
+                else if (player[who].strongCount > size - 1) {
+                    // Correct the value of strong counter when necessary
+                    player[who].strongCount = size - 1;
+                } // else if (player[who].strongCount > size - 1)
 
                 player[who].recent = card;
                 recent.add(card);
