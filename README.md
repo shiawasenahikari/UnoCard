@@ -22,14 +22,20 @@ Download the binary release
 Download the source code and compile manually
 ---------------------------------------------
 
-1. Clone this repository by executing the following command in Windows Terminal or Git Bash (replace
+1. Before continuing, make sure that you have `Visual Studio 2015`, `Qt 5.14.2 MSVC2015 64bit` and
+   `Qt Creator 4.11.1` installed on your computer. Installation guide of `Qt 5.14.2 MSVC2015 64bit`:
+   [Getting Started with Qt | Qt 5.14](https://doc.qt.io/qt-5.14/gettingstarted.html)
+2. Clone this repository by executing the following command in Windows Terminal or Git Bash (replace
    `<proj_root>` with a directory path where you want to store this repository):
 ```Bash
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
-2. Open `<proj_root>\UnoCard.sln` solution file in your Visual Studio 2015 IDE (or higher).
-3. Execute [BUILD]->[Build Solution] menu command (or press F6) to build this project.
-4. Execute [DEBUG]->[Start Without Debugging] menu command (or press Ctrl+F5) to run this program.
+3. Open `<proj_root>\UnoCard\UnoCard.pro` project file in your Qt Creator IDE.
+4. In `Configure Project` page, check `Select all kits`, click `Details` on the right side of
+   `Desktop Qt 5.14.2 MSVC2015 64bit`, then uncheck `Debug` and `Profile`, just keep `Release`
+   checked. Finally, set Release path to `<proj_root>/UnoCard/build` and click `Configure Project`.
+5. Execute [Build]->[Build All] menu command (or press Ctrl+Shift+B) to build this project.
+6. Execute [Build]->[Run] menu command (or press Ctrl+R) to run this program.
 
 💻For MAC OS X PC Devices
 =========================
@@ -108,11 +114,11 @@ Download the source code and compile manually
 ```Bash
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
-2. Open your Android Studio IDE (version 3.4 or higher), click [Open an existing Android Studio
+2. Open your Android Studio IDE (version 4.3 or higher), click [Open an existing Android Studio
    project], then select the `<proj_root>\UnoCard-android` directory. Click [OK].
 3. You may need to install missing components during the project building procedure, such as Android
-   SDK 28, and Android Build Tools 28.0.3. If you want to use your existed Android SDK which is not
-   in version 28, do the following things: a) expand `Gradle scripts` directory in left-side drawer,
+   SDK 30, and Android Build Tools 30.0.3. If you want to use your existed Android SDK which is not
+   in version 30, do the following things: a) expand `Gradle scripts` directory in left-side drawer,
    open `build.gradle (Module: app)` file; b) Change the values of `compileSdkVersion` and
    `buildToolsVersion` properties to your existed components' version; c) Do the same things to
    `build.gradle (Module: opencv410)` file; d) Sync project.
@@ -206,14 +212,20 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 下载源码并手动编译
 ------------------
 
-1. 在 Windows 命令提示符或 Git Bash 中执行如下命令以克隆本仓库
+1. 在您开始编译前，请确认您的电脑上已安装 `Visual Studio 2015`, `Qt 5.14.2 MSVC2015 64bit` 和
+   `Qt Creator 4.11.1`。您可以参考以下页面来安装 `Qt 5.14.2 MSVC2015 64bit`：
+   [Getting Started with Qt | Qt 5.14](https://doc.qt.io/qt-5.14/gettingstarted.html)
+2. 在 Windows 命令提示符或 Git Bash 中执行如下命令以克隆本仓库
    (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
 ```Bash
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
-2. 用 Visual Studio 2015 IDE (或更高版本) 打开 `<proj_root>\UnoCard.sln` 解决方案文件。
-3. 执行 [生成]->[生成解决方案] 菜单命令 (或按 F6) 生成项目的可执行文件。
-4. 执行 [调试]->[开始执行 (不调试)] 菜单命令 (或按 Ctrl+F5) 运行本程序。
+3. 用 Qt Creator 打开 `<proj_root>\UnoCard\UnoCard.pro` 项目文件。
+4. 在 `Configure Project` 页面，选中 `Select all kits`，点击 `Desktop Qt 5.14.2 MSVC2015 64bit`
+   右侧的 `Details`，然后取消选中 `Debug` 和 `Profile`，仅保持 `Release` 为选中状态即可。
+   最后，将 Release 目录置为 `<proj_root>/UnoCard/build` 并点击 `Configure Project`。
+5. 执行 [Build]->[Build All] 菜单命令 (或按 Ctrl+Shift+B) 生成项目的可执行文件。
+6. 执行 [Build]->[Run] 菜单命令 (或按 Ctrl+R) to run this program.
 
 💻在 MAC OS X PC 设备上运行
 ===========================
@@ -286,10 +298,10 @@ qmake && make && ./UnoCard
 ```Bash
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
-2. 打开您的 Android Studio IDE (版本 3.4 或更高), 单击 [Open an existing Android Studio project]，
+2. 打开您的 Android Studio IDE (版本 4.3 或更高), 单击 [Open an existing Android Studio project]，
    并选择 `<proj_root>\UnoCard-android` 目录。然后单击 [OK] 按钮。
-3. 在项目生成过程中，您可能需要安装缺失的组件，诸如 Android SDK 28 以及 Android Build Tools 28.0.3。
-   如果您想使用已有的非 28 版本的 Android SDK，请执行下列操作：a) 展开左侧抽屉里的 `Gradle scripts`
+3. 在项目生成过程中，您可能需要安装缺失的组件，诸如 Android SDK 30 以及 Android Build Tools 30.0.3。
+   如果您想使用已有的非 30 版本的 Android SDK，请执行下列操作：a) 展开左侧抽屉里的 `Gradle scripts`
    目录并打开 `build.gradle (Module: app)` 文件；b) 更改 `compileSdkVersion` 和 `buildToolsVersion`
    属性的值，使它们和您已有组件的版本一致；c) 在 `build.gradle (Module: opencv410)` 文件中做同样的
    修改；d) 同步整个项目 (点击 IDE 右上角的 Sync project)。
@@ -367,7 +379,7 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 📄License
 =========
 
-    Copyright 2020 Hikari Toyama
+    Copyright 2022 Hikari Toyama
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.

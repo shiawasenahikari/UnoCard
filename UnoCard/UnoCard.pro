@@ -2,18 +2,18 @@
 ##
 ## Uno Card Game
 ## Author: Hikari Toyama
-## Compile Environment: Visual Studio 2015, Windows 10 x64
-## COPYRIGHT HIKARI TOYAMA, 1992-2021. ALL RIGHTS RESERVED.
+## Compile Environment: Qt 5 with Qt Creator
+## COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
 ##
 ################################################################################
 
 TEMPLATE = app
 CONFIG += console c++11
 CONFIG -= app_bundle
-CONFIG -= qt
 DESTDIR = $$PWD
 RC_FILE = UnoCard.rc
 RC_ICONS = UnoCard.ico
+QT += widgets
 
 HEADERS += \
     include/AI.h \

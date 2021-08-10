@@ -2,27 +2,12 @@
 //
 // Uno Card Game
 // Author: Hikari Toyama
-// Compile Environment: Android Studio 3.4, with Android SDK 28
-// COPYRIGHT HIKARI TOYAMA, 1992-2021. ALL RIGHTS RESERVED.
+// Compile Environment: Android Studio Arctic Fox, with Android SDK 30
+// COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 package com.github.hikari_toyama.unocard.core;
-
-import android.content.Context;
-import android.util.Log;
-
-import com.github.hikari_toyama.unocard.R;
-
-import org.opencv.android.Utils;
-import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
 
 import static com.github.hikari_toyama.unocard.core.Color.BLUE;
 import static com.github.hikari_toyama.unocard.core.Color.GREEN;
@@ -44,6 +29,21 @@ import static com.github.hikari_toyama.unocard.core.Content.REV;
 import static com.github.hikari_toyama.unocard.core.Content.SKIP;
 import static com.github.hikari_toyama.unocard.core.Content.WILD;
 import static com.github.hikari_toyama.unocard.core.Content.WILD_DRAW4;
+
+import android.content.Context;
+import android.util.Log;
+
+import com.github.hikari_toyama.unocard.R;
+
+import org.opencv.android.Utils;
+import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
 /**
  * Uno Runtime Class (Singleton).

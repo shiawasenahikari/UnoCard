@@ -2,23 +2,23 @@
 //
 // Uno Card Game
 // Author: Hikari Toyama
-// Compile Environment: Android Studio 3.4, with Android SDK 28
-// COPYRIGHT HIKARI TOYAMA, 1992-2021. ALL RIGHTS RESERVED.
+// Compile Environment: Android Studio Arctic Fox, with Android SDK 30
+// COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 package com.github.hikari_toyama.unocard.core;
-
-import android.content.Context;
-
-import java.util.List;
-import java.util.Random;
 
 import static com.github.hikari_toyama.unocard.core.Color.BLUE;
 import static com.github.hikari_toyama.unocard.core.Color.GREEN;
 import static com.github.hikari_toyama.unocard.core.Color.NONE;
 import static com.github.hikari_toyama.unocard.core.Color.RED;
 import static com.github.hikari_toyama.unocard.core.Color.YELLOW;
+
+import android.content.Context;
+
+import java.util.List;
+import java.util.Random;
 
 /**
  * AI Strategies.

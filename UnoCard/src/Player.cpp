@@ -2,8 +2,8 @@
 //
 // Uno Card Game
 // Author: Hikari Toyama
-// Compile Environment: Visual Studio 2015, Windows 10 x64
-// COPYRIGHT HIKARI TOYAMA, 1992-2021. ALL RIGHTS RESERVED.
+// Compile Environment: Qt 5 with Qt Creator
+// COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -16,14 +16,14 @@
  * @return This player's all hand cards.
  */
 const std::vector<Card*>& Player::getHandCards() {
-	return handCards;
+    return handCards;
 } // getHandCards()
 
 /**
  * @deprecated Use getStrongColor() instead.
  */
 [[deprecated]] Color Player::getDangerousColor() {
-	return getStrongColor();
+    return getStrongColor();
 } // getDangerousColor()
 
 /**
@@ -36,14 +36,14 @@ const std::vector<Card*>& Player::getHandCards() {
  *         strong color.
  */
 Color Player::getStrongColor() {
-	return strongColor;
+    return strongColor;
 } // getStrongColor()
 
 /**
  * @deprecated Use getWeakColor() instead.
  */
 [[deprecated]] Color Player::getSafeColor() {
-	return getWeakColor();
+    return getWeakColor();
 } // getSafeColor()
 
 /**
@@ -56,7 +56,7 @@ Color Player::getStrongColor() {
  *         color.
  */
 Color Player::getWeakColor() {
-	return weakColor;
+    return weakColor;
 } // getWeakColor()
 
 /**
@@ -64,7 +64,7 @@ Color Player::getWeakColor() {
  *         one or more cards in its previous action.
  */
 Card* Player::getRecent() {
-	return recent;
+    return recent;
 } // getRecent()
 
 // E.O.F

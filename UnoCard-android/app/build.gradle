@@ -2,19 +2,20 @@
 //
 // Uno Card Game
 // Author: Hikari Toyama
-// Compile Environment: Android Studio 3.4, with Android SDK 28
+// Compile Environment: Android Studio Arctic Fox, with Android SDK 30
+// COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 28
-    buildToolsVersion "28.0.3"
+    compileSdkVersion 30
+    buildToolsVersion "30.0.3"
     defaultConfig {
         applicationId "com.github.hikari_toyama.unocard"
         minSdkVersion 15
-        targetSdkVersion 28
+        targetSdkVersion 30
         versionCode 20210702
         versionName "1.5"
     } // defaultConfig
@@ -33,8 +34,8 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation 'androidx.appcompat:appcompat:1.3.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.0'
     implementation 'cat.ereza:customactivityoncrash:2.2.0'
     implementation project(path: ':opencv410')
 } // dependencies
