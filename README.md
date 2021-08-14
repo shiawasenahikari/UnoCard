@@ -45,18 +45,12 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```Bash
 brew install opencv qt5
 ```
-2. After installation, add `/opt/homebrew/lib` directory to your `LD_LIBRARY_PATH` environment
-   variable by executing the following commands in your bash terminal:
-```Bash
-sudo echo -e "\nexprt LD_LIBRARY_PATH=/opt/homebrew/lib:$LD_LIBRARY_PATH" >> /etc/profile
-source /etc/profile
-```
-3. Clone this repository by executing the following command in your bash terminal (replace
+2. Clone this repository by executing the following command in your bash terminal (replace
    `<proj_root>` with a directory path where you want to store this repository):
 ```Bash
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
-4. Build and run
+3. Build and run
 ```Bash
 cd <proj_root>/UnoCard
 qmake && make && ./UnoCard
@@ -69,7 +63,7 @@ qmake && make && ./UnoCard
    following command in your bash terminal:
 ```Bash
 # For Ubuntu/Debian users:
-sudo apt install qt5-default
+sudo apt install qt5-default qtmultimedia5-dev
 
 # For Fedora/CentOS/RHEL users:
 sudo yum install qt5-devel
@@ -234,17 +228,11 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```Bash
 brew install opencv qt5
 ```
-2. 安装完毕后，将 `/opt/homebrew/lib` 目录添加到您的 `LD_LIBRARY_PATH` 环境变量中。
-   您需要在 Bash 终端中执行如下命令：
-```Bash
-sudo echo -e "\nexprt LD_LIBRARY_PATH=/opt/homebrew/lib:$LD_LIBRARY_PATH" >> /etc/profile
-source /etc/profile
-```
-3. 在 Bash 中执行如下命令以克隆本仓库 (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
+2. 在 Bash 中执行如下命令以克隆本仓库 (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
 ```Bash
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
-4. 编译并运行
+3. 编译并运行
 ```Bash
 cd <proj_root>/UnoCard
 qmake && make && ./UnoCard
@@ -256,7 +244,7 @@ qmake && make && ./UnoCard
 1. 请确认您的电脑上已安装 Qt 工具包。若您尚未安装，则在 Bash 终端中执行如下命令以安装：
 ```Bash
 # Ubuntu/Debian 发行版用户执行该条
-sudo apt install qt5-default
+sudo apt install qt5-default qtmultimedia5-dev
 
 # Fedora/CentOS/RHEL 发行版用户执行该条
 sudo yum install qt5-devel
@@ -372,9 +360,12 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ==================
 
 * The card images are from [Wikipedia](https://commons.wikimedia.org/wiki/File:UNO_cards_deck.svg).
-* This application is using the GUI module provided by the [OpenCV](https://opencv.org) library.
+* This application is using the GUI module provided by the [OpenCV](https://opencv.org) library
+  and the [Qt](https://www.qt.io) library.
 * The Android application is using a custom UI when crashes, which is provided by the
   [CustomActivityOnCrash](https://github.com/Ereza/CustomActivityOnCrash) library.
+* The background music is from:
+  [兔子跳儿童欢快音乐_站长素材](https://sc.chinaz.com/yinxiao/210502415031.htm)
 
 📄License
 =========

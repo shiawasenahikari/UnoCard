@@ -14,6 +14,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.KeyEvent;
@@ -64,7 +67,9 @@ public class MainActivity extends AppCompatActivity
     private static final int STAT_NEW_GAME = 0x3333;
     private static final int STAT_WELCOME = 0x2222;
     private static final int STAT_IDLE = 0x1111;
+    private MediaPlayer mMediaPlayer;
     private boolean mChallengeAsk;
+    private SoundPool mSoundPool;
     private ImageView mImgScreen;
     private boolean mChallenged;
     private boolean mImmPlayAsk;
@@ -84,6 +89,11 @@ public class MainActivity extends AppCompatActivity
     private int mStatus;
     private int mWinner;
     private Bitmap mBmp;
+    private int sndPlay;
+    private int sndDraw;
+    private int sndLose;
+    private int sndWin;
+    private int sndUno;
     private Mat mScr;
     private Uno mUno;
     private AI mAI;
@@ -120,6 +130,15 @@ public class MainActivity extends AppCompatActivity
             mBmp = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888);
             mImgScreen = findViewById(R.id.imgMainScreen);
             onStatusChanged(mStatus);
+            mSoundPool = new SoundPool(2, AudioManager.STREAM_MUSIC, 0);
+            sndUno = mSoundPool.load(this, R.raw.snd_uno, 1);
+            sndWin = mSoundPool.load(this, R.raw.snd_win, 1);
+            sndLose = mSoundPool.load(this, R.raw.snd_lose, 1);
+            sndPlay = mSoundPool.load(this, R.raw.snd_play, 1);
+            sndDraw = mSoundPool.load(this, R.raw.snd_draw, 1);
+            mMediaPlayer = MediaPlayer.create(this, R.raw.bgm);
+            mMediaPlayer.setVolume(0.5f, 0.5f);
+            mMediaPlayer.setLooping(true);
             mImgScreen.setOnTouchListener(this);
         } // if (OPENCV_INIT_SUCCESS)
         else {
@@ -127,6 +146,17 @@ public class MainActivity extends AppCompatActivity
             dialog.show(getSupportFragmentManager(), "UnsupportedDeviceDialog");
         } // else
     } // onCreate(Bundle)
+
+    /**
+     * Triggered when activity gets focus.
+     */
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (OPENCV_INIT_SUCCESS) {
+            mMediaPlayer.start();
+        } // if (OPENCV_INIT_SUCCESS)
+    } // onResume()
 
     /**
      * AI Strategies (Difficulty: EASY).
@@ -526,6 +556,7 @@ public class MainActivity extends AppCompatActivity
             case STAT_GAME_OVER:
                 // Game over
                 if (mWinner == Player.YOU) {
+                    mSoundPool.play(sndWin, 1.0f, 1.0f, 1, 0, 1.0f);
                     switch (mUno.getDifficulty() << 4 | mUno.getPlayers()) {
                         case 0x03:
                             // Difficulty = EASY(0), Players = 3
@@ -551,6 +582,9 @@ public class MainActivity extends AppCompatActivity
                             break; // default
                     } // switch (mUno.getDifficulty() << 4 | mUno.getPlayers())
                 } // if (mWinner == Player.YOU)
+                else {
+                    mSoundPool.play(sndLose, 1.0f, 1.0f, 1, 0, 1.0f);
+                } // else
 
                 refreshScreen("Click the card deck to restart");
                 if (mAuto) {
@@ -932,6 +966,7 @@ public class MainActivity extends AppCompatActivity
         size = mUno.getPlayer(now).getHandCards().size();
         card = mUno.play(now, index, color);
         mSelectedCard = null;
+        mSoundPool.play(sndPlay, 1.0f, 1.0f, 1, 0, 1.0f);
         if (card != null) {
             // Animation
             image = card.image;
@@ -978,13 +1013,17 @@ public class MainActivity extends AppCompatActivity
                 int next;
                 String message;
 
-                if (mUno.getPlayer(now).getHandCards().size() == 0) {
+                if (size == 2) {
+                    mSoundPool.play(sndUno, 1.0f, 1.0f, 1, 0, 1.0f);
+                } // if (size == 2)
+
+                if (size == 1) {
                     // The player in action becomes winner when it played the
                     // final card in its hand successfully
                     mWinner = now;
                     mStatus = STAT_GAME_OVER;
                     onStatusChanged(mStatus);
-                } // if (mUno.getPlayer(now).getHandCards().size() == 0)
+                } // if (size == 1)
                 else {
                     // When the played card is an action card or a wild card,
                     // do the necessary things according to the game rule
@@ -1476,6 +1515,7 @@ public class MainActivity extends AppCompatActivity
         SharedPreferences.Editor editor;
 
         if (OPENCV_INIT_SUCCESS) {
+            mMediaPlayer.pause();
             sp = getSharedPreferences("UnoStat", Context.MODE_PRIVATE);
             editor = sp.edit();
             editor.putInt("easyWin", mEasyWin);
@@ -1499,6 +1539,10 @@ public class MainActivity extends AppCompatActivity
      */
     @Override
     protected void onDestroy() {
+        if (OPENCV_INIT_SUCCESS) {
+            mSoundPool.release();
+        } // if (OPENCV_INIT_SUCCESS)
+
         mHandler.removeCallbacksAndMessages(null);
         super.onDestroy();
     } // onDestroy()
@@ -1668,13 +1712,13 @@ public class MainActivity extends AppCompatActivity
                 image.copyTo(new Mat(mScr, roi), image);
                 Utils.matToBitmap(mScr, mBmp);
                 mImgScreen.setImageBitmap(mBmp);
+                mSoundPool.play(sndDraw, 1.0f, 1.0f, 1, 0, 1.0f);
                 delayedTask = () -> {
                     refreshScreen(message);
-                    ++times;
-                    if (times < count) {
+                    if (++times < count) {
                         // Loop until all requested cards are drawn
                         mHandler.postDelayed(this, 300);
-                    } // if (times < count)
+                    } // if (++times < count)
                     else {
                         // All requested cards are drawn, do following things
                         mHandler.postDelayed(this::afterDrawn, 750);

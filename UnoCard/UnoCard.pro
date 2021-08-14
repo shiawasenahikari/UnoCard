@@ -13,7 +13,7 @@ CONFIG -= app_bundle
 DESTDIR = $$PWD
 RC_FILE = UnoCard.rc
 RC_ICONS = UnoCard.ico
-QT += widgets
+QT += multimedia widgets
 
 HEADERS += \
     include/AI.h \
@@ -21,19 +21,25 @@ HEADERS += \
     include/Color.h \
     include/Content.h \
     include/Player.h \
+    include/Sound.h \
     include/Uno.h
 
 SOURCES += \
     src/AI.cpp \
     src/Card.cpp \
     src/Player.cpp \
+    src/Sound.cpp \
     src/Uno.cpp \
     src/main.cpp
 
 macx {
     DEPENDPATH += /opt/homebrew/include $$PWD/include
     INCLUDEPATH += /opt/homebrew/include $$PWD/include
-    LIBS += -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs
+    LIBS += \
+        -L/opt/homebrew/lib -lopencv_core \
+        -L/opt/homebrew/lib -lopencv_highgui \
+        -L/opt/homebrew/lib -lopencv_imgproc \
+        -L/opt/homebrew/lib -lopencv_imgcodecs
 } # end of macx
 
 unix:!macx {

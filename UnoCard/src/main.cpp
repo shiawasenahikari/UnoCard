@@ -17,9 +17,12 @@
 #include <fstream>
 #include <sstream>
 #include <Color.h>
+#include <Sound.h>
 #include <Player.h>
 #include <Content.h>
 #include <QApplication>
+#include <QMediaPlayer>
+#include <QMediaPlaylist>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
@@ -58,6 +61,11 @@ static int sEasyWin;
 static int sHardWin;
 static int sEasyWin3;
 static int sHardWin3;
+static Sound* sndUno;
+static Sound* sndWin;
+static Sound* sndLose;
+static Sound* sndDraw;
+static Sound* sndPlay;
 static int sEasyTotal;
 static int sHardTotal;
 static int sEasyTotal3;
@@ -69,6 +77,8 @@ static bool sImmPlayAsk;
 static bool sChallenged;
 static bool sChallengeAsk;
 static Card* sSelectedCard;
+static QMediaPlayer sMedia;
+static QMediaPlaylist sPlaylist;
 
 // Functions
 static void easyAI();
@@ -147,6 +157,16 @@ int main(int argc, char* argv[]) {
     sScreen = sUno->getBackground().clone();
     cv::namedWindow("Uno");
     onStatusChanged(sStatus);
+    sndUno = new Sound("resource/snd_uno.wav");
+    sndWin = new Sound("resource/snd_win.wav");
+    sndLose = new Sound("resource/snd_lose.wav");
+    sndPlay = new Sound("resource/snd_play.wav");
+    sndDraw = new Sound("resource/snd_draw.wav");
+    sPlaylist.addMedia(QUrl::fromLocalFile("resource/bgm.mp3"));
+    sPlaylist.setPlaybackMode(QMediaPlaylist::Loop);
+    sMedia.setPlaylist(&sPlaylist);
+    sMedia.setVolume(50);
+    sMedia.play();
     cv::setMouseCallback("Uno", onMouse, nullptr);
     for (;;) {
         cv::waitKey(0); // prevent from blocking main thread
@@ -552,6 +572,7 @@ static void onStatusChanged(int status) {
     case STAT_GAME_OVER:
         // Game over
         if (sWinner == Player::YOU) {
+            sndWin->play();
             switch (sUno->getDifficulty() << 4 | sUno->getPlayers()) {
             case 0x03:
                 // Difficulty = EASY(0), Players = 3
@@ -577,6 +598,9 @@ static void onStatusChanged(int status) {
                 break; // default
             } // switch (sUno->getDifficulty() << 4 | sUno->getPlayers())
         } // if (sWinner == Player::YOU)
+        else {
+            sndLose->play();
+        } // else
 
         refreshScreen("Click the card deck to restart");
         if (sAuto) {
@@ -956,6 +980,7 @@ static void play(int index, Color color) {
     size = int(sUno->getPlayer(now)->getHandCards().size());
     card = sUno->play(now, index, color);
     sSelectedCard = nullptr;
+    sndPlay->play();
     if (card != nullptr) {
         // Animation
         image = card->image;
@@ -994,13 +1019,17 @@ static void play(int index, Color color) {
             break; // default
         } // switch (now)
 
-        if (sUno->getPlayer(now)->getHandCards().size() == 0) {
+        if (size == 2) {
+            sndUno->play();
+        } // if (size == 2)
+
+        if (size == 1) {
             // The player in action becomes winner when it played the
             // final card in its hand successfully
             sWinner = now;
             sStatus = STAT_GAME_OVER;
             onStatusChanged(sStatus);
-        } // if (sUno->getPlayer(now)->getHandCards().size() == 0)
+        } // if (size == 1)
         else {
             // When the played card is an action card or a wild card,
             // do the necessary things according to the game rule
@@ -1141,6 +1170,7 @@ static void draw(int count, bool force) {
             // Animation
             image.copyTo(sScreen(roi), image);
             imshow("Uno", sScreen);
+            sndDraw->play();
             cv::waitKey(300);
             refreshScreen(message);
             cv::waitKey(300);
@@ -1246,7 +1276,7 @@ static void onChallengeChance(bool challenged) {
             } // if (curr == Player::YOU)
             else {
                 message = "Challenge success, "
-                    + NAME[curr] + "draws 4 cards";
+                    + NAME[curr] + " draws 4 cards";
             } // else
 
             refreshScreen(message);
@@ -1284,6 +1314,8 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
         if (y >= 21 && y <= 42 && x >= 1140 && x <= 1260) {
             // <QUIT> button
             // Store statistics data to UnoCard.stat file
+            delete sndUno; delete sndDraw; delete sndPlay;
+            delete sndWin; delete sndLose;
             writer = std::ofstream(
                 /* filename */ "UnoCard.stat",
                 /*   mode   */ std::ios::out | std::ios::binary
