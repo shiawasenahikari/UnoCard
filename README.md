@@ -22,9 +22,9 @@ Download the binary release
 Download the source code and compile manually
 ---------------------------------------------
 
-1. Before continuing, make sure that you have `Visual Studio 2015`, `Qt 5.14.2 MSVC2015 64bit` and
-   `Qt Creator 4.11.1` installed on your computer. Installation guide of `Qt 5.14.2 MSVC2015 64bit`:
-   [Getting Started with Qt | Qt 5.14](https://doc.qt.io/qt-5.14/gettingstarted.html)
+1. Before continuing, make sure that you have `Visual Studio 2015`, `Qt 5.12.11 MSVC2015 64bit` and
+   `Qt Creator 4.11.1` installed on your computer. You can download the Qt 5.12 offline installer
+   from: [Download Offline Installers](https://www.qt.io/offline-installers)
 2. Clone this repository by executing the following command in Windows Terminal or Git Bash (replace
    `<proj_root>` with a directory path where you want to store this repository):
 ```Bash
@@ -32,7 +32,7 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
 3. Open `<proj_root>\UnoCard\UnoCard.pro` project file in your Qt Creator IDE.
 4. In `Configure Project` page, check `Select all kits`, click `Details` on the right side of
-   `Desktop Qt 5.14.2 MSVC2015 64bit`, then uncheck `Debug` and `Profile`, just keep `Release`
+   `Desktop Qt 5.12.11 MSVC2015 64bit`, then uncheck `Debug` and `Profile`, just keep `Release`
    checked. Finally, set Release path to `<proj_root>/UnoCard/build` and click `Configure Project`.
 5. Execute [Build]->[Build All] menu command (or press Ctrl+Shift+B) to build this project.
 6. Execute [Build]->[Run] menu command (or press Ctrl+R) to run this program.
@@ -63,20 +63,17 @@ qmake && make && ./UnoCard
    following command in your bash terminal:
 ```Bash
 # For Ubuntu/Debian users:
-sudo apt install qt5-default qtmultimedia5-dev
+sudo apt install libqt5* qt5* qtmultimedia5-dev
 
 # For Fedora/CentOS/RHEL users:
 sudo yum install qt5-devel
 ```
-2. Ensure that you have installed OpenCV 3.x/4.x library on your computer. If not, install it
-   according to the following steps:
+2. Ensure that you have installed OpenCV 4 library on your computer. If not, install it according
+   to the following steps:
    [OpenCV: Installation in Linux](https://docs.opencv.org/4.5.3/d7/d9f/tutorial_linux_install.html)
-3. After installation, add `/usr/local/lib` directory to your `LD_LIBRARY_PATH` environment variable
-   by executing the following commands in your bash terminal:
-```Bash
-sudo echo -e "\nexprt LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH" >> /etc/profile
-source /etc/profile
-```
+3. Ensure that you have installed GStreamer library on your computer. If not, install it according
+   to the following steps:
+   [Installing on Linux](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html)
 4. Clone this repository by executing the following command in your bash terminal (replace
    `<proj_root>` with a directory path where you want to store this repository):
 ```Bash
@@ -206,20 +203,20 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 下载源码并手动编译
 ------------------
 
-1. 在您开始编译前，请确认您的电脑上已安装 `Visual Studio 2015`, `Qt 5.14.2 MSVC2015 64bit` 和
-   `Qt Creator 4.11.1`。您可以参考以下页面来安装 `Qt 5.14.2 MSVC2015 64bit`：
-   [Getting Started with Qt | Qt 5.14](https://doc.qt.io/qt-5.14/gettingstarted.html)
+1. 在您开始编译前，请确认您的电脑上已安装 `Visual Studio 2015`, `Qt 5.12.11 MSVC2015 64bit` 和
+   `Qt Creator 4.11.1`。您可以访问以下页面下载 Qt 5.12 离线安装包：
+   [Download Offline Installers](https://www.qt.io/offline-installers)
 2. 在 Windows 命令提示符或 Git Bash 中执行如下命令以克隆本仓库
    (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
 ```Bash
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
 3. 用 Qt Creator 打开 `<proj_root>\UnoCard\UnoCard.pro` 项目文件。
-4. 在 `Configure Project` 页面，选中 `Select all kits`，点击 `Desktop Qt 5.14.2 MSVC2015 64bit`
+4. 在 `Configure Project` 页面，选中 `Select all kits`，点击 `Desktop Qt 5.12.11 MSVC2015 64bit`
    右侧的 `Details`，然后取消选中 `Debug` 和 `Profile`，仅保持 `Release` 为选中状态即可。
    最后，将 Release 目录置为 `<proj_root>/UnoCard/build` 并点击 `Configure Project`。
 5. 执行 [Build]->[Build All] 菜单命令 (或按 Ctrl+Shift+B) 生成项目的可执行文件。
-6. 执行 [Build]->[Run] 菜单命令 (或按 Ctrl+R) to run this program.
+6. 执行 [Build]->[Run] 菜单命令 (或按 Ctrl+R) 开始运行。
 
 💻在 MAC OS X PC 设备上运行
 ===========================
@@ -244,19 +241,15 @@ qmake && make && ./UnoCard
 1. 请确认您的电脑上已安装 Qt 工具包。若您尚未安装，则在 Bash 终端中执行如下命令以安装：
 ```Bash
 # Ubuntu/Debian 发行版用户执行该条
-sudo apt install qt5-default qtmultimedia5-dev
+sudo apt install libqt5* qt5* qtmultimedia5-dev
 
 # Fedora/CentOS/RHEL 发行版用户执行该条
 sudo yum install qt5-devel
 ```
-2. 请确认您的电脑上已安装 OpenCV 3.x 或 4.x 的库。若您尚未安装，则请按照下述指示安装：
+2. 请确认您的电脑上已安装 OpenCV 4。若您尚未安装，则请按照下述指示安装：
    [OpenCV: Installation in Linux](https://docs.opencv.org/4.5.3/d7/d9f/tutorial_linux_install.html)
-3. 安装完毕后，将 `/usr/local/lib` 目录添加到您的 `LD_LIBRARY_PATH` 环境变量中。
-   您需要在 Bash 终端中执行如下命令：
-```Bash
-sudo echo -e "\nexprt LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH" >> /etc/profile
-source /etc/profile
-```
+3. 请确认您的电脑上已安装 GStreamer。若您尚未安装，则请按照下述指示安装：
+   [Installing on Linux](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html)
 4. 在 Bash 中执行如下命令以克隆本仓库 (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
 ```Bash
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>

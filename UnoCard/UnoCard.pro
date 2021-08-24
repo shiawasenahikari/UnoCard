@@ -21,14 +21,14 @@ HEADERS += \
     include/Color.h \
     include/Content.h \
     include/Player.h \
-    include/Sound.h \
+    include/SoundPool.h \
     include/Uno.h
 
 SOURCES += \
     src/AI.cpp \
     src/Card.cpp \
     src/Player.cpp \
-    src/Sound.cpp \
+    src/SoundPool.cpp \
     src/Uno.cpp \
     src/main.cpp
 
@@ -45,7 +45,11 @@ macx {
 unix:!macx {
     DEPENDPATH += /usr/local/include $$PWD/include
     INCLUDEPATH += /usr/local/include $$PWD/include
-    LIBS += -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs
+    LIBS += \
+        -L/usr/local/lib -lopencv_core \
+        -L/usr/local/lib -lopencv_highgui \
+        -L/usr/local/lib -lopencv_imgproc \
+        -L/usr/local/lib -lopencv_imgcodecs
 } # end of unix:!macx
 
 win32-msvc2015 {

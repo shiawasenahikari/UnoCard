@@ -17,9 +17,10 @@
 #include <fstream>
 #include <sstream>
 #include <Color.h>
-#include <Sound.h>
 #include <Player.h>
 #include <Content.h>
+#include <QFileInfo>
+#include <SoundPool.h>
 #include <QApplication>
 #include <QMediaPlayer>
 #include <QMediaPlaylist>
@@ -61,11 +62,6 @@ static int sEasyWin;
 static int sHardWin;
 static int sEasyWin3;
 static int sHardWin3;
-static Sound* sndUno;
-static Sound* sndWin;
-static Sound* sndLose;
-static Sound* sndDraw;
-static Sound* sndPlay;
 static int sEasyTotal;
 static int sHardTotal;
 static int sEasyTotal3;
@@ -77,8 +73,9 @@ static bool sImmPlayAsk;
 static bool sChallenged;
 static bool sChallengeAsk;
 static Card* sSelectedCard;
-static QMediaPlayer sMedia;
-static QMediaPlaylist sPlaylist;
+static SoundPool* sSoundPool;
+static QMediaPlayer* sMediaPlay;
+static QMediaPlaylist* sMediaList;
 
 // Functions
 static void easyAI();
@@ -152,21 +149,20 @@ int main(int argc, char* argv[]) {
         reader.close();
     } // if (!reader.fail())
 
+    sSoundPool = new SoundPool;
+    sMediaPlay = new QMediaPlayer;
+    sMediaList = new QMediaPlaylist;
+    sMediaList->setPlaybackMode(QMediaPlaylist::Loop);
+    sMediaList->addMedia(QUrl::fromLocalFile(
+        QFileInfo("resource/bgm.mp3").absoluteFilePath()));
+    sMediaPlay->setPlaylist(sMediaList);
+    sMediaPlay->setVolume(50);
     sWinner = Player::YOU;
     sStatus = STAT_WELCOME;
     sScreen = sUno->getBackground().clone();
     cv::namedWindow("Uno");
     onStatusChanged(sStatus);
-    sndUno = new Sound("resource/snd_uno.wav");
-    sndWin = new Sound("resource/snd_win.wav");
-    sndLose = new Sound("resource/snd_lose.wav");
-    sndPlay = new Sound("resource/snd_play.wav");
-    sndDraw = new Sound("resource/snd_draw.wav");
-    sPlaylist.addMedia(QUrl::fromLocalFile("resource/bgm.mp3"));
-    sPlaylist.setPlaybackMode(QMediaPlaylist::Loop);
-    sMedia.setPlaylist(&sPlaylist);
-    sMedia.setVolume(50);
-    sMedia.play();
+    sMediaPlay->play();
     cv::setMouseCallback("Uno", onMouse, nullptr);
     for (;;) {
         cv::waitKey(0); // prevent from blocking main thread
@@ -572,7 +568,7 @@ static void onStatusChanged(int status) {
     case STAT_GAME_OVER:
         // Game over
         if (sWinner == Player::YOU) {
-            sndWin->play();
+            sSoundPool->play(SoundPool::SND_WIN);
             switch (sUno->getDifficulty() << 4 | sUno->getPlayers()) {
             case 0x03:
                 // Difficulty = EASY(0), Players = 3
@@ -599,7 +595,7 @@ static void onStatusChanged(int status) {
             } // switch (sUno->getDifficulty() << 4 | sUno->getPlayers())
         } // if (sWinner == Player::YOU)
         else {
-            sndLose->play();
+            sSoundPool->play(SoundPool::SND_LOSE);
         } // else
 
         refreshScreen("Click the card deck to restart");
@@ -980,7 +976,7 @@ static void play(int index, Color color) {
     size = int(sUno->getPlayer(now)->getHandCards().size());
     card = sUno->play(now, index, color);
     sSelectedCard = nullptr;
-    sndPlay->play();
+    sSoundPool->play(SoundPool::SND_PLAY);
     if (card != nullptr) {
         // Animation
         image = card->image;
@@ -1020,7 +1016,7 @@ static void play(int index, Color color) {
         } // switch (now)
 
         if (size == 2) {
-            sndUno->play();
+            sSoundPool->play(SoundPool::SND_UNO);
         } // if (size == 2)
 
         if (size == 1) {
@@ -1170,7 +1166,7 @@ static void draw(int count, bool force) {
             // Animation
             image.copyTo(sScreen(roi), image);
             imshow("Uno", sScreen);
-            sndDraw->play();
+            sSoundPool->play(SoundPool::SND_DRAW);
             cv::waitKey(300);
             refreshScreen(message);
             cv::waitKey(300);
@@ -1314,8 +1310,9 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
         if (y >= 21 && y <= 42 && x >= 1140 && x <= 1260) {
             // <QUIT> button
             // Store statistics data to UnoCard.stat file
-            delete sndUno; delete sndDraw; delete sndPlay;
-            delete sndWin; delete sndLose;
+            delete sMediaList;
+            delete sMediaPlay;
+            delete sSoundPool;
             writer = std::ofstream(
                 /* filename */ "UnoCard.stat",
                 /*   mode   */ std::ios::out | std::ios::binary
