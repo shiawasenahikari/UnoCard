@@ -14,10 +14,10 @@ android {
     buildToolsVersion "30.0.3"
     defaultConfig {
         applicationId "com.github.hikari_toyama.unocard"
-        minSdkVersion 15
+        minSdkVersion 19
         targetSdkVersion 30
-        versionCode 20210702
-        versionName "1.5"
+        versionCode 20210825
+        versionName "1.6"
     } // defaultConfig
     buildTypes {
         release {

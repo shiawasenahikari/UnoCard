@@ -16,8 +16,10 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/releases) page and download the
-   latest version in zip file `(UnoCard-v1.5.zip)`.
+   latest version in zip file `(UnoCard-v1.6.zip)`.
 2. Unzip the downloaded zip file, then execute `UnoCard.exe` and have fun!
+3. If there's a message box shows that `msvcp140.dll` is missing, install the VC++ library by
+   executing `vcredist_x64.exe`.
 
 Download the source code and compile manually
 ---------------------------------------------
@@ -92,7 +94,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/release) page and download the
-   latest version in apk file `(UnoCard-v1.5.apk)`.
+   latest version in apk file `(UnoCard-v1.6.apk)`.
 2. On your Android phone, open [Settings] app, go to [Security] page, then check the [Unknown
    sources] toggle.
 3. Push the downloaded file to your Android phone, then install and launch it to have fun!
@@ -197,8 +199,9 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/releases) 页面下载最新版本的 zip 包
-   `(UnoCard-v1.5.zip)`.
+   `(UnoCard-v1.6.zip)`.
 2. 解压并执行 `UnoCard.exe` 开始游戏。
+3. 如果弹窗提示丢失 `msvcp140.dll`，则执行 `vcredist_x64.exe` 以安装 VC++ 运行库。
 
 下载源码并手动编译
 ------------------
@@ -267,7 +270,7 @@ qmake && make && ./UnoCard
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/release) 页面下载最新版本的 apk 包
-   `(UnoCard-v1.5.apk)`.
+   `(UnoCard-v1.6.apk)`.
 2. 打开您的 Android 设备中的 [设置] 应用，进入 [安全] 页面，勾选 [未知来源] 复选框。
 3. 将已下载的安装包传到手机中，安装并运行即可开始游戏。
 
