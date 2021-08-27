@@ -307,10 +307,10 @@ public abstract class Uno {
      *              i.e. previous player played a [+2] or [wild +4] to let this
      *              player draw cards. Or false if the specified player draws a
      *              card by itself in its action.
-     * @return Reference of the drawn card, or null if the specified player
+     * @return Index of the drawn card in hand, or -1 if the specified player
      * didn't draw a card because of the limitation.
      */
-    public abstract Card draw(int who, boolean force);
+    public abstract int draw(int who, boolean force);
 
     /**
      * Check whether the specified card is legal to play. It's legal only when

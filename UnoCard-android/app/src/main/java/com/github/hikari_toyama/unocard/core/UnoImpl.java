@@ -78,7 +78,7 @@ class UnoImpl extends Uno {
         context = context.getApplicationContext();
         loaded = 0;
         total = 124;
-        Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
+        Log.i(TAG, "Loading... (0%)");
 
         try {
             // Load background image resources
@@ -711,16 +711,16 @@ class UnoImpl extends Uno {
      *              i.e. previous player played a [+2] or [wild +4] to let this
      *              player draw cards. Or false if the specified player draws a
      *              card by itself in its action.
-     * @return Reference of the drawn card, or null if the specified player
+     * @return Index of the drawn card in hand, or -1 if the specified player
      * didn't draw a card because of the limitation.
      */
     @Override
-    public Card draw(int who, boolean force) {
+    public int draw(int who, boolean force) {
         List<Card> hand;
         Card card, picked;
         int i, index, size;
 
-        card = null;
+        i = -1;
         if (who >= Player.YOU && who <= Player.COM3) {
             if (!force) {
                 // Draw a card by player itself, register weak color
@@ -765,7 +765,7 @@ class UnoImpl extends Uno {
             } // if (hand.size() < MAX_HOLD_CARDS)
         } // if (who >= Player.YOU && who <= Player.COM3)
 
-        return card;
+        return i;
     } // draw(int, boolean)
 
     /**

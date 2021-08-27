@@ -85,6 +85,7 @@ static void play(int index, Color color = NONE);
 static void draw(int count = 1, bool force = false);
 static void refreshScreen(const std::string& message);
 static void onChallengeChance(bool challenged = true);
+static void animate(cv::Mat elem, int x1, int y1, int x2, int y2);
 static void onMouse(int event, int x, int y, int flags, void* param);
 
 /**
@@ -626,8 +627,8 @@ static void refreshScreen(const std::string& message) {
     std::string info;
     bool beChallenged;
     std::vector<Card*> hand;
+    int status, size, width;
     int i, remain, used, rate;
-    int status, size, width, height;
 
     // Lock the value of global variable [sStatus]
     status = sStatus;
@@ -773,9 +774,8 @@ static void refreshScreen(const std::string& message) {
             cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
         } // if (size == 0)
         else {
-            height = 40 * size + 140;
             roi.x = 20;
-            roi.y = 360 - height / 2;
+            roi.y = 290 - 20 * size;
             beChallenged = sChallenged && sUno->getNow() == Player::COM1;
             if (beChallenged || status == STAT_GAME_OVER) {
                 // Show remained cards to everyone
@@ -815,8 +815,7 @@ static void refreshScreen(const std::string& message) {
             } // if (sUno->getPlayers() == 4)
         } // if (size == 0)
         else {
-            width = 45 * size + 75;
-            roi.x = 640 - width / 2;
+            roi.x = (1205 - 45 * size) / 2;
             roi.y = 20;
             beChallenged = sChallenged && sUno->getNow() == Player::COM2;
             if (beChallenged || status == STAT_GAME_OVER) {
@@ -855,9 +854,8 @@ static void refreshScreen(const std::string& message) {
             cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
         } // if (size == 0)
         else {
-            height = 40 * size + 140;
             roi.x = 1140;
-            roi.y = 360 - height / 2;
+            roi.y = 290 - 20 * size;
             beChallenged = sChallenged && sUno->getNow() == Player::COM3;
             if (beChallenged || status == STAT_GAME_OVER) {
                 // Show remained cards to everyone
@@ -896,8 +894,7 @@ static void refreshScreen(const std::string& message) {
         } // if (size == 0)
         else {
             // Show your all hand cards
-            width = 45 * size + 75;
-            roi.x = 640 - width / 2;
+            roi.x = (1205 - 45 * size) / 2;
             for (Card* card : hand) {
                 switch (status) {
                 case Player::YOU:
@@ -969,56 +966,43 @@ static void play(int index, Color color) {
     cv::Rect roi;
     cv::Mat image;
     std::string message;
-    int x, y, now, size, width, height, next;
+    std::vector<Card*> hand;
+    int x1, y1, x2, now, size, recentSize, next;
 
     sStatus = STAT_IDLE; // block mouse click events when idle
     now = sUno->getNow();
-    size = int(sUno->getPlayer(now)->getHandCards().size());
+    hand = sUno->getPlayer(now)->getHandCards();
+    size = int(hand.size());
     card = sUno->play(now, index, color);
     sSelectedCard = nullptr;
     sSoundPool->play(SoundPool::SND_PLAY);
     if (card != nullptr) {
-        // Animation
         image = card->image;
         switch (now) {
         case Player::COM1:
-            height = 40 * size + 140;
-            x = 160;
-            y = 360 - height / 2 + 40 * index;
-            roi = cv::Rect(x, y, 121, 181);
-            image.copyTo(sScreen(roi), image);
-            imshow("Uno", sScreen);
-            cv::waitKey(300);
+            x1 = 160;
+            y1 = 290 - 20 * size + 40 * index;
             break; // case Player::COM1
 
         case Player::COM2:
-            width = 45 * size + 75;
-            x = 640 - width / 2 + 45 * index;
-            y = 50;
-            roi = cv::Rect(x, y, 121, 181);
-            image.copyTo(sScreen(roi), image);
-            imshow("Uno", sScreen);
-            cv::waitKey(300);
+            x1 = (1205 - 45 * size + 90 * index) / 2;
+            y1 = 50;
             break; // case Player::COM2
 
         case Player::COM3:
-            height = 40 * size + 140;
-            x = 1000;
-            y = 360 - height / 2 + 40 * index;
-            roi = cv::Rect(x, y, 121, 181);
-            image.copyTo(sScreen(roi), image);
-            imshow("Uno", sScreen);
-            cv::waitKey(300);
+            x1 = 1000;
+            y1 = 290 - 20 * size + 40 * index;
             break; // case Player::COM3
 
         default:
+            x1 = (1205 - 45 * size + 90 * index) / 2;
+            y1 = 490;
             break; // default
         } // switch (now)
 
-        if (size == 2) {
-            sSoundPool->play(SoundPool::SND_UNO);
-        } // if (size == 2)
-
+        recentSize = int(sUno->getRecent().size());
+        x2 = (45 * recentSize + 1419) / 2;
+        animate(image, x1, y1, x2, 270);
         if (size == 1) {
             // The player in action becomes winner when it played the
             // final card in its hand successfully
@@ -1029,6 +1013,10 @@ static void play(int index, Color color) {
         else {
             // When the played card is an action card or a wild card,
             // do the necessary things according to the game rule
+            if (size == 2) {
+                sSoundPool->play(SoundPool::SND_UNO);
+            } // if (size == 2)
+
             message = NAME[now];
             switch (card->content) {
             case DRAW2:
@@ -1108,21 +1096,25 @@ static void play(int index, Color color) {
  *              card by itself in its action.
  */
 static void draw(int count, bool force) {
-    int i, now;
-    cv::Rect roi;
     cv::Mat image;
     std::string message;
+    std::vector<Card*> hand;
+    int i, index, now, size, x2, y2;
 
     sStatus = STAT_IDLE; // block mouse click events when idle
     now = sUno->getNow();
     sSelectedCard = nullptr;
     for (i = 0; i < count; ++i) {
-        sDrawnCard = sUno->draw(now, force);
-        if (sDrawnCard != nullptr) {
+        index = sUno->draw(now, force);
+        if (index >= 0) {
+            hand = sUno->getPlayer(now)->getHandCards();
+            sDrawnCard = hand.at(index);
+            size = int(hand.size());
             switch (now) {
             case Player::COM1:
                 image = sUno->getBackImage();
-                roi = cv::Rect(160, 270, 121, 181);
+                x2 = 20;
+                y2 = 290 - 20 * size + 40 * index;
                 if (count == 1) {
                     message = NAME[now] + ": Draw a card";
                 } // if (count == 1)
@@ -1134,7 +1126,8 @@ static void draw(int count, bool force) {
 
             case Player::COM2:
                 image = sUno->getBackImage();
-                roi = cv::Rect(580, 50, 121, 181);
+                x2 = (1205 - 45 * size + 90 * index) / 2;
+                y2 = 20;
                 if (count == 1) {
                     message = NAME[now] + ": Draw a card";
                 } // if (count == 1)
@@ -1146,7 +1139,8 @@ static void draw(int count, bool force) {
 
             case Player::COM3:
                 image = sUno->getBackImage();
-                roi = cv::Rect(1000, 270, 121, 181);
+                x2 = 1140;
+                y2 = 290 - 20 * size + 40 * index;
                 if (count == 1) {
                     message = NAME[now] + ": Draw a card";
                 } // if (count == 1)
@@ -1158,19 +1152,17 @@ static void draw(int count, bool force) {
 
             default:
                 image = sDrawnCard->image;
-                roi = cv::Rect(580, 490, 121, 181);
+                x2 = (1205 - 45 * size + 90 * index) / 2;
+                y2 = 520;
                 message = NAME[now] + ": Draw " + sDrawnCard->name;
                 break; // default
             } // switch (now)
 
-            // Animation
-            image.copyTo(sScreen(roi), image);
-            imshow("Uno", sScreen);
             sSoundPool->play(SoundPool::SND_DRAW);
-            cv::waitKey(300);
+            animate(image, 338, 270, x2, y2);
             refreshScreen(message);
             cv::waitKey(300);
-        } // if (sDrawnCard != nullptr)
+        } // if (index >= 0)
         else {
             message = NAME[now]
                 + " cannot hold more than "
@@ -1286,6 +1278,37 @@ static void onChallengeChance(bool challenged) {
         draw(4, /* force */ true);
     } // else
 } // onChallengeChance(bool)
+
+/**
+ * Do uniform motion for an object from somewhere to somewhere.
+ * NOTE: This function does not draw the last frame. After animation,
+ * you need to call refreshScreen() function to draw the last frame.
+ *
+ * @param elem Move which object.
+ * @param x1   The object's start X coordinate.
+ * @param y1   The object's start Y coordinate.
+ * @param x2   The object's end X coordinate.
+ * @param y2   The object's end Y coordinate.
+ */
+static void animate(cv::Mat elem, int x1, int y1, int x2, int y2) {
+    int i;
+    cv::Rect roi;
+    cv::Mat canvas;
+
+    roi = cv::Rect(x1, y1, elem.cols, elem.rows);
+    canvas = sScreen.clone();
+    elem.copyTo(canvas(roi), elem);
+    imshow("Uno", canvas);
+    cv::waitKey(30);
+    for (i = 1; i < 5; ++i) {
+        sScreen(roi).copyTo(canvas(roi));
+        roi.x = x1 + (x2 - x1) * i / 5;
+        roi.y = y1 + (y2 - y1) * i / 5;
+        elem.copyTo(canvas(roi), elem);
+        imshow("Uno", canvas);
+        cv::waitKey(30);
+    } // for (i = 1; i < 5; ++i)
+} // animate(cv::Mat, cv::Point, cv::Point)
 
 /**
  * Mouse event callback, used by OpenCV GUI windows. When a GUI window

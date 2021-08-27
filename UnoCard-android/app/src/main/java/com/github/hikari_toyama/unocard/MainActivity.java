@@ -637,8 +637,8 @@ public class MainActivity extends AppCompatActivity
         Size textSize;
         List<Card> hand;
         boolean beChallenged;
+        int status, size, width;
         int i, remain, used, rate;
-        int status, size, width, height;
 
         // Lock the value of member [mStatus]
         status = mStatus;
@@ -784,9 +784,8 @@ public class MainActivity extends AppCompatActivity
             Imgproc.putText(mScr, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
         } // if (size == 0)
         else {
-            height = 40 * size + 140;
             roi.x = 20;
-            roi.y = 360 - height / 2;
+            roi.y = 290 - 20 * size;
             beChallenged = mChallenged && mUno.getNow() == Player.COM1;
             if (beChallenged || status == STAT_GAME_OVER) {
                 // Show remained cards to everyone
@@ -826,8 +825,7 @@ public class MainActivity extends AppCompatActivity
             } // if (mUno.getPlayers() == 4)
         } // if (size == 0)
         else {
-            width = 45 * size + 75;
-            roi.x = 640 - width / 2;
+            roi.x = (1205 - 45 * size) / 2;
             roi.y = 20;
             beChallenged = mChallenged && mUno.getNow() == Player.COM2;
             if (beChallenged || status == STAT_GAME_OVER) {
@@ -866,9 +864,8 @@ public class MainActivity extends AppCompatActivity
             Imgproc.putText(mScr, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
         } // if (size == 0)
         else {
-            height = 40 * size + 140;
             roi.x = 1140;
-            roi.y = 360 - height / 2;
+            roi.y = 290 - 20 * size;
             beChallenged = mChallenged && mUno.getNow() == Player.COM3;
             if (beChallenged || status == STAT_GAME_OVER) {
                 // Show remained hand cards
@@ -907,8 +904,7 @@ public class MainActivity extends AppCompatActivity
         } // if (size == 0)
         else {
             // Show your all hand cards
-            width = 60 * size + 60;
-            roi.x = 640 - width / 2;
+            roi.x = 610 - 30 * size;
             for (Card card : hand) {
                 switch (status) {
                     case Player.YOU:
@@ -977,78 +973,46 @@ public class MainActivity extends AppCompatActivity
      */
     private void play(int index, Color color) {
         new Thread(() -> {
-            Rect roi;
             Mat image;
             Card card;
             String message;
-            int x, y, now, size, width, height, next;
+            List<Card> hand;
+            int x1, y1, x2, now, size, recentSize, next;
 
             mStatus = STAT_IDLE; // block tap down events when idle
             now = mUno.getNow();
-            size = mUno.getPlayer(now).getHandCards().size();
+            hand = mUno.getPlayer(now).getHandCards();
+            size = hand.size();
             card = mUno.play(now, index, color);
             mSelectedCard = null;
             mSoundPool.play(sndPlay, 1.0f, 1.0f, 1, 0, 1.0f);
             if (card != null) {
-                // Animation
                 image = card.image;
                 switch (now) {
                     case Player.COM1:
-                        height = 40 * size + 140;
-                        x = 160;
-                        y = 360 - height / 2 + 40 * index;
-                        roi = new Rect(x, y, 121, 181);
-                        image.copyTo(new Mat(mScr, roi), image);
-                        Utils.matToBitmap(mScr, mBmp);
-                        mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
-                        try {
-                            Thread.sleep(300);
-                        } // try
-                        catch (InterruptedException e) {
-                            e.printStackTrace();
-                        } // catch (InterruptedException e)
+                        x1 = 160;
+                        y1 = 290 - 20 * size + 40 * index;
                         break; // case Player.COM1
 
                     case Player.COM2:
-                        width = 45 * size + 75;
-                        x = 640 - width / 2 + 45 * index;
-                        y = 50;
-                        roi = new Rect(x, y, 121, 181);
-                        image.copyTo(new Mat(mScr, roi), image);
-                        Utils.matToBitmap(mScr, mBmp);
-                        mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
-                        try {
-                            Thread.sleep(300);
-                        } // try
-                        catch (InterruptedException e) {
-                            e.printStackTrace();
-                        } // catch (InterruptedException e)
+                        x1 = (1205 - 45 * size + 90 * index) / 2;
+                        y1 = 50;
                         break; // case Player.COM2
 
                     case Player.COM3:
-                        height = 40 * size + 140;
-                        x = 1000;
-                        y = 360 - height / 2 + 40 * index;
-                        roi = new Rect(x, y, 121, 181);
-                        image.copyTo(new Mat(mScr, roi), image);
-                        Utils.matToBitmap(mScr, mBmp);
-                        mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
-                        try {
-                            Thread.sleep(300);
-                        } // try
-                        catch (InterruptedException e) {
-                            e.printStackTrace();
-                        } // catch (InterruptedException e)
+                        x1 = 1000;
+                        y1 = 290 - 20 * size + 40 * index;
                         break; // case Player.COM3
 
                     default:
+                        x1 = 610 - 30 * size + 60 * index;
+                        y1 = 490;
                         break; // default
                 } // switch (now)
 
-                if (size == 2) {
-                    mSoundPool.play(sndUno, 1.0f, 1.0f, 1, 0, 1.0f);
-                } // if (size == 2)
-
+                recentSize = mUno.getRecent().size();
+                x2 = (45 * recentSize + 1419) / 2;
+                animate(image, x1, y1, x2, 270);
                 if (size == 1) {
                     // The player in action becomes winner when it played the
                     // final card in its hand successfully
@@ -1059,6 +1023,10 @@ public class MainActivity extends AppCompatActivity
                 else {
                     // When the played card is an action card or a wild card,
                     // do the necessary things according to the game rule
+                    if (size == 2) {
+                        mSoundPool.play(sndUno, 1.0f, 1.0f, 1, 0, 1.0f);
+                    } // if (size == 2)
+
                     switch (card.content) {
                         case DRAW2:
                             next = mUno.switchNow();
@@ -1181,21 +1149,25 @@ public class MainActivity extends AppCompatActivity
      */
     private void draw(int count, boolean force) {
         new Thread(() -> {
-            Rect roi;
             Mat image;
-            int i, now;
             String message;
+            List<Card> hand;
+            int i, index, now, size, x2, y2;
 
             mStatus = STAT_IDLE; // block tap down events when idle
             now = mUno.getNow();
             mSelectedCard = null;
             for (i = 0; i < count; ++i) {
-                mDrawnCard = mUno.draw(now, force);
-                if (mDrawnCard != null) {
+                index = mUno.draw(now, force);
+                if (index >= 0) {
+                    hand = mUno.getPlayer(now).getHandCards();
+                    mDrawnCard = hand.get(index);
+                    size = hand.size();
                     switch (now) {
                         case Player.COM1:
                             image = mUno.getBackImage();
-                            roi = new Rect(160, 270, 121, 181);
+                            x2 = 20;
+                            y2 = 290 - 20 * size + 40 * index;
                             if (count == 1) {
                                 message = NAME[now] + ": Draw a card";
                             } // if (count == 1)
@@ -1207,7 +1179,8 @@ public class MainActivity extends AppCompatActivity
 
                         case Player.COM2:
                             image = mUno.getBackImage();
-                            roi = new Rect(580, 50, 121, 181);
+                            x2 = (1205 - 45 * size + 90 * index) / 2;
+                            y2 = 20;
                             if (count == 1) {
                                 message = NAME[now] + ": Draw a card";
                             } // if (count == 1)
@@ -1219,7 +1192,8 @@ public class MainActivity extends AppCompatActivity
 
                         case Player.COM3:
                             image = mUno.getBackImage();
-                            roi = new Rect(1000, 270, 121, 181);
+                            x2 = 1140;
+                            y2 = 290 - 20 * size + 40 * index;
                             if (count == 1) {
                                 message = NAME[now] + ": Draw a card";
                             } // if (count == 1)
@@ -1231,25 +1205,23 @@ public class MainActivity extends AppCompatActivity
 
                         default:
                             image = mDrawnCard.image;
-                            roi = new Rect(580, 490, 121, 181);
+                            x2 = 610 - 30 * size + 60 * index;
+                            y2 = 520;
                             message = NAME[now] + ": Draw " + mDrawnCard.name;
                             break; // default
                     } // switch (now)
 
                     // Animation
-                    image.copyTo(new Mat(mScr, roi), image);
-                    Utils.matToBitmap(mScr, mBmp);
-                    mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
                     mSoundPool.play(sndDraw, 1.0f, 1.0f, 1, 0, 1.0f);
+                    animate(image, 338, 270, x2, y2);
+                    refreshScreen(message);
                     try {
-                        Thread.sleep(300);
-                        refreshScreen(message);
                         Thread.sleep(300);
                     } // try
                     catch (InterruptedException e) {
                         e.printStackTrace();
                     } // catch (InterruptedException)
-                } // if (mDrawnCard != null)
+                } // if (index >= 0)
                 else {
                     message = NAME[now] + " cannot hold more than "
                             + Uno.MAX_HOLD_CARDS + " cards";
@@ -1288,6 +1260,50 @@ public class MainActivity extends AppCompatActivity
             onStatusChanged(mStatus);
         }).start();
     } // draw(int, boolean)
+
+    /**
+     * Do uniform motion for an object from somewhere to somewhere.
+     * NOTE: This method does not draw the last frame. After animation,
+     * you need to call refreshScreen() method to draw the last frame.
+     *
+     * @param elem Move which object.
+     * @param x1   The object's start X coordinate.
+     * @param y1   The object's start Y coordinate.
+     * @param x2   The object's end X coordinate.
+     * @param y2   The object's end Y coordinate.
+     */
+    private void animate(Mat elem, int x1, int y1, int x2, int y2) {
+        int i;
+        Rect roi;
+        Mat canvas;
+
+        roi = new Rect(x1, y1, elem.cols(), elem.rows());
+        canvas = mScr.clone();
+        elem.copyTo(new Mat(canvas, roi), elem);
+        Utils.matToBitmap(canvas, mBmp);
+        mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
+        try {
+            Thread.sleep(30);
+        } // try
+        catch (InterruptedException e) {
+            e.printStackTrace();
+        } // catch (InterruptedException e)
+
+        for (i = 1; i < 5; ++i) {
+            new Mat(mScr, roi).copyTo(new Mat(canvas, roi));
+            roi.x = x1 + (x2 - x1) * i / 5;
+            roi.y = y1 + (y2 - y1) * i / 5;
+            elem.copyTo(new Mat(canvas, roi), elem);
+            Utils.matToBitmap(canvas, mBmp);
+            mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
+            try {
+                Thread.sleep(30);
+            } // try
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            } // catch (InterruptedException e)
+        } // for (i = 1; i < 5; ++i)
+    } // animate()
 
     /**
      * Triggered on challenge chance. When a player played a [wild +4], the next

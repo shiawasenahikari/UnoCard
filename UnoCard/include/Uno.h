@@ -297,10 +297,10 @@ public:
      *              i.e. previous player played a [+2] or [wild +4] to let this
      *              player draw cards. Or false if the specified player draws a
      *              card by itself in its action.
-     * @return Reference of the drawn card, or nullptr if the specified player
+     * @return Index of the drawn card in hand, or -1 if the specified player
      *         didn't draw a card because of the limitation.
      */
-    Card* draw(int who, bool force);
+    int draw(int who, bool force);
 
     /**
      * Check whether the specified card is legal to play. It's legal only when

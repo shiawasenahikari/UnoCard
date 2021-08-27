@@ -32,7 +32,7 @@ Uno::Uno() {
     // Preparations
     done = 0;
     total = 124;
-    std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
+    std::cout << "Loading... (0%)" << std::endl;
 
     // Load background image resources
     bgWelcome = cv::imread("resource/bg_welcome.png");
@@ -670,17 +670,17 @@ void Uno::start() {
  *              i.e. previous player played a [+2] or [wild +4] to let this
  *              player draw cards. Or false if the specified player draws a
  *              card by itself in its action.
- * @return Reference of the drawn card, or nullptr if the specified player
+ * @return Index of the drawn card in hand, or -1 if the specified player
  *         didn't draw a card because of the limitation.
  */
-Card* Uno::draw(int who, bool force) {
+int Uno::draw(int who, bool force) {
     Card* card;
     Card* picked;
-    int index, size;
+    int i, index, size;
     std::vector<Card*>* hand;
-    std::vector<Card*>::iterator i;
+    std::vector<Card*>::iterator it;
 
-    card = nullptr;
+    i = -1;
     if (who >= Player::YOU && who <= Player::COM3) {
         if (!force) {
             // Draw a card by player itself, register weak color
@@ -696,15 +696,15 @@ Card* Uno::draw(int who, bool force) {
             // Draw a card from card deck, and put it to an appropriate position
             card = deck.back();
             deck.pop_back();
-            for (i = hand->begin(); i != hand->end(); ++i) {
-                if ((*i)->order > card->order) {
+            for (i = 0, it = hand->begin(); it != hand->end(); ++i, ++it) {
+                if ((*it)->order > card->order) {
                     // Found an appropriate position to insert the new card,
                     // which keeps the player's hand cards sequenced
                     break;
-                } // if ((*i)->order > card->order)
-            } // for (i = hand->begin(); i != hand->end(); ++i)
+                } // if ((*it)->order > card->order)
+            } // for (i = 0, it = hand->begin(); it != hand->end(); ++i, ++it)
 
-            hand->insert(i, card);
+            hand->insert(it, card);
             player[who].recent = nullptr;
             if (deck.empty()) {
                 // Re-use the used cards when there are no more cards in deck
@@ -725,7 +725,7 @@ Card* Uno::draw(int who, bool force) {
         } // if (hand->size() < MAX_HOLD_CARDS)
     } // if (who >= Player::YOU && who <= Player::COM3)
 
-    return card;
+    return i;
 } // draw(int, bool)
 
 /**
