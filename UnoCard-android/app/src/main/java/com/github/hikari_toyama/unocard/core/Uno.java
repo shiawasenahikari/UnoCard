@@ -116,6 +116,11 @@ public abstract class Uno {
     int difficulty;
 
     /**
+     * Can or cannot stack +2 cards.
+     */
+    boolean stackDraw2;
+
+    /**
      * Game players.
      */
     Player[] player;
@@ -264,6 +269,19 @@ public abstract class Uno {
      *                   Only LV_EASY and LV_HARD are available.
      */
     public abstract void setDifficulty(int difficulty);
+
+    /**
+     * @return Can or cannot stack +2 cards. If can, when you put down a +2
+     * card, the next player may transfer the punishment to its next
+     * player by stacking another +2 card. Finally the first one who
+     * does not stack a +2 card must draw all of the required cards.
+     */
+    public abstract boolean canStackDraw2();
+
+    /**
+     * @param allowed Enable/Disable the +2 stacking rule.
+     */
+    public abstract void setStackDraw2(boolean allowed);
 
     /**
      * Find a card instance in card table.

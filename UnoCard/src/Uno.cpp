@@ -355,6 +355,7 @@ Uno::Uno() {
     players = 3;
     direction = 0;
     now = Player::YOU;
+    stackDraw2 = false;
     difficulty = LV_EASY;
 
     // Generate a random seed based on the current time stamp
@@ -541,6 +542,23 @@ void Uno::setDifficulty(int difficulty) {
         this->difficulty = difficulty;
     } // if (difficulty == LV_EASY || difficulty == LV_HARD)
 } // setDifficulty(int)
+
+/**
+ * @return Can or cannot stack +2 cards. If can, when you put down a +2
+ *         card, the next player may transfer the punishment to its next
+ *         player by stacking another +2 card. Finally the first one who
+ *         does not stack a +2 card must draw all of the required cards.
+ */
+bool Uno::canStackDraw2() {
+    return stackDraw2;
+} // canStackDraw2()
+
+/**
+ * @param allowed Enable/Disable the +2 stacking rule.
+ */
+void Uno::setStackDraw2(bool allowed) {
+    stackDraw2 = allowed;
+} // setStackDraw2(bool)
 
 /**
  * Find a card instance in card table.

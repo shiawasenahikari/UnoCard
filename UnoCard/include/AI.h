@@ -10,7 +10,6 @@
 #ifndef __AI_H_494649FDFA62B3C015120BCB9BE17613__
 #define __AI_H_494649FDFA62B3C015120BCB9BE17613__
 
-#include <Uno.h>
 #include <Card.h>
 #include <Color.h>
 

@@ -38,13 +38,44 @@ class PlayerImpl extends Player {
     } // getHandCards()
 
     /**
-     * @deprecated Use getStrongColor() instead.
+     * Calculate the total score of this player's hand cards. According to the
+     * official rule, Wild Cards are worth 50 points, Action Cards are worth 20
+     * points, and Number Cards are worth points that equals to the number.
+     *
+     * @return Score of this player's hand cards.
      */
     @Override
-    @Deprecated
-    public Color getDangerousColor() {
-        return getStrongColor();
-    } // getDangerousColor()
+    public int getHandScore() {
+        int score = 0;
+        for (Card card : handCards) {
+            switch (card.content) {
+                case WILD:
+                case WILD_DRAW4:
+                    score += 50;
+                    break; // case WILD, WILD_DRAW4
+
+                case REV:
+                case SKIP:
+                case DRAW2:
+                    score += 20;
+                    break; // case REV, SKIP, DRAW2
+
+                default: // Number Cards
+                    score += card.content.ordinal();
+                    break; // default
+            } // switch (card.content)
+        } // for (Card card : handCards)
+
+        return score;
+    } // getHandScore()
+
+    /**
+     * @return How many cards in this player's hand.
+     */
+    @Override
+    public int getHandSize() {
+        return handCards.size();
+    } // getHandSize()
 
     /**
      * When this player played a wild card, record the color specified, as this
@@ -59,15 +90,6 @@ class PlayerImpl extends Player {
     public Color getStrongColor() {
         return strongColor;
     } // getStrongColor()
-
-    /**
-     * @deprecated Use getWeakColor() instead.
-     */
-    @Override
-    @Deprecated
-    public Color getSafeColor() {
-        return getWeakColor();
-    } // getSafeColor()
 
     /**
      * When this player draw a card in action, record the previous played card's

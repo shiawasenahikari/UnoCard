@@ -374,6 +374,7 @@ class UnoImpl extends Uno {
         players = 3;
         direction = 0;
         now = Player.YOU;
+        stackDraw2 = false;
         difficulty = LV_EASY;
         used = new ArrayList<>();
         deck = new ArrayList<>();
@@ -575,6 +576,25 @@ class UnoImpl extends Uno {
             this.difficulty = difficulty;
         } // if (difficulty == LV_EASY || difficulty == LV_HARD)
     } // setDifficulty(int)
+
+    /**
+     * @return Can or cannot stack +2 cards. If can, when you put down a +2
+     * card, the next player may transfer the punishment to its next
+     * player by stacking another +2 card. Finally the first one who
+     * does not stack a +2 card must draw all of the required cards.
+     */
+    @Override
+    public boolean canStackDraw2() {
+        return stackDraw2;
+    } // canStackDraw2()
+
+    /**
+     * @param allowed Enable/Disable the +2 stacking rule.
+     */
+    @Override
+    public void setStackDraw2(boolean allowed) {
+        stackDraw2 = allowed;
+    } // setStackDraw2(boolean)
 
     /**
      * Find a card instance in card table.

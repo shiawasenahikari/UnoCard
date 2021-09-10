@@ -79,10 +79,18 @@ public abstract class Player {
     public abstract List<Card> getHandCards();
 
     /**
-     * @deprecated Use getStrongColor() instead.
+     * Calculate the total score of this player's hand cards. According to the
+     * official rule, Wild Cards are worth 50 points, Action Cards are worth 20
+     * points, and Number Cards are worth points that equals to the number.
+     *
+     * @return Score of this player's hand cards.
      */
-    @Deprecated
-    public abstract Color getDangerousColor();
+    public abstract int getHandScore();
+
+    /**
+     * @return How many cards in this player's hand.
+     */
+    public abstract int getHandSize();
 
     /**
      * When this player played a wild card, record the color specified, as this
@@ -94,12 +102,6 @@ public abstract class Player {
      * strong color.
      */
     public abstract Color getStrongColor();
-
-    /**
-     * @deprecated Use getWeakColor() instead.
-     */
-    @Deprecated
-    public abstract Color getSafeColor();
 
     /**
      * When this player draw a card in action, record the previous played card's

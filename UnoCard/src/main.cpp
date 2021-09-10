@@ -15,7 +15,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
-#include <sstream>
 #include <Color.h>
 #include <Player.h>
 #include <Content.h>
@@ -56,22 +55,16 @@ static const char FILE_HEADER[] = {
 static AI sAI;
 static Uno* sUno;
 static bool sAuto;
+static int sScore;
 static int sStatus;
 static int sWinner;
-static int sEasyWin;
-static int sHardWin;
-static int sEasyWin3;
-static int sHardWin3;
-static int sEasyTotal;
-static int sHardTotal;
-static int sEasyTotal3;
-static int sHardTotal3;
 static bool sAIRunning;
 static cv::Mat sScreen;
 static Card* sDrawnCard;
 static bool sImmPlayAsk;
 static bool sChallenged;
 static bool sChallengeAsk;
+static bool sAdjustOptions;
 static Card* sSelectedCard;
 static SoundPool* sSoundPool;
 static QMediaPlayer* sMediaPlay;
@@ -92,64 +85,13 @@ static void onMouse(int event, int x, int y, int flags, void* param);
  * Defines the entry point for the console application.
  */
 int main(int argc, char* argv[]) {
-    int len, dw[11], sum;
+    int len, dw[7], hash;
     std::ifstream reader;
     QApplication a(argc, argv);
     char header[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     // Preparations
     sUno = Uno::getInstance();
-    sEasyWin = sHardWin = sEasyTotal = sHardTotal = 0;
-    sEasyWin3 = sHardWin3 = sEasyTotal3 = sHardTotal3 = 0;
-    reader = std::ifstream("UnoCard.stat", std::ios::in | std::ios::binary);
-    if (!reader.fail()) {
-        // Using statistics data in UnoCard.stat file.
-        reader.seekg(0, std::ios::end);
-        len = int(reader.tellg());
-        reader.seekg(0, std::ios::beg);
-        switch (len) {
-        case 8 + 5 * sizeof(int) :
-            // old version
-            reader.read(header, 8);
-            reader.read((char*)dw, 5 * sizeof(int));
-            sum = dw[0] + dw[1] + dw[2] + dw[3];
-            if (strcmp(header, FILE_HEADER) == 0 && sum == dw[4]) {
-                // File verification success
-                sEasyWin = dw[0];
-                sHardWin = dw[1];
-                sEasyTotal = dw[2];
-                sHardTotal = dw[3];
-            } // if (strcmp(header, FILE_HEADER) == 0 && sum == dw[4])
-            break; // case 8 + 5 * sizeof(int)
-
-        case 8 + 11 * sizeof(int) :
-            // new version
-            reader.read(header, 8);
-            reader.read((char*)dw, 11 * sizeof(int));
-            sum = dw[0] + dw[1] + dw[2] + dw[3] + dw[4]
-                + dw[5] + dw[6] + dw[7] + dw[8] + dw[9];
-            if (strcmp(header, FILE_HEADER) == 0 && sum == dw[10]) {
-                // File verification success
-                sEasyWin = dw[0];
-                sHardWin = dw[1];
-                sEasyWin3 = dw[2];
-                sHardWin3 = dw[3];
-                sEasyTotal = dw[4];
-                sHardTotal = dw[5];
-                sEasyTotal3 = dw[6];
-                sHardTotal3 = dw[7];
-                sUno->setPlayers(dw[8]);
-                sUno->setDifficulty(dw[9]);
-            } // if (strcmp(header, FILE_HEADER) == 0 && sum == dw[10])
-            break; // case 8 + 11 * sizeof(int)
-
-        default:
-            break; // default
-        } // switch (len)
-
-        reader.close();
-    } // if (!reader.fail())
-
     sSoundPool = new SoundPool;
     sMediaPlay = new QMediaPlayer;
     sMediaList = new QMediaPlaylist;
@@ -158,6 +100,35 @@ int main(int argc, char* argv[]) {
         QFileInfo("resource/bgm.mp3").absoluteFilePath()));
     sMediaPlay->setPlaylist(sMediaList);
     sMediaPlay->setVolume(50);
+    reader = std::ifstream("UnoCard.stat", std::ios::in | std::ios::binary);
+    if (!reader.fail()) {
+        // Using statistics data in UnoCard.stat file.
+        reader.seekg(0, std::ios::end);
+        len = int(reader.tellg());
+        reader.seekg(0, std::ios::beg);
+        if (len == 8 + 7 * sizeof(int)) {
+            reader.read(header, 8);
+            reader.read((char*)dw, 7 * sizeof(int));
+            for (hash = 0, len = 0; len < 6; ++len) {
+                hash = 31 * hash + dw[len];
+            } // for (hash = 0, len = 0; len < 6; ++len)
+
+            if (strcmp(header, FILE_HEADER) == 0 && hash == dw[6]) {
+                // File verification success
+                if (dw[0] > 9999) dw[0] = 9999;
+                else if (dw[0] < -999) dw[0] = -999;
+                sScore = dw[0];
+                sUno->setPlayers(dw[1]);
+                sUno->setDifficulty(dw[2]);
+                sUno->setStackDraw2(dw[3] != 0);
+                sSoundPool->setEnabled(dw[4] != 0);
+                sMediaPlay->setVolume(dw[5]);
+            } // if (strcmp(header, FILE_HEADER) == 0 && hash == dw[6])
+        } // if (len == 8 + 7 * sizeof(int))
+
+        reader.close();
+    } // if (!reader.fail())
+
     sWinner = Player::YOU;
     sStatus = STAT_WELCOME;
     sScreen = sUno->getBackground().clone();
@@ -279,36 +250,12 @@ static void onStatusChanged(int status) {
 
     switch (status) {
     case STAT_WELCOME:
-        refreshScreen("WELCOME TO UNO CARD GAME, CLICK UNO TO START");
+        refreshScreen(sAdjustOptions ? "" :
+            "WELCOME TO UNO CARD GAME, CLICK UNO TO START");
         break; // case STAT_WELCOME
 
     case STAT_NEW_GAME:
         // New game
-        switch (sUno->getDifficulty() << 4 | sUno->getPlayers()) {
-        case 0x03:
-            // Difficulty = EASY(0), Players = 3
-            ++sEasyTotal3;
-            break; // case 0x03
-
-        case 0x04:
-            // Difficulty = EASY(0), Players = 4
-            ++sEasyTotal;
-            break; // case 0x04
-
-        case 0x13:
-            // Difficulty = HARD(1), Players = 3
-            ++sHardTotal3;
-            break; // case 0x13
-
-        case 0x14:
-            // Difficulty = HARD(1), Players = 4
-            ++sHardTotal;
-            break; // case 0x14
-
-        default:
-            break; // default
-        } // switch (sUno->getDifficulty() << 4 | sUno->getPlayers())
-
         sUno->start();
         sSelectedCard = nullptr;
         refreshScreen("GET READY");
@@ -568,45 +515,8 @@ static void onStatusChanged(int status) {
 
     case STAT_GAME_OVER:
         // Game over
-        if (sWinner == Player::YOU) {
-            sSoundPool->play(SoundPool::SND_WIN);
-            switch (sUno->getDifficulty() << 4 | sUno->getPlayers()) {
-            case 0x03:
-                // Difficulty = EASY(0), Players = 3
-                ++sEasyWin3;
-                break; // case 0x03
-
-            case 0x04:
-                // Difficulty = EASY(0), Players = 4
-                ++sEasyWin;
-                break; // case 0x04
-
-            case 0x13:
-                // Difficulty = HARD(1), Players = 3
-                ++sHardWin3;
-                break; // case 0x13
-
-            case 0x14:
-                // Difficulty = HARD(1), Players = 4
-                ++sHardWin;
-                break; // case 0x14
-
-            default:
-                break; // default
-            } // switch (sUno->getDifficulty() << 4 | sUno->getPlayers())
-        } // if (sWinner == Player::YOU)
-        else {
-            sSoundPool->play(SoundPool::SND_LOSE);
-        } // else
-
-        refreshScreen("Click the card deck to restart");
-        if (sAuto) {
-            cv::waitKey(5000);
-            if (sAuto && sStatus == STAT_GAME_OVER) {
-                sStatus = STAT_NEW_GAME;
-                onStatusChanged(sStatus);
-            } // if (sAuto && sStatus == STAT_GAME_OVER)
-        } // if (sAuto)
+        refreshScreen(sAdjustOptions ? "" :
+            "Click the card deck to restart");
         break; // case STAT_GAME_OVER
 
     default:
@@ -627,8 +537,7 @@ static void refreshScreen(const std::string& message) {
     std::string info;
     bool beChallenged;
     std::vector<Card*> hand;
-    int status, size, width;
-    int i, remain, used, rate;
+    int i, remain, size, status, used, width;
 
     // Lock the value of global variable [sStatus]
     status = sStatus;
@@ -658,79 +567,152 @@ static void refreshScreen(const std::string& message) {
         /* color     */ sAuto ? RGB_YELLOW : RGB_WHITE
     ); // cv::putText()
 
-    // For welcome screen, only show difficulty buttons and winning rates
-    if (status == STAT_WELCOME) {
+    // Left-bottom corner: <OPTIONS> button
+    // Shows only when game is not in process
+    if (status == STAT_WELCOME || status == STAT_GAME_OVER) {
+        point.x = 20;
+        point.y = 700;
+        cv::putText(
+            /* img       */ sScreen,
+            /* text      */ "<OPTIONS>",
+            /* org       */ point,
+            /* fontFace  */ FONT_SANS,
+            /* fontScale */ 1.0,
+            /* color     */ sAdjustOptions ? RGB_YELLOW : RGB_WHITE
+        ); // cv::putText()
+    } // if (status == STAT_WELCOME || status == STAT_GAME_OVER)
+
+    if (sAdjustOptions) {
+        // Show special screen when configuring game options
+        // BGM switch
+        point.x = 60;
+        point.y = 160;
+        cv::putText(sScreen, "BGM", point, FONT_SANS, 1.0, RGB_WHITE);
+        image = sMediaPlay->volume() > 0 ?
+            sUno->findCard(GREEN, REV)->image:
+            sUno->findCard(GREEN, REV)->darkImg;
+        roi = cv::Rect(150, 60, 121, 181);
+        image.copyTo(sScreen(roi), image);
+        image = sMediaPlay->volume() > 0 ?
+            sUno->findCard(RED, SKIP)->darkImg:
+            sUno->findCard(RED, SKIP)->image;
+        roi.x = 330;
+        image.copyTo(sScreen(roi), image);
+
+        // Sound effect switch
+        point.x = 60;
+        point.y = 370;
+        cv::putText(sScreen, "SND", point, FONT_SANS, 1.0, RGB_WHITE);
+        image = sSoundPool->isEnabled() ?
+            sUno->findCard(GREEN, REV)->image:
+            sUno->findCard(GREEN, REV)->darkImg;
+        roi.x = 150;
+        roi.y = 270;
+        image.copyTo(sScreen(roi), image);
+        image = sSoundPool->isEnabled() ?
+            sUno->findCard(RED, SKIP)->darkImg:
+            sUno->findCard(RED, SKIP)->image;
+        roi.x = 330;
+        image.copyTo(sScreen(roi), image);
+
         // [Level] option: easy / hard
-        point.x = 340;
+        point.x = 640;
         point.y = 160;
         cv::putText(sScreen, "LEVEL", point, FONT_SANS, 1.0, RGB_WHITE);
         image = sUno->getLevelImage(
             /* level   */ Uno::LV_EASY,
             /* hiLight */ sUno->getDifficulty() == Uno::LV_EASY
         ); // image = sUno->getLevelImage()
-        roi = cv::Rect(490, 60, 121, 181);
+        roi.x = 790;
+        roi.y = 60;
         image.copyTo(sScreen(roi), image);
         image = sUno->getLevelImage(
             /* level   */ Uno::LV_HARD,
             /* hiLight */ sUno->getDifficulty() == Uno::LV_HARD
         ); // image = sUno->getLevelImage()
-        roi.x = 670;
+        roi.x = 970;
         image.copyTo(sScreen(roi), image);
 
         // [Players] option: 3 / 4
-        point.x = 340;
+        point.x = 640;
         point.y = 370;
         cv::putText(sScreen, "PLAYERS", point, FONT_SANS, 1.0, RGB_WHITE);
         image = sUno->getPlayers() == 3 ?
             sUno->findCard(BLUE, NUM3)->image :
             sUno->findCard(BLUE, NUM3)->darkImg;
-        roi.x = 490;
+        roi.x = 790;
         roi.y = 270;
         image.copyTo(sScreen(roi), image);
         image = sUno->getPlayers() == 4 ?
             sUno->findCard(BLUE, NUM4)->image :
             sUno->findCard(BLUE, NUM4)->darkImg;
-        roi.x = 670;
+        roi.x = 970;
         image.copyTo(sScreen(roi), image);
 
-        // Win rate
-        switch (sUno->getDifficulty() << 4 | sUno->getPlayers()) {
-        case 0x03:
-            // Difficulty = EASY(0), Players = 3
-            rate = sEasyTotal3 == 0 ? 0 : 100 * sEasyWin3 / sEasyTotal3;
-            break; // case 0x03
+        // Special rules
+        point.x = 60;
+        point.y = 580;
+        cv::putText(
+            /* img       */ sScreen,
+            /* text      */ "CAN  OR  CANNOT  STACK  +2  CARDS:",
+            /* org       */ point,
+            /* fontFace  */ FONT_SANS,
+            /* fontScale */ 1.0,
+            /* color     */ RGB_WHITE
+        ); // cv::putText()
 
-        case 0x04:
-            // Difficulty = EASY(0), Players = 4
-            rate = sEasyTotal == 0 ? 0 : 100 * sEasyWin / sEasyTotal;
-            break; // case 0x04
-
-        case 0x13:
-            // Difficulty = HARD(1), Players = 3
-            rate = sHardTotal3 == 0 ? 0 : 100 * sHardWin3 / sHardTotal3;
-            break; // case 0x13
-
-        case 0x14:
-            // Difficulty = HARD(1), Players = 4
-            rate = sHardTotal == 0 ? 0 : 100 * sHardWin / sHardTotal;
-            break; // case 0x14
-
-        default:
-            rate = 0;
-            break; // default
-        } // switch (sUno->getDifficulty() << 4 | sUno->getPlayers())
-
-        info = "win rate: " + std::to_string(rate) + "%";
-        width = cv::getTextSize(info, FONT_SANS, 1.0, 1, nullptr).width;
-        point.x = 930 - width / 2;
-        cv::putText(sScreen, info, point, FONT_SANS, 1.0, RGB_WHITE);
-
-        // [UNO] button: start a new game
+        image = sUno->findCard(RED, DRAW2)->image;
+        roi.x = 790;
+        roi.y = 480;
+        image.copyTo(sScreen(roi), image);
+        image = sUno->canStackDraw2() ?
+            sUno->findCard(BLUE, DRAW2)->image :
+            sUno->findCard(BLUE, DRAW2)->darkImg;
+        roi.x += 45;
+        image.copyTo(sScreen(roi), image);
+        image = sUno->canStackDraw2() ?
+            sUno->findCard(GREEN, DRAW2)->image :
+            sUno->findCard(GREEN, DRAW2)->darkImg;
+        roi.x += 45;
+        image.copyTo(sScreen(roi), image);
+        image = sUno->canStackDraw2() ?
+            sUno->findCard(YELLOW, DRAW2)->image :
+            sUno->findCard(YELLOW, DRAW2)->darkImg;
+        roi.x += 45;
+        image.copyTo(sScreen(roi), image);
+    } // if (sAdjustOptions)
+    else if (status == STAT_WELCOME) {
+        // For welcome screen, show the start button and your score
         image = sUno->getBackImage();
-        roi.x = 580;
+        roi = cv::Rect(580, 270, 121, 181);
+        image.copyTo(sScreen(roi), image);
+        point.x = 240;
+        point.y = 620;
+        cv::putText(sScreen, "SCORE", point, FONT_SANS, 1.0, RGB_WHITE);
+        if (sScore < 0) {
+            image = sUno->getColoredWildImage(NONE);
+        } // if (sScore < 0)
+        else {
+            i = sScore / 1000;
+            image = sUno->findCard(RED, Content(i))->image;
+        } // else
+
+        roi.x = 360;
         roi.y = 520;
         image.copyTo(sScreen(roi), image);
-    } // if (status == STAT_WELCOME)
+        i = abs(sScore / 100 % 10);
+        image = sUno->findCard(BLUE, Content(i))->image;
+        roi.x += 140;
+        image.copyTo(sScreen(roi), image);
+        i = abs(sScore / 10 % 10);
+        image = sUno->findCard(GREEN, Content(i))->image;
+        roi.x += 140;
+        image.copyTo(sScreen(roi), image);
+        i = abs(sScore % 10);
+        image = sUno->findCard(YELLOW, Content(i))->image;
+        roi.x += 140;
+        image.copyTo(sScreen(roi), image);
+    } // else if (status == STAT_WELCOME)
     else {
         // Center: card deck & recent played card
         image = sUno->getBackImage();
@@ -757,7 +739,8 @@ static void refreshScreen(const std::string& message) {
         } // for (Card* recent : hand)
 
         // Left-top corner: remain / used
-        point = cv::Point(20, 42);
+        point.x = 20;
+        point.y = 42;
         remain = sUno->getDeckCount();
         used = sUno->getUsedCount();
         info = "Remain/Used: "
@@ -765,15 +748,15 @@ static void refreshScreen(const std::string& message) {
         cv::putText(sScreen, info, point, FONT_SANS, 1.0, RGB_WHITE);
 
         // Left-center: Hand cards of Player West (COM1)
-        hand = sUno->getPlayer(Player::COM1)->getHandCards();
-        size = int(hand.size());
-        if (size == 0) {
+        if (status == STAT_GAME_OVER && sWinner == Player::COM1) {
             // Played all hand cards, it's winner
             point.x = 51;
             point.y = 461;
             cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
-        } // if (size == 0)
+        } // if (status == STAT_GAME_OVER && sWinner == Player::COM1)
         else {
+            hand = sUno->getPlayer(Player::COM1)->getHandCards();
+            size = int(hand.size());
             roi.x = 20;
             roi.y = 290 - 20 * size;
             beChallenged = sChallenged && sUno->getNow() == Player::COM1;
@@ -804,17 +787,15 @@ static void refreshScreen(const std::string& message) {
         } // else
 
         // Top-center: Hand cards of Player North (COM2)
-        hand = sUno->getPlayer(Player::COM2)->getHandCards();
-        size = int(hand.size());
-        if (size == 0) {
+        if (status == STAT_GAME_OVER && sWinner == Player::COM2) {
             // Played all hand cards, it's winner
-            if (sUno->getPlayers() == 4) {
-                point.x = 611;
-                point.y = 121;
-                cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
-            } // if (sUno->getPlayers() == 4)
-        } // if (size == 0)
+            point.x = 611;
+            point.y = 121;
+            cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
+        } // if (status == STAT_GAME_OVER && sWinner == Player::COM2)
         else {
+            hand = sUno->getPlayer(Player::COM2)->getHandCards();
+            size = int(hand.size());
             roi.x = (1205 - 45 * size) / 2;
             roi.y = 20;
             beChallenged = sChallenged && sUno->getNow() == Player::COM2;
@@ -845,15 +826,15 @@ static void refreshScreen(const std::string& message) {
         } // else
 
         // Right-center: Hand cards of Player East (COM3)
-        hand = sUno->getPlayer(Player::COM3)->getHandCards();
-        size = int(hand.size());
-        if (size == 0) {
+        if (status == STAT_GAME_OVER && sWinner == Player::COM3) {
             // Played all hand cards, it's winner
             point.x = 1170;
             point.y = 461;
             cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
-        } // if (size == 0)
+        } // if (status == STAT_GAME_OVER && sWinner == Player::COM3)
         else {
+            hand = sUno->getPlayer(Player::COM3)->getHandCards();
+            size = int(hand.size());
             roi.x = 1140;
             roi.y = 290 - 20 * size;
             beChallenged = sChallenged && sUno->getNow() == Player::COM3;
@@ -884,16 +865,16 @@ static void refreshScreen(const std::string& message) {
         } // else
 
         // Bottom: Your hand cards
-        hand = sUno->getPlayer(Player::YOU)->getHandCards();
-        size = int(hand.size());
-        if (size == 0) {
+        if (status == STAT_GAME_OVER && sWinner == Player::YOU) {
             // Played all hand cards, it's winner
             point.x = 611;
             point.y = 621;
             cv::putText(sScreen, "WIN", point, FONT_SANS, 1.0, RGB_YELLOW);
-        } // if (size == 0)
+        } // if (status == STAT_GAME_OVER && sWinner == Player::YOU)
         else {
             // Show your all hand cards
+            hand = sUno->getPlayer(Player::YOU)->getHandCards();
+            size = int(hand.size());
             roi.x = (1205 - 45 * size) / 2;
             for (Card* card : hand) {
                 switch (status) {
@@ -966,13 +947,11 @@ static void play(int index, Color color) {
     cv::Rect roi;
     cv::Mat image;
     std::string message;
-    std::vector<Card*> hand;
     int x1, y1, x2, now, size, recentSize, next;
 
     sStatus = STAT_IDLE; // block mouse click events when idle
     now = sUno->getNow();
-    hand = sUno->getPlayer(now)->getHandCards();
-    size = int(hand.size());
+    size = sUno->getPlayer(now)->getHandSize();
     card = sUno->play(now, index, color);
     sSelectedCard = nullptr;
     sSoundPool->play(SoundPool::SND_PLAY);
@@ -1006,6 +985,19 @@ static void play(int index, Color color) {
         if (size == 1) {
             // The player in action becomes winner when it played the
             // final card in its hand successfully
+            if (now == Player::YOU) {
+                sScore += sUno->getPlayer(Player::COM1)->getHandScore()
+                    + sUno->getPlayer(Player::COM2)->getHandScore()
+                    + sUno->getPlayer(Player::COM3)->getHandScore();
+                if (sScore > 9999) sScore = 9999;
+                sSoundPool->play(SoundPool::SND_WIN);
+            } // if (now == Player::YOU)
+            else {
+                sScore -= sUno->getPlayer(Player::YOU)->getHandScore();
+                if (sScore < -999) sScore = -999;
+                sSoundPool->play(SoundPool::SND_LOSE);
+            } // else
+
             sWinner = now;
             sStatus = STAT_GAME_OVER;
             onStatusChanged(sStatus);
@@ -1098,7 +1090,6 @@ static void play(int index, Color color) {
 static void draw(int count, bool force) {
     cv::Mat image;
     std::string message;
-    std::vector<Card*> hand;
     int i, index, now, size, x2, y2;
 
     sStatus = STAT_IDLE; // block mouse click events when idle
@@ -1107,9 +1098,8 @@ static void draw(int count, bool force) {
     for (i = 0; i < count; ++i) {
         index = sUno->draw(now, force);
         if (index >= 0) {
-            hand = sUno->getPlayer(now)->getHandCards();
-            sDrawnCard = hand.at(index);
-            size = int(hand.size());
+            sDrawnCard = sUno->getPlayer(now)->getHandCards().at(index);
+            size = sUno->getPlayer(now)->getHandSize();
             switch (now) {
             case Player::COM1:
                 image = sUno->getBackImage();
@@ -1322,7 +1312,7 @@ static void animate(cv::Mat elem, int x1, int y1, int x2, int y2) {
  * @param param [UNUSED IN THIS CALLBACK]
  */
 static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
-    static int dw[11];
+    static int dw[7];
     static Card* card;
     static std::ofstream writer;
     static std::vector<Card*> hand;
@@ -1330,12 +1320,85 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 
     if (event == cv::EVENT_LBUTTONDOWN || event == cv::EVENT_LBUTTONDBLCLK) {
         // Only response to left-click events, and ignore the others
-        if (y >= 21 && y <= 42 && x >= 1140 && x <= 1260) {
+        if (sAdjustOptions) {
+            // Do special behaviors when configuring game options
+            if (y >= 21 && y <= 42) {
+                if (x >= 1140 && x <= 1260) {
+                    // <QUIT> button
+                    // Leave options page
+                    sAdjustOptions = false;
+                    onStatusChanged(sStatus);
+                } // if (x >= 1140 && x <= 1260)
+            } // if (y >= 21 && y <= 42)
+            else if (y >= 60 && y <= 240) {
+                if (x >= 150 && x <= 270) {
+                    // BGM ON button
+                    sMediaPlay->setVolume(50);
+                    onStatusChanged(sStatus);
+                } // if (x >= 150 && x <= 270)
+                else if (x >= 330 && x <= 450) {
+                    // BGM OFF button
+                    sMediaPlay->setVolume(0);
+                    onStatusChanged(sStatus);
+                } // else if (x >= 330 && x <= 450)
+                else if (x >= 790 && x <= 910) {
+                    // Easy AI Level
+                    sUno->setDifficulty(Uno::LV_EASY);
+                    onStatusChanged(sStatus);
+                } // else if (x >= 790 && x <= 910)
+                else if (x >= 970 && x <= 1090) {
+                    // Hard AI Level
+                    sUno->setDifficulty(Uno::LV_HARD);
+                    onStatusChanged(sStatus);
+                } // else if (x >= 970 && x <= 1090)
+            } // else if (y >= 60 && y <= 240)
+            else if (y >= 270 && y <= 450) {
+                if (x >= 150 && x <= 270) {
+                    // SND ON button
+                    sSoundPool->setEnabled(true);
+                    sSoundPool->play(SoundPool::SND_PLAY);
+                    onStatusChanged(sStatus);
+                } // if (x >= 150 && x <= 270)
+                else if (x >= 330 && x <= 450) {
+                    // SND OFF button
+                    sSoundPool->setEnabled(false);
+                    onStatusChanged(sStatus);
+                } // else if (x >= 330 && x <= 450)
+                else if (x >= 790 && x <= 910) {
+                    // 3 players
+                    sUno->setPlayers(3);
+                    onStatusChanged(sStatus);
+                } // else if (x >= 790 && x <= 910)
+                else if (x >= 970 && x <= 1090) {
+                    // 4 players
+                    sUno->setPlayers(4);
+                    onStatusChanged(sStatus);
+                } // else if (x >= 970 && x <= 1090)
+            } // else if (y >= 270 && y <= 450)
+            else if (y >= 480 && y <= 660) {
+                if (x >= 790 && x <= 1045) {
+                    // +2 stacking rule
+                    sUno->setStackDraw2(!sUno->canStackDraw2());
+                    onStatusChanged(sStatus);
+                } // if (x >= 790 && x <= 1045)
+            } // else if (y >= 480 && y <= 660)
+            else if (y >= 679 && y <= 700) {
+                if (x >= 20 && x <= 200) {
+                    // <OPTIONS> button
+                    // Leave options page
+                    sAdjustOptions = false;
+                    onStatusChanged(sStatus);
+                } // if (x >= 20 && x <= 200)
+                else if (x >= 1140 && x <= 1260) {
+                    // <AUTO> button
+                    sAuto = !sAuto;
+                    onStatusChanged(sStatus);
+                } // else if (x >= 1140 && x <= 1260)
+            } // else if (y >= 679 && y <= 700)
+        } // if (sAdjustOptions)
+        else if (y >= 21 && y <= 42 && x >= 1140 && x <= 1260) {
             // <QUIT> button
             // Store statistics data to UnoCard.stat file
-            delete sMediaList;
-            delete sMediaPlay;
-            delete sSoundPool;
             writer = std::ofstream(
                 /* filename */ "UnoCard.stat",
                 /*   mode   */ std::ios::out | std::ios::binary
@@ -1343,28 +1406,27 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
 
             if (!writer.fail()) {
                 // Store statistics data to file
-                dw[0] = sEasyWin;
-                dw[1] = sHardWin;
-                dw[2] = sEasyWin3;
-                dw[3] = sHardWin3;
-                dw[4] = sEasyTotal;
-                dw[5] = sHardTotal;
-                dw[6] = sEasyTotal3;
-                dw[7] = sHardTotal3;
-                dw[8] = sUno->getPlayers();
-                dw[9] = sUno->getDifficulty();
-                for (dw[10] = 0, i = 0; i < 10; ++i) {
-                    dw[10] += dw[i];
-                } // for (dw[10] = 0, i = 0; i < 10; ++i)
+                dw[0] = sScore;
+                dw[1] = sUno->getPlayers();
+                dw[2] = sUno->getDifficulty();
+                dw[3] = sUno->canStackDraw2() ? 1 : 0;
+                dw[4] = sSoundPool->isEnabled() ? 1 : 0;
+                dw[5] = sMediaPlay->volume();
+                for (dw[6] = 0, i = 0; i < 6; ++i) {
+                    dw[6] = 31 * dw[6] + dw[i];
+                } // for (dw[6] = 0, i = 0; i < 6; ++i)
 
                 writer.write(FILE_HEADER, 8);
-                writer.write((char*)dw, 11 * sizeof(int));
+                writer.write((char*)dw, 7 * sizeof(int));
                 writer.close();
             } // if (!writer.fail())
 
             cv::destroyAllWindows();
+            delete sMediaList;
+            delete sMediaPlay;
+            delete sSoundPool;
             exit(0);
-        } // if (y >= 21 && y <= 42 && x >= 1140 && x <= 1260)
+        } // else if (y >= 21 && y <= 42 && x >= 1140 && x <= 1260)
         else if (y >= 679 && y <= 700 && x >= 1130 && x <= 1260) {
             // <AUTO> button
             // In player's action, automatically play or draw cards by AI
@@ -1395,37 +1457,20 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
         } // else if (y >= 679 && y <= 700 && x >= 1130 && x <= 1260)
         else switch (sStatus) {
         case STAT_WELCOME:
-            if (y >= 60 && y <= 240) {
-                if (x >= 490 && x <= 610) {
-                    // Difficulty: EASY
-                    sUno->setDifficulty(Uno::LV_EASY);
-                    onStatusChanged(sStatus);
-                } // if (x >= 490 && x <= 610)
-                else if (x >= 670 && x <= 790) {
-                    // Difficulty: HARD
-                    sUno->setDifficulty(Uno::LV_HARD);
-                    onStatusChanged(sStatus);
-                } // else if (x >= 670 && x <= 790)
-            } // if (y >= 60 && y <= 240)
-            else if (y >= 270 && y <= 450) {
-                if (x >= 490 && x <= 610) {
-                    // 3-player mode
-                    sUno->setPlayers(3);
-                    onStatusChanged(sStatus);
-                } // if (x >= 490 && x <= 610)
-                else if (x >= 670 && x <= 790) {
-                    // 4-player mode
-                    sUno->setPlayers(4);
-                    onStatusChanged(sStatus);
-                } // else if (x >= 670 && x <= 790)
-            } // else if (y >= 270 && y <= 450)
-            else if (y >= 520 && y <= 700) {
+            if (y >= 270 && y <= 450) {
                 if (x >= 580 && x <= 700) {
                     // UNO button, start a new game
                     sStatus = STAT_NEW_GAME;
                     onStatusChanged(sStatus);
                 } // if (x >= 580 && x <= 700)
-            } // else if (y >= 520 && y <= 700)
+            } // if (y >= 270 && y <= 450)
+            else if (y >= 679 && y <= 700) {
+                if (x >= 20 && x <= 200) {
+                    // <OPTIONS> button
+                    sAdjustOptions = true;
+                    onStatusChanged(sStatus);
+                } // if (x >= 20 && x <= 200)
+            } // else if (y >= 679 && y <= 700)
             break; // case STAT_WELCOME
 
         case Player::YOU:
@@ -1576,11 +1621,20 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
             break; // case STAT_WILD_COLOR
 
         case STAT_GAME_OVER:
-            if (y >= 270 && y <= 450 && x >= 338 && x <= 458) {
-                // Card deck area, start a new game
-                sStatus = STAT_NEW_GAME;
-                onStatusChanged(sStatus);
-            } // if (y >= 270 && y <= 450 && x >= 338 && x <= 458)
+            if (y >= 270 && y <= 450) {
+                if (x >= 338 && x <= 458) {
+                    // Card deck area, start a new game
+                    sStatus = STAT_NEW_GAME;
+                    onStatusChanged(sStatus);
+                } // if (x >= 338 && x <= 458)
+            } // if (y >= 270 && y <= 450)
+            else if (y >= 679 && y <= 700) {
+                if (x >= 20 && x <= 200) {
+                    // <OPTIONS> button
+                    sAdjustOptions = true;
+                    onStatusChanged(sStatus);
+                } // if (x >= 20 && x <= 200)
+            } // else if (y >= 679 && y <= 700)
             break; // case STAT_GAME_OVER
 
         default:

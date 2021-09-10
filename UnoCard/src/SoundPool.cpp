@@ -28,34 +28,45 @@ SoundPool::SoundPool(QObject* parent) : QObject(parent) {
     connect(this, SIGNAL(playSndLose()), &sndLose, SLOT(play()));
     connect(this, SIGNAL(playSndDraw()), &sndDraw, SLOT(play()));
     connect(this, SIGNAL(playSndPlay()), &sndPlay, SLOT(play()));
+    enabled = true;
     thread.start();
 } // SoundPool(QObject*) (Class Constructor)
 
+void SoundPool::setEnabled(bool enabled) {
+    this->enabled = enabled;
+} // setEnabled(bool)
+
+bool SoundPool::isEnabled() {
+    return enabled;
+} // isEnabled()
+
 void SoundPool::play(int which) {
-    switch (which) {
-    case SND_UNO:
-        emit this->playSndUno();
-        break; // case SND_UNO
+    if (enabled) {
+        switch (which) {
+        case SND_UNO:
+            emit this->playSndUno();
+            break; // case SND_UNO
 
-    case SND_WIN:
-        emit this->playSndWin();
-        break; // case SND_WIN
+        case SND_WIN:
+            emit this->playSndWin();
+            break; // case SND_WIN
 
-    case SND_LOSE:
-        emit this->playSndLose();
-        break; // case SND_LOSE
+        case SND_LOSE:
+            emit this->playSndLose();
+            break; // case SND_LOSE
 
-    case SND_DRAW:
-        emit this->playSndDraw();
-        break; // case SND_DRAW
+        case SND_DRAW:
+            emit this->playSndDraw();
+            break; // case SND_DRAW
 
-    case SND_PLAY:
-        emit this->playSndPlay();
-        break; // case SND_PLAY
+        case SND_PLAY:
+            emit this->playSndPlay();
+            break; // case SND_PLAY
 
-    default:
-        break; // default
-    } // switch (which)
+        default:
+            break; // default
+        } // switch (which)
+    } // if (enabled)
 } // play(int)
 
 SoundPool::~SoundPool() {

@@ -21,6 +21,7 @@ class SoundPool : public QObject {
     Q_OBJECT
 
 private:
+    bool enabled;
     QThread thread;
     QSoundEffect sndUno;
     QSoundEffect sndWin;
@@ -35,6 +36,8 @@ public:
     static const int SND_DRAW = 3;
     static const int SND_PLAY = 4;
     SoundPool(QObject* parent = nullptr);
+    void setEnabled(bool enabled);
+    bool isEnabled();
     ~SoundPool();
 
 public slots:

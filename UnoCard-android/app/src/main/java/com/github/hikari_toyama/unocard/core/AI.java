@@ -17,6 +17,10 @@ import android.content.Context;
 public abstract class AI {
     /**
      * In MainActivity Class, get AI instance here.
+     *
+     * @param context Pass a context object to let us get the
+     *                Uno runtime instance.
+     * @return Reference of our singleton.
      */
     public static AI getInstance(Context context) {
         return new AIImpl(context);

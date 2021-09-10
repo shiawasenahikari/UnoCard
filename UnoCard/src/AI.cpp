@@ -76,18 +76,20 @@ static Color calcBestColor4NowPlayer() {
  * @return True if it's necessary to make a challenge.
  */
 bool AI::needToChallenge(int challenger) {
+    int size;
     bool challenge;
     Card* next2last;
     Color draw4Color;
     Color colorBeforeDraw4;
-    std::vector<Card*> hand, recent;
+    std::vector<Card*> recent;
 
-    hand = uno->getPlayer(challenger)->getHandCards();
-    if (hand.size() == 1 || hand.size() >= Uno::MAX_HOLD_CARDS - 4) {
+    size = uno->getPlayer(challenger)->getHandSize();
+    if (size == 1 || size >= Uno::MAX_HOLD_CARDS - 4) {
         // Challenge when defending my UNO dash
         // Challenge when I have 10 or more cards already
+        // For the latter, even if challenge failed, I draw 4 cards at most
         challenge = true;
-    } // if (hand.size() == 1 || hand.size() >= Uno::MAX_HOLD_CARDS - 4)
+    } // if (size == 1 || size >= Uno::MAX_HOLD_CARDS - 4)
     else {
         // Challenge when legal color has not been changed
         recent = uno->getRecent();
@@ -123,9 +125,6 @@ int AI::easyAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
     bool legal;
     Card* card;
     Card* last;
-    Player* curr;
-    Player* next;
-    Player* prev;
     std::vector<Card*> hand;
     Color bestColor, lastColor;
     int yourSize, nextSize, prevSize;
@@ -136,8 +135,7 @@ int AI::easyAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
         throw "outColor[] cannot be nullptr";
     } // if (outColor == nullptr)
 
-    curr = uno->getPlayer(uno->getNow());
-    hand = curr->getHandCards();
+    hand = uno->getPlayer(uno->getNow())->getHandCards();
     yourSize = int(hand.size());
     if (yourSize == 1) {
         // Only one card remained. Play it when it's legal.
@@ -146,10 +144,8 @@ int AI::easyAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
         return uno->isLegalToPlay(card) ? 0 : -1;
     } // if (yourSize == 1)
 
-    next = uno->getPlayer(uno->getNext());
-    nextSize = int(next->getHandCards().size());
-    prev = uno->getPlayer(uno->getPrev());
-    prevSize = int(prev->getHandCards().size());
+    nextSize = uno->getPlayer(uno->getNext())->getHandSize();
+    prevSize = uno->getPlayer(uno->getPrev())->getHandSize();
     hasNum = hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
     idxBest = idxNum = idxRev = idxSkip = idxDraw2 = idxWild = idxWD4 = -1;
     bestColor = calcBestColor4NowPlayer();
@@ -310,11 +306,11 @@ int AI::hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
     } // if (yourSize == 1)
 
     next = uno->getPlayer(uno->getNext());
-    nextSize = int(next->getHandCards().size());
+    nextSize = next->getHandSize();
     oppo = uno->getPlayer(uno->getOppo());
-    oppoSize = int(oppo->getHandCards().size());
+    oppoSize = oppo->getHandSize();
     prev = uno->getPlayer(uno->getPrev());
-    prevSize = int(prev->getHandCards().size());
+    prevSize = prev->getHandSize();
     hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
     idxBest = idxRev = idxSkip = idxDraw2 = idxWild = idxWD4 = -1;
     idxNumIn[0] = idxNumIn[1] = idxNumIn[2] = idxNumIn[3] = idxNumIn[4] = -1;

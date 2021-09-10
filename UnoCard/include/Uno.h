@@ -84,6 +84,11 @@ private:
     int difficulty;
 
     /**
+     * Can or cannot stack +2 cards.
+     */
+    bool stackDraw2;
+
+    /**
      * Game players.
      */
     Player player[4];
@@ -254,6 +259,19 @@ public:
      *                   Only LV_EASY and LV_HARD are available.
      */
     void setDifficulty(int difficulty);
+
+    /**
+     * @return Can or cannot stack +2 cards. If can, when you put down a +2
+     *         card, the next player may transfer the punishment to its next
+     *         player by stacking another +2 card. Finally the first one who
+     *         does not stack a +2 card must draw all of the required cards.
+     */
+    bool canStackDraw2();
+
+    /**
+     * @param allowed Enable/Disable the +2 stacking rule.
+     */
+    void setStackDraw2(bool allowed);
 
     /**
      * Find a card instance in card table.

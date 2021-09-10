@@ -87,9 +87,18 @@ public:
     const std::vector<Card*>& getHandCards();
 
     /**
-     * @deprecated Use getStrongColor() instead.
+     * Calculate the total score of this player's hand cards. According to the
+     * official rule, Wild Cards are worth 50 points, Action Cards are worth 20
+     * points, and Number Cards are worth points that equals to the number.
+     *
+     * @return Score of this player's hand cards.
      */
-    [[deprecated]] Color getDangerousColor();
+    int getHandScore();
+
+    /**
+     * @return How many cards in this player's hand.
+     */
+    int getHandSize();
 
     /**
      * When this player played a wild card, record the color specified, as this
@@ -101,11 +110,6 @@ public:
      *         strong color.
      */
     Color getStrongColor();
-
-    /**
-     * @deprecated Use getWeakColor() instead.
-     */
-    [[deprecated]] Color getSafeColor();
 
     /**
      * When this player draw a card in action, record the previous played card's

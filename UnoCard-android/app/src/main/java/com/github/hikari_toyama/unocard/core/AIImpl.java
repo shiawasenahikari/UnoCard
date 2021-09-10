@@ -100,17 +100,19 @@ class AIImpl extends AI {
      */
     @Override
     public boolean needToChallenge(int challenger) {
+        int size;
         Card next2last;
         boolean challenge;
-        List<Card> hand, recent;
+        List<Card> recent;
         Color draw4Color, colorBeforeDraw4;
 
-        hand = uno.getPlayer(challenger).getHandCards();
-        if (hand.size() == 1 || hand.size() >= Uno.MAX_HOLD_CARDS - 4) {
+        size = uno.getPlayer(challenger).getHandSize();
+        if (size == 1 || size >= Uno.MAX_HOLD_CARDS - 4) {
             // Challenge when defending my UNO dash
             // Challenge when I have 10 or more cards already
+            // For the latter, even if challenge failed, I draw 4 cards at most
             challenge = true;
-        } // if (hand.size() == 1 || hand.size() >= Uno.MAX_HOLD_CARDS - 4)
+        } // if (size == 1 || size >= Uno.MAX_HOLD_CARDS - 4)
         else {
             // Challenge when legal color has not been changed
             recent = uno.getRecent();
@@ -149,7 +151,6 @@ class AIImpl extends AI {
         String errMsg;
         Card card, last;
         List<Card> hand, recent;
-        Player curr, next, prev;
         Color bestColor, lastColor;
         int yourSize, nextSize, prevSize;
         boolean hasNum, hasRev, hasSkip, hasDraw2, hasWild, hasWD4;
@@ -160,8 +161,7 @@ class AIImpl extends AI {
             throw new IllegalArgumentException(errMsg);
         }  // if (outColor == null || outColor.length == 0)
 
-        curr = uno.getPlayer(uno.getNow());
-        hand = curr.getHandCards();
+        hand = uno.getPlayer(uno.getNow()).getHandCards();
         yourSize = hand.size();
         if (yourSize == 1) {
             // Only one card remained. Play it when it's legal.
@@ -170,10 +170,8 @@ class AIImpl extends AI {
             return uno.isLegalToPlay(card) ? 0 : -1;
         } // if (yourSize == 1)
 
-        next = uno.getPlayer(uno.getNext());
-        nextSize = next.getHandCards().size();
-        prev = uno.getPlayer(uno.getPrev());
-        prevSize = prev.getHandCards().size();
+        nextSize = uno.getPlayer(uno.getNext()).getHandSize();
+        prevSize = uno.getPlayer(uno.getPrev()).getHandSize();
         hasNum = hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
         idxBest = idxNum = idxRev = idxSkip = idxDraw2 = idxWild = idxWD4 = -1;
         bestColor = calcBestColor4NowPlayer();
@@ -336,11 +334,11 @@ class AIImpl extends AI {
         } // if (yourSize == 1)
 
         next = uno.getPlayer(uno.getNext());
-        nextSize = next.getHandCards().size();
+        nextSize = next.getHandSize();
         oppo = uno.getPlayer(uno.getOppo());
-        oppoSize = oppo.getHandCards().size();
+        oppoSize = oppo.getHandSize();
         prev = uno.getPlayer(uno.getPrev());
-        prevSize = prev.getHandCards().size();
+        prevSize = prev.getHandSize();
         hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
         idxBest = idxRev = idxSkip = idxDraw2 = idxWild = idxWD4 = -1;
         hasNumIn = new boolean[]{false, false, false, false, false};
