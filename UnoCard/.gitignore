@@ -1,4 +1,10 @@
 build/
+UnoCard
 UnoCard.exe
 UnoCard.prop
 UnoCard.stat
+.qmake.stash
+.DS_Store
+Makefile
+moc_*
+*.o
