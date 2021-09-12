@@ -907,6 +907,24 @@ class UnoImpl extends Uno {
 
         return card;
     } // play(int, int, Color)
+
+    /**
+     * In 7-0 rule, when a zero card is put down, everyone need to pass the hand
+     * cards to the next player.
+     */
+    @Override
+    public void cycle() {
+        int curr = now, next = getNext(), oppo = getOppo(), prev = getPrev();
+        List<Card> tmp = new ArrayList<>(player[curr].handCards);
+        player[curr].handCards.clear();
+        player[curr].handCards.addAll(player[prev].handCards);
+        player[prev].handCards.clear();
+        player[prev].handCards.addAll(player[oppo].handCards);
+        player[oppo].handCards.clear();
+        player[oppo].handCards.addAll(player[next].handCards);
+        player[next].handCards.clear();
+        player[next].handCards.addAll(tmp);
+    } // cycle()
 } // UnoImpl Class
 
 // E.O.F

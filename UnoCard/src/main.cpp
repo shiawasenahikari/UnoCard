@@ -1066,6 +1066,17 @@ static void play(int index, Color color) {
                 onStatusChanged(sStatus);
                 break; // case WILD_DRAW4
 
+            case NUM0:
+                message += ": " + std::string(card->name);
+                refreshScreen(message);
+                cv::waitKey(1500);
+                sUno->cycle();
+                refreshScreen("Hand cards transferred to next");
+                cv::waitKey(1500);
+                sStatus = sUno->switchNow();
+                onStatusChanged(sStatus);
+                break; // case NUM0
+
             default:
                 message += ": " + std::string(card->name);
                 refreshScreen(message);

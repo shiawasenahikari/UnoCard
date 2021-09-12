@@ -1128,6 +1128,29 @@ public class MainActivity extends AppCompatActivity
                             onStatusChanged(mStatus);
                             break; // case WILD_DRAW4
 
+                        case NUM0:
+                            message = NAME[now] + ": " + card.name;
+                            refreshScreen(message);
+                            try {
+                                Thread.sleep(1500);
+                            } // try
+                            catch (InterruptedException e) {
+                                e.printStackTrace();
+                            } // catch (InterruptedException e)
+
+                            mUno.cycle();
+                            refreshScreen("Hand cards transferred to next");
+                            try {
+                                Thread.sleep(1500);
+                            } // try
+                            catch (InterruptedException e) {
+                                e.printStackTrace();
+                            } // catch (InterruptedException e)
+
+                            mStatus = mUno.switchNow();
+                            onStatusChanged(mStatus);
+                            break; // case NUM0
+
                         default:
                             message = NAME[now] + ": " + card;
                             refreshScreen(message);

@@ -363,6 +363,12 @@ public abstract class Uno {
      * @return Reference of the played card.
      */
     public abstract Card play(int who, int index, Color color);
+
+    /**
+     * In 7-0 rule, when a zero card is put down, everyone need to pass the hand
+     * cards to the next player.
+     */
+    public abstract void cycle();
 } // Uno Class
 
 // E.O.F
