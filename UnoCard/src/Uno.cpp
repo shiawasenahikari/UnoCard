@@ -515,6 +515,12 @@ void Uno::start() {
             recent.push_back(card);
         } // else
     } while (recent.empty());
+
+    // In the case of (last winner = NORTH) & (game mode = 3 player mode)
+    // Re-specify the dealer randomly
+    if (players == 3 && now == Player::COM2) {
+        now = (3 + rand() % 3) % 4;
+    } // if (players == 3 && now == Player::COM2)
 } // start()
 
 /**
@@ -705,16 +711,32 @@ Card* Uno::play(int who, int index, Color color) {
 } // play(int, int, Color)
 
 /**
+ * In 7-0 rule, when someone put down a seven hard, then the player must
+ * swap hand cards with another player immediately.
+ *
+ * @param a Who put down the seven card. Must be one of the following:
+ *          Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+ * @param b Exchange with whom. Must be one of the following:
+ *          Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+ *          Cannot exchange with yourself.
+ */
+void Uno::swap(int a, int b) {
+    Player store = player[a];
+    player[a] = player[b];
+    player[b] = store;
+} // swap(int, int)
+
+/**
  * In 7-0 rule, when a zero card is put down, everyone need to pass the hand
  * cards to the next player.
  */
 void Uno::cycle() {
     int curr = now, next = getNext(), oppo = getOppo(), prev = getPrev();
-    std::vector<Card*> tmp = player[curr].handCards;
-    player[curr].handCards = player[prev].handCards;
-    player[prev].handCards = player[oppo].handCards;
-    player[oppo].handCards = player[next].handCards;
-    player[next].handCards = tmp;
+    Player store = player[curr];
+    player[curr] = player[prev];
+    player[prev] = player[oppo];
+    player[oppo] = player[next];
+    player[next] = store;
 } // cycle()
 
 // E.O.F

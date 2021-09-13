@@ -32,6 +32,7 @@ static const int STAT_WELCOME = 0x2222;
 static const int STAT_NEW_GAME = 0x3333;
 static const int STAT_GAME_OVER = 0x4444;
 static const int STAT_WILD_COLOR = 0x5555;
+static const int STAT_SEVEN_TARGET = 0x7777;
 static const cv::Scalar RGB_RED = CV_RGB(0xFF, 0x55, 0x55);
 static const cv::Scalar RGB_BLUE = CV_RGB(0x55, 0x55, 0xFF);
 static const cv::Scalar RGB_GREEN = CV_RGB(0x55, 0xAA, 0x55);
@@ -73,6 +74,7 @@ static QMediaPlaylist* sMediaList;
 // Functions
 static void easyAI();
 static void hardAI();
+static void swapWith(int whom);
 static void onStatusChanged(int status);
 static void play(int index, Color color = NONE);
 static void draw(int count = 1, bool force = false);
@@ -241,6 +243,7 @@ static void hardAI() {
  * @param status New status value.
  */
 static void onStatusChanged(int status) {
+    int a, b;
     cv::Rect rect;
     cv::Size axes;
     Card* next2last;
@@ -498,6 +501,99 @@ static void onStatusChanged(int status) {
         // Show screen
         imshow("Uno", sScreen);
         break; // case STAT_WILD_COLOR
+
+    case STAT_SEVEN_TARGET:
+        // In 7-0 rule, when someone put down a seven hard, the player must
+        // swap hand cards with another player immediately.
+        a = sUno->getNow();
+        if (a != Player::YOU) {
+            // Seven-card is played by an AI player.
+            // Select target automatically.
+            sStatus = STAT_IDLE;
+            do {
+                b = (3 + rand() % sUno->getPlayers()) % 4;
+            } while (a == b);
+
+            swapWith(b);
+            break; // case STAT_SEVEN_TARGET
+        } // if (a != Player::YOU)
+
+        // Seven-card is played by you. Select target manually.
+        refreshScreen("^ Specify the target to swap hand cards with");
+        rect = cv::Rect(338, 270, 121, 181);
+        sUno->getBackground()(rect).copyTo(sScreen(rect));
+        center = cv::Point(405, 315);
+        axes = cv::Size(135, 135);
+
+        // Draw west sector (red)
+        cv::ellipse(
+            /* img        */ sScreen,
+            /* center     */ center,
+            /* axes       */ axes,
+            /* angle      */ 90,
+            /* startAngle */ 0,
+            /* endAngle   */ 120,
+            /* color      */ RGB_RED,
+            /* thickness  */ -1,
+            /* lineType   */ cv::LINE_AA
+        ); // cv::ellipse()
+        cv::putText(
+            /* img       */ sScreen,
+            /* text      */ "WEST",
+            /* org       */ cv::Point(300, 350),
+            /* fontFace  */ FONT_SANS,
+            /* fontScale */ 1.0,
+            /* color     */ RGB_WHITE,
+            /* thickness */ 2
+        ); // cv::putText()
+
+        // Draw east sector (green)
+        cv::ellipse(
+            /* img        */ sScreen,
+            /* center     */ center,
+            /* axes       */ axes,
+            /* angle      */ 90,
+            /* startAngle */ 0,
+            /* endAngle   */ -120,
+            /* color      */ RGB_GREEN,
+            /* thickness  */ -1,
+            /* lineType   */ cv::LINE_AA
+        ); // cv::ellipse()
+        cv::putText(
+            /* img       */ sScreen,
+            /* text      */ "EAST",
+            /* org       */ cv::Point(430, 350),
+            /* fontFace  */ FONT_SANS,
+            /* fontScale */ 1.0,
+            /* color     */ RGB_WHITE,
+            /* thickness */ 2
+        ); // cv::putText()
+
+        // Draw north sector (yellow)
+        cv::ellipse(
+            /* img        */ sScreen,
+            /* center     */ center,
+            /* axes       */ axes,
+            /* angle      */ -150,
+            /* startAngle */ 0,
+            /* endAngle   */ 120,
+            /* color      */ RGB_YELLOW,
+            /* thickness  */ -1,
+            /* lineType   */ cv::LINE_AA
+        ); // cv::ellipse()
+        cv::putText(
+            /* img       */ sScreen,
+            /* text      */ "NORTH",
+            /* org       */ cv::Point(350, 270),
+            /* fontFace  */ FONT_SANS,
+            /* fontScale */ 1.0,
+            /* color     */ RGB_WHITE,
+            /* thickness */ 2
+        ); // cv::putText()
+
+        // Show screen
+        imshow("Uno", sScreen);
+        break; // case STAT_SEVEN_TARGET
 
     case Player::COM1:
     case Player::COM2:
@@ -935,6 +1031,22 @@ static void refreshScreen(const std::string& message) {
 } // refreshScreen(const std::string&)
 
 /**
+ * The player in action swap hand cards with another player.
+ *
+ * @param whom Swap with whom. Must be one of the following:
+ *             Player::YOU, Player::COM1, Player::COM2, Player::COM3
+ */
+void swapWith(int whom) {
+    int now = sUno->getNow();
+    sStatus = STAT_IDLE;
+    sUno->swap(now, whom);
+    refreshScreen(NAME[now] + " swapped hands with " + NAME[whom]);
+    cv::waitKey(1500);
+    sStatus = sUno->switchNow();
+    onStatusChanged(sStatus);
+} // swapWith(int)
+
+/**
  * The player in action play a card.
  *
  * @param index Play which card. Pass the corresponding card's index of the
@@ -1066,10 +1178,18 @@ static void play(int index, Color color) {
                 onStatusChanged(sStatus);
                 break; // case WILD_DRAW4
 
+            case NUM7:
+                message += ": " + std::string(card->name);
+                refreshScreen(message);
+                cv::waitKey(750);
+                sStatus = STAT_SEVEN_TARGET;
+                onStatusChanged(sStatus);
+                break; // case NUM7
+
             case NUM0:
                 message += ": " + std::string(card->name);
                 refreshScreen(message);
-                cv::waitKey(1500);
+                cv::waitKey(750);
                 sUno->cycle();
                 refreshScreen("Hand cards transferred to next");
                 cv::waitKey(1500);
@@ -1630,6 +1750,25 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
                 } // else if (x > 405 && x < 500)
             } // else if (y > 315 && y < 410)
             break; // case STAT_WILD_COLOR
+
+        case STAT_SEVEN_TARGET:
+            if (y > 198 && y < 276 && sUno->getPlayers() == 4) {
+                if (x > 338 && x < 472) {
+                    // North sector
+                    swapWith(Player::COM2);
+                } // if (x > 338 && x < 472)
+            } // if (y > 198 && y < 276 && sUno->getPlayers() == 4)
+            else if (y > 315 && y < 410) {
+                if (x > 310 && x < 405) {
+                    // West sector
+                    swapWith(Player::COM1);
+                } // if (x > 310 && x < 405)
+                else if (x > 405 && x < 500) {
+                    // East sector
+                    swapWith(Player::COM3);
+                } // else if (x > 405 && x < 500)
+            } // else if (y > 315 && y < 410)
+            break; // case STAT_SEVEN_TARGET
 
         case STAT_GAME_OVER:
             if (y >= 270 && y <= 450) {

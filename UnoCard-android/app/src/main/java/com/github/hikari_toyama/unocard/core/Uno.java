@@ -365,6 +365,18 @@ public abstract class Uno {
     public abstract Card play(int who, int index, Color color);
 
     /**
+     * In 7-0 rule, when someone put down a seven hard, then the player must
+     * swap hand cards with another player immediately.
+     *
+     * @param a Who put down the seven card. Must be one of the following:
+     *          Player.YOU, Player.COM1, Player.COM2, Player.COM3.
+     * @param b Exchange with whom. Must be one of the following:
+     *          Player.YOU, Player.COM1, Player.COM2, Player.COM3.
+     *          Cannot exchange with yourself.
+     */
+    public abstract void swap(int a, int b);
+
+    /**
      * In 7-0 rule, when a zero card is put down, everyone need to pass the hand
      * cards to the next player.
      */
