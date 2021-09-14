@@ -199,8 +199,9 @@ Uno::Uno() {
     players = 3;
     direction = 0;
     now = rand() % 4;
-    stackDraw2 = false;
     difficulty = LV_EASY;
+    sevenZeroRule = false;
+    draw2StackRule = false;
 } // Uno() (Class Constructor)
 
 /**
@@ -385,21 +386,38 @@ void Uno::setDifficulty(int difficulty) {
 } // setDifficulty(int)
 
 /**
+ * @return Whether the 7-0 rule is enabled. In 7-0 rule, when a seven card
+ *         is put down, the player must swap hand cards with another player
+ *         immediately. When a zero card is put down, everyone need to pass
+ *         the hand cards to the next player.
+ */
+bool Uno::isSevenZeroRule() {
+    return sevenZeroRule;
+} // isSevenZeroRule()
+
+/**
+ * @param enabled Enable/Disable the 7-0 rule.
+ */
+void Uno::setSevenZeroRule(bool enabled) {
+    sevenZeroRule = enabled;
+} // setSevenZeroRule(bool)
+
+/**
  * @return Can or cannot stack +2 cards. If can, when you put down a +2
  *         card, the next player may transfer the punishment to its next
  *         player by stacking another +2 card. Finally the first one who
  *         does not stack a +2 card must draw all of the required cards.
  */
-bool Uno::canStackDraw2() {
-    return stackDraw2;
-} // canStackDraw2()
+bool Uno::isDraw2StackRule() {
+    return draw2StackRule;
+} // isDraw2StackRule()
 
 /**
- * @param allowed Enable/Disable the +2 stacking rule.
+ * @param enabled Enable/Disable the +2 stacking rule.
  */
-void Uno::setStackDraw2(bool allowed) {
-    stackDraw2 = allowed;
-} // setStackDraw2(bool)
+void Uno::setDraw2StackRule(bool enabled) {
+    draw2StackRule = enabled;
+} // setDraw2StackRule(bool)
 
 /**
  * Find a card instance in card table.
@@ -711,7 +729,7 @@ Card* Uno::play(int who, int index, Color color) {
 } // play(int, int, Color)
 
 /**
- * In 7-0 rule, when someone put down a seven hard, then the player must
+ * In 7-0 rule, when someone put down a seven card, then the player must
  * swap hand cards with another player immediately.
  *
  * @param a Who put down the seven card. Must be one of the following:

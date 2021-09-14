@@ -84,9 +84,14 @@ private:
     int difficulty;
 
     /**
+     * Whether the 7-0 rule is enabled.
+     */
+    bool sevenZeroRule;
+
+    /**
      * Can or cannot stack +2 cards.
      */
-    bool stackDraw2;
+    bool draw2StackRule;
 
     /**
      * Game players.
@@ -261,17 +266,30 @@ public:
     void setDifficulty(int difficulty);
 
     /**
+     * @return Whether the 7-0 rule is enabled. In 7-0 rule, when a seven card
+     *         is put down, the player must swap hand cards with another player
+     *         immediately. When a zero card is put down, everyone need to pass
+     *         the hand cards to the next player.
+     */
+    bool isSevenZeroRule();
+
+    /**
+     * @param enabled Enable/Disable the 7-0 rule.
+     */
+    void setSevenZeroRule(bool enabled);
+
+    /**
      * @return Can or cannot stack +2 cards. If can, when you put down a +2
      *         card, the next player may transfer the punishment to its next
      *         player by stacking another +2 card. Finally the first one who
      *         does not stack a +2 card must draw all of the required cards.
      */
-    bool canStackDraw2();
+    bool isDraw2StackRule();
 
     /**
-     * @param allowed Enable/Disable the +2 stacking rule.
+     * @param enabled Enable/Disable the +2 stacking rule.
      */
-    void setStackDraw2(bool allowed);
+    void setDraw2StackRule(bool enabled);
 
     /**
      * Find a card instance in card table.
@@ -355,7 +373,7 @@ public:
     Card* play(int who, int index, Color color);
 
     /**
-     * In 7-0 rule, when someone put down a seven hard, then the player must
+     * In 7-0 rule, when someone put down a seven card, then the player must
      * swap hand cards with another player immediately.
      *
      * @param a Who put down the seven card. Must be one of the following:

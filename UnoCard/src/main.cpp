@@ -87,7 +87,7 @@ static void onMouse(int event, int x, int y, int flags, void* param);
  * Defines the entry point for the console application.
  */
 int main(int argc, char* argv[]) {
-    int len, dw[7], hash;
+    int len, dw[8], hash;
     std::ifstream reader;
     QApplication a(argc, argv);
     char header[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -108,25 +108,26 @@ int main(int argc, char* argv[]) {
         reader.seekg(0, std::ios::end);
         len = int(reader.tellg());
         reader.seekg(0, std::ios::beg);
-        if (len == 8 + 7 * sizeof(int)) {
+        if (len == 8 + 8 * sizeof(int)) {
             reader.read(header, 8);
-            reader.read((char*)dw, 7 * sizeof(int));
-            for (hash = 0, len = 0; len < 6; ++len) {
+            reader.read((char*)dw, 8 * sizeof(int));
+            for (hash = 0, len = 0; len < 7; ++len) {
                 hash = 31 * hash + dw[len];
-            } // for (hash = 0, len = 0; len < 6; ++len)
+            } // for (hash = 0, len = 0; len < 7; ++len)
 
-            if (strcmp(header, FILE_HEADER) == 0 && hash == dw[6]) {
+            if (strcmp(header, FILE_HEADER) == 0 && hash == dw[7]) {
                 // File verification success
                 if (dw[0] > 9999) dw[0] = 9999;
                 else if (dw[0] < -999) dw[0] = -999;
                 sScore = dw[0];
                 sUno->setPlayers(dw[1]);
                 sUno->setDifficulty(dw[2]);
-                sUno->setStackDraw2(dw[3] != 0);
-                sSoundPool->setEnabled(dw[4] != 0);
-                sMediaPlay->setVolume(dw[5]);
-            } // if (strcmp(header, FILE_HEADER) == 0 && hash == dw[6])
-        } // if (len == 8 + 7 * sizeof(int))
+                sUno->setSevenZeroRule(dw[3] != 0);
+                sUno->setDraw2StackRule(dw[4] != 0);
+                sSoundPool->setEnabled(dw[5] != 0);
+                sMediaPlay->setVolume(dw[6]);
+            } // if (strcmp(header, FILE_HEADER) == 0 && hash == dw[7])
+        } // if (len == 8 + 8 * sizeof(int))
 
         reader.close();
     } // if (!reader.fail())
@@ -253,7 +254,7 @@ static void onStatusChanged(int status) {
 
     switch (status) {
     case STAT_WELCOME:
-        refreshScreen(sAdjustOptions ? "" :
+        refreshScreen(sAdjustOptions ? "SPECIAL RULES" :
             "WELCOME TO UNO CARD GAME, CLICK UNO TO START");
         break; // case STAT_WELCOME
 
@@ -503,7 +504,7 @@ static void onStatusChanged(int status) {
         break; // case STAT_WILD_COLOR
 
     case STAT_SEVEN_TARGET:
-        // In 7-0 rule, when someone put down a seven hard, the player must
+        // In 7-0 rule, when someone put down a seven card, the player must
         // swap hand cards with another player immediately.
         a = sUno->getNow();
         if (a != Player::YOU) {
@@ -611,7 +612,7 @@ static void onStatusChanged(int status) {
 
     case STAT_GAME_OVER:
         // Game over
-        refreshScreen(sAdjustOptions ? "" :
+        refreshScreen(sAdjustOptions ? "SPECIAL RULES" :
             "Click the card deck to restart");
         break; // case STAT_GAME_OVER
 
@@ -685,29 +686,29 @@ static void refreshScreen(const std::string& message) {
         point.y = 160;
         cv::putText(sScreen, "BGM", point, FONT_SANS, 1.0, RGB_WHITE);
         image = sMediaPlay->volume() > 0 ?
-            sUno->findCard(GREEN, REV)->image:
-            sUno->findCard(GREEN, REV)->darkImg;
+            sUno->findCard(RED, SKIP)->darkImg:
+            sUno->findCard(RED, SKIP)->image;
         roi = cv::Rect(150, 60, 121, 181);
         image.copyTo(sScreen(roi), image);
         image = sMediaPlay->volume() > 0 ?
-            sUno->findCard(RED, SKIP)->darkImg:
-            sUno->findCard(RED, SKIP)->image;
+            sUno->findCard(GREEN, REV)->image:
+            sUno->findCard(GREEN, REV)->darkImg;
         roi.x = 330;
         image.copyTo(sScreen(roi), image);
 
         // Sound effect switch
         point.x = 60;
-        point.y = 370;
+        point.y = 350;
         cv::putText(sScreen, "SND", point, FONT_SANS, 1.0, RGB_WHITE);
-        image = sSoundPool->isEnabled() ?
-            sUno->findCard(GREEN, REV)->image:
-            sUno->findCard(GREEN, REV)->darkImg;
-        roi.x = 150;
-        roi.y = 270;
-        image.copyTo(sScreen(roi), image);
         image = sSoundPool->isEnabled() ?
             sUno->findCard(RED, SKIP)->darkImg:
             sUno->findCard(RED, SKIP)->image;
+        roi.x = 150;
+        roi.y = 250;
+        image.copyTo(sScreen(roi), image);
+        image = sSoundPool->isEnabled() ?
+            sUno->findCard(GREEN, REV)->image:
+            sUno->findCard(GREEN, REV)->darkImg;
         roi.x = 330;
         image.copyTo(sScreen(roi), image);
 
@@ -731,47 +732,56 @@ static void refreshScreen(const std::string& message) {
 
         // [Players] option: 3 / 4
         point.x = 640;
-        point.y = 370;
+        point.y = 350;
         cv::putText(sScreen, "PLAYERS", point, FONT_SANS, 1.0, RGB_WHITE);
         image = sUno->getPlayers() == 3 ?
-            sUno->findCard(BLUE, NUM3)->image :
-            sUno->findCard(BLUE, NUM3)->darkImg;
+            sUno->findCard(GREEN, NUM3)->image :
+            sUno->findCard(GREEN, NUM3)->darkImg;
         roi.x = 790;
-        roi.y = 270;
+        roi.y = 250;
         image.copyTo(sScreen(roi), image);
         image = sUno->getPlayers() == 4 ?
-            sUno->findCard(BLUE, NUM4)->image :
-            sUno->findCard(BLUE, NUM4)->darkImg;
+            sUno->findCard(YELLOW, NUM4)->image :
+            sUno->findCard(YELLOW, NUM4)->darkImg;
         roi.x = 970;
         image.copyTo(sScreen(roi), image);
 
         // Special rules
-        point.x = 60;
-        point.y = 580;
-        cv::putText(
-            /* img       */ sScreen,
-            /* text      */ "CAN  OR  CANNOT  STACK  +2  CARDS:",
-            /* org       */ point,
-            /* fontFace  */ FONT_SANS,
-            /* fontScale */ 1.0,
-            /* color     */ RGB_WHITE
-        ); // cv::putText()
-
-        image = sUno->findCard(RED, DRAW2)->image;
-        roi.x = 790;
-        roi.y = 480;
+        // 7-0 Rule
+        image = sUno->isSevenZeroRule() ?
+            sUno->findCard(RED, NUM7)->image :
+            sUno->findCard(RED, NUM7)->darkImg;
+        roi.x = 240;
+        roi.y = 520;
         image.copyTo(sScreen(roi), image);
-        image = sUno->canStackDraw2() ?
-            sUno->findCard(BLUE, DRAW2)->image :
-            sUno->findCard(BLUE, DRAW2)->darkImg;
+        image = sUno->isSevenZeroRule() ?
+            sUno->findCard(YELLOW, REV)->image :
+            sUno->findCard(YELLOW, REV)->darkImg;
         roi.x += 45;
         image.copyTo(sScreen(roi), image);
-        image = sUno->canStackDraw2() ?
+        image = sUno->isSevenZeroRule() ?
+            sUno->findCard(GREEN, NUM0)->image :
+            sUno->findCard(GREEN, NUM0)->darkImg;
+        roi.x += 45;
+        image.copyTo(sScreen(roi), image);
+
+        // +2 Stack Rule
+        image = sUno->isDraw2StackRule() ?
+            sUno->findCard(GREEN, DRAW2)->image :
+            sUno->findCard(GREEN, DRAW2)->darkImg;
+        roi.x = 790;
+        image.copyTo(sScreen(roi), image);
+        image = sUno->isDraw2StackRule() ?
             sUno->findCard(GREEN, DRAW2)->image :
             sUno->findCard(GREEN, DRAW2)->darkImg;
         roi.x += 45;
         image.copyTo(sScreen(roi), image);
-        image = sUno->canStackDraw2() ?
+        image = sUno->isDraw2StackRule() ?
+            sUno->findCard(YELLOW, DRAW2)->image :
+            sUno->findCard(YELLOW, DRAW2)->darkImg;
+        roi.x += 45;
+        image.copyTo(sScreen(roi), image);
+        image = sUno->isDraw2StackRule() ?
             sUno->findCard(YELLOW, DRAW2)->image :
             sUno->findCard(YELLOW, DRAW2)->darkImg;
         roi.x += 45;
@@ -1179,23 +1189,29 @@ static void play(int index, Color color) {
                 break; // case WILD_DRAW4
 
             case NUM7:
-                message += ": " + std::string(card->name);
-                refreshScreen(message);
-                cv::waitKey(750);
-                sStatus = STAT_SEVEN_TARGET;
-                onStatusChanged(sStatus);
-                break; // case NUM7
+                if (sUno->isSevenZeroRule()) {
+                    message += ": " + std::string(card->name);
+                    refreshScreen(message);
+                    cv::waitKey(750);
+                    sStatus = STAT_SEVEN_TARGET;
+                    onStatusChanged(sStatus);
+                    break; // case NUM7
+                } // if (sUno->isSevenZeroRule())
+                // else fall through
 
             case NUM0:
-                message += ": " + std::string(card->name);
-                refreshScreen(message);
-                cv::waitKey(750);
-                sUno->cycle();
-                refreshScreen("Hand cards transferred to next");
-                cv::waitKey(1500);
-                sStatus = sUno->switchNow();
-                onStatusChanged(sStatus);
-                break; // case NUM0
+                if (sUno->isSevenZeroRule()) {
+                    message += ": " + std::string(card->name);
+                    refreshScreen(message);
+                    cv::waitKey(750);
+                    sUno->cycle();
+                    refreshScreen("Hand cards transferred to next");
+                    cv::waitKey(1500);
+                    sStatus = sUno->switchNow();
+                    onStatusChanged(sStatus);
+                    break; // case NUM0
+                } // if (sUno->isSevenZeroRule())
+                // else fall through
 
             default:
                 message += ": " + std::string(card->name);
@@ -1443,7 +1459,7 @@ static void animate(cv::Mat elem, int x1, int y1, int x2, int y2) {
  * @param param [UNUSED IN THIS CALLBACK]
  */
 static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
-    static int dw[7];
+    static int dw[8];
     static Card* card;
     static std::ofstream writer;
     static std::vector<Card*> hand;
@@ -1506,26 +1522,31 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
                     onStatusChanged(sStatus);
                 } // else if (x >= 970 && x <= 1090)
             } // else if (y >= 270 && y <= 450)
-            else if (y >= 480 && y <= 660) {
-                if (x >= 790 && x <= 1045) {
+            else if (y >= 520 && y <= 700) {
+                if (x >= 240 && x <= 450) {
+                    // 7-0 rule
+                    sUno->setSevenZeroRule(!sUno->isSevenZeroRule());
+                    onStatusChanged(sStatus);
+                } // if (x >= 240 && x <= 450)
+                else if (x >= 790 && x <= 1045) {
                     // +2 stacking rule
-                    sUno->setStackDraw2(!sUno->canStackDraw2());
+                    sUno->setDraw2StackRule(!sUno->isDraw2StackRule());
                     onStatusChanged(sStatus);
-                } // if (x >= 790 && x <= 1045)
-            } // else if (y >= 480 && y <= 660)
-            else if (y >= 679 && y <= 700) {
-                if (x >= 20 && x <= 200) {
-                    // <OPTIONS> button
-                    // Leave options page
-                    sAdjustOptions = false;
-                    onStatusChanged(sStatus);
-                } // if (x >= 20 && x <= 200)
-                else if (x >= 1140 && x <= 1260) {
-                    // <AUTO> button
-                    sAuto = !sAuto;
-                    onStatusChanged(sStatus);
-                } // else if (x >= 1140 && x <= 1260)
-            } // else if (y >= 679 && y <= 700)
+                } // else if (x >= 790 && x <= 1045)
+                else if (y >= 679) {
+                    if (x >= 20 && x <= 200) {
+                        // <OPTIONS> button
+                        // Leave options page
+                        sAdjustOptions = false;
+                        onStatusChanged(sStatus);
+                    } // if (x >= 20 && x <= 200)
+                    else if (x >= 1140 && x <= 1260) {
+                        // <AUTO> button
+                        sAuto = !sAuto;
+                        onStatusChanged(sStatus);
+                    } // else if (x >= 1140 && x <= 1260)
+                } // else if (y >= 679)
+            } // else if (y >= 520 && y <= 700)
         } // if (sAdjustOptions)
         else if (y >= 21 && y <= 42 && x >= 1140 && x <= 1260) {
             // <QUIT> button
@@ -1540,15 +1561,16 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
                 dw[0] = sScore;
                 dw[1] = sUno->getPlayers();
                 dw[2] = sUno->getDifficulty();
-                dw[3] = sUno->canStackDraw2() ? 1 : 0;
-                dw[4] = sSoundPool->isEnabled() ? 1 : 0;
-                dw[5] = sMediaPlay->volume();
-                for (dw[6] = 0, i = 0; i < 6; ++i) {
-                    dw[6] = 31 * dw[6] + dw[i];
-                } // for (dw[6] = 0, i = 0; i < 6; ++i)
+                dw[3] = sUno->isSevenZeroRule() ? 1 : 0;
+                dw[4] = sUno->isDraw2StackRule() ? 1 : 0;
+                dw[5] = sSoundPool->isEnabled() ? 1 : 0;
+                dw[6] = sMediaPlay->volume();
+                for (dw[7] = 0, i = 0; i < 7; ++i) {
+                    dw[7] = 31 * dw[7] + dw[i];
+                } // for (dw[7] = 0, i = 0; i < 7; ++i)
 
                 writer.write(FILE_HEADER, 8);
-                writer.write((char*)dw, 7 * sizeof(int));
+                writer.write((char*)dw, 8 * sizeof(int));
                 writer.close();
             } // if (!writer.fail())
 

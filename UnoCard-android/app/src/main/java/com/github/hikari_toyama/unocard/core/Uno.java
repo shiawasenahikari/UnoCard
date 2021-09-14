@@ -116,9 +116,14 @@ public abstract class Uno {
     int difficulty;
 
     /**
+     * Whether the 7-0 rule is enabled.
+     */
+    boolean sevenZeroRule;
+
+    /**
      * Can or cannot stack +2 cards.
      */
-    boolean stackDraw2;
+    boolean draw2StackRule;
 
     /**
      * Game players.
@@ -271,17 +276,30 @@ public abstract class Uno {
     public abstract void setDifficulty(int difficulty);
 
     /**
+     * @return Whether the 7-0 rule is enabled. In 7-0 rule, when a seven card
+     * is put down, the player must swap hand cards with another player
+     * immediately. When a zero card is put down, everyone need to pass
+     * the hand cards to the next player.
+     */
+    public abstract boolean isSevenZeroRule();
+
+    /**
+     * @param enabled Enable/Disable the 7-0 rule.
+     */
+    public abstract void setSevenZeroRule(boolean enabled);
+
+    /**
      * @return Can or cannot stack +2 cards. If can, when you put down a +2
      * card, the next player may transfer the punishment to its next
      * player by stacking another +2 card. Finally the first one who
      * does not stack a +2 card must draw all of the required cards.
      */
-    public abstract boolean canStackDraw2();
+    public abstract boolean isDraw2StackRule();
 
     /**
-     * @param allowed Enable/Disable the +2 stacking rule.
+     * @param enabled Enable/Disable the +2 stacking rule.
      */
-    public abstract void setStackDraw2(boolean allowed);
+    public abstract void setDraw2StackRule(boolean enabled);
 
     /**
      * Find a card instance in card table.
@@ -365,7 +383,7 @@ public abstract class Uno {
     public abstract Card play(int who, int index, Color color);
 
     /**
-     * In 7-0 rule, when someone put down a seven hard, then the player must
+     * In 7-0 rule, when someone put down a seven card, then the player must
      * swap hand cards with another player immediately.
      *
      * @param a Who put down the seven card. Must be one of the following:
