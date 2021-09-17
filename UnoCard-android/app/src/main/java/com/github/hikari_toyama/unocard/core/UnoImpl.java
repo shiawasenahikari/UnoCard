@@ -372,11 +372,10 @@ class UnoImpl extends Uno {
 
         // Initialize other members
         players = 3;
-        direction = 0;
-        now = Player.YOU;
+        now = rnd.nextInt(4);
         difficulty = LV_EASY;
-        sevenZeroRule = false;
-        draw2StackRule = false;
+        direction = draw2StackCount = 0;
+        sevenZeroRule = draw2StackRule = false;
         used = new ArrayList<>();
         deck = new ArrayList<>();
         recent = new ArrayList<>();
@@ -675,6 +674,9 @@ class UnoImpl extends Uno {
         // Reset direction
         direction = DIR_LEFT;
 
+        // In +2 stack rule, reset the stack counter
+        draw2StackCount = 0;
+
         // Clear card deck, used card deck, recent played cards,
         // everyone's hand cards, and everyone's strong/weak colors
         deck.clear();
@@ -768,14 +770,17 @@ class UnoImpl extends Uno {
 
         i = -1;
         if (who >= Player.YOU && who <= Player.COM3) {
-            if (!force) {
+            if (draw2StackCount > 0) {
+                --draw2StackCount;
+            } // if (draw2StackCount > 0)
+            else if (!force) {
                 // Draw a card by player itself, register weak color
                 player[who].weakColor = recent.get(recent.size() - 1).color;
                 if (player[who].weakColor == player[who].strongColor) {
                     // Weak color cannot also be strong color
                     player[who].strongColor = NONE;
                 } // if (player[who].weakColor == player[who].strongColor)
-            } // if (!force)
+            } // else if (!force)
 
             hand = player[who].handCards;
             if (hand.size() < MAX_HOLD_CARDS) {
@@ -830,6 +835,10 @@ class UnoImpl extends Uno {
             // Null Pointer
             result = false;
         } // if (card == null || recent.isEmpty())
+        else if (draw2StackCount > 0) {
+            // When in +2 stacking procedure, only +2 cards are legal
+            result = card.content == DRAW2;
+        } // else if (draw2StackCount > 0)
         else if (card.isWild()) {
             // Wild cards: LEGAL
             result = true;
@@ -916,6 +925,10 @@ class UnoImpl extends Uno {
                     // Correct the value of strong counter when necessary
                     player[who].strongCount = size - 1;
                 } // else if (player[who].strongCount > size - 1)
+
+                if (card.content == DRAW2 && draw2StackRule) {
+                    draw2StackCount += 2;
+                } // if (card.content == DRAW2 && draw2StackRule)
 
                 player[who].recent = card;
                 recent.add(card);

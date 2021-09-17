@@ -80,6 +80,7 @@ public class MainActivity extends AppCompatActivity
     private Card mSelectedCard;
     private Handler mHandler;
     private Card mDrawnCard;
+    private int mDrawCount;
     private int mWildIndex;
     private boolean mAuto;
     private float mSndVol;
@@ -450,14 +451,28 @@ public class MainActivity extends AppCompatActivity
                     mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
                 } // else if (mChallengeAsk)
                 else if (mUno.legalCardsCount4NowPlayer() == 0) {
-                    refreshScreen(
-                            "No card can be played... Draw a card from deck"
-                    ); // refreshScreen()
+                    if (mDrawCount == 0) {
+                        message = "No card can be played... Draw "
+                                + "a card from deck";
+                    } // if (mDrawCount == 0)
+                    else {
+                        message = "No +2 card to stack... Draw "
+                                + mDrawCount + " cards from deck";
+                    } // else
+
+                    refreshScreen(message);
                 } // else if (mUno.legalCardsCount4NowPlayer() == 0)
                 else if (mSelectedCard == null) {
-                    refreshScreen(
-                            "Select a card to play or draw a card from deck"
-                    ); // refreshScreen()
+                    if (mDrawCount == 0) {
+                        message = "Select a card to play, or draw "
+                                + "a card from deck";
+                    } // if (mDrawCount == 0)
+                    else {
+                        message = "Stack a +2 card, or draw "
+                                + mDrawCount + " cards from deck";
+                    } // else
+
+                    refreshScreen(message);
                 } // else if (mSelectedCard == null)
                 else {
                     refreshScreen("Click again to play");
@@ -641,8 +656,15 @@ public class MainActivity extends AppCompatActivity
 
             case STAT_GAME_OVER:
                 // Game over
-                refreshScreen(mAdjustOptions ? "SPECIAL RULES" :
-                        "Click the card deck to restart");
+                if (mAdjustOptions) {
+                    message = "SPECIAL RULES";
+                } // if (mAdjustOptions)
+                else {
+                    message = "Your score is " + mScore
+                            + ". Click the card deck to restart";
+                } // else
+
+                refreshScreen(message);
                 break; // case STAT_GAME_OVER
 
             default:
@@ -791,19 +813,17 @@ public class MainActivity extends AppCompatActivity
             image.copyTo(new Mat(mScr, roi), image);
 
             // +2 Stack Rule
-            image = mUno.isDraw2StackRule() ?
-                    mUno.findCard(Color.GREEN, Content.DRAW2).image :
-                    mUno.findCard(Color.GREEN, Content.DRAW2).darkImg;
+            image = mUno.findCard(Color.RED, Content.DRAW2).image;
             roi.x = 790;
             image.copyTo(new Mat(mScr, roi), image);
             image = mUno.isDraw2StackRule() ?
-                    mUno.findCard(Color.GREEN, Content.DRAW2).image :
-                    mUno.findCard(Color.GREEN, Content.DRAW2).darkImg;
+                    mUno.findCard(Color.BLUE, Content.DRAW2).image :
+                    mUno.findCard(Color.BLUE, Content.DRAW2).darkImg;
             roi.x += 45;
             image.copyTo(new Mat(mScr, roi), image);
             image = mUno.isDraw2StackRule() ?
-                    mUno.findCard(Color.YELLOW, Content.DRAW2).image :
-                    mUno.findCard(Color.YELLOW, Content.DRAW2).darkImg;
+                    mUno.findCard(Color.GREEN, Content.DRAW2).image :
+                    mUno.findCard(Color.GREEN, Content.DRAW2).darkImg;
             roi.x += 45;
             image.copyTo(new Mat(mScr, roi), image);
             image = mUno.isDraw2StackRule() ?
@@ -1170,11 +1190,22 @@ public class MainActivity extends AppCompatActivity
                 switch (card.content) {
                     case DRAW2:
                         next = mUno.switchNow();
-                        message = NAME[now] + ": Let "
-                                + NAME[next] + " draw 2 cards";
-                        refreshScreen(message);
-                        threadSleep(1500);
-                        draw(2, /* force */ true);
+                        if (mUno.isDraw2StackRule()) {
+                            mDrawCount += 2;
+                            message = NAME[now] + ": Let " + NAME[next]
+                                    + " draw " + mDrawCount + " cards";
+                            refreshScreen(message);
+                            threadSleep(1500);
+                            mStatus = next;
+                            onStatusChanged(mStatus);
+                        } // if (mUno.isDraw2StackRule())
+                        else {
+                            message = NAME[now] + ": Let "
+                                    + NAME[next] + " draw 2 cards";
+                            refreshScreen(message);
+                            threadSleep(1500);
+                            draw(2, /* force */ true);
+                        } // else
                         break; // case DRAW2
 
                     case SKIP:
@@ -1280,6 +1311,11 @@ public class MainActivity extends AppCompatActivity
         Mat image;
         String message;
         int i, index, now, size, x2, y2;
+
+        if (mDrawCount > 0) {
+            count = mDrawCount;
+            mDrawCount = 0;
+        } // if (mDrawCount > 0)
 
         mStatus = STAT_IDLE; // block tap down events when idle
         now = mUno.getNow();
@@ -1509,28 +1545,28 @@ public class MainActivity extends AppCompatActivity
             return false;
         } // if (event.getAction() != MotionEvent.ACTION_DOWN)
 
+        // Coordinates must be measured in UI thread
+        // Measurement in sub thread will cause measurement error
+        int x = (int) (event.getX() * 1280 / v.getWidth());
+        int y = (int) (event.getY() * 720 / v.getHeight());
         new Thread(() -> {
             Card card;
             List<Card> hand;
-            int x, y, index, size, width, height, startX;
+            int index, size, width, startX;
 
-            width = mUno.getBackground().width();
-            height = mUno.getBackground().height();
-            x = (int) (event.getX() * width / v.getWidth());
-            y = (int) (event.getY() * height / v.getHeight());
             if (mAdjustOptions) {
                 // Do special behaviors when configuring game options
                 if (y >= 60 && y <= 240) {
                     if (x >= 150 && x <= 270) {
-                        // BGM ON button
-                        mBgmVol = 0.5f;
-                        mMediaPlayer.setVolume(0.5f, 0.5f);
-                        onStatusChanged(mStatus);
-                    } // if (x >= 150 && x <= 270)
-                    else if (x >= 330 && x <= 450) {
                         // BGM OFF button
                         mBgmVol = 0.0f;
                         mMediaPlayer.setVolume(0.0f, 0.0f);
+                        onStatusChanged(mStatus);
+                    } // if (x >= 150 && x <= 270)
+                    else if (x >= 330 && x <= 450) {
+                        // BGM ON button
+                        mBgmVol = 0.5f;
+                        mMediaPlayer.setVolume(0.5f, 0.5f);
                         onStatusChanged(mStatus);
                     } // else if (x >= 330 && x <= 450)
                     else if (x >= 790 && x <= 910) {
@@ -1546,14 +1582,14 @@ public class MainActivity extends AppCompatActivity
                 } // if (y >= 60 && y <= 240)
                 else if (y >= 270 && y <= 450) {
                     if (x >= 150 && x <= 270) {
-                        // SND ON button
-                        mSndVol = 0.5f;
-                        mSoundPool.play(sndPlay, 0.5f, 0.5f, 1, 0, 1.0f);
+                        // SND OFF button
+                        mSndVol = 0.0f;
                         onStatusChanged(mStatus);
                     } // if (x >= 150 && x <= 270)
                     else if (x >= 330 && x <= 450) {
-                        // SND OFF button
-                        mSndVol = 0.0f;
+                        // SND ON button
+                        mSndVol = 0.5f;
+                        mSoundPool.play(sndPlay, 0.5f, 0.5f, 1, 0, 1.0f);
                         onStatusChanged(mStatus);
                     } // else if (x >= 330 && x <= 450)
                     else if (x >= 790 && x <= 910) {

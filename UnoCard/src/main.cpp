@@ -59,6 +59,7 @@ static bool sAuto;
 static int sScore;
 static int sStatus;
 static int sWinner;
+static int sDrawCount;
 static bool sAIRunning;
 static cv::Mat sScreen;
 static Card* sDrawnCard;
@@ -424,14 +425,26 @@ static void onStatusChanged(int status) {
             imshow("Uno", sScreen);
         } // else if (sChallengeAsk)
         else if (sUno->legalCardsCount4NowPlayer() == 0) {
-            refreshScreen(
-                "No card can be played... Draw a card from deck"
-            ); // refreshScreen()
+            if (sDrawCount == 0) {
+                message = "No card can be played... Draw a card from deck";
+            } // if (sDrawCount == 0)
+            else {
+                message = "No +2 card to stack... Draw "
+                    + std::to_string(sDrawCount) + " cards from deck";
+            } // else
+
+            refreshScreen(message);
         } // else if (sUno->legalCardsCount4NowPlayer() == 0)
         else if (sSelectedCard == nullptr) {
-            refreshScreen(
-                "Select a card to play or draw a card from deck"
-            ); // refreshScreen()
+            if (sDrawCount == 0) {
+                message = "Select a card to play, or draw a card from deck";
+            } // if (sDrawCount == 0)
+            else {
+                message = "Stack a +2 card, or draw "
+                    + std::to_string(sDrawCount) + " cards from deck";
+            } // else
+
+            refreshScreen(message);
         } // else if (sSelectedCard == nullptr)
         else {
             refreshScreen("Click again to play");
@@ -612,8 +625,15 @@ static void onStatusChanged(int status) {
 
     case STAT_GAME_OVER:
         // Game over
-        refreshScreen(sAdjustOptions ? "SPECIAL RULES" :
-            "Click the card deck to restart");
+        if (sAdjustOptions) {
+            message = "SPECIAL RULES";
+        } // if (sAdjustOptions)
+        else {
+            message = "Your score is " + std::to_string(sScore)
+                + ". Click the card deck to restart";
+        } // else
+
+        refreshScreen(message);
         break; // case STAT_GAME_OVER
 
     default:
@@ -766,19 +786,17 @@ static void refreshScreen(const std::string& message) {
         image.copyTo(sScreen(roi), image);
 
         // +2 Stack Rule
-        image = sUno->isDraw2StackRule() ?
-            sUno->findCard(GREEN, DRAW2)->image :
-            sUno->findCard(GREEN, DRAW2)->darkImg;
+        image = sUno->findCard(RED, DRAW2)->image;
         roi.x = 790;
         image.copyTo(sScreen(roi), image);
         image = sUno->isDraw2StackRule() ?
-            sUno->findCard(GREEN, DRAW2)->image :
-            sUno->findCard(GREEN, DRAW2)->darkImg;
+            sUno->findCard(BLUE, DRAW2)->image :
+            sUno->findCard(BLUE, DRAW2)->darkImg;
         roi.x += 45;
         image.copyTo(sScreen(roi), image);
         image = sUno->isDraw2StackRule() ?
-            sUno->findCard(YELLOW, DRAW2)->image :
-            sUno->findCard(YELLOW, DRAW2)->darkImg;
+            sUno->findCard(GREEN, DRAW2)->image :
+            sUno->findCard(GREEN, DRAW2)->darkImg;
         roi.x += 45;
         image.copyTo(sScreen(roi), image);
         image = sUno->isDraw2StackRule() ?
@@ -1135,10 +1153,21 @@ static void play(int index, Color color) {
             switch (card->content) {
             case DRAW2:
                 next = sUno->switchNow();
-                message += ": Let " + NAME[next] + " draw 2 cards";
-                refreshScreen(message);
-                cv::waitKey(1500);
-                draw(2, /* force */ true);
+                if (sUno->isDraw2StackRule()) {
+                    sDrawCount += 2;
+                    message += ": Let " + NAME[next] + " draw ";
+                    message += std::to_string(sDrawCount) + " cards";
+                    refreshScreen(message);
+                    cv::waitKey(1500);
+                    sStatus = next;
+                    onStatusChanged(sStatus);
+                } // if (sUno->isDraw2StackRule())
+                else {
+                    message += ": Let " + NAME[next] + " draw 2 cards";
+                    refreshScreen(message);
+                    cv::waitKey(1500);
+                    draw(2, /* force */ true);
+                } // else
                 break; // case DRAW2
 
             case SKIP:
@@ -1238,6 +1267,11 @@ static void draw(int count, bool force) {
     cv::Mat image;
     std::string message;
     int i, index, now, size, x2, y2;
+
+    if (sDrawCount > 0) {
+        count = sDrawCount;
+        sDrawCount = 0;
+    } // if (sDrawCount > 0)
 
     sStatus = STAT_IDLE; // block mouse click events when idle
     now = sUno->getNow();
@@ -1479,13 +1513,13 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
             } // if (y >= 21 && y <= 42)
             else if (y >= 60 && y <= 240) {
                 if (x >= 150 && x <= 270) {
-                    // BGM ON button
-                    sMediaPlay->setVolume(50);
+                    // BGM OFF button
+                    sMediaPlay->setVolume(0);
                     onStatusChanged(sStatus);
                 } // if (x >= 150 && x <= 270)
                 else if (x >= 330 && x <= 450) {
-                    // BGM OFF button
-                    sMediaPlay->setVolume(0);
+                    // BGM ON button
+                    sMediaPlay->setVolume(50);
                     onStatusChanged(sStatus);
                 } // else if (x >= 330 && x <= 450)
                 else if (x >= 790 && x <= 910) {
@@ -1501,14 +1535,14 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
             } // else if (y >= 60 && y <= 240)
             else if (y >= 270 && y <= 450) {
                 if (x >= 150 && x <= 270) {
-                    // SND ON button
-                    sSoundPool->setEnabled(true);
-                    sSoundPool->play(SoundPool::SND_PLAY);
+                    // SND OFF button
+                    sSoundPool->setEnabled(false);
                     onStatusChanged(sStatus);
                 } // if (x >= 150 && x <= 270)
                 else if (x >= 330 && x <= 450) {
-                    // SND OFF button
-                    sSoundPool->setEnabled(false);
+                    // SND ON button
+                    sSoundPool->setEnabled(true);
+                    sSoundPool->play(SoundPool::SND_PLAY);
                     onStatusChanged(sStatus);
                 } // else if (x >= 330 && x <= 450)
                 else if (x >= 790 && x <= 910) {

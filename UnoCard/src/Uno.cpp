@@ -100,8 +100,7 @@ Uno::Uno() {
     const char* content_short = "0123456789+@$";
     const char* color_long[] = { "Red", "Blue", "Green", "Yellow" };
     const char* content_long[] = {
-        "0", "1", "2", "3", "4",
-        "5", "6", "7", "8", "9",
+        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
         "Draw 2", "Skip", "Reverse"
     }; // content_long[]
 
@@ -197,11 +196,10 @@ Uno::Uno() {
 
     // Initialize other members
     players = 3;
-    direction = 0;
     now = rand() % 4;
     difficulty = LV_EASY;
-    sevenZeroRule = false;
-    draw2StackRule = false;
+    draw2StackCount = direction = 0;
+    draw2StackRule = sevenZeroRule = false;
 } // Uno() (Class Constructor)
 
 /**
@@ -473,6 +471,9 @@ void Uno::start() {
     // Reset direction
     direction = DIR_LEFT;
 
+    // In +2 stack rule, reset the stack counter
+    draw2StackCount = 0;
+
     // Clear card deck, used card deck, recent played cards,
     // everyone's hand cards, and everyone's strong/weak colors
     deck.clear();
@@ -565,14 +566,17 @@ int Uno::draw(int who, bool force) {
 
     i = -1;
     if (who >= Player::YOU && who <= Player::COM3) {
-        if (!force) {
+        if (draw2StackCount > 0) {
+            --draw2StackCount;
+        } // if (draw2StackCount > 0)
+        else if (!force) {
             // Draw a card by player itself, register weak color
             player[who].weakColor = recent.back()->color;
             if (player[who].weakColor == player[who].strongColor) {
                 // Weak color cannot also be strong color
                 player[who].strongColor = NONE;
             } // if (player[who].weakColor == player[who].strongColor)
-        } // if (!force)
+        } // else if (!force)
 
         hand = &(player[who].handCards);
         if (hand->size() < MAX_HOLD_CARDS) {
@@ -626,6 +630,10 @@ bool Uno::isLegalToPlay(Card* card) {
         // Null Pointer
         result = false;
     } // if (card == nullptr || recent.empty())
+    else if (draw2StackCount > 0) {
+        // When in +2 stacking procedure, only +2 cards are legal
+        result = card->content == DRAW2;
+    } // else if (draw2StackCount > 0)
     else if (card->isWild()) {
         // Wild cards: LEGAL
         result = true;
@@ -710,6 +718,10 @@ Card* Uno::play(int who, int index, Color color) {
                 // Correct the value of strong counter when necessary
                 player[who].strongCount = size - 1;
             } // else if (player[who].strongCount > size - 1)
+
+            if (card->content == DRAW2 && draw2StackRule) {
+                draw2StackCount += 2;
+            } // if (card->content == DRAW2 && draw2StackRule)
 
             player[who].recent = card;
             recent.push_back(card);
