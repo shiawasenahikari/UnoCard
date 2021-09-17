@@ -504,8 +504,8 @@ static void onStatusChanged(int status) {
         break; // case STAT_WILD_COLOR
 
     case STAT_SEVEN_TARGET:
-        // In 7-0 rule, when someone put down a seven card, the player must
-        // swap hand cards with another player immediately.
+        // In 7-0 rule, when someone put down a seven card, the player
+        // must swap hand cards with another player immediately.
         a = sUno->getNow();
         if (a != Player::YOU) {
             // Seven-card is played by an AI player.

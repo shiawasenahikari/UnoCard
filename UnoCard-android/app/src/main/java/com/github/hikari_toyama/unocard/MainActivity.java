@@ -25,6 +25,8 @@ import android.view.View;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.UiThread;
+import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.DialogFragment;
@@ -99,6 +101,7 @@ public class MainActivity extends AppCompatActivity
      * Activity initialization.
      */
     @Override
+    @UiThread
     protected void onCreate(Bundle savedInstanceState) {
         SharedPreferences sp;
         DialogFragment dialog;
@@ -131,7 +134,7 @@ public class MainActivity extends AppCompatActivity
             mScr = mUno.getBackground().clone();
             mBmp = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888);
             mImgScreen = findViewById(R.id.imgMainScreen);
-            onStatusChanged(mStatus);
+            new Thread(() -> onStatusChanged(mStatus)).start();
             mImgScreen.setOnTouchListener(this);
         } // if (OPENCV_INIT_SUCCESS)
         else {
@@ -144,6 +147,7 @@ public class MainActivity extends AppCompatActivity
      * Triggered when activity gets focus.
      */
     @Override
+    @UiThread
     protected void onResume() {
         SharedPreferences sp;
 
@@ -156,8 +160,29 @@ public class MainActivity extends AppCompatActivity
     } // onResume()
 
     /**
+     * Call this method to avoid from writing the complex code
+     * <code>
+     * try { Thread.sleep(milliSeconds); }
+     * catch (InterruptedException e) { e.printStackTrace(); }
+     * </code>
+     * again and again.
+     *
+     * @param millis How many milli seconds to sleep.
+     */
+    @WorkerThread
+    private void threadSleep(int millis) {
+        try {
+            Thread.sleep(millis);
+        } // try
+        catch (InterruptedException e) {
+            e.printStackTrace();
+        } // catch (InterruptedException e)
+    } // threadSleep(milliSeconds)
+
+    /**
      * AI Strategies (Difficulty: EASY).
      */
+    @WorkerThread
     private void easyAI() {
         int idxBest, now;
         Color[] bestColor;
@@ -184,13 +209,7 @@ public class MainActivity extends AppCompatActivity
                 if (mImmPlayAsk) {
                     mImmPlayAsk = false;
                     refreshScreen(NAME[now] + ": Pass");
-                    try {
-                        Thread.sleep(750);
-                    } // try
-                    catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } // catch (InterruptedException e)
-
+                    threadSleep(750);
                     mStatus = mUno.switchNow();
                     onStatusChanged(mStatus);
                 } // if (mImmPlayAsk)
@@ -204,6 +223,7 @@ public class MainActivity extends AppCompatActivity
     /**
      * AI Strategies (Difficulty: HARD).
      */
+    @WorkerThread
     private void hardAI() {
         int idxBest, now;
         Color[] bestColor;
@@ -230,13 +250,7 @@ public class MainActivity extends AppCompatActivity
                 if (mImmPlayAsk) {
                     mImmPlayAsk = false;
                     refreshScreen(NAME[now] + ": Pass");
-                    try {
-                        Thread.sleep(750);
-                    } // try
-                    catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } // catch (InterruptedException e)
-
+                    threadSleep(750);
                     mStatus = mUno.switchNow();
                     onStatusChanged(mStatus);
                 } // if (mImmPlayAsk)
@@ -252,397 +266,388 @@ public class MainActivity extends AppCompatActivity
      *
      * @param status New status value.
      */
+    @WorkerThread
     private void onStatusChanged(int status) {
-        new Thread(() -> {
-            int a, b;
-            Rect rect;
-            Size axes;
-            Point center;
-            Card next2last;
-            String message;
-            Mat areaToErase;
-            List<Card> recent;
+        int a, b;
+        Rect rect;
+        Size axes;
+        Point center;
+        Card next2last;
+        String message;
+        Mat areaToErase;
+        List<Card> recent;
 
-            switch (status) {
-                case STAT_WELCOME:
-                    refreshScreen(mAdjustOptions ? "SPECIAL RULES" :
-                            "WELCOME TO UNO CARD GAME, CLICK UNO TO START");
-                    break; // case STAT_WELCOME
+        switch (status) {
+            case STAT_WELCOME:
+                refreshScreen(mAdjustOptions ? "SPECIAL RULES" :
+                        "WELCOME TO UNO CARD GAME, CLICK UNO TO START");
+                break; // case STAT_WELCOME
 
-                case STAT_NEW_GAME:
-                    // New game
-                    mUno.start();
-                    mSelectedCard = null;
-                    refreshScreen("GET READY");
-                    try {
-                        Thread.sleep(2000);
-                    } // try
-                    catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } // catch (InterruptedException e)
+            case STAT_NEW_GAME:
+                // New game
+                mUno.start();
+                mSelectedCard = null;
+                refreshScreen("GET READY");
+                threadSleep(2000);
+                switch (mUno.getRecent().get(0).content) {
+                    case DRAW2:
+                        // If starting with a [+2], let dealer draw 2 cards.
+                        draw(2, /* force */ true);
+                        break; // case DRAW2
 
-                    switch (mUno.getRecent().get(0).content) {
-                        case DRAW2:
-                            // If starting with a [+2], let dealer draw 2 cards.
-                            draw(2, /* force */ true);
-                            break; // case DRAW2
+                    case SKIP:
+                        // If starting with a [skip], skip dealer's turn.
+                        refreshScreen(NAME[mUno.getNow()] + ": Skipped");
+                        threadSleep(1500);
+                        mStatus = mUno.switchNow();
+                        onStatusChanged(mStatus);
+                        break; // case SKIP
 
-                        case SKIP:
-                            // If starting with a [skip], skip dealer's turn.
-                            refreshScreen(NAME[mUno.getNow()] + ": Skipped");
-                            mHandler.postDelayed(() -> {
-                                mStatus = mUno.switchNow();
-                                onStatusChanged(mStatus);
-                            }, 1500);
-                            break; // case SKIP
+                    case REV:
+                        // If starting with a [reverse], change the action
+                        // sequence to COUNTER CLOCKWISE.
+                        mUno.switchDirection();
+                        refreshScreen("Direction changed");
+                        threadSleep(1500);
+                        mStatus = mUno.getNow();
+                        onStatusChanged(mStatus);
+                        break; // case REV
 
-                        case REV:
-                            // If starting with a [reverse], change the action
-                            // sequence to COUNTER CLOCKWISE.
-                            mUno.switchDirection();
-                            refreshScreen("Direction changed");
-                            mHandler.postDelayed(() -> {
-                                mStatus = mUno.getNow();
-                                onStatusChanged(mStatus);
-                            }, 1500);
-                            break; // case REV
+                    default:
+                        // Otherwise, go to dealer's turn.
+                        mStatus = mUno.getNow();
+                        onStatusChanged(mStatus);
+                        break; // default
+                } // switch (mUno.getRecent().get(0).content)
+                break; // case STAT_NEW_GAME
 
-                        default:
-                            // Otherwise, go to dealer's turn.
-                            mStatus = mUno.getNow();
-                            onStatusChanged(mStatus);
-                            break; // default
-                    } // switch (mUno.getRecent().get(0).content)
-                    break; // case STAT_NEW_GAME
-
-                case Player.YOU:
-                    // Your turn, select a hand card to play, or draw a card
-                    if (mAuto) {
-                        if (mUno.getDifficulty() == Uno.LV_EASY) {
-                            easyAI();
-                        } // if (mUno.getDifficulty() == Uno.LV_EASY)
-                        else {
-                            hardAI();
-                        } // else
-                    } // if (mAuto)
-                    else if (mImmPlayAsk) {
-                        mSelectedCard = mDrawnCard;
-                        refreshScreen("^ Play " + mDrawnCard + "?");
-                        rect = new Rect(338, 270, 121, 181);
-                        areaToErase = new Mat(mUno.getBackground(), rect);
-                        areaToErase.copyTo(new Mat(mScr, rect));
-                        center = new Point(405, 315);
-                        axes = new Size(135, 135);
-
-                        // Draw YES button
-                        Imgproc.ellipse(
-                                /* img        */ mScr,
-                                /* center     */ center,
-                                /* axes       */ axes,
-                                /* angle      */ 0,
-                                /* startAngle */ 0,
-                                /* endAngle   */ -180,
-                                /* color      */ RGB_GREEN,
-                                /* thickness  */ -1,
-                                /* lineType   */ Imgproc.LINE_AA
-                        ); // Imgproc.ellipse()
-                        Imgproc.putText(
-                                /* img       */ mScr,
-                                /* text      */ "YES",
-                                /* org       */ new Point(346, 295),
-                                /* fontFace  */ FONT_SANS,
-                                /* fontScale */ 2.0,
-                                /* color     */ RGB_WHITE,
-                                /* thickness */ 2
-                        ); // Imgproc.putText()
-
-                        // Draw NO button
-                        Imgproc.ellipse(
-                                /* img        */ mScr,
-                                /* center     */ center,
-                                /* axes       */ axes,
-                                /* angle      */ 0,
-                                /* startAngle */ 0,
-                                /* endAngle   */ 180,
-                                /* color      */ RGB_RED,
-                                /* thickness  */ -1,
-                                /* lineType   */ Imgproc.LINE_AA
-                        ); // Imgproc.ellipse()
-                        Imgproc.putText(
-                                /* img        */ mScr,
-                                /* text       */ "NO",
-                                /* org        */ new Point(360, 378),
-                                /* fontFace   */ FONT_SANS,
-                                /* fontScale  */ 2.0,
-                                /* color      */ RGB_WHITE,
-                                /* thickness  */ 2
-                        ); // Imgproc.putText()
-
-                        // Show screen
-                        Utils.matToBitmap(mScr, mBmp);
-                        mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
-                    } // else if (mImmPlayAsk)
-                    else if (mChallengeAsk) {
-                        recent = mUno.getRecent();
-                        next2last = recent.get(recent.size() - 2);
-                        message = "^ Do you think "
-                                + NAME[mUno.getNow()] + " still has "
-                                + CL[next2last.getRealColor().ordinal()] + "?";
-                        refreshScreen(message);
-                        rect = new Rect(338, 270, 121, 181);
-                        areaToErase = new Mat(mUno.getBackground(), rect);
-                        areaToErase.copyTo(new Mat(mScr, rect));
-                        center = new Point(405, 315);
-                        axes = new Size(135, 135);
-
-                        // Draw YES button
-                        Imgproc.ellipse(
-                                /* img        */ mScr,
-                                /* center     */ center,
-                                /* axes       */ axes,
-                                /* angle      */ 0,
-                                /* startAngle */ 0,
-                                /* endAngle   */ -180,
-                                /* color      */ RGB_GREEN,
-                                /* thickness  */ -1,
-                                /* lineType   */ Imgproc.LINE_AA
-                        ); // Imgproc.ellipse()
-                        Imgproc.putText(
-                                /* img       */ mScr,
-                                /* text      */ "YES",
-                                /* org       */ new Point(346, 295),
-                                /* fontFace  */ FONT_SANS,
-                                /* fontScale */ 2.0,
-                                /* color     */ RGB_WHITE,
-                                /* thickness */ 2
-                        ); // Imgproc.putText()
-
-                        // Draw NO button
-                        Imgproc.ellipse(
-                                /* img        */ mScr,
-                                /* center     */ center,
-                                /* axes       */ axes,
-                                /* angle      */ 0,
-                                /* startAngle */ 0,
-                                /* endAngle   */ 180,
-                                /* color      */ RGB_RED,
-                                /* thickness  */ -1,
-                                /* lineType   */ Imgproc.LINE_AA
-                        ); // Imgproc.ellipse()
-                        Imgproc.putText(
-                                /* img        */ mScr,
-                                /* text       */ "NO",
-                                /* org        */ new Point(360, 378),
-                                /* fontFace   */ FONT_SANS,
-                                /* fontScale  */ 2.0,
-                                /* color      */ RGB_WHITE,
-                                /* thickness  */ 2
-                        ); // Imgproc.putText()
-
-                        // Show screen
-                        Utils.matToBitmap(mScr, mBmp);
-                        mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
-                    } // else if (mChallengeAsk)
-                    else if (mUno.legalCardsCount4NowPlayer() == 0) {
-                        refreshScreen(
-                                "No card can be played... Draw a card from deck"
-                        ); // refreshScreen()
-                    } // else if (mUno.legalCardsCount4NowPlayer() == 0)
-                    else if (mSelectedCard == null) {
-                        refreshScreen(
-                                "Select a card to play or draw a card from deck"
-                        ); // refreshScreen()
-                    } // else if (mSelectedCard == null)
-                    else {
-                        refreshScreen("Click again to play");
-                    } // else
-                    break; // case Player.YOU
-
-                case STAT_WILD_COLOR:
-                    // Need to specify the following legal color after played a
-                    // wild card. Draw color sectors in the center of screen
-                    refreshScreen("^ Specify the following legal color");
-                    rect = new Rect(338, 270, 121, 181);
-                    areaToErase = new Mat(mUno.getBackground(), rect);
-                    areaToErase.copyTo(new Mat(mScr, rect));
-                    center = new Point(405, 315);
-                    axes = new Size(135, 135);
-
-                    // Draw blue sector
-                    Imgproc.ellipse(
-                            /* img        */ mScr,
-                            /* center     */ center,
-                            /* axes       */ axes,
-                            /* angle      */ 0,
-                            /* startAngle */ 0,
-                            /* endAngle   */ -90,
-                            /* color      */ RGB_BLUE,
-                            /* thickness  */ -1,
-                            /* lineType   */ Imgproc.LINE_AA
-                    ); // Imgproc.ellipse()
-
-                    // Draw green sector
-                    Imgproc.ellipse(
-                            /* img        */ mScr,
-                            /* center     */ center,
-                            /* axes       */ axes,
-                            /* angle      */ 0,
-                            /* startAngle */ 0,
-                            /* endAngle   */ 90,
-                            /* color      */ RGB_GREEN,
-                            /* thickness  */ -1,
-                            /* lineType   */ Imgproc.LINE_AA
-                    ); // Imgproc.ellipse()
-
-                    // Draw red sector
-                    Imgproc.ellipse(
-                            /* img        */ mScr,
-                            /* center     */ center,
-                            /* axes       */ axes,
-                            /* angle      */ 180,
-                            /* startAngle */ 0,
-                            /* endAngle   */ 90,
-                            /* color      */ RGB_RED,
-                            /* thickness  */ -1,
-                            /* lineType   */ Imgproc.LINE_AA
-                    ); // Imgproc.ellipse()
-
-                    // Draw yellow sector
-                    Imgproc.ellipse(
-                            /* img        */ mScr,
-                            /* center     */ center,
-                            /* axes       */ axes,
-                            /* angle      */ 180,
-                            /* startAngle */ 0,
-                            /* endAngle   */ -90,
-                            /* color      */ RGB_YELLOW,
-                            /* thickness  */ -1,
-                            /* lineType   */ Imgproc.LINE_AA
-                    ); // Imgproc.ellipse()
-
-                    // Show screen
-                    Utils.matToBitmap(mScr, mBmp);
-                    mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
-                    break; // case STAT_WILD_COLOR
-
-                case STAT_SEVEN_TARGET:
-                    // In 7-0 rule, when someone put down a seven card, the player must
-                    // swap hand cards with another player immediately.
-                    a = mUno.getNow();
-                    if (a != Player.YOU) {
-                        // Seven-card is played by an AI player.
-                        // Select target automatically.
-                        mStatus = STAT_IDLE;
-                        do {
-                            b = (int) (Math.random() * mUno.getPlayers());
-                            b = (b + 3) % 4;
-                        } while (a == b);
-
-                        swapWith(b);
-                        break; // case STAT_SEVEN_TARGET
-                    } // if (a != Player.YOU)
-
-                    // Seven-card is played by you. Select target manually.
-                    refreshScreen("^ Specify the target to swap hand cards with");
-                    rect = new Rect(338, 270, 121, 181);
-                    areaToErase = new Mat(mUno.getBackground(), rect);
-                    areaToErase.copyTo(new Mat(mScr, rect));
-                    center = new Point(405, 315);
-                    axes = new Size(135, 135);
-
-                    // Draw west sector (red)
-                    Imgproc.ellipse(
-                            /* img        */ mScr,
-                            /* center     */ center,
-                            /* axes       */ axes,
-                            /* angle      */ 90,
-                            /* startAngle */ 0,
-                            /* endAngle   */ 120,
-                            /* color      */ RGB_RED,
-                            /* thickness  */ -1,
-                            /* lineType   */ Imgproc.LINE_AA
-                    ); // Imgproc.ellipse()
-                    Imgproc.putText(
-                            /* img       */ mScr,
-                            /* text      */ "WEST",
-                            /* org       */ new Point(300, 350),
-                            /* fontFace  */ FONT_SANS,
-                            /* fontScale */ 1.0,
-                            /* color     */ RGB_WHITE,
-                            /* thickness */ 2
-                    ); // Imgproc.putText()
-
-                    // Draw east sector (green)
-                    Imgproc.ellipse(
-                            /* img        */ mScr,
-                            /* center     */ center,
-                            /* axes       */ axes,
-                            /* angle      */ 90,
-                            /* startAngle */ 0,
-                            /* endAngle   */ -120,
-                            /* color      */ RGB_GREEN,
-                            /* thickness  */ -1,
-                            /* lineType   */ Imgproc.LINE_AA
-                    ); // Imgproc.ellipse()
-                    Imgproc.putText(
-                            /* img       */ mScr,
-                            /* text      */ "EAST",
-                            /* org       */ new Point(430, 350),
-                            /* fontFace  */ FONT_SANS,
-                            /* fontScale */ 1.0,
-                            /* color     */ RGB_WHITE,
-                            /* thickness */ 2
-                    ); // Imgproc.putText()
-
-                    // Draw north sector (yellow)
-                    Imgproc.ellipse(
-                            /* img        */ mScr,
-                            /* center     */ center,
-                            /* axes       */ axes,
-                            /* angle      */ -150,
-                            /* startAngle */ 0,
-                            /* endAngle   */ 120,
-                            /* color      */ RGB_YELLOW,
-                            /* thickness  */ -1,
-                            /* lineType   */ Imgproc.LINE_AA
-                    ); // Imgproc.ellipse()
-                    Imgproc.putText(
-                            /* img       */ mScr,
-                            /* text      */ "NORTH",
-                            /* org       */ new Point(350, 270),
-                            /* fontFace  */ FONT_SANS,
-                            /* fontScale */ 1.0,
-                            /* color     */ RGB_WHITE,
-                            /* thickness */ 2
-                    ); // Imgproc.putText()
-
-                    // Show screen
-                    Utils.matToBitmap(mScr, mBmp);
-                    mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
-                    break; // case STAT_SEVEN_TARGET
-
-                case Player.COM1:
-                case Player.COM2:
-                case Player.COM3:
-                    // AI players' turn
+            case Player.YOU:
+                // Your turn, select a hand card to play, or draw a card
+                if (mAuto) {
                     if (mUno.getDifficulty() == Uno.LV_EASY) {
                         easyAI();
                     } // if (mUno.getDifficulty() == Uno.LV_EASY)
                     else {
                         hardAI();
                     } // else
-                    break; // case Player.COM1, Player.COM2, Player.COM3
+                } // if (mAuto)
+                else if (mImmPlayAsk) {
+                    mSelectedCard = mDrawnCard;
+                    refreshScreen("^ Play " + mDrawnCard + "?");
+                    rect = new Rect(338, 270, 121, 181);
+                    areaToErase = new Mat(mUno.getBackground(), rect);
+                    areaToErase.copyTo(new Mat(mScr, rect));
+                    center = new Point(405, 315);
+                    axes = new Size(135, 135);
 
-                case STAT_GAME_OVER:
-                    // Game over
-                    refreshScreen(mAdjustOptions ? "SPECIAL RULES" :
-                            "Click the card deck to restart");
-                    break; // case STAT_GAME_OVER
+                    // Draw YES button
+                    Imgproc.ellipse(
+                            /* img        */ mScr,
+                            /* center     */ center,
+                            /* axes       */ axes,
+                            /* angle      */ 0,
+                            /* startAngle */ 0,
+                            /* endAngle   */ -180,
+                            /* color      */ RGB_GREEN,
+                            /* thickness  */ -1,
+                            /* lineType   */ Imgproc.LINE_AA
+                    ); // Imgproc.ellipse()
+                    Imgproc.putText(
+                            /* img       */ mScr,
+                            /* text      */ "YES",
+                            /* org       */ new Point(346, 295),
+                            /* fontFace  */ FONT_SANS,
+                            /* fontScale */ 2.0,
+                            /* color     */ RGB_WHITE,
+                            /* thickness */ 2
+                    ); // Imgproc.putText()
 
-                default:
-                    break; // default
-            } // switch (status)
-        }).start();
+                    // Draw NO button
+                    Imgproc.ellipse(
+                            /* img        */ mScr,
+                            /* center     */ center,
+                            /* axes       */ axes,
+                            /* angle      */ 0,
+                            /* startAngle */ 0,
+                            /* endAngle   */ 180,
+                            /* color      */ RGB_RED,
+                            /* thickness  */ -1,
+                            /* lineType   */ Imgproc.LINE_AA
+                    ); // Imgproc.ellipse()
+                    Imgproc.putText(
+                            /* img        */ mScr,
+                            /* text       */ "NO",
+                            /* org        */ new Point(360, 378),
+                            /* fontFace   */ FONT_SANS,
+                            /* fontScale  */ 2.0,
+                            /* color      */ RGB_WHITE,
+                            /* thickness  */ 2
+                    ); // Imgproc.putText()
+
+                    // Show screen
+                    Utils.matToBitmap(mScr, mBmp);
+                    mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
+                } // else if (mImmPlayAsk)
+                else if (mChallengeAsk) {
+                    recent = mUno.getRecent();
+                    next2last = recent.get(recent.size() - 2);
+                    message = "^ Do you think "
+                            + NAME[mUno.getNow()] + " still has "
+                            + CL[next2last.getRealColor().ordinal()] + "?";
+                    refreshScreen(message);
+                    rect = new Rect(338, 270, 121, 181);
+                    areaToErase = new Mat(mUno.getBackground(), rect);
+                    areaToErase.copyTo(new Mat(mScr, rect));
+                    center = new Point(405, 315);
+                    axes = new Size(135, 135);
+
+                    // Draw YES button
+                    Imgproc.ellipse(
+                            /* img        */ mScr,
+                            /* center     */ center,
+                            /* axes       */ axes,
+                            /* angle      */ 0,
+                            /* startAngle */ 0,
+                            /* endAngle   */ -180,
+                            /* color      */ RGB_GREEN,
+                            /* thickness  */ -1,
+                            /* lineType   */ Imgproc.LINE_AA
+                    ); // Imgproc.ellipse()
+                    Imgproc.putText(
+                            /* img       */ mScr,
+                            /* text      */ "YES",
+                            /* org       */ new Point(346, 295),
+                            /* fontFace  */ FONT_SANS,
+                            /* fontScale */ 2.0,
+                            /* color     */ RGB_WHITE,
+                            /* thickness */ 2
+                    ); // Imgproc.putText()
+
+                    // Draw NO button
+                    Imgproc.ellipse(
+                            /* img        */ mScr,
+                            /* center     */ center,
+                            /* axes       */ axes,
+                            /* angle      */ 0,
+                            /* startAngle */ 0,
+                            /* endAngle   */ 180,
+                            /* color      */ RGB_RED,
+                            /* thickness  */ -1,
+                            /* lineType   */ Imgproc.LINE_AA
+                    ); // Imgproc.ellipse()
+                    Imgproc.putText(
+                            /* img        */ mScr,
+                            /* text       */ "NO",
+                            /* org        */ new Point(360, 378),
+                            /* fontFace   */ FONT_SANS,
+                            /* fontScale  */ 2.0,
+                            /* color      */ RGB_WHITE,
+                            /* thickness  */ 2
+                    ); // Imgproc.putText()
+
+                    // Show screen
+                    Utils.matToBitmap(mScr, mBmp);
+                    mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
+                } // else if (mChallengeAsk)
+                else if (mUno.legalCardsCount4NowPlayer() == 0) {
+                    refreshScreen(
+                            "No card can be played... Draw a card from deck"
+                    ); // refreshScreen()
+                } // else if (mUno.legalCardsCount4NowPlayer() == 0)
+                else if (mSelectedCard == null) {
+                    refreshScreen(
+                            "Select a card to play or draw a card from deck"
+                    ); // refreshScreen()
+                } // else if (mSelectedCard == null)
+                else {
+                    refreshScreen("Click again to play");
+                } // else
+                break; // case Player.YOU
+
+            case STAT_WILD_COLOR:
+                // Need to specify the following legal color after played a
+                // wild card. Draw color sectors in the center of screen
+                refreshScreen("^ Specify the following legal color");
+                rect = new Rect(338, 270, 121, 181);
+                areaToErase = new Mat(mUno.getBackground(), rect);
+                areaToErase.copyTo(new Mat(mScr, rect));
+                center = new Point(405, 315);
+                axes = new Size(135, 135);
+
+                // Draw blue sector
+                Imgproc.ellipse(
+                        /* img        */ mScr,
+                        /* center     */ center,
+                        /* axes       */ axes,
+                        /* angle      */ 0,
+                        /* startAngle */ 0,
+                        /* endAngle   */ -90,
+                        /* color      */ RGB_BLUE,
+                        /* thickness  */ -1,
+                        /* lineType   */ Imgproc.LINE_AA
+                ); // Imgproc.ellipse()
+
+                // Draw green sector
+                Imgproc.ellipse(
+                        /* img        */ mScr,
+                        /* center     */ center,
+                        /* axes       */ axes,
+                        /* angle      */ 0,
+                        /* startAngle */ 0,
+                        /* endAngle   */ 90,
+                        /* color      */ RGB_GREEN,
+                        /* thickness  */ -1,
+                        /* lineType   */ Imgproc.LINE_AA
+                ); // Imgproc.ellipse()
+
+                // Draw red sector
+                Imgproc.ellipse(
+                        /* img        */ mScr,
+                        /* center     */ center,
+                        /* axes       */ axes,
+                        /* angle      */ 180,
+                        /* startAngle */ 0,
+                        /* endAngle   */ 90,
+                        /* color      */ RGB_RED,
+                        /* thickness  */ -1,
+                        /* lineType   */ Imgproc.LINE_AA
+                ); // Imgproc.ellipse()
+
+                // Draw yellow sector
+                Imgproc.ellipse(
+                        /* img        */ mScr,
+                        /* center     */ center,
+                        /* axes       */ axes,
+                        /* angle      */ 180,
+                        /* startAngle */ 0,
+                        /* endAngle   */ -90,
+                        /* color      */ RGB_YELLOW,
+                        /* thickness  */ -1,
+                        /* lineType   */ Imgproc.LINE_AA
+                ); // Imgproc.ellipse()
+
+                // Show screen
+                Utils.matToBitmap(mScr, mBmp);
+                mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
+                break; // case STAT_WILD_COLOR
+
+            case STAT_SEVEN_TARGET:
+                // In 7-0 rule, when someone put down a seven card, the player
+                // must swap hand cards with another player immediately.
+                a = mUno.getNow();
+                if (a != Player.YOU) {
+                    // Seven-card is played by an AI player.
+                    // Select target automatically.
+                    mStatus = STAT_IDLE;
+                    do {
+                        b = (int) (Math.random() * mUno.getPlayers());
+                        b = (b + 3) % 4;
+                    } while (a == b);
+
+                    swapWith(b);
+                    break; // case STAT_SEVEN_TARGET
+                } // if (a != Player.YOU)
+
+                // Seven-card is played by you. Select target manually.
+                refreshScreen("^ Specify the target to swap hand cards with");
+                rect = new Rect(338, 270, 121, 181);
+                areaToErase = new Mat(mUno.getBackground(), rect);
+                areaToErase.copyTo(new Mat(mScr, rect));
+                center = new Point(405, 315);
+                axes = new Size(135, 135);
+
+                // Draw west sector (red)
+                Imgproc.ellipse(
+                        /* img        */ mScr,
+                        /* center     */ center,
+                        /* axes       */ axes,
+                        /* angle      */ 90,
+                        /* startAngle */ 0,
+                        /* endAngle   */ 120,
+                        /* color      */ RGB_RED,
+                        /* thickness  */ -1,
+                        /* lineType   */ Imgproc.LINE_AA
+                ); // Imgproc.ellipse()
+                Imgproc.putText(
+                        /* img       */ mScr,
+                        /* text      */ "WEST",
+                        /* org       */ new Point(300, 350),
+                        /* fontFace  */ FONT_SANS,
+                        /* fontScale */ 1.0,
+                        /* color     */ RGB_WHITE,
+                        /* thickness */ 2
+                ); // Imgproc.putText()
+
+                // Draw east sector (green)
+                Imgproc.ellipse(
+                        /* img        */ mScr,
+                        /* center     */ center,
+                        /* axes       */ axes,
+                        /* angle      */ 90,
+                        /* startAngle */ 0,
+                        /* endAngle   */ -120,
+                        /* color      */ RGB_GREEN,
+                        /* thickness  */ -1,
+                        /* lineType   */ Imgproc.LINE_AA
+                ); // Imgproc.ellipse()
+                Imgproc.putText(
+                        /* img       */ mScr,
+                        /* text      */ "EAST",
+                        /* org       */ new Point(430, 350),
+                        /* fontFace  */ FONT_SANS,
+                        /* fontScale */ 1.0,
+                        /* color     */ RGB_WHITE,
+                        /* thickness */ 2
+                ); // Imgproc.putText()
+
+                // Draw north sector (yellow)
+                Imgproc.ellipse(
+                        /* img        */ mScr,
+                        /* center     */ center,
+                        /* axes       */ axes,
+                        /* angle      */ -150,
+                        /* startAngle */ 0,
+                        /* endAngle   */ 120,
+                        /* color      */ RGB_YELLOW,
+                        /* thickness  */ -1,
+                        /* lineType   */ Imgproc.LINE_AA
+                ); // Imgproc.ellipse()
+                Imgproc.putText(
+                        /* img       */ mScr,
+                        /* text      */ "NORTH",
+                        /* org       */ new Point(350, 270),
+                        /* fontFace  */ FONT_SANS,
+                        /* fontScale */ 1.0,
+                        /* color     */ RGB_WHITE,
+                        /* thickness */ 2
+                ); // Imgproc.putText()
+
+                // Show screen
+                Utils.matToBitmap(mScr, mBmp);
+                mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
+                break; // case STAT_SEVEN_TARGET
+
+            case Player.COM1:
+            case Player.COM2:
+            case Player.COM3:
+                // AI players' turn
+                if (mUno.getDifficulty() == Uno.LV_EASY) {
+                    easyAI();
+                } // if (mUno.getDifficulty() == Uno.LV_EASY)
+                else {
+                    hardAI();
+                } // else
+                break; // case Player.COM1, Player.COM2, Player.COM3
+
+            case STAT_GAME_OVER:
+                // Game over
+                refreshScreen(mAdjustOptions ? "SPECIAL RULES" :
+                        "Click the card deck to restart");
+                break; // case STAT_GAME_OVER
+
+            default:
+                break; // default
+        } // switch (status)
     } // onStatusChanged(int)
 
     /**
@@ -650,6 +655,7 @@ public class MainActivity extends AppCompatActivity
      *
      * @param message Extra message to show.
      */
+    @WorkerThread
     private void refreshScreen(String message) {
         Rect roi;
         Mat image;
@@ -1075,22 +1081,15 @@ public class MainActivity extends AppCompatActivity
      * @param whom Swap with whom. Must be one of the following:
      *             Player.YOU, Player.COM1, Player.COM2, Player.COM3
      */
+    @WorkerThread
     void swapWith(int whom) {
-        new Thread(() -> {
-            int now = mUno.getNow();
-            mStatus = STAT_IDLE;
-            mUno.swap(now, whom);
-            refreshScreen(NAME[now] + " swapped hands with " + NAME[whom]);
-            try {
-                Thread.sleep(1500);
-            } // try
-            catch (InterruptedException e) {
-                e.printStackTrace();
-            } // catch (InterruptedException e)
-
-            mStatus = mUno.switchNow();
-            onStatusChanged(mStatus);
-        }).start();
+        int now = mUno.getNow();
+        mStatus = STAT_IDLE;
+        mUno.swap(now, whom);
+        refreshScreen(NAME[now] + " swapped hands with " + NAME[whom]);
+        threadSleep(1500);
+        mStatus = mUno.switchNow();
+        onStatusChanged(mStatus);
     } // swapWith(int)
 
     /**
@@ -1101,225 +1100,170 @@ public class MainActivity extends AppCompatActivity
      * @param color Optional, available when the card to play is a wild card.
      *              Pass the specified following legal color.
      */
+    @WorkerThread
     private void play(int index, Color color) {
-        new Thread(() -> {
-            Mat image;
-            Card card;
-            String message;
-            int x1, y1, x2, now, size, recentSize, next;
+        Mat image;
+        Card card;
+        String message;
+        int x1, y1, x2, now, size, recentSize, next;
 
-            mStatus = STAT_IDLE; // block tap down events when idle
-            now = mUno.getNow();
-            size = mUno.getPlayer(now).getHandSize();
-            card = mUno.play(now, index, color);
-            mSelectedCard = null;
-            mSoundPool.play(sndPlay, mSndVol, mSndVol, 1, 0, 1.0f);
-            if (card != null) {
-                image = card.image;
-                switch (now) {
-                    case Player.COM1:
-                        x1 = 160;
-                        y1 = 290 - 20 * size + 40 * index;
-                        break; // case Player.COM1
+        mStatus = STAT_IDLE; // block tap down events when idle
+        now = mUno.getNow();
+        size = mUno.getPlayer(now).getHandSize();
+        card = mUno.play(now, index, color);
+        mSelectedCard = null;
+        mSoundPool.play(sndPlay, mSndVol, mSndVol, 1, 0, 1.0f);
+        if (card != null) {
+            image = card.image;
+            switch (now) {
+                case Player.COM1:
+                    x1 = 160;
+                    y1 = 290 - 20 * size + 40 * index;
+                    break; // case Player.COM1
 
-                    case Player.COM2:
-                        x1 = (1205 - 45 * size + 90 * index) / 2;
-                        y1 = 50;
-                        break; // case Player.COM2
+                case Player.COM2:
+                    x1 = (1205 - 45 * size + 90 * index) / 2;
+                    y1 = 50;
+                    break; // case Player.COM2
 
-                    case Player.COM3:
-                        x1 = 1000;
-                        y1 = 290 - 20 * size + 40 * index;
-                        break; // case Player.COM3
+                case Player.COM3:
+                    x1 = 1000;
+                    y1 = 290 - 20 * size + 40 * index;
+                    break; // case Player.COM3
+
+                default:
+                    x1 = 610 - 30 * size + 60 * index;
+                    y1 = 490;
+                    break; // default
+            } // switch (now)
+
+            recentSize = mUno.getRecent().size();
+            x2 = (45 * recentSize + 1419) / 2;
+            animate(image, x1, y1, x2, 270);
+            if (size == 1) {
+                // The player in action becomes winner when it played the
+                // final card in its hand successfully
+                if (now == Player.YOU) {
+                    mScore += mUno.getPlayer(Player.COM1).getHandScore()
+                            + mUno.getPlayer(Player.COM2).getHandScore()
+                            + mUno.getPlayer(Player.COM3).getHandScore();
+                    if (mScore > 9999) mScore = 9999;
+                    mSoundPool.play(sndWin, mSndVol, mSndVol, 1, 0, 1.0f);
+                } // if (now == Player.YOU)
+                else {
+                    mScore -= mUno.getPlayer(Player.YOU).getHandScore();
+                    if (mScore < -999) mScore = -999;
+                    mSoundPool.play(sndLose, mSndVol, mSndVol, 1, 0, 1.0f);
+                } // else
+
+                mWinner = now;
+                mStatus = STAT_GAME_OVER;
+                onStatusChanged(mStatus);
+            } // if (size == 1)
+            else {
+                // When the played card is an action card or a wild card,
+                // do the necessary things according to the game rule
+                if (size == 2) {
+                    mSoundPool.play(sndUno, 1.0f, 1.0f, 1, 0, 1.0f);
+                } // if (size == 2)
+
+                switch (card.content) {
+                    case DRAW2:
+                        next = mUno.switchNow();
+                        message = NAME[now] + ": Let "
+                                + NAME[next] + " draw 2 cards";
+                        refreshScreen(message);
+                        threadSleep(1500);
+                        draw(2, /* force */ true);
+                        break; // case DRAW2
+
+                    case SKIP:
+                        next = mUno.switchNow();
+                        if (next == Player.YOU) {
+                            message = NAME[now] + ": Skip your turn";
+                        } // if (next == Player.YOU)
+                        else {
+                            message = NAME[now] + ": Skip "
+                                    + NAME[next] + "'s turn";
+                        } // else
+
+                        refreshScreen(message);
+                        threadSleep(1500);
+                        mStatus = mUno.switchNow();
+                        onStatusChanged(mStatus);
+                        break; // case SKIP
+
+                    case REV:
+                        if (mUno.switchDirection() == Uno.DIR_LEFT) {
+                            message = NAME[now] + ": Change direction to "
+                                    + "CLOCKWISE";
+                        } // if (mUno.switchDirection() == Uno.DIR_LEFT)
+                        else {
+                            message = NAME[now] + ": Change direction to "
+                                    + "COUNTER CLOCKWISE";
+                        } // else
+
+                        refreshScreen(message);
+                        threadSleep(1500);
+                        mStatus = mUno.switchNow();
+                        onStatusChanged(mStatus);
+                        break; // case REV
+
+                    case WILD:
+                        message = NAME[now]
+                                + ": Change the following legal color";
+                        refreshScreen(message);
+                        threadSleep(1500);
+                        mStatus = mUno.switchNow();
+                        onStatusChanged(mStatus);
+                        break; // case WILD
+
+                    case WILD_DRAW4:
+                        next = mUno.getNext();
+                        message = NAME[now] + ": Let "
+                                + NAME[next] + " draw 4 cards";
+                        refreshScreen(message);
+                        threadSleep(1500);
+                        mStatus = next;
+                        mChallengeAsk = true;
+                        onStatusChanged(mStatus);
+                        break; // case WILD_DRAW4
+
+                    case NUM7:
+                        if (mUno.isSevenZeroRule()) {
+                            message = NAME[now] + ": " + card.name;
+                            refreshScreen(message);
+                            threadSleep(750);
+                            mStatus = STAT_SEVEN_TARGET;
+                            onStatusChanged(mStatus);
+                            break; // case NUM7
+                        } // if (mUno.isSevenZeroRule())
+                        // else fall through
+
+                    case NUM0:
+                        if (mUno.isSevenZeroRule()) {
+                            message = NAME[now] + ": " + card.name;
+                            refreshScreen(message);
+                            threadSleep(750);
+                            mUno.cycle();
+                            refreshScreen("Hand cards transferred to next");
+                            threadSleep(1500);
+                            mStatus = mUno.switchNow();
+                            onStatusChanged(mStatus);
+                            break; // case NUM0
+                        } // if (mUno.isSevenZeroRule())
+                        // else fall through
 
                     default:
-                        x1 = 610 - 30 * size + 60 * index;
-                        y1 = 490;
+                        message = NAME[now] + ": " + card;
+                        refreshScreen(message);
+                        threadSleep(1500);
+                        mStatus = mUno.switchNow();
+                        onStatusChanged(mStatus);
                         break; // default
-                } // switch (now)
-
-                recentSize = mUno.getRecent().size();
-                x2 = (45 * recentSize + 1419) / 2;
-                animate(image, x1, y1, x2, 270);
-                if (size == 1) {
-                    // The player in action becomes winner when it played the
-                    // final card in its hand successfully
-                    if (now == Player.YOU) {
-                        mScore += mUno.getPlayer(Player.COM1).getHandScore()
-                                + mUno.getPlayer(Player.COM2).getHandScore()
-                                + mUno.getPlayer(Player.COM3).getHandScore();
-                        if (mScore > 9999) mScore = 9999;
-                        mSoundPool.play(sndWin, mSndVol, mSndVol, 1, 0, 1.0f);
-                    } // if (now == Player.YOU)
-                    else {
-                        mScore -= mUno.getPlayer(Player.YOU).getHandScore();
-                        if (mScore < -999) mScore = -999;
-                        mSoundPool.play(sndLose, mSndVol, mSndVol, 1, 0, 1.0f);
-                    } // else
-
-                    mWinner = now;
-                    mStatus = STAT_GAME_OVER;
-                    onStatusChanged(mStatus);
-                } // if (size == 1)
-                else {
-                    // When the played card is an action card or a wild card,
-                    // do the necessary things according to the game rule
-                    if (size == 2) {
-                        mSoundPool.play(sndUno, 1.0f, 1.0f, 1, 0, 1.0f);
-                    } // if (size == 2)
-
-                    switch (card.content) {
-                        case DRAW2:
-                            next = mUno.switchNow();
-                            message = NAME[now] + ": Let "
-                                    + NAME[next] + " draw 2 cards";
-                            refreshScreen(message);
-                            try {
-                                Thread.sleep(1500);
-                            } // try
-                            catch (InterruptedException e) {
-                                e.printStackTrace();
-                            } // catch (InterruptedException e)
-
-                            draw(2, /* force */ true);
-                            break; // case DRAW2
-
-                        case SKIP:
-                            next = mUno.switchNow();
-                            if (next == Player.YOU) {
-                                message = NAME[now] + ": Skip your turn";
-                            } // if (next == Player.YOU)
-                            else {
-                                message = NAME[now] + ": Skip "
-                                        + NAME[next] + "'s turn";
-                            } // else
-
-                            refreshScreen(message);
-                            try {
-                                Thread.sleep(1500);
-                            } // try
-                            catch (InterruptedException e) {
-                                e.printStackTrace();
-                            } // catch (InterruptedException e)
-
-                            mStatus = mUno.switchNow();
-                            onStatusChanged(mStatus);
-                            break; // case SKIP
-
-                        case REV:
-                            if (mUno.switchDirection() == Uno.DIR_LEFT) {
-                                message = NAME[now] + ": Change direction to "
-                                        + "CLOCKWISE";
-                            } // if (mUno.switchDirection() == Uno.DIR_LEFT)
-                            else {
-                                message = NAME[now] + ": Change direction to "
-                                        + "COUNTER CLOCKWISE";
-                            } // else
-
-                            refreshScreen(message);
-                            try {
-                                Thread.sleep(1500);
-                            } // try
-                            catch (InterruptedException e) {
-                                e.printStackTrace();
-                            } // catch (InterruptedException e)
-
-                            mStatus = mUno.switchNow();
-                            onStatusChanged(mStatus);
-                            break; // case REV
-
-                        case WILD:
-                            message = NAME[now]
-                                    + ": Change the following legal color";
-                            refreshScreen(message);
-                            try {
-                                Thread.sleep(1500);
-                            } // try
-                            catch (InterruptedException e) {
-                                e.printStackTrace();
-                            } // catch (InterruptedException e)
-
-                            mStatus = mUno.switchNow();
-                            onStatusChanged(mStatus);
-                            break; // case WILD
-
-                        case WILD_DRAW4:
-                            next = mUno.getNext();
-                            message = NAME[now] + ": Let "
-                                    + NAME[next] + " draw 4 cards";
-                            refreshScreen(message);
-                            try {
-                                Thread.sleep(1500);
-                            } // try
-                            catch (InterruptedException e) {
-                                e.printStackTrace();
-                            } // catch (InterruptedException e)
-
-                            mStatus = next;
-                            mChallengeAsk = true;
-                            onStatusChanged(mStatus);
-                            break; // case WILD_DRAW4
-
-                        case NUM7:
-                            if (mUno.isSevenZeroRule()) {
-                                message = NAME[now] + ": " + card.name;
-                                refreshScreen(message);
-                                try {
-                                    Thread.sleep(750);
-                                } // try
-                                catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                } // catch (InterruptedException e)
-
-                                mStatus = STAT_SEVEN_TARGET;
-                                onStatusChanged(mStatus);
-                                break; // case NUM7
-                            } // if (mUno.isSevenZeroRule())
-                            // else fall through
-
-                        case NUM0:
-                            if (mUno.isSevenZeroRule()) {
-                                message = NAME[now] + ": " + card.name;
-                                refreshScreen(message);
-                                try {
-                                    Thread.sleep(750);
-                                } // try
-                                catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                } // catch (InterruptedException e)
-
-                                mUno.cycle();
-                                refreshScreen("Hand cards transferred to next");
-                                try {
-                                    Thread.sleep(1500);
-                                } // try
-                                catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                } // catch (InterruptedException e)
-
-                                mStatus = mUno.switchNow();
-                                onStatusChanged(mStatus);
-                                break; // case NUM0
-                            } // if (mUno.isSevenZeroRule())
-                            // else fall through
-
-                        default:
-                            message = NAME[now] + ": " + card;
-                            refreshScreen(message);
-                            try {
-                                Thread.sleep(1500);
-                            } // try
-                            catch (InterruptedException e) {
-                                e.printStackTrace();
-                            } // catch (InterruptedException e)
-
-                            mStatus = mUno.switchNow();
-                            onStatusChanged(mStatus);
-                            break; // default
-                    } // switch (card.content)
-                } // else
-            } // if (card != null)
-        }).start();
+                } // switch (card.content)
+            } // else
+        } // if (card != null)
     } // play(int, Color)
 
     /**
@@ -1331,116 +1275,98 @@ public class MainActivity extends AppCompatActivity
      *              player draw cards. Or false if the specified player draws a
      *              card by itself in its action.
      */
+    @WorkerThread
     private void draw(int count, boolean force) {
-        new Thread(() -> {
-            Mat image;
-            String message;
-            int i, index, now, size, x2, y2;
+        Mat image;
+        String message;
+        int i, index, now, size, x2, y2;
 
-            mStatus = STAT_IDLE; // block tap down events when idle
-            now = mUno.getNow();
-            mSelectedCard = null;
-            for (i = 0; i < count; ++i) {
-                index = mUno.draw(now, force);
-                if (index >= 0) {
-                    mDrawnCard = mUno.getPlayer(now).getHandCards().get(index);
-                    size = mUno.getPlayer(now).getHandSize();
-                    switch (now) {
-                        case Player.COM1:
-                            image = mUno.getBackImage();
-                            x2 = 20;
-                            y2 = 290 - 20 * size + 40 * index;
-                            if (count == 1) {
-                                message = NAME[now] + ": Draw a card";
-                            } // if (count == 1)
-                            else {
-                                message = NAME[now]
-                                        + ": Draw " + count + " cards";
-                            } // else
-                            break; // case Player.COM1
+        mStatus = STAT_IDLE; // block tap down events when idle
+        now = mUno.getNow();
+        mSelectedCard = null;
+        for (i = 0; i < count; ++i) {
+            index = mUno.draw(now, force);
+            if (index >= 0) {
+                mDrawnCard = mUno.getPlayer(now).getHandCards().get(index);
+                size = mUno.getPlayer(now).getHandSize();
+                switch (now) {
+                    case Player.COM1:
+                        image = mUno.getBackImage();
+                        x2 = 20;
+                        y2 = 290 - 20 * size + 40 * index;
+                        if (count == 1) {
+                            message = NAME[now] + ": Draw a card";
+                        } // if (count == 1)
+                        else {
+                            message = NAME[now]
+                                    + ": Draw " + count + " cards";
+                        } // else
+                        break; // case Player.COM1
 
-                        case Player.COM2:
-                            image = mUno.getBackImage();
-                            x2 = (1205 - 45 * size + 90 * index) / 2;
-                            y2 = 20;
-                            if (count == 1) {
-                                message = NAME[now] + ": Draw a card";
-                            } // if (count == 1)
-                            else {
-                                message = NAME[now]
-                                        + ": Draw " + count + " cards";
-                            } // else
-                            break; // case Player.COM2
+                    case Player.COM2:
+                        image = mUno.getBackImage();
+                        x2 = (1205 - 45 * size + 90 * index) / 2;
+                        y2 = 20;
+                        if (count == 1) {
+                            message = NAME[now] + ": Draw a card";
+                        } // if (count == 1)
+                        else {
+                            message = NAME[now]
+                                    + ": Draw " + count + " cards";
+                        } // else
+                        break; // case Player.COM2
 
-                        case Player.COM3:
-                            image = mUno.getBackImage();
-                            x2 = 1140;
-                            y2 = 290 - 20 * size + 40 * index;
-                            if (count == 1) {
-                                message = NAME[now] + ": Draw a card";
-                            } // if (count == 1)
-                            else {
-                                message = NAME[now] +
-                                        ": Draw " + count + " cards";
-                            } // else
-                            break; // case Player.COM3
+                    case Player.COM3:
+                        image = mUno.getBackImage();
+                        x2 = 1140;
+                        y2 = 290 - 20 * size + 40 * index;
+                        if (count == 1) {
+                            message = NAME[now] + ": Draw a card";
+                        } // if (count == 1)
+                        else {
+                            message = NAME[now] +
+                                    ": Draw " + count + " cards";
+                        } // else
+                        break; // case Player.COM3
 
-                        default:
-                            image = mDrawnCard.image;
-                            x2 = 610 - 30 * size + 60 * index;
-                            y2 = 520;
-                            message = NAME[now] + ": Draw " + mDrawnCard.name;
-                            break; // default
-                    } // switch (now)
+                    default:
+                        image = mDrawnCard.image;
+                        x2 = 610 - 30 * size + 60 * index;
+                        y2 = 520;
+                        message = NAME[now] + ": Draw " + mDrawnCard.name;
+                        break; // default
+                } // switch (now)
 
-                    // Animation
-                    mSoundPool.play(sndDraw, 1.0f, 1.0f, 1, 0, 1.0f);
-                    animate(image, 338, 270, x2, y2);
-                    refreshScreen(message);
-                    try {
-                        Thread.sleep(300);
-                    } // try
-                    catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } // catch (InterruptedException)
-                } // if (index >= 0)
-                else {
-                    message = NAME[now] + " cannot hold more than "
-                            + Uno.MAX_HOLD_CARDS + " cards";
-                    refreshScreen(message);
-                    break;
-                } // else
-            } // for (i = 0; i < count; ++i)
-
-            try {
-                Thread.sleep(750);
-            } // try
-            catch (InterruptedException e) {
-                e.printStackTrace();
-            } // catch (InterruptedException e)
-
-            if (count == 1 &&
-                    mDrawnCard != null &&
-                    mUno.isLegalToPlay(mDrawnCard)) {
-                // Player drew one card by itself, the drawn card
-                // can be played immediately if it's legal to play
-                mStatus = now;
-                mImmPlayAsk = true;
-            } // if (count == 1 && ...)
+                // Animation
+                mSoundPool.play(sndDraw, 1.0f, 1.0f, 1, 0, 1.0f);
+                animate(image, 338, 270, x2, y2);
+                refreshScreen(message);
+                threadSleep(300);
+            } // if (index >= 0)
             else {
-                refreshScreen(NAME[now] + ": Pass");
-                try {
-                    Thread.sleep(750);
-                } // try
-                catch (InterruptedException e) {
-                    e.printStackTrace();
-                } // catch (InterruptedException e)
-
-                mStatus = mUno.switchNow();
+                message = NAME[now] + " cannot hold more than "
+                        + Uno.MAX_HOLD_CARDS + " cards";
+                refreshScreen(message);
+                break;
             } // else
+        } // for (i = 0; i < count; ++i)
 
-            onStatusChanged(mStatus);
-        }).start();
+        threadSleep(750);
+        if (count == 1 &&
+                mDrawnCard != null &&
+                mUno.isLegalToPlay(mDrawnCard)) {
+            // Player drew one card by itself, the drawn card
+            // can be played immediately if it's legal to play
+            mStatus = now;
+            mImmPlayAsk = true;
+        } // if (count == 1 && ...)
+        else {
+            refreshScreen(NAME[now] + ": Pass");
+            threadSleep(750);
+            mStatus = mUno.switchNow();
+        } // else
+
+        onStatusChanged(mStatus);
     } // draw(int, boolean)
 
     /**
@@ -1454,6 +1380,7 @@ public class MainActivity extends AppCompatActivity
      * @param x2   The object's end X coordinate.
      * @param y2   The object's end Y coordinate.
      */
+    @WorkerThread
     private void animate(Mat elem, int x1, int y1, int x2, int y2) {
         int i;
         Rect roi;
@@ -1464,13 +1391,7 @@ public class MainActivity extends AppCompatActivity
         elem.copyTo(new Mat(canvas, roi), elem);
         Utils.matToBitmap(canvas, mBmp);
         mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
-        try {
-            Thread.sleep(30);
-        } // try
-        catch (InterruptedException e) {
-            e.printStackTrace();
-        } // catch (InterruptedException e)
-
+        threadSleep(30);
         for (i = 1; i < 5; ++i) {
             new Mat(mScr, roi).copyTo(new Mat(canvas, roi));
             roi.x = x1 + (x2 - x1) * i / 5;
@@ -1478,12 +1399,7 @@ public class MainActivity extends AppCompatActivity
             elem.copyTo(new Mat(canvas, roi), elem);
             Utils.matToBitmap(canvas, mBmp);
             mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
-            try {
-                Thread.sleep(30);
-            } // try
-            catch (InterruptedException e) {
-                e.printStackTrace();
-            } // catch (InterruptedException e)
+            threadSleep(30);
         } // for (i = 1; i < 5; ++i)
     } // animate()
 
@@ -1498,102 +1414,83 @@ public class MainActivity extends AppCompatActivity
      * @param challenged Whether the next player (challenger) challenged current
      *                   player(be challenged)'s [wild +4].
      */
+    @WorkerThread
     private void onChallengeChance(boolean challenged) {
-        new Thread(() -> {
-            Card next2last;
-            String message;
-            List<Card> recent;
-            boolean draw4IsLegal;
-            int curr, challenger;
-            Color colorBeforeDraw4;
+        Card next2last;
+        String message;
+        List<Card> recent;
+        boolean draw4IsLegal;
+        int curr, challenger;
+        Color colorBeforeDraw4;
 
-            mStatus = STAT_IDLE; // block tap down events when idle
-            mChallenged = challenged;
-            mChallengeAsk = false;
-            if (challenged) {
-                curr = mUno.getNow();
-                challenger = mUno.getNext();
-                recent = mUno.getRecent();
-                next2last = recent.get(recent.size() - 2);
-                colorBeforeDraw4 = next2last.getRealColor();
-                if (curr == Player.YOU) {
-                    message = NAME[challenger]
-                            + " doubted that you still have "
-                            + CL[colorBeforeDraw4.ordinal()];
-                } // if (curr == Player.YOU)
+        mStatus = STAT_IDLE; // block tap down events when idle
+        mChallenged = challenged;
+        mChallengeAsk = false;
+        if (challenged) {
+            curr = mUno.getNow();
+            challenger = mUno.getNext();
+            recent = mUno.getRecent();
+            next2last = recent.get(recent.size() - 2);
+            colorBeforeDraw4 = next2last.getRealColor();
+            if (curr == Player.YOU) {
+                message = NAME[challenger]
+                        + " doubted that you still have "
+                        + CL[colorBeforeDraw4.ordinal()];
+            } // if (curr == Player.YOU)
+            else {
+                message = NAME[challenger]
+                        + " doubted that " + NAME[curr]
+                        + " still has " + CL[colorBeforeDraw4.ordinal()];
+            } // else
+
+            refreshScreen(message);
+            threadSleep(1500);
+            draw4IsLegal = true;
+            for (Card card : mUno.getPlayer(curr).getHandCards()) {
+                if (card.getRealColor() == colorBeforeDraw4) {
+                    // Found a card that matches the next-to-last recent
+                    // played card's color, [wild +4] is illegally used
+                    draw4IsLegal = false;
+                    break;
+                } // if (card.getRealColor() == colorBeforeDraw4)
+            } // for (Card card : mUno.getPlayer(curr).getHandCards())
+
+            if (draw4IsLegal) {
+                // Challenge failure, challenger draws 6 cards
+                if (challenger == Player.YOU) {
+                    message = "Challenge failure, you draw 6 cards";
+                } // if (challenger == Player.YOU)
                 else {
-                    message = NAME[challenger]
-                            + " doubted that " + NAME[curr]
-                            + " still has " + CL[colorBeforeDraw4.ordinal()];
+                    message = "Challenge failure, "
+                            + NAME[challenger] + " draws 6 cards";
                 } // else
 
                 refreshScreen(message);
-                try {
-                    Thread.sleep(1500);
-                } // try
-                catch (InterruptedException e) {
-                    e.printStackTrace();
-                } // catch (InterruptedException e)
-
-                draw4IsLegal = true;
-                for (Card card : mUno.getPlayer(curr).getHandCards()) {
-                    if (card.getRealColor() == colorBeforeDraw4) {
-                        // Found a card that matches the next-to-last recent
-                        // played card's color, [wild +4] is illegally used
-                        draw4IsLegal = false;
-                        break;
-                    } // if (card.getRealColor() == colorBeforeDraw4)
-                } // for (Card card : mUno.getPlayer(curr).getHandCards())
-
-                if (draw4IsLegal) {
-                    // Challenge failure, challenger draws 6 cards
-                    if (challenger == Player.YOU) {
-                        message = "Challenge failure, you draw 6 cards";
-                    } // if (challenger == Player.YOU)
-                    else {
-                        message = "Challenge failure, "
-                                + NAME[challenger] + " draws 6 cards";
-                    } // else
-
-                    refreshScreen(message);
-                    try {
-                        Thread.sleep(1500);
-                    } // try
-                    catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } // catch (InterruptedException e)
-
-                    mChallenged = false;
-                    mUno.switchNow();
-                    draw(6, /* force */ true);
-                } // if (draw4IsLegal)
-                else {
-                    // Challenge success, who played [wild +4] draws 4 cards
-                    if (curr == Player.YOU) {
-                        message = "Challenge success, you draw 4 cards";
-                    } // if (curr == Player.YOU)
-                    else {
-                        message = "Challenge success, "
-                                + NAME[curr] + " draws 4 cards";
-                    } // else
-
-                    refreshScreen(message);
-                    try {
-                        Thread.sleep(1500);
-                    } // try
-                    catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } // catch (InterruptedException e)
-
-                    mChallenged = false;
-                    draw(4, /* force */ true);
-                } // else
-            } // if (challenged)
-            else {
+                threadSleep(1500);
+                mChallenged = false;
                 mUno.switchNow();
+                draw(6, /* force */ true);
+            } // if (draw4IsLegal)
+            else {
+                // Challenge success, who played [wild +4] draws 4 cards
+                if (curr == Player.YOU) {
+                    message = "Challenge success, you draw 4 cards";
+                } // if (curr == Player.YOU)
+                else {
+                    message = "Challenge success, "
+                            + NAME[curr] + " draws 4 cards";
+                } // else
+
+                refreshScreen(message);
+                threadSleep(1500);
+                mChallenged = false;
                 draw(4, /* force */ true);
             } // else
-        }).start();
+        } // if (challenged)
+        else {
+            mUno.switchNow();
+            draw(4, /* force */ true);
+        } // else
     } // onChallengeChance(boolean)
 
     /**
@@ -1605,14 +1502,18 @@ public class MainActivity extends AppCompatActivity
      * @return True because our listener has consumed the touch events.
      */
     @Override
+    @UiThread
     public boolean onTouch(View v, MotionEvent event) {
-        Card card;
-        List<Card> hand;
-        Runnable delayedTask;
-        int x, y, index, size, width, height, startX;
-
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+        if (event.getAction() != MotionEvent.ACTION_DOWN) {
             // Only response to tap down events, and ignore the others
+            return false;
+        } // if (event.getAction() != MotionEvent.ACTION_DOWN)
+
+        new Thread(() -> {
+            Card card;
+            List<Card> hand;
+            int x, y, index, size, width, height, startX;
+
             width = mUno.getBackground().width();
             height = mUno.getBackground().height();
             x = (int) (event.getX() * width / v.getWidth());
@@ -1691,8 +1592,11 @@ public class MainActivity extends AppCompatActivity
                         } // else if (x >= 1140 && x <= 1260)
                     } // else if (y >= 679)
                 } // else if (y >= 520 && y <= 700)
+
+                return;
             } // if (mAdjustOptions)
-            else if (y >= 679 && y <= 700 && x >= 1130 && x <= 1260) {
+
+            if (y >= 679 && y <= 700 && x >= 1130 && x <= 1260) {
                 // <AUTO> button
                 // In player's action, automatically play or draw cards by AI
                 mAuto = !mAuto;
@@ -1717,56 +1621,82 @@ public class MainActivity extends AppCompatActivity
                         ); // Imgproc.putText()
 
                         Utils.matToBitmap(mScr, mBmp);
-                        mImgScreen.setImageBitmap(mBmp);
+                        mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
                         break; // default
                 } // switch (mStatus)
-            } // else if (y >= 679 && y <= 700 && x >= 1130 && x <= 1260)
-            else switch (mStatus) {
-                    case STAT_WELCOME:
-                        if (y >= 270 && y <= 450) {
-                            if (x >= 580 && x <= 700) {
-                                // UNO button, start a new game
-                                mStatus = STAT_NEW_GAME;
-                                onStatusChanged(mStatus);
-                            } // if (x >= 580 && x <= 700)
-                        } // if (y >= 270 && y <= 450)
-                        else if (y >= 679 && y <= 700) {
-                            if (x >= 20 && x <= 200) {
-                                // <OPTIONS> button
-                                mAdjustOptions = true;
-                                onStatusChanged(mStatus);
-                            } // if (x >= 20 && x <= 200)
-                        } // else if (y >= 679 && y <= 700)
-                        break; // case STAT_WELCOME
 
-                    case Player.YOU:
-                        if (mAuto) {
-                            // Do operations automatically by AI strategies
-                            break; // case Player.YOU
-                        } // if (mAuto)
-                        else if (mImmPlayAsk) {
-                            // Asking if you want to play the drawn card immediately
-                            if (y >= 520 && y <= 700) {
-                                hand = mUno.getPlayer(Player.YOU).getHandCards();
+                return;
+            } // if (y >= 679 && y <= 700 && x >= 1130 && x <= 1260)
+
+            switch (mStatus) {
+                case STAT_WELCOME:
+                    if (y >= 270 && y <= 450) {
+                        if (x >= 580 && x <= 700) {
+                            // UNO button, start a new game
+                            mStatus = STAT_NEW_GAME;
+                            onStatusChanged(mStatus);
+                        } // if (x >= 580 && x <= 700)
+                    } // if (y >= 270 && y <= 450)
+                    else if (y >= 679 && y <= 700) {
+                        if (x >= 20 && x <= 200) {
+                            // <OPTIONS> button
+                            mAdjustOptions = true;
+                            onStatusChanged(mStatus);
+                        } // if (x >= 20 && x <= 200)
+                    } // else if (y >= 679 && y <= 700)
+                    break; // case STAT_WELCOME
+
+                case Player.YOU:
+                    if (mAuto) {
+                        // Do operations automatically by AI strategies
+                        break; // case Player.YOU
+                    } // if (mAuto)
+                    else if (mImmPlayAsk) {
+                        // Asking if you want to play the drawn card immediately
+                        if (y >= 520 && y <= 700) {
+                            hand = mUno.getPlayer(Player.YOU).getHandCards();
+                            size = hand.size();
+                            width = 60 * size + 60;
+                            startX = 640 - width / 2;
+                            if (x >= startX && x <= startX + width) {
+                                // Hand card area
+                                // Calculate which card clicked
+                                index = (x - startX) / 60;
+                                if (index >= size) {
+                                    index = size - 1;
+                                } // if (index >= size)
+
+                                // If clicked the drawn card, play it
+                                card = hand.get(index);
+                                if (card == mDrawnCard) {
+                                    mImmPlayAsk = false;
+                                    if (card.isWild() && size > 1) {
+                                        // Store index value as class member.
+                                        // This value will be used after the
+                                        // wild color determined.
+                                        mWildIndex = index;
+                                        mStatus = STAT_WILD_COLOR;
+                                        onStatusChanged(mStatus);
+                                    } // if (card.isWild() && size > 1)
+                                    else {
+                                        play(index, card.getRealColor());
+                                    } // else
+                                } // if (card == mDrawnCard)
+                            } // if (x >= startX && x <= startX + width)
+                        } // if (y >= 520 && y <= 700)
+                        else if (x > 310 && x < 500) {
+                            if (y > 220 && y < 315) {
+                                // YES button, play the drawn card
+                                hand = mUno.getPlayer(mStatus).getHandCards();
                                 size = hand.size();
-                                width = 60 * size + 60;
-                                startX = 640 - width / 2;
-                                if (x >= startX && x <= startX + width) {
-                                    // Hand card area
-                                    // Calculate which card clicked
-                                    index = (x - startX) / 60;
-                                    if (index >= size) {
-                                        index = size - 1;
-                                    } // if (index >= size)
-
-                                    // If clicked the drawn card, play it
+                                for (index = 0; index < size; ++index) {
                                     card = hand.get(index);
                                     if (card == mDrawnCard) {
                                         mImmPlayAsk = false;
                                         if (card.isWild() && size > 1) {
-                                            // Store index value as class member.
-                                            // This value will be used after the
-                                            // wild color determined.
+                                            // Store index value as class
+                                            // member. This value will be used
+                                            // after the wild color determined.
                                             mWildIndex = index;
                                             mStatus = STAT_WILD_COLOR;
                                             onStatusChanged(mStatus);
@@ -1774,171 +1704,146 @@ public class MainActivity extends AppCompatActivity
                                         else {
                                             play(index, card.getRealColor());
                                         } // else
+                                        break;
                                     } // if (card == mDrawnCard)
-                                } // if (x >= startX && x <= startX + width)
-                            } // if (y >= 520 && y <= 700)
-                            else if (x > 310 && x < 500) {
-                                if (y > 220 && y < 315) {
-                                    // YES button, play the drawn card
-                                    hand = mUno.getPlayer(mStatus).getHandCards();
-                                    size = hand.size();
-                                    for (index = 0; index < size; ++index) {
-                                        card = hand.get(index);
-                                        if (card == mDrawnCard) {
-                                            mImmPlayAsk = false;
-                                            if (card.isWild() && size > 1) {
-                                                // Store index value as class
-                                                // member. This value will be used
-                                                // after the wild color determined.
-                                                mWildIndex = index;
-                                                mStatus = STAT_WILD_COLOR;
-                                                onStatusChanged(mStatus);
-                                            } // if (card.isWild() && size > 1)
-                                            else {
-                                                play(index, card.getRealColor());
-                                            } // else
-                                            break;
-                                        } // if (card == mDrawnCard)
-                                    } // for (index = 0; index < size; ++index)
-                                } // if (y > 220 && y < 315)
-                                else if (y > 315 && y < 410) {
-                                    // NO button, go to next player's round
-                                    mStatus = STAT_IDLE;
-                                    mImmPlayAsk = false;
-                                    refreshScreen(NAME[Player.YOU] + ": Pass");
-                                    delayedTask = () -> {
-                                        mStatus = mUno.switchNow();
-                                        onStatusChanged(mStatus);
-                                    }; // delayedTask = () -> {}
-                                    mHandler.postDelayed(delayedTask, 750);
-                                } // else if (y > 315 && y < 410)
-                            } // else if (x > 310 && x < 500)
-                        } // else if (mImmPlayAsk)
-                        else if (mChallengeAsk) {
-                            // Asking if you want to challenge your previous player
-                            if (x > 310 && x < 500) {
-                                if (y > 220 && y < 315) {
-                                    // YES button, challenge wild +4
-                                    onChallengeChance(true);
-                                } // if (y > 220 && y < 315)
-                                else if (y > 315 && y < 410) {
-                                    // NO button, do not challenge wild +4
-                                    onChallengeChance(false);
-                                } // else if (y > 315 && y < 410)
-                            } // if (x > 310 && x < 500)
-                        } // else if (mChallengeAsk)
-                        else if (y >= 520 && y <= 700) {
-                            hand = mUno.getPlayer(Player.YOU).getHandCards();
-                            size = hand.size();
-                            width = 60 * size + 60;
-                            startX = 640 - width / 2;
-                            if (x >= startX && x <= startX + width) {
-                                // Hand card area
-                                // Calculate which card clicked by the X-coordinate
-                                index = (x - startX) / 60;
-                                if (index >= size) {
-                                    index = size - 1;
-                                } // if (index >= size)
+                                } // for (index = 0; index < size; ++index)
+                            } // if (y > 220 && y < 315)
+                            else if (y > 315 && y < 410) {
+                                // NO button, go to next player's round
+                                mStatus = STAT_IDLE;
+                                mImmPlayAsk = false;
+                                refreshScreen(NAME[Player.YOU] + ": Pass");
+                                threadSleep(750);
+                                mStatus = mUno.switchNow();
+                                onStatusChanged(mStatus);
+                            } // else if (y > 315 && y < 410)
+                        } // else if (x > 310 && x < 500)
+                    } // else if (mImmPlayAsk)
+                    else if (mChallengeAsk) {
+                        // Asking if you want to challenge your previous player
+                        if (x > 310 && x < 500) {
+                            if (y > 220 && y < 315) {
+                                // YES button, challenge wild +4
+                                onChallengeChance(true);
+                            } // if (y > 220 && y < 315)
+                            else if (y > 315 && y < 410) {
+                                // NO button, do not challenge wild +4
+                                onChallengeChance(false);
+                            } // else if (y > 315 && y < 410)
+                        } // if (x > 310 && x < 500)
+                    } // else if (mChallengeAsk)
+                    else if (y >= 520 && y <= 700) {
+                        hand = mUno.getPlayer(Player.YOU).getHandCards();
+                        size = hand.size();
+                        width = 60 * size + 60;
+                        startX = 640 - width / 2;
+                        if (x >= startX && x <= startX + width) {
+                            // Hand card area
+                            // Calculate which card clicked by the X-coordinate
+                            index = (x - startX) / 60;
+                            if (index >= size) {
+                                index = size - 1;
+                            } // if (index >= size)
 
-                                // Try to play it
-                                card = hand.get(index);
-                                if (card != mSelectedCard) {
-                                    mSelectedCard = card;
-                                    onStatusChanged(mStatus);
-                                } // if (card != mSelectedCard)
-                                else if (card.isWild() && size > 1) {
-                                    // Store index value as class member. This value
-                                    // will be used after the wild color determined.
-                                    mWildIndex = index;
-                                    mStatus = STAT_WILD_COLOR;
-                                    onStatusChanged(mStatus);
-                                } // else if (card.isWild() && size > 1)
-                                else if (mUno.isLegalToPlay(card)) {
-                                    play(index, card.getRealColor());
-                                } // else if (mUno.isLegalToPlay(card))
-                                else {
-                                    refreshScreen("Cannot play " + card.name);
-                                } // else
-                            } // if (x >= startX && x <= startX + width)
+                            // Try to play it
+                            card = hand.get(index);
+                            if (card != mSelectedCard) {
+                                mSelectedCard = card;
+                                onStatusChanged(mStatus);
+                            } // if (card != mSelectedCard)
+                            else if (card.isWild() && size > 1) {
+                                // Store index value as class member. This value
+                                // will be used after the wild color determined.
+                                mWildIndex = index;
+                                mStatus = STAT_WILD_COLOR;
+                                onStatusChanged(mStatus);
+                            } // else if (card.isWild() && size > 1)
+                            else if (mUno.isLegalToPlay(card)) {
+                                play(index, card.getRealColor());
+                            } // else if (mUno.isLegalToPlay(card))
                             else {
-                                // Blank area, cancel your selection
-                                mSelectedCard = null;
-                                onStatusChanged(mStatus);
+                                refreshScreen("Cannot play " + card.name);
                             } // else
-                        } // if (y >= 520 && y <= 700)
-                        else if (y >= 270 && y <= 450 && x >= 338 && x <= 458) {
-                            // Card deck area, draw a card
-                            draw(1, /* force */ false);
-                        } // else if (y >= 270 && y <= 450 && x >= 338 && x <= 458)
-                        break; // case Player.YOU
+                        } // if (x >= startX && x <= startX + width)
+                        else {
+                            // Blank area, cancel your selection
+                            mSelectedCard = null;
+                            onStatusChanged(mStatus);
+                        } // else
+                    } // if (y >= 520 && y <= 700)
+                    else if (y >= 270 && y <= 450 && x >= 338 && x <= 458) {
+                        // Card deck area, draw a card
+                        draw(1, /* force */ false);
+                    } // else if (y >= 270 && y <= 450 && x >= 338 && x <= 458)
+                    break; // case Player.YOU
 
-                    case STAT_WILD_COLOR:
-                        if (y > 220 && y < 315) {
-                            if (x > 310 && x < 405) {
-                                // Red sector
-                                mStatus = Player.YOU;
-                                play(mWildIndex, Color.RED);
-                            } // if (x > 310 && x < 405)
-                            else if (x > 405 && x < 500) {
-                                // Blue sector
-                                mStatus = Player.YOU;
-                                play(mWildIndex, Color.BLUE);
-                            } // else if (x > 405 && x < 500)
-                        } // if (y > 220 && y < 315)
-                        else if (y > 315 && y < 410) {
-                            if (x > 310 && x < 405) {
-                                // Yellow sector
-                                mStatus = Player.YOU;
-                                play(mWildIndex, Color.YELLOW);
-                            } // if (x > 310 && x < 405)
-                            else if (x > 405 && x < 500) {
-                                // Green sector
-                                mStatus = Player.YOU;
-                                play(mWildIndex, Color.GREEN);
-                            } // else if (x > 405 && x < 500)
-                        } // else if (y > 315 && y < 410)
-                        break; // case STAT_WILD_COLOR
+                case STAT_WILD_COLOR:
+                    if (y > 220 && y < 315) {
+                        if (x > 310 && x < 405) {
+                            // Red sector
+                            mStatus = Player.YOU;
+                            play(mWildIndex, Color.RED);
+                        } // if (x > 310 && x < 405)
+                        else if (x > 405 && x < 500) {
+                            // Blue sector
+                            mStatus = Player.YOU;
+                            play(mWildIndex, Color.BLUE);
+                        } // else if (x > 405 && x < 500)
+                    } // if (y > 220 && y < 315)
+                    else if (y > 315 && y < 410) {
+                        if (x > 310 && x < 405) {
+                            // Yellow sector
+                            mStatus = Player.YOU;
+                            play(mWildIndex, Color.YELLOW);
+                        } // if (x > 310 && x < 405)
+                        else if (x > 405 && x < 500) {
+                            // Green sector
+                            mStatus = Player.YOU;
+                            play(mWildIndex, Color.GREEN);
+                        } // else if (x > 405 && x < 500)
+                    } // else if (y > 315 && y < 410)
+                    break; // case STAT_WILD_COLOR
 
-                    case STAT_SEVEN_TARGET:
-                        if (y > 198 && y < 276 && mUno.getPlayers() == 4) {
-                            if (x > 338 && x < 472) {
-                                // North sector
-                                swapWith(Player.COM2);
-                            } // if (x > 338 && x < 472)
-                        } // if (y > 198 && y < 276 && mUno.getPlayers() == 4)
-                        else if (y > 315 && y < 410) {
-                            if (x > 310 && x < 405) {
-                                // West sector
-                                swapWith(Player.COM1);
-                            } // if (x > 310 && x < 405)
-                            else if (x > 405 && x < 500) {
-                                // East sector
-                                swapWith(Player.COM3);
-                            } // else if (x > 405 && x < 500)
-                        } // else if (y > 315 && y < 410)
-                        break; // case STAT_SEVEN_TARGET
+                case STAT_SEVEN_TARGET:
+                    if (y > 198 && y < 276 && mUno.getPlayers() == 4) {
+                        if (x > 338 && x < 472) {
+                            // North sector
+                            swapWith(Player.COM2);
+                        } // if (x > 338 && x < 472)
+                    } // if (y > 198 && y < 276 && mUno.getPlayers() == 4)
+                    else if (y > 315 && y < 410) {
+                        if (x > 310 && x < 405) {
+                            // West sector
+                            swapWith(Player.COM1);
+                        } // if (x > 310 && x < 405)
+                        else if (x > 405 && x < 500) {
+                            // East sector
+                            swapWith(Player.COM3);
+                        } // else if (x > 405 && x < 500)
+                    } // else if (y > 315 && y < 410)
+                    break; // case STAT_SEVEN_TARGET
 
-                    case STAT_GAME_OVER:
-                        if (y >= 270 && y <= 450) {
-                            if (x >= 338 && x <= 458) {
-                                // Card deck area, start a new game
-                                mStatus = STAT_NEW_GAME;
-                                onStatusChanged(mStatus);
-                            } // if (x >= 338 && x <= 458)
-                        } // if (y >= 270 && y <= 450)
-                        else if (y >= 679 && y <= 700) {
-                            if (x >= 20 && x <= 200) {
-                                // <OPTIONS> button
-                                mAdjustOptions = true;
-                                onStatusChanged(mStatus);
-                            } // if (x >= 20 && x <= 200)
-                        } // else if (y >= 679 && y <= 700)
-                        break; // case STAT_GAME_OVER
+                case STAT_GAME_OVER:
+                    if (y >= 270 && y <= 450) {
+                        if (x >= 338 && x <= 458) {
+                            // Card deck area, start a new game
+                            mStatus = STAT_NEW_GAME;
+                            onStatusChanged(mStatus);
+                        } // if (x >= 338 && x <= 458)
+                    } // if (y >= 270 && y <= 450)
+                    else if (y >= 679 && y <= 700) {
+                        if (x >= 20 && x <= 200) {
+                            // <OPTIONS> button
+                            mAdjustOptions = true;
+                            onStatusChanged(mStatus);
+                        } // if (x >= 20 && x <= 200)
+                    } // else if (y >= 679 && y <= 700)
+                    break; // case STAT_GAME_OVER
 
-                    default:
-                        break; // default
-                } // else switch (mStatus)
-        } // if (event.getAction() == MotionEvent.ACTION_DOWN)
+                default:
+                    break; // default
+            } // switch (mStatus)
+        }).start();
 
         return true;
     } // onTouch()
@@ -1952,6 +1857,7 @@ public class MainActivity extends AppCompatActivity
      * the key down event. Otherwise, follow the super method's steps.
      */
     @Override
+    @UiThread
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             // Pop-up confirm dialog box when BACK key is pressed
@@ -1968,6 +1874,7 @@ public class MainActivity extends AppCompatActivity
      * Triggered when activity loses focus.
      */
     @Override
+    @UiThread
     protected void onPause() {
         SharedPreferences sp;
         SharedPreferences.Editor editor;
@@ -1994,6 +1901,7 @@ public class MainActivity extends AppCompatActivity
      * Triggered when activity destroyed.
      */
     @Override
+    @UiThread
     protected void onDestroy() {
         if (OPENCV_INIT_SUCCESS) {
             mSoundPool.release();
