@@ -245,7 +245,6 @@ static void hardAI() {
  * @param status New status value.
  */
 static void onStatusChanged(int status) {
-    int a, b;
     cv::Rect rect;
     cv::Size axes;
     Card* next2last;
@@ -519,18 +518,11 @@ static void onStatusChanged(int status) {
     case STAT_SEVEN_TARGET:
         // In 7-0 rule, when someone put down a seven card, the player
         // must swap hand cards with another player immediately.
-        a = sUno->getNow();
-        if (a != Player::YOU) {
-            // Seven-card is played by an AI player.
-            // Select target automatically.
-            sStatus = STAT_IDLE;
-            do {
-                b = (3 + rand() % sUno->getPlayers()) % 4;
-            } while (a == b);
-
-            swapWith(b);
+        if (sAuto || sUno->getNow() != Player::YOU) {
+            // Seven-card is played by AI. Select target automatically.
+            swapWith(sAI.bestSwapTarget4NowPlayer());
             break; // case STAT_SEVEN_TARGET
-        } // if (a != Player::YOU)
+        } // if (sAuto || sUno->getNow() != Player::YOU)
 
         // Seven-card is played by you. Select target manually.
         refreshScreen("^ Specify the target to swap hand cards with");
@@ -1619,14 +1611,14 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
             // In player's action, automatically play or draw cards by AI
             sAuto = !sAuto;
             switch (sStatus) {
-            case Player::YOU:
-                onStatusChanged(sStatus);
-                break; // case Player::YOU
-
             case STAT_WILD_COLOR:
                 sStatus = Player::YOU;
+                // fall through
+
+            case Player::YOU:
+            case STAT_SEVEN_TARGET:
                 onStatusChanged(sStatus);
-                break; // case STAT_WILD_COLOR
+                break; // case Player::YOU, STAT_SEVEN_TARGET
 
             default:
                 cv::putText(

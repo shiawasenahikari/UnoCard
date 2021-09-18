@@ -269,7 +269,6 @@ public class MainActivity extends AppCompatActivity
      */
     @WorkerThread
     private void onStatusChanged(int status) {
-        int a, b;
         Rect rect;
         Size axes;
         Point center;
@@ -549,19 +548,11 @@ public class MainActivity extends AppCompatActivity
             case STAT_SEVEN_TARGET:
                 // In 7-0 rule, when someone put down a seven card, the player
                 // must swap hand cards with another player immediately.
-                a = mUno.getNow();
-                if (a != Player.YOU) {
-                    // Seven-card is played by an AI player.
-                    // Select target automatically.
-                    mStatus = STAT_IDLE;
-                    do {
-                        b = (int) (Math.random() * mUno.getPlayers());
-                        b = (b + 3) % 4;
-                    } while (a == b);
-
-                    swapWith(b);
+                if (mAuto || mUno.getNow() != Player.YOU) {
+                    // Seven-card is played by AI. Select target automatically.
+                    swapWith(mAI.bestSwapTarget4NowPlayer());
                     break; // case STAT_SEVEN_TARGET
-                } // if (a != Player.YOU)
+                } // if (mAuto || mUno.getNow() != Player.YOU)
 
                 // Seven-card is played by you. Select target manually.
                 refreshScreen("^ Specify the target to swap hand cards with");
@@ -1192,8 +1183,9 @@ public class MainActivity extends AppCompatActivity
                         next = mUno.switchNow();
                         if (mUno.isDraw2StackRule()) {
                             mDrawCount += 2;
-                            message = NAME[now] + ": Let " + NAME[next]
-                                    + " draw " + mDrawCount + " cards";
+                            message = NAME[now] + ": Let "
+                                    + NAME[next] + " draw "
+                                    + mDrawCount + " cards";
                             refreshScreen(message);
                             threadSleep(1500);
                             mStatus = next;
@@ -1637,14 +1629,14 @@ public class MainActivity extends AppCompatActivity
                 // In player's action, automatically play or draw cards by AI
                 mAuto = !mAuto;
                 switch (mStatus) {
-                    case Player.YOU:
-                        onStatusChanged(mStatus);
-                        break; // case Player.YOU
-
                     case STAT_WILD_COLOR:
                         mStatus = Player.YOU;
+                        // fall through
+
+                    case Player.YOU:
+                    case STAT_SEVEN_TARGET:
                         onStatusChanged(mStatus);
-                        break; // case STAT_WILD_COLOR
+                        break; // case Player.YOU, STAT_SEVEN_TARGET
 
                     default:
                         Imgproc.putText(

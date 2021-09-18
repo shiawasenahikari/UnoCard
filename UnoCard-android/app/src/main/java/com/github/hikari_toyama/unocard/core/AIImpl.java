@@ -91,6 +91,51 @@ class AIImpl extends AI {
     } // calcBestColor4NowPlayer()
 
     /**
+     * In 7-0 rule, when a seven card is put down, the player must swap hand
+     * cards with another player immediately. This API returns that swapping
+     * with whom is the best answer for current player.
+     *
+     * @return Current player swaps with whom. Must be one of the following:
+     * Player.YOU, Player.COM1, Player.COM2, Player.COM3.
+     */
+    @Override
+    public int bestSwapTarget4NowPlayer() {
+        int who;
+        Color lastColor;
+        List<Card> recent;
+        Player next, oppo, target;
+
+        // Swap with your previous player as default
+        who = uno.getPrev();
+        recent = uno.getRecent();
+        target = uno.getPlayer(who);
+        lastColor = recent.get(recent.size() - 1).getRealColor();
+
+        // If your opponent player has the strong color matching the last card,
+        // or it holds fewer cards, change the swap target to it
+        oppo = uno.getPlayer(uno.getOppo());
+        if (oppo.getHandSize() < target.getHandSize()
+                && oppo.getWeakColor() != lastColor
+                || oppo.getStrongColor() == lastColor
+                && target.getStrongColor() != lastColor) {
+            who = uno.getOppo();
+            target = uno.getPlayer(who);
+        } // if (oppo.getHandSize() < target.getHandSize() && ...)
+
+        // If your next player has the strong color matching the last card,
+        // or it holds fewer cards, change the swap target to it
+        next = uno.getPlayer(uno.getNext());
+        if (next.getHandSize() < next.getHandSize()
+                && next.getWeakColor() != lastColor
+                || next.getStrongColor() == lastColor
+                && target.getStrongColor() != lastColor) {
+            who = uno.getNext();
+        } // if (next.getHandSize() < target.getHandSize() && ...)
+
+        return who;
+    } // bestSwapTarget4NowPlayer()
+
+    /**
      * AI strategies of determining if it's necessary to challenge previous
      * player's [wild +4] card's legality.
      *
@@ -968,12 +1013,16 @@ class AIImpl extends AI {
                 // Play a [skip] when your next player remains only a few cards.
                 idxBest = idxSkip;
             } // else if (hasSkip && nextSize <= 4 && nextSize - oppoSize <= 1)
-            else if (hasRev && prevSize - nextSize >= 3) {
+            else if (hasRev &&
+                    (prevSize - nextSize >= 3 || prev.getRecent() == null)) {
                 // Play a [reverse] when your next player remains only a few
                 // cards but your previous player remains a lot of cards, in
-                // order to balance everyone's hand-card amount.
+                // order to balance everyone's hand-card amount.  Also, when
+                // your previous player drew a card in its last action, you
+                // can play a reverse card too. What you did probably makes
+                // it draw a card again.
                 idxBest = idxRev;
-            } // else if (hasRev && prevSize - nextSize >= 3)
+            } // else if (hasRev && ...)
             else if (hasNumIn[bestColor.ordinal()]) {
                 // Play number cards.
                 idxBest = idxNumIn[bestColor.ordinal()];
@@ -990,14 +1039,12 @@ class AIImpl extends AI {
             else if (hasNumIn[YELLOW.ordinal()]) {
                 idxBest = idxNumIn[YELLOW.ordinal()];
             } // else if (hasNumIn[YELLOW.ordinal()])
-            else if (hasRev &&
-                    (prevSize >= 4 || prev.getRecent() == null)) {
+            else if (hasRev && prevSize >= 4) {
                 // When you have no more legal number cards to play, you can
                 // play a [reverse] safely when your previous player still has
-                // a number of cards, or drew a card in its previous action
-                // (this probably makes it draw a card again).
+                // a number of cards.
                 idxBest = idxRev;
-            } // else if (hasRev && ...)
+            } // else if (hasRev && prevSize >= 4)
             else if (hasSkip &&
                     oppoSize >= 3 &&
                     hand.get(idxSkip).getRealColor() == bestColor) {

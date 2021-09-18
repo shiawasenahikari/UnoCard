@@ -27,6 +27,16 @@ public abstract class AI {
     } // getInstance()
 
     /**
+     * In 7-0 rule, when a seven card is put down, the player must swap hand
+     * cards with another player immediately. This API returns that swapping
+     * with whom is the best answer for current player.
+     *
+     * @return Current player swaps with whom. Must be one of the following:
+     * Player.YOU, Player.COM1, Player.COM2, Player.COM3.
+     */
+    public abstract int bestSwapTarget4NowPlayer();
+
+    /**
      * AI strategies of determining if it's necessary to challenge previous
      * player's [wild +4] card's legality.
      *
