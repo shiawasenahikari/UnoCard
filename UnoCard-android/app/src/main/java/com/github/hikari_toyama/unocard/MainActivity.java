@@ -286,6 +286,7 @@ public class MainActivity extends AppCompatActivity
             case STAT_NEW_GAME:
                 // New game
                 mUno.start();
+                mDrawCount = 0;
                 mSelectedCard = null;
                 refreshScreen("GET READY");
                 threadSleep(2000);
@@ -1629,14 +1630,15 @@ public class MainActivity extends AppCompatActivity
                 // In player's action, automatically play or draw cards by AI
                 mAuto = !mAuto;
                 switch (mStatus) {
-                    case STAT_WILD_COLOR:
-                        mStatus = Player.YOU;
-                        // fall through
-
                     case Player.YOU:
                     case STAT_SEVEN_TARGET:
                         onStatusChanged(mStatus);
                         break; // case Player.YOU, STAT_SEVEN_TARGET
+
+                    case STAT_WILD_COLOR:
+                        mStatus = Player.YOU;
+                        onStatusChanged(mStatus);
+                        break; // case STAT_WILD_COLOR
 
                     default:
                         Imgproc.putText(

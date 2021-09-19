@@ -261,6 +261,7 @@ static void onStatusChanged(int status) {
     case STAT_NEW_GAME:
         // New game
         sUno->start();
+        sDrawCount = 0;
         sSelectedCard = nullptr;
         refreshScreen("GET READY");
         cv::waitKey(2000);
@@ -1611,14 +1612,15 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
             // In player's action, automatically play or draw cards by AI
             sAuto = !sAuto;
             switch (sStatus) {
-            case STAT_WILD_COLOR:
-                sStatus = Player::YOU;
-                // fall through
-
             case Player::YOU:
             case STAT_SEVEN_TARGET:
                 onStatusChanged(sStatus);
                 break; // case Player::YOU, STAT_SEVEN_TARGET
+
+            case STAT_WILD_COLOR:
+                sStatus = Player::YOU;
+                onStatusChanged(sStatus);
+                break; // case STAT_WILD_COLOR
 
             default:
                 cv::putText(
