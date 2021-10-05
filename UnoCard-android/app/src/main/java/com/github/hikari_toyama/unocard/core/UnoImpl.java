@@ -616,6 +616,21 @@ class UnoImpl extends Uno {
     } // setDraw2StackRule(boolean)
 
     /**
+     * Only available in +2 stack rule. In this rule, when a +2 card is put
+     * down, the next player may transfer the punishment to its next player
+     * by stacking another +2 card. Finally the first one who does not stack
+     * a +2 card must draw all of the required cards.
+     *
+     * @return This counter records that how many required cards need to be
+     * drawn by the final player. When this value is not zero, only
+     * +2 cards are legal to play.
+     */
+    @Override
+    public int getDraw2StackCount() {
+        return draw2StackCount;
+    } // getDraw2StackCount()
+
+    /**
      * Find a card instance in card table.
      *
      * @param color   Color of the card you want to get.
@@ -814,6 +829,12 @@ class UnoImpl extends Uno {
                     } // while (size > 0)
                 } // if (deck.isEmpty())
             } // if (hand.size() < MAX_HOLD_CARDS)
+            else {
+                // In +2 stack rule, if someone cannot draw all of the required
+                // cards because of the max-hold-card limitation, force reset
+                // the counter to zero.
+                draw2StackCount = 0;
+            } // else
         } // if (who >= Player.YOU && who <= Player.COM3)
 
         return i;

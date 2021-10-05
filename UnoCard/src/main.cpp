@@ -59,7 +59,6 @@ static bool sAuto;
 static int sScore;
 static int sStatus;
 static int sWinner;
-static int sDrawCount;
 static bool sAIRunning;
 static cv::Mat sScreen;
 static Card* sDrawnCard;
@@ -245,6 +244,7 @@ static void hardAI() {
  * @param status New status value.
  */
 static void onStatusChanged(int status) {
+    int counter;
     cv::Rect rect;
     cv::Size axes;
     Card* next2last;
@@ -261,7 +261,6 @@ static void onStatusChanged(int status) {
     case STAT_NEW_GAME:
         // New game
         sUno->start();
-        sDrawCount = 0;
         sSelectedCard = nullptr;
         refreshScreen("GET READY");
         cv::waitKey(2000);
@@ -425,23 +424,25 @@ static void onStatusChanged(int status) {
             imshow("Uno", sScreen);
         } // else if (sChallengeAsk)
         else if (sUno->legalCardsCount4NowPlayer() == 0) {
-            if (sDrawCount == 0) {
+            counter = sUno->getDraw2StackCount();
+            if (counter == 0) {
                 message = "No card can be played... Draw a card from deck";
-            } // if (sDrawCount == 0)
+            } // if (counter == 0)
             else {
                 message = "No +2 card to stack... Draw "
-                    + std::to_string(sDrawCount) + " cards from deck";
+                    + std::to_string(counter) + " cards from deck";
             } // else
 
             refreshScreen(message);
         } // else if (sUno->legalCardsCount4NowPlayer() == 0)
         else if (sSelectedCard == nullptr) {
-            if (sDrawCount == 0) {
+            counter = sUno->getDraw2StackCount();
+            if (counter == 0) {
                 message = "Select a card to play, or draw a card from deck";
-            } // if (sDrawCount == 0)
+            } // if (counter == 0)
             else {
                 message = "Stack a +2 card, or draw "
-                    + std::to_string(sDrawCount) + " cards from deck";
+                    + std::to_string(counter) + " cards from deck";
             } // else
 
             refreshScreen(message);
@@ -1080,7 +1081,7 @@ static void play(int index, Color color) {
     cv::Rect roi;
     cv::Mat image;
     std::string message;
-    int x1, y1, x2, now, size, recentSize, next;
+    int x1, y1, x2, counter, now, size, recentSize, next;
 
     sStatus = STAT_IDLE; // block mouse click events when idle
     now = sUno->getNow();
@@ -1147,9 +1148,9 @@ static void play(int index, Color color) {
             case DRAW2:
                 next = sUno->switchNow();
                 if (sUno->isDraw2StackRule()) {
-                    sDrawCount += 2;
+                    counter = sUno->getDraw2StackCount();
                     message += ": Let " + NAME[next] + " draw ";
-                    message += std::to_string(sDrawCount) + " cards";
+                    message += std::to_string(counter) + " cards";
                     refreshScreen(message);
                     cv::waitKey(1500);
                     sStatus = next;
@@ -1259,14 +1260,11 @@ static void play(int index, Color color) {
 static void draw(int count, bool force) {
     cv::Mat image;
     std::string message;
-    int i, index, now, size, x2, y2;
-
-    if (sDrawCount > 0) {
-        count = sDrawCount;
-        sDrawCount = 0;
-    } // if (sDrawCount > 0)
+    int i, index, counter, now, size, x2, y2;
 
     sStatus = STAT_IDLE; // block mouse click events when idle
+    counter = sUno->getDraw2StackCount();
+    count = counter > 0 ? counter : count;
     now = sUno->getNow();
     sSelectedCard = nullptr;
     for (i = 0; i < count; ++i) {

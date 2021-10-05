@@ -80,7 +80,6 @@ public class MainActivity extends AppCompatActivity
     private Card mSelectedCard;
     private Handler mHandler;
     private Card mDrawnCard;
-    private int mDrawCount;
     private int mWildIndex;
     private boolean mAuto;
     private float mSndVol;
@@ -271,6 +270,7 @@ public class MainActivity extends AppCompatActivity
     private void onStatusChanged(int status) {
         Rect rect;
         Size axes;
+        int counter;
         Point center;
         Card next2last;
         String message;
@@ -286,7 +286,6 @@ public class MainActivity extends AppCompatActivity
             case STAT_NEW_GAME:
                 // New game
                 mUno.start();
-                mDrawCount = 0;
                 mSelectedCard = null;
                 refreshScreen("GET READY");
                 threadSleep(2000);
@@ -451,25 +450,27 @@ public class MainActivity extends AppCompatActivity
                     mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
                 } // else if (mChallengeAsk)
                 else if (mUno.legalCardsCount4NowPlayer() == 0) {
-                    if (mDrawCount == 0) {
+                    counter = mUno.getDraw2StackCount();
+                    if (counter == 0) {
                         message = "No card can be played... Draw "
                                 + "a card from deck";
-                    } // if (mDrawCount == 0)
+                    } // if (counter == 0)
                     else {
                         message = "No +2 card to stack... Draw "
-                                + mDrawCount + " cards from deck";
+                                + counter + " cards from deck";
                     } // else
 
                     refreshScreen(message);
                 } // else if (mUno.legalCardsCount4NowPlayer() == 0)
                 else if (mSelectedCard == null) {
-                    if (mDrawCount == 0) {
+                    counter = mUno.getDraw2StackCount();
+                    if (counter == 0) {
                         message = "Select a card to play, or draw "
                                 + "a card from deck";
-                    } // if (mDrawCount == 0)
+                    } // if (counter == 0)
                     else {
                         message = "Stack a +2 card, or draw "
-                                + mDrawCount + " cards from deck";
+                                + counter + " cards from deck";
                     } // else
 
                     refreshScreen(message);
@@ -1117,7 +1118,7 @@ public class MainActivity extends AppCompatActivity
         Mat image;
         Card card;
         String message;
-        int x1, y1, x2, now, size, recentSize, next;
+        int x1, y1, x2, counter, now, size, recentSize, next;
 
         mStatus = STAT_IDLE; // block tap down events when idle
         now = mUno.getNow();
@@ -1183,10 +1184,10 @@ public class MainActivity extends AppCompatActivity
                     case DRAW2:
                         next = mUno.switchNow();
                         if (mUno.isDraw2StackRule()) {
-                            mDrawCount += 2;
+                            counter = mUno.getDraw2StackCount();
                             message = NAME[now] + ": Let "
                                     + NAME[next] + " draw "
-                                    + mDrawCount + " cards";
+                                    + counter + " cards";
                             refreshScreen(message);
                             threadSleep(1500);
                             mStatus = next;
@@ -1303,14 +1304,11 @@ public class MainActivity extends AppCompatActivity
     private void draw(int count, boolean force) {
         Mat image;
         String message;
-        int i, index, now, size, x2, y2;
-
-        if (mDrawCount > 0) {
-            count = mDrawCount;
-            mDrawCount = 0;
-        } // if (mDrawCount > 0)
+        int i, index, counter, now, size, x2, y2;
 
         mStatus = STAT_IDLE; // block tap down events when idle
+        counter = mUno.getDraw2StackCount();
+        count = counter > 0 ? counter : count;
         now = mUno.getNow();
         mSelectedCard = null;
         for (i = 0; i < count; ++i) {

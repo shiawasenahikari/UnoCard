@@ -302,6 +302,18 @@ public:
     void setDraw2StackRule(bool enabled);
 
     /**
+     * Only available in +2 stack rule. In this rule, when a +2 card is put
+     * down, the next player may transfer the punishment to its next player
+     * by stacking another +2 card. Finally the first one who does not stack
+     * a +2 card must draw all of the required cards.
+     *
+     * @return This counter records that how many required cards need to be
+     *         drawn by the final player. When this value is not zero, only
+     *         +2 cards are legal to play.
+     */
+    int getDraw2StackCount();
+
+    /**
      * Find a card instance in card table.
      *
      * @param color   Color of the card you want to get.
