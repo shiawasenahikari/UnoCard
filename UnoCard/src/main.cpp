@@ -74,6 +74,7 @@ static QMediaPlaylist* sMediaList;
 // Functions
 static void easyAI();
 static void hardAI();
+static void sevenZeroAI();
 static void swapWith(int whom);
 static void onStatusChanged(int status);
 static void play(int index, Color color = NONE);
@@ -239,6 +240,53 @@ static void hardAI() {
 } // hardAI()
 
 /**
+ * Special AI strategies in 7-0 rule.
+ */
+static void sevenZeroAI() {
+    int idxBest, now;
+    Color bestColor[1];
+
+    sAIRunning = true;
+    while (sStatus == Player::COM1
+        || sStatus == Player::COM2
+        || sStatus == Player::COM3
+        || sStatus == Player::YOU && sAuto) {
+        if (sChallengeAsk) {
+            onChallengeChance(sAI.needToChallenge(sStatus));
+        } // if (sChallengeAsk)
+        else {
+            now = sStatus;
+            sStatus = STAT_IDLE; // block mouse click events when idle
+            idxBest = sAI.sevenZeroAI_bestCardIndex4NowPlayer(
+                /* drawnCard */ sImmPlayAsk ? sDrawnCard : nullptr,
+                /* outColor  */ bestColor
+            ); // idxBest = sAI.sevenZeroAI_bestCardIndex4NowPlayer()
+
+            if (idxBest >= 0) {
+                // Found an appropriate card to play
+                sImmPlayAsk = false;
+                play(idxBest, bestColor[0]);
+            } // if (idxBest >= 0)
+            else {
+                // No appropriate cards to play, or no card is legal to play
+                if (sImmPlayAsk) {
+                    sImmPlayAsk = false;
+                    refreshScreen(NAME[now] + ": Pass");
+                    cv::waitKey(750);
+                    sStatus = sUno->switchNow();
+                    onStatusChanged(sStatus);
+                } // if (sImmPlayAsk)
+                else {
+                    draw();
+                } // else
+            } // else
+        } // else
+    } // while (sStatus == Player::COM1 || ...)
+
+    sAIRunning = false;
+} // sevenZeroAI()
+
+/**
  * Triggered when the value of global value [sStatus] changed.
  *
  * @param status New status value.
@@ -300,9 +348,12 @@ static void onStatusChanged(int status) {
         // Your turn, select a hand card to play, or draw a card
         if (sAuto) {
             if (!sAIRunning) {
-                if (sUno->getDifficulty() == Uno::LV_EASY) {
+                if (sUno->isSevenZeroRule()) {
+                    sevenZeroAI();
+                } // if (sUno->isSevenZeroRule())
+                else if (sUno->getDifficulty() == Uno::LV_EASY) {
                     easyAI();
-                } // if (sUno->getDifficulty() == Uno::LV_EASY)
+                } // else if (sUno->getDifficulty() == Uno::LV_EASY)
                 else {
                     hardAI();
                 } // else
@@ -608,9 +659,12 @@ static void onStatusChanged(int status) {
     case Player::COM3:
         // AI players' turn
         if (!sAIRunning) {
-            if (sUno->getDifficulty() == Uno::LV_EASY) {
+            if (sUno->isSevenZeroRule()) {
+                sevenZeroAI();
+            } // if (sUno->isSevenZeroRule())
+            else if (sUno->getDifficulty() == Uno::LV_EASY) {
                 easyAI();
-            } // if (sUno->getDifficulty() == Uno::LV_EASY)
+            } // else if (sUno->getDifficulty() == Uno::LV_EASY)
             else {
                 hardAI();
             } // else
@@ -700,12 +754,12 @@ static void refreshScreen(const std::string& message) {
         point.y = 160;
         cv::putText(sScreen, "BGM", point, FONT_SANS, 1.0, RGB_WHITE);
         image = sMediaPlay->volume() > 0 ?
-            sUno->findCard(RED, SKIP)->darkImg:
+            sUno->findCard(RED, SKIP)->darkImg :
             sUno->findCard(RED, SKIP)->image;
         roi = cv::Rect(150, 60, 121, 181);
         image.copyTo(sScreen(roi), image);
         image = sMediaPlay->volume() > 0 ?
-            sUno->findCard(GREEN, REV)->image:
+            sUno->findCard(GREEN, REV)->image :
             sUno->findCard(GREEN, REV)->darkImg;
         roi.x = 330;
         image.copyTo(sScreen(roi), image);
@@ -715,13 +769,13 @@ static void refreshScreen(const std::string& message) {
         point.y = 350;
         cv::putText(sScreen, "SND", point, FONT_SANS, 1.0, RGB_WHITE);
         image = sSoundPool->isEnabled() ?
-            sUno->findCard(RED, SKIP)->darkImg:
+            sUno->findCard(RED, SKIP)->darkImg :
             sUno->findCard(RED, SKIP)->image;
         roi.x = 150;
         roi.y = 250;
         image.copyTo(sScreen(roi), image);
         image = sSoundPool->isEnabled() ?
-            sUno->findCard(GREEN, REV)->image:
+            sUno->findCard(GREEN, REV)->image :
             sUno->findCard(GREEN, REV)->darkImg;
         roi.x = 330;
         image.copyTo(sScreen(roi), image);
@@ -730,17 +784,35 @@ static void refreshScreen(const std::string& message) {
         point.x = 640;
         point.y = 160;
         cv::putText(sScreen, "LEVEL", point, FONT_SANS, 1.0, RGB_WHITE);
-        image = sUno->getLevelImage(
-            /* level   */ Uno::LV_EASY,
-            /* hiLight */ sUno->getDifficulty() == Uno::LV_EASY
-        ); // image = sUno->getLevelImage()
+        if (sUno->isSevenZeroRule()) {
+            image = sUno->getLevelImage(
+                /* level   */ Uno::LV_EASY,
+                /* hiLight */ false
+            ); // image = sUno->getLevelImage()
+        } // if (sUno->isSevenZeroRule())
+        else {
+            image = sUno->getLevelImage(
+                /* level   */ Uno::LV_EASY,
+                /* hiLight */ sUno->getDifficulty() == Uno::LV_EASY
+            ); // image = sUno->getLevelImage()
+        } // else
+
         roi.x = 790;
         roi.y = 60;
         image.copyTo(sScreen(roi), image);
-        image = sUno->getLevelImage(
-            /* level   */ Uno::LV_HARD,
-            /* hiLight */ sUno->getDifficulty() == Uno::LV_HARD
-        ); // image = sUno->getLevelImage()
+        if (sUno->isSevenZeroRule()) {
+            image = sUno->getLevelImage(
+                /* level   */ Uno::LV_HARD,
+                /* hiLight */ false
+            ); // image = sUno->getLevelImage()
+        } // if (sUno->isSevenZeroRule())
+        else {
+            image = sUno->getLevelImage(
+                /* level   */ Uno::LV_HARD,
+                /* hiLight */ sUno->getDifficulty() == Uno::LV_HARD
+            ); // image = sUno->getLevelImage()
+        } // else
+
         roi.x = 970;
         image.copyTo(sScreen(roi), image);
 

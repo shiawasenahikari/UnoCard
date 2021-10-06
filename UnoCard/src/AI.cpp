@@ -165,15 +165,14 @@ bool AI::needToChallenge(int challenger) {
  *         Or a negative number that means no appropriate card to play.
  */
 int AI::easyAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
-    int i;
     bool legal;
     Card* card;
-    Card* last;
+    int i, idxBest;
     std::vector<Card*> hand;
     Color bestColor, lastColor;
     int yourSize, nextSize, prevSize;
+    int idxNum, idxRev, idxSkip, idxDraw2, idxWild, idxWD4;
     bool hasNum, hasRev, hasSkip, hasDraw2, hasWild, hasWD4;
-    int idxBest, idxNum, idxRev, idxSkip, idxDraw2, idxWild, idxWD4;
 
     if (outColor == nullptr) {
         throw "outColor[] cannot be nullptr";
@@ -188,13 +187,10 @@ int AI::easyAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
         return uno->isLegalToPlay(card) ? 0 : -1;
     } // if (yourSize == 1)
 
-    nextSize = uno->getPlayer(uno->getNext())->getHandSize();
-    prevSize = uno->getPlayer(uno->getPrev())->getHandSize();
     hasNum = hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
     idxBest = idxNum = idxRev = idxSkip = idxDraw2 = idxWild = idxWD4 = -1;
     bestColor = calcBestColor4NowPlayer();
-    last = uno->getRecent().back();
-    lastColor = last->getRealColor();
+    lastColor = uno->getRecent().back()->getRealColor();
     for (i = 0; i < yourSize; ++i) {
         // Index of any kind
         card = hand.at(i);
@@ -249,6 +245,8 @@ int AI::easyAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
     } // for (i = 0; i < yourSize; ++i)
 
     // Decision tree
+    nextSize = uno->getPlayer(uno->getNext())->getHandSize();
+    prevSize = uno->getPlayer(uno->getPrev())->getHandSize();
     if (nextSize == 1) {
         // Strategies when your next player remains only one card.
         // Limit your next player's action as well as you can.
@@ -261,9 +259,9 @@ int AI::easyAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
         else if (hasRev) {
             idxBest = idxRev;
         } // else if (hasRev)
-        else if (hasWD4) {
+        else if (hasWD4 && lastColor != bestColor) {
             idxBest = idxWD4;
-        } // else if (hasWD4)
+        } // else if (hasWD4 && lastColor != bestColor)
         else if (hasWild && lastColor != bestColor) {
             idxBest = idxWild;
         } // else if (hasWild && lastColor != bestColor)
@@ -285,9 +283,9 @@ int AI::easyAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
         else if (hasDraw2) {
             idxBest = idxDraw2;
         } // else if (hasDraw2)
-        else if (hasRev && prevSize >= 4) {
+        else if (hasRev && prevSize > 1) {
             idxBest = idxRev;
-        } // else if (hasRev && prevSize >= 4)
+        } // else if (hasRev && prevSize > 1)
         else if (hasWild) {
             idxBest = idxWild;
         } // else if (hasWild)
@@ -319,21 +317,20 @@ int AI::easyAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
  *         Or a negative number that means no appropriate card to play.
  */
 int AI::hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
-    int i;
     Card* card;
-    Card* last;
     Player* curr;
     Player* next;
     Player* oppo;
     Player* prev;
+    int i, idxBest;
     bool legal, allWild;
     std::vector<Card*> hand;
     Color bestColor, lastColor, safeColor;
     int yourSize, nextSize, oppoSize, prevSize;
     Color nextWeakColor, oppoWeakColor, prevWeakColor;
     Color nextStrongColor, oppoStrongColor, prevStrongColor;
+    int idxNumIn[5], idxRev, idxSkip, idxDraw2, idxWild, idxWD4;
     bool hasNumIn[5], hasRev, hasSkip, hasDraw2, hasWild, hasWD4;
-    int idxBest, idxNumIn[5], idxRev, idxSkip, idxDraw2, idxWild, idxWD4;
 
     if (outColor == nullptr) {
         throw "outColor[] cannot be nullptr";
@@ -349,19 +346,12 @@ int AI::hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
         return uno->isLegalToPlay(card) ? 0 : -1;
     } // if (yourSize == 1)
 
-    next = uno->getPlayer(uno->getNext());
-    nextSize = next->getHandSize();
-    oppo = uno->getPlayer(uno->getOppo());
-    oppoSize = oppo->getHandSize();
-    prev = uno->getPlayer(uno->getPrev());
-    prevSize = prev->getHandSize();
     hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
     idxBest = idxRev = idxSkip = idxDraw2 = idxWild = idxWD4 = -1;
     idxNumIn[0] = idxNumIn[1] = idxNumIn[2] = idxNumIn[3] = idxNumIn[4] = -1;
     hasNumIn[0] = hasNumIn[1] = hasNumIn[2] = hasNumIn[3] = hasNumIn[4] = false;
     bestColor = calcBestColor4NowPlayer();
-    last = uno->getRecent().back();
-    lastColor = last->getRealColor();
+    lastColor = uno->getRecent().back()->getRealColor();
     allWild = true;
     for (i = 0; i < yourSize; ++i) {
         // Index of any kind
@@ -418,11 +408,17 @@ int AI::hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
     } // for (i = 0; i < yourSize; ++i)
 
     // Decision tree
+    next = uno->getPlayer(uno->getNext());
+    nextSize = next->getHandSize();
     nextWeakColor = next->getWeakColor();
-    oppoWeakColor = oppo->getWeakColor();
-    prevWeakColor = prev->getWeakColor();
     nextStrongColor = next->getStrongColor();
+    oppo = uno->getPlayer(uno->getOppo());
+    oppoSize = oppo->getHandSize();
+    oppoWeakColor = oppo->getWeakColor();
     oppoStrongColor = oppo->getStrongColor();
+    prev = uno->getPlayer(uno->getPrev());
+    prevSize = prev->getHandSize();
+    prevWeakColor = prev->getWeakColor();
     prevStrongColor = prev->getStrongColor();
     if (nextSize == 1) {
         // Strategies when your next player remains only one card.
@@ -974,7 +970,7 @@ int AI::hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
             idxBest = idxSkip;
         } // else if (hasSkip && nextSize <= 4 && nextSize - oppoSize <= 1)
         else if (hasRev &&
-             (prevSize - nextSize >= 3 || prev->getRecent() == nullptr)) {
+            (prevSize - nextSize >= 3 || prev->getRecent() == nullptr)) {
             // Play a [reverse] when your next player remains only a few
             // cards but your previous player remains a lot of cards, in
             // order to balance everyone's hand-card amount. Also, when
@@ -1064,5 +1060,281 @@ int AI::hardAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
     outColor[0] = bestColor;
     return idxBest;
 } // hardAI_bestCardIndex4NowPlayer(Card*, Color[])
+
+/**
+ * AI Strategies in 7-0 special rule. Analyze current player's hand cards,
+ * and calculate which is the best card to play out.
+ *
+ * @param drawnCard When current player drew a card just now, pass the drawn
+ *                  card. If not, pass nullptr. If drew a card from deck,
+ *                  then you can play only the drawn card, but not the other
+ *                  cards in your hand, immediately.
+ * @param outColor  This is a out parameter. Pass a Color array (length>=1)
+ *                  in order to let us pass the return value by assigning
+ *                  outColor[0]. When the best card to play becomes a wild
+ *                  card, outColor[0] will become the following legal color
+ *                  to change. When the best card to play becomes an action
+ *                  or a number card, outColor[0] will become the player's
+ *                  best color.
+ * @return Index of the best card to play, in current player's hand.
+ *         Or a negative number that means no appropriate card to play.
+ */
+int AI::sevenZeroAI_bestCardIndex4NowPlayer(Card* drawnCard, Color outColor[]) {
+    bool legal;
+    Card* card;
+    Player* next;
+    Player* oppo;
+    Player* prev;
+    int i, idxBest;
+    std::vector<Card*> hand;
+    Color bestColor, lastColor;
+    int idx0, idxNum, idxWild, idxWD4;
+    bool has0, hasNum, hasWild, hasWD4;
+    int idx7, idxRev, idxSkip, idxDraw2;
+    bool has7, hasRev, hasSkip, hasDraw2;
+    int yourSize, nextSize, oppoSize, prevSize;
+    Color nextStrongColor, oppoStrongColor, prevStrongColor;
+
+    if (outColor == nullptr) {
+        throw "outColor[] cannot be nullptr";
+    } // if (outColor == nullptr)
+
+    hand = uno->getPlayer(uno->getNow())->getHandCards();
+    yourSize = int(hand.size());
+    if (yourSize == 1) {
+        // Only one card remained. Play it when it's legal.
+        card = hand.at(0);
+        outColor[0] = card->getRealColor();
+        return uno->isLegalToPlay(card) ? 0 : -1;
+    } // if (yourSize == 1)
+
+    idx0 = idxNum = idxWild = idxWD4 = -1;
+    has0 = hasNum = hasWild = hasWD4 = false;
+    has7 = hasRev = hasSkip = hasDraw2 = false;
+    idxBest = idx7 = idxRev = idxSkip = idxDraw2 = -1;
+    bestColor = calcBestColor4NowPlayer();
+    lastColor = uno->getRecent().back()->getRealColor();
+    for (i = 0; i < yourSize; ++i) {
+        // Index of any kind
+        card = hand.at(i);
+        if (drawnCard == nullptr) {
+            legal = uno->isLegalToPlay(card);
+        } // if (drawnCard == nullptr)
+        else {
+            legal = card == drawnCard;
+        } // else
+
+        if (legal) {
+            switch (card->content) {
+            case DRAW2:
+                if (!hasDraw2 || card->getRealColor() == bestColor) {
+                    idxDraw2 = i;
+                    hasDraw2 = true;
+                } // if (!hasDraw2 || card->getRealColor() == bestColor)
+                break; // case DRAW2
+
+            case SKIP:
+                if (!hasSkip || card->getRealColor() == bestColor) {
+                    idxSkip = i;
+                    hasSkip = true;
+                } // if (!hasSkip || card->getRealColor() == bestColor)
+                break; // case SKIP
+
+            case REV:
+                if (!hasRev || card->getRealColor() == bestColor) {
+                    idxRev = i;
+                    hasRev = true;
+                } // if (!hasRev || card->getRealColor() == bestColor)
+                break; // case REV
+
+            case WILD:
+                idxWild = i;
+                hasWild = true;
+                break; // case WILD
+
+            case WILD_DRAW4:
+                idxWD4 = i;
+                hasWD4 = true;
+                break; // case WILD_DRAW4
+
+            case NUM7:
+                if (!has7 || card->getRealColor() == bestColor) {
+                    idx7 = i;
+                    has7 = true;
+                } // if (!has7 || card->getRealColor() == bestColor)
+                break; // case NUM7
+
+            case NUM0:
+                if (!has0 || card->getRealColor() == bestColor) {
+                    idx0 = i;
+                    has0 = true;
+                } // if (!has0 || card->getRealColor() == bestColor)
+                break; // case NUM0
+
+            default: // number cards
+                if (!hasNum || card->getRealColor() == bestColor) {
+                    idxNum = i;
+                    hasNum = true;
+                } // if (!hasNum || card->getRealColor() == bestColor)
+                break; // default
+            } // switch (card->content)
+        } // if (legal)
+    } // for (i = 0; i < yourSize; ++i)
+
+    // Decision tree
+    next = uno->getPlayer(uno->getNext());
+    nextSize = next->getHandSize();
+    nextStrongColor = next->getStrongColor();
+    oppo = uno->getPlayer(uno->getOppo());
+    oppoSize = oppo->getHandSize();
+    oppoStrongColor = oppo->getStrongColor();
+    prev = uno->getPlayer(uno->getPrev());
+    prevSize = prev->getHandSize();
+    prevStrongColor = prev->getStrongColor();
+    if (nextSize == 1) {
+        // Strategies when your next player remains only one card.
+        // Firstly consider to use a 7 to steal the UNO, if can't,
+        // limit your next player's action as well as you can.
+        if (has7 && (yourSize > 2 ||
+            hand.at(1 - idx7)->content != NUM7 &&
+            hand.at(1 - idx7)->content != WILD &&
+            hand.at(1 - idx7)->content != WILD_DRAW4 &&
+            hand.at(1 - idx7)->getRealColor() != hand.at(idx7)->getRealColor())) {
+            idxBest = idx7;
+        } // if (has7 && ...)
+        else if (has0 && (yourSize > 2 ||
+            hand.at(1 - idx0)->content != NUM0 &&
+            hand.at(1 - idx0)->content != WILD &&
+            hand.at(1 - idx0)->content != WILD_DRAW4 &&
+            hand.at(1 - idx0)->getRealColor() != hand.at(idx0)->getRealColor())) {
+            idxBest = idx0;
+        } // else if (has0 && ...)
+        else if (hasDraw2) {
+            idxBest = idxDraw2;
+        } // else if (hasDraw2)
+        else if (hasSkip) {
+            idxBest = idxSkip;
+        } // else if (hasSkip)
+        else if (hasRev) {
+            idxBest = idxRev;
+        } // else if (hasRev)
+        else if (hasWD4 && lastColor != bestColor) {
+            idxBest = idxWD4;
+        } // else if (hasWD4 && lastColor != bestColor)
+        else if (hasWild && lastColor != bestColor) {
+            idxBest = idxWild;
+        } // else if (hasWild && lastColor != bestColor)
+        else if (hasNum &&
+            hand.at(idxNum)->getRealColor() != nextStrongColor) {
+            idxBest = idxNum;
+        } // else if (hasNum && ...)
+        else if (hasWild && (has7 || has0)) {
+            idxBest = idxWild;
+        } // else if (hasWild && (has7 || has0))
+    } // if (nextSize == 1)
+    else if (prevSize == 1) {
+        // Strategies when your previous player remains only one card.
+        // Consider to use a 0 or 7 to steal the UNO.
+        if (has0) {
+            idxBest = idx0;
+        } // if (has0)
+        else if (has7) {
+            idxBest = idx7;
+        } // else if (has7)
+        else if (hasNum) {
+            idxBest = idxNum;
+        } // else if (hasNum)
+        else if (hasSkip &&
+            hand.at(idxSkip)->getRealColor() != prevStrongColor) {
+            idxBest = idxSkip;
+        } // else if (hasSkip && ...)
+        else if (hasDraw2 &&
+            hand.at(idxDraw2)->getRealColor() != prevStrongColor) {
+            idxBest = idxDraw2;
+        } // else if (hasDraw2 && ...)
+        else if (hasWild && bestColor != prevStrongColor) {
+            idxBest = idxWild;
+        } // else if (hasWild && bestColor != prevStrongColor)
+        else if (hasWD4 && bestColor != prevStrongColor) {
+            idxBest = idxWD4;
+        } // else if (hasWD4 && bestColor != prevStrongColor)
+    } // else if (prevSize == 1)
+    else if (oppoSize == 1) {
+        // Strategies when your opposite player remains only one card.
+        // Consider to use a 7 to steal the UNO.
+        if (has7) {
+            idxBest = idx7;
+        } // if (has7)
+        else if (has0) {
+            idxBest = idx0;
+        } // else if (has0)
+        else if (hasNum) {
+            idxBest = idxNum;
+        } // else if (hasNum)
+        else if (hasRev && prevSize > nextSize) {
+            idxBest = idxRev;
+        } // else if (hasRev && prevSize > nextSize)
+        else if (hasSkip &&
+            hand.at(idxSkip)->getRealColor() != oppoStrongColor) {
+            idxBest = idxSkip;
+        } // else if (hasSkip && ...)
+        else if (hasDraw2 &&
+            hand.at(idxDraw2)->getRealColor() != oppoStrongColor) {
+            idxBest = idxDraw2;
+        } // else if (hasDraw2 && ...)
+        else if (hasWild && bestColor != prevStrongColor) {
+            idxBest = idxWild;
+        } // else if (hasWild && bestColor != prevStrongColor)
+        else if (hasWD4 && bestColor != prevStrongColor) {
+            idxBest = idxWD4;
+        } // else if (hasWD4 && bestColor != prevStrongColor)
+    } // else if (oppoSize == 1)
+    else {
+        // Normal strategies
+        if (has0 && hand.at(idx0)->getRealColor() == prevStrongColor) {
+            idxBest = idx0;
+        } // if (has0 && hand.at(idx0)->getRealColor() == nextStrongColor)
+        else if (has7 && (
+            hand.at(idx7)->getRealColor() == prevStrongColor ||
+            hand.at(idx7)->getRealColor() == oppoStrongColor ||
+            hand.at(idx7)->getRealColor() == nextStrongColor)) {
+            idxBest = idx7;
+        } // else if (has7 && ...)
+        else if (hasRev && prevSize > nextSize) {
+            idxBest = idxRev;
+        } // else if (hasRev && prevSize > nextSize)
+        else if (hasNum) {
+            idxBest = idxNum;
+        } // else if (hasNum)
+        else if (hasSkip) {
+            idxBest = idxSkip;
+        } // else if (hasSkip)
+        else if (hasDraw2) {
+            idxBest = idxDraw2;
+        } // else if (hasDraw2)
+        else if (hasRev) {
+            idxBest = idxRev;
+        } // else if (hasRev)
+        else if (has0 && (yourSize > 2 ||
+            hand.at(1 - idx0)->content != NUM0 &&
+            hand.at(1 - idx0)->content != WILD &&
+            hand.at(1 - idx0)->content != WILD_DRAW4 &&
+            hand.at(1 - idx0)->getRealColor() != hand.at(idx0)->getRealColor())) {
+            idxBest = idx0;
+        } // else if (has0 && ...)
+        else if (has7) {
+            idxBest = idx7;
+        } // else if (has7)
+        else if (hasWild) {
+            idxBest = idxWild;
+        } // else if (hasWild)
+        else if (hasWD4) {
+            idxBest = idxWD4;
+        } // else if (hasWD4)
+    } // else
+
+    outColor[0] = bestColor;
+    return idxBest;
+} // sevenZeroAI_bestCardIndex4NowPlayer(Card*, Color[])
 
 // E.O.F

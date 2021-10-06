@@ -262,6 +262,47 @@ public class MainActivity extends AppCompatActivity
     } // hardAI()
 
     /**
+     * AI Strategies (Difficulty: EASY).
+     */
+    @WorkerThread
+    private void sevenZeroAI() {
+        int idxBest, now;
+        Color[] bestColor;
+
+        if (mChallengeAsk) {
+            onChallengeChance(mAI.needToChallenge(mStatus));
+        } // if (mChallengeAsk)
+        else {
+            now = mStatus;
+            mStatus = STAT_IDLE; // block tap down events when idle
+            bestColor = new Color[1];
+            idxBest = mAI.sevenZeroAI_bestCardIndex4NowPlayer(
+                    /* drawnCard */ mImmPlayAsk ? mDrawnCard : null,
+                    /* outColor  */ bestColor
+            ); // idxBest = mAI.sevenZeroAI_bestCardIndex4NowPlayer()
+
+            if (idxBest >= 0) {
+                // Found an appropriate card to play
+                mImmPlayAsk = false;
+                play(idxBest, bestColor[0]);
+            } // if (idxBest >= 0)
+            else {
+                // No appropriate cards to play, or no card is legal to play
+                if (mImmPlayAsk) {
+                    mImmPlayAsk = false;
+                    refreshScreen(NAME[now] + ": Pass");
+                    threadSleep(750);
+                    mStatus = mUno.switchNow();
+                    onStatusChanged(mStatus);
+                } // if (mImmPlayAsk)
+                else {
+                    draw(1, /* force */ false);
+                } // else
+            } // else
+        } // else
+    } // sevenZeroAI()
+
+    /**
      * Triggered when the value of member [mStatus] changed.
      *
      * @param status New status value.
@@ -324,9 +365,12 @@ public class MainActivity extends AppCompatActivity
             case Player.YOU:
                 // Your turn, select a hand card to play, or draw a card
                 if (mAuto) {
-                    if (mUno.getDifficulty() == Uno.LV_EASY) {
+                    if (mUno.isSevenZeroRule()) {
+                        sevenZeroAI();
+                    } // if (mUno.isSevenZeroRule())
+                    else if (mUno.getDifficulty() == Uno.LV_EASY) {
                         easyAI();
-                    } // if (mUno.getDifficulty() == Uno.LV_EASY)
+                    } // else if (mUno.getDifficulty() == Uno.LV_EASY)
                     else {
                         hardAI();
                     } // else
@@ -639,9 +683,12 @@ public class MainActivity extends AppCompatActivity
             case Player.COM2:
             case Player.COM3:
                 // AI players' turn
-                if (mUno.getDifficulty() == Uno.LV_EASY) {
+                if (mUno.isSevenZeroRule()) {
+                    sevenZeroAI();
+                } // if (mUno.isSevenZeroRule())
+                else if (mUno.getDifficulty() == Uno.LV_EASY) {
                     easyAI();
-                } // if (mUno.getDifficulty() == Uno.LV_EASY)
+                } // else if (mUno.getDifficulty() == Uno.LV_EASY)
                 else {
                     hardAI();
                 } // else
@@ -756,17 +803,34 @@ public class MainActivity extends AppCompatActivity
             point.x = 640;
             point.y = 160;
             Imgproc.putText(mScr, "LEVEL", point, FONT_SANS, 1.0, RGB_WHITE);
-            image = mUno.getLevelImage(
-                    /* level   */ Uno.LV_EASY,
-                    /* hiLight */ mUno.getDifficulty() == Uno.LV_EASY
-            ); // image = mUno.getLevelImage()
+            if (mUno.isSevenZeroRule()) {
+                image = mUno.getLevelImage(
+                        /* level   */ Uno.LV_EASY,
+                        /* hiLight */ false
+                ); // image = mUno.getLevelImage()
+            } // if (mUno.isSevenZeroRule())
+            else {
+                image = mUno.getLevelImage(
+                        /* level   */ Uno.LV_EASY,
+                        /* hiLight */ mUno.getDifficulty() == Uno.LV_EASY
+                ); // image = mUno.getLevelImage()
+            } // else
+
             roi.x = 790;
             roi.y = 60;
             image.copyTo(new Mat(mScr, roi), image);
-            image = mUno.getLevelImage(
-                    /* level   */ Uno.LV_HARD,
-                    /* hiLight */ mUno.getDifficulty() == Uno.LV_HARD
-            ); // image = mUno.getLevelImage()
+            if (mUno.isSevenZeroRule()) {
+                image = mUno.getLevelImage(
+                        /* level   */ Uno.LV_HARD,
+                        /* hiLight */ false
+                ); // image = mUno.getLevelImage()
+            } // if (mUno.isSevenZeroRule())
+            else {
+                image = mUno.getLevelImage(
+                        /* level   */ Uno.LV_HARD,
+                        /* hiLight */ mUno.getDifficulty() == Uno.LV_HARD
+                ); // image = mUno.getLevelImage()
+            } // else
             roi.x = 970;
             image.copyTo(new Mat(mScr, roi), image);
 

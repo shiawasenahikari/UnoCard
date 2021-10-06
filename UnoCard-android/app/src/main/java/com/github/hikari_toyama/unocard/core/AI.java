@@ -18,8 +18,9 @@ public abstract class AI {
     /**
      * In MainActivity Class, get AI instance here.
      *
-     * @param context Pass a context object to let us get the
-     *                Uno runtime instance.
+     * @param context Pass a Context (MainActivity.this) to let us get the Uno
+     *                runtime instance. Uno runtime needs a Context to refer
+     *                application resources, such as card images.
      * @return Reference of our singleton.
      */
     public static AI getInstance(Context context) {
@@ -87,6 +88,27 @@ public abstract class AI {
      */
     public abstract int hardAI_bestCardIndex4NowPlayer(Card drawnCard,
                                                        Color[] outColor);
+
+    /**
+     * AI Strategies in 7-0 special rule. Analyze current player's hand cards,
+     * and calculate which is the best card to play out.
+     *
+     * @param drawnCard When current player drew a card just now, pass the drawn
+     *                  card. If not, pass null. If drew a card from deck, then
+     *                  you can play only the drawn card, but not the other
+     *                  cards in your hand, immediately.
+     * @param outColor  This is a out parameter. Pass a Color array (length>=1)
+     *                  in order to let us pass the return value by assigning
+     *                  outColor[0]. When the best card to play becomes a wild
+     *                  card, outColor[0] will become the following legal color
+     *                  to change. When the best card to play becomes an action
+     *                  or a number card, outColor[0] will become the player's
+     *                  best color.
+     * @return Index of the best card to play, in current player's hand.
+     * Or a negative number that means no appropriate card to play.
+     */
+    public abstract int sevenZeroAI_bestCardIndex4NowPlayer(Card drawnCard,
+                                                            Color[] outColor);
 } // AI Abstract Class
 
 // E.O.F
