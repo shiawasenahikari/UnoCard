@@ -33,11 +33,11 @@ static const int STAT_NEW_GAME = 0x3333;
 static const int STAT_GAME_OVER = 0x4444;
 static const int STAT_WILD_COLOR = 0x5555;
 static const int STAT_SEVEN_TARGET = 0x7777;
-static const cv::Scalar RGB_RED = CV_RGB(0xFF, 0x55, 0x55);
-static const cv::Scalar RGB_BLUE = CV_RGB(0x55, 0x55, 0xFF);
-static const cv::Scalar RGB_GREEN = CV_RGB(0x55, 0xAA, 0x55);
-static const cv::Scalar RGB_WHITE = CV_RGB(0xCC, 0xCC, 0xCC);
-static const cv::Scalar RGB_YELLOW = CV_RGB(0xFF, 0xAA, 0x11);
+static const cv::Scalar RGB_RED(0x55, 0x55, 0xFF);
+static const cv::Scalar RGB_BLUE(0xFF, 0x55, 0x55);
+static const cv::Scalar RGB_GREEN(0x55, 0xAA, 0x55);
+static const cv::Scalar RGB_WHITE(0xCC, 0xCC, 0xCC);
+static const cv::Scalar RGB_YELLOW(0x11, 0xAA, 0xFF);
 static const std::string NAME[] = { "YOU", "WEST", "NORTH", "EAST" };
 static const enum cv::HersheyFonts FONT_SANS = cv::FONT_HERSHEY_DUPLEX;
 static const std::string CL[] = { "", "RED", "BLUE", "GREEN", "YELLOW" };
@@ -88,9 +88,10 @@ static void onMouse(int event, int x, int y, int flags, void* param);
  * Defines the entry point for the console application.
  */
 int main(int argc, char* argv[]) {
-    int len, dw[8], hash;
+    int len, hash;
     std::ifstream reader;
     QApplication a(argc, argv);
+    int dw[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
     char header[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     // Preparations
@@ -156,9 +157,9 @@ static void easyAI() {
     while (sStatus == Player::COM1
         || sStatus == Player::COM2
         || sStatus == Player::COM3
-        || sStatus == Player::YOU && sAuto) {
+        || (sStatus == Player::YOU && sAuto)) {
         if (sChallengeAsk) {
-            onChallengeChance(sAI.needToChallenge(sStatus));
+            onChallengeChance(sAI.needToChallenge());
         } // if (sChallengeAsk)
         else {
             now = sStatus;
@@ -203,9 +204,9 @@ static void hardAI() {
     while (sStatus == Player::COM1
         || sStatus == Player::COM2
         || sStatus == Player::COM3
-        || sStatus == Player::YOU && sAuto) {
+        || (sStatus == Player::YOU && sAuto)) {
         if (sChallengeAsk) {
-            onChallengeChance(sAI.needToChallenge(sStatus));
+            onChallengeChance(sAI.needToChallenge());
         } // if (sChallengeAsk)
         else {
             now = sStatus;
@@ -250,9 +251,9 @@ static void sevenZeroAI() {
     while (sStatus == Player::COM1
         || sStatus == Player::COM2
         || sStatus == Player::COM3
-        || sStatus == Player::YOU && sAuto) {
+        || (sStatus == Player::YOU && sAuto)) {
         if (sChallengeAsk) {
-            onChallengeChance(sAI.needToChallenge(sStatus));
+            onChallengeChance(sAI.needToChallenge());
         } // if (sChallengeAsk)
         else {
             now = sStatus;
@@ -295,10 +296,8 @@ static void onStatusChanged(int status) {
     int counter;
     cv::Rect rect;
     cv::Size axes;
-    Card* next2last;
     cv::Point center;
     std::string message;
-    std::vector<Card*> recent;
 
     switch (status) {
     case STAT_WELCOME:
@@ -416,11 +415,8 @@ static void onStatusChanged(int status) {
             imshow("Uno", sScreen);
         } // else if (sImmPlayAsk)
         else if (sChallengeAsk) {
-            recent = sUno->getRecent();
-            next2last = recent.at(recent.size() - 2);
-            message = "^ Do you think "
-                + NAME[sUno->getNow()] + " still has "
-                + CL[next2last->getRealColor()] + "?";
+            message = "^ Do you think " + NAME[sUno->getNow()]
+                + " still has " + CL[sUno->next2lastColor()] + "?";
             refreshScreen(message);
             rect = cv::Rect(338, 270, 121, 181);
             sUno->getBackground()(rect).copyTo(sScreen(rect));
@@ -701,7 +697,8 @@ static void refreshScreen(const std::string& message) {
     cv::Point point;
     std::string info;
     bool beChallenged;
-    std::vector<Card*> hand;
+    std::vector<Card*> hand, recent;
+    std::vector<Color> recentColors;
     int i, remain, size, status, used, width;
 
     // Lock the value of global variable [sStatus]
@@ -908,25 +905,26 @@ static void refreshScreen(const std::string& message) {
         image = sUno->getBackImage();
         roi = cv::Rect(338, 270, 121, 181);
         image.copyTo(sScreen(roi), image);
-        hand = sUno->getRecent();
-        size = int(hand.size());
+        recentColors = sUno->getRecentColors();
+        recent = sUno->getRecent();
+        size = int(recent.size());
         width = 45 * size + 75;
         roi.x = 792 - width / 2;
         roi.y = 270;
-        for (Card* recent : hand) {
-            if (recent->content == WILD) {
-                image = sUno->getColoredWildImage(recent->getRealColor());
-            } // if (recent->content == WILD)
-            else if (recent->content == WILD_DRAW4) {
-                image = sUno->getColoredWildDraw4Image(recent->getRealColor());
-            } // else if (recent->content == WILD_DRAW4)
+        for (i = 0; i < size; ++i) {
+            if (recent.at(i)->content == WILD) {
+                image = sUno->getColoredWildImage(recentColors.at(i));
+            } // if (recent.at(i)->content == WILD)
+            else if (recent.at(i)->content == WILD_DRAW4) {
+                image = sUno->getColoredWildDraw4Image(recentColors.at(i));
+            } // else if (recent.at(i)->content == WILD_DRAW4)
             else {
-                image = recent->image;
+                image = recent.at(i)->image;
             } // else
 
             image.copyTo(sScreen(roi), image);
             roi.x += 45;
-        } // for (Card* recent : hand)
+        } // for (i = 0; i < size; ++i)
 
         // Left-top corner: remain / used
         point.x = 20;
@@ -1436,12 +1434,9 @@ static void draw(int count, bool force) {
  *                   player(be challenged)'s [wild +4].
  */
 static void onChallengeChance(bool challenged) {
-    Card* next2last;
     bool draw4IsLegal;
     std::string message;
     int curr, challenger;
-    Color colorBeforeDraw4;
-    std::vector<Card*> recent;
 
     sStatus = STAT_IDLE; // block mouse click events when idle
     sChallenged = challenged;
@@ -1449,30 +1444,27 @@ static void onChallengeChance(bool challenged) {
     if (challenged) {
         curr = sUno->getNow();
         challenger = sUno->getNext();
-        recent = sUno->getRecent();
-        next2last = recent.at(recent.size() - 2);
-        colorBeforeDraw4 = next2last->getRealColor();
         if (curr == Player::YOU) {
             message = NAME[challenger]
                 + " doubted that you still have "
-                + CL[colorBeforeDraw4];
+                + CL[sUno->next2lastColor()];
         } // if (curr == Player::YOU)
         else {
             message = NAME[challenger]
                 + " doubted that " + NAME[curr]
-                + " still has " + CL[colorBeforeDraw4];
+                + " still has " + CL[sUno->next2lastColor()];
         } // else
 
         refreshScreen(message);
         cv::waitKey(1500);
         draw4IsLegal = true;
         for (Card* card : sUno->getPlayer(curr)->getHandCards()) {
-            if (card->getRealColor() == colorBeforeDraw4) {
+            if (card->color == sUno->next2lastColor()) {
                 // Found a card that matches the next-to-last recent
                 // played card's color, [wild +4] is illegally used
                 draw4IsLegal = false;
                 break;
-            } // if (card->getRealColor() == colorBeforeDraw4)
+            } // if (card->color == sUno->next2lastColor())
         } // for (Card* card : sUno->getPlayer(curr)->getHandCards())
 
         if (draw4IsLegal) {

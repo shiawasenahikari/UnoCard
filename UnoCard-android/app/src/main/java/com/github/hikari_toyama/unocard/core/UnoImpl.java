@@ -65,6 +65,12 @@ class UnoImpl extends Uno {
     private final List<Card> recent_readOnly;
 
     /**
+     * Colors of recent played cards
+     * (read-only version, provide for external accesses).
+     */
+    private final List<Color> recentColors_readOnly;
+
+    /**
      * Singleton, hide default constructor.
      *
      * @param context Pass a context object to let us get the card image
@@ -379,7 +385,9 @@ class UnoImpl extends Uno {
         used = new ArrayList<>();
         deck = new ArrayList<>();
         recent = new ArrayList<>();
+        recentColors = new ArrayList<>();
         recent_readOnly = Collections.unmodifiableList(recent);
+        recentColors_readOnly = Collections.unmodifiableList(recentColors);
         player = new Player[]{
                 new PlayerImpl(), // YOU
                 new PlayerImpl(), // COM1
@@ -678,6 +686,30 @@ class UnoImpl extends Uno {
     } // getRecent()
 
     /**
+     * @return Colors of recent played cards.
+     */
+    @Override
+    public List<Color> getRecentColors() {
+        return recentColors_readOnly;
+    } // getRecentColors()
+
+    /**
+     * @return Color of the last played card.
+     */
+    @Override
+    public Color lastColor() {
+        return recentColors.get(recentColors.size() - 1);
+    } // lastColor()
+
+    /**
+     * @return Color of the next-to-last played card.
+     */
+    @Override
+    public Color next2lastColor() {
+        return recentColors.get(recentColors.size() - 2);
+    } // next2lastColor()
+
+    /**
      * Start a new Uno game. Shuffle cards, let everyone draw 7 cards,
      * then determine our start card.
      */
@@ -697,6 +729,7 @@ class UnoImpl extends Uno {
         deck.clear();
         used.clear();
         recent.clear();
+        recentColors.clear();
         for (i = Player.YOU; i <= Player.COM3; ++i) {
             player[i].handCards.clear();
             player[i].weakColor = NONE;
@@ -705,11 +738,6 @@ class UnoImpl extends Uno {
 
         // Generate a temporary sequenced card deck
         for (i = 0; i < 108; ++i) {
-            if (table[i].isWild()) {
-                // reset the wild cards' colors
-                table[i].color = NONE;
-            } // if (table[i].isWild())
-
             deck.add(table[i]);
         } // for (i = 0; i < 108; ++i)
 
@@ -752,6 +780,7 @@ class UnoImpl extends Uno {
                 // Any non-wild card can be start card
                 // Start card determined
                 recent.add(card);
+                recentColors.add(card.color);
             } // else
         } while (recent.isEmpty());
 
@@ -779,8 +808,8 @@ class UnoImpl extends Uno {
      */
     @Override
     public int draw(int who, boolean force) {
+        Card card;
         List<Card> hand;
-        Card card, picked;
         int i, index, size;
 
         i = -1;
@@ -790,7 +819,7 @@ class UnoImpl extends Uno {
             } // if (draw2StackCount > 0)
             else if (!force) {
                 // Draw a card by player itself, register weak color
-                player[who].weakColor = recent.get(recent.size() - 1).color;
+                player[who].weakColor = lastColor();
                 if (player[who].weakColor == player[who].strongColor) {
                     // Weak color cannot also be strong color
                     player[who].strongColor = NONE;
@@ -816,16 +845,9 @@ class UnoImpl extends Uno {
                     // Re-use the used cards when there are no more cards in deck
                     size = used.size();
                     while (size > 0) {
-                        index = rnd.nextInt(size);
-                        picked = used.get(index);
-                        if (picked.isWild()) {
-                            // reset the used wild cards' colors
-                            picked.color = NONE;
-                        } // if (picked.isWild())
-
-                        deck.add(picked);
+                        index = rnd.nextInt(size--);
+                        deck.add(used.get(index));
                         used.remove(index);
-                        --size;
                     } // while (size > 0)
                 } // if (deck.isEmpty())
             } // if (hand.size() < MAX_HOLD_CARDS)
@@ -849,7 +871,6 @@ class UnoImpl extends Uno {
      */
     @Override
     public boolean isLegalToPlay(Card card) {
-        Card previous;
         boolean result;
 
         if (card == null || recent.isEmpty()) {
@@ -868,9 +889,8 @@ class UnoImpl extends Uno {
             // Same content to previous: LEGAL
             // Same color to previous: LEGAL
             // Other cards: ILLEGAL
-            previous = recent.get(recent.size() - 1);
-            result = card.color == previous.color ||
-                    card.content == previous.content;
+            result = card.content == recent.get(recent.size() - 1).content
+                    || card.color == lastColor();
         } // else
 
         return result;
@@ -926,7 +946,6 @@ class UnoImpl extends Uno {
                 if (card.isWild()) {
                     // When a wild card is played, register the specified
                     // following legal color as the player's strong color
-                    card.color = color;
                     player[who].strongColor = color;
                     player[who].strongCount = 1 + size / 3;
                     if (color == player[who].weakColor) {
@@ -953,9 +972,11 @@ class UnoImpl extends Uno {
 
                 player[who].recent = card;
                 recent.add(card);
+                recentColors.add(card.isWild() ? color : card.color);
                 if (recent.size() > 5) {
                     used.add(recent.get(0));
                     recent.remove(0);
+                    recentColors.remove(0);
                 } // if (recent.size() > 5)
 
                 if (hand.size() == 0) {

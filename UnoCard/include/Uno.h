@@ -129,6 +129,11 @@ private:
     std::vector<Card*> recent;
 
     /**
+     * Colors of recent played cards.
+     */
+    std::vector<Color> recentColors;
+
+    /**
      * Singleton, hide default constructor.
      */
     Uno();
@@ -336,6 +341,21 @@ public:
      * @return Recent played cards.
      */
     const std::vector<Card*>& getRecent();
+
+    /**
+     * @return Colors of recent played cards.
+     */
+    const std::vector<Color>& getRecentColors();
+
+    /**
+     * @return Color of the last played card.
+     */
+    Color lastColor();
+
+    /**
+     * @return Color of the next-to-last played card.
+     */
+    Color next2lastColor();
 
     /**
      * Start a new Uno game. Shuffle cards, let everyone draw 7 cards,

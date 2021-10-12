@@ -18,18 +18,18 @@
 Card::Card(cv::Mat image, cv::Mat darkImg,
     Color color, Content content, const char* name) :
     name(name),
-    image(image),
     color(color),
-    content(content),
+    image(image),
     darkImg(darkImg),
-    order((color << 8) + content) {
+    content(content),
+    order((color << 8) | content) {
 } // Card(Mat, Mat, Color, Content, const char*) (Class Constructor)
 
 /**
- * @return For non-wild cards, return card's color. For wild cards, return
- *         the specified wild color by the player who played this card, or
- *         Color::NONE if this card is in hand or card deck.
+ * @return Card's color.
+ * @deprecated Please access this->color directly.
  */
+[[deprecated]]
 Color Card::getRealColor() {
     return color;
 } // getRealColor()

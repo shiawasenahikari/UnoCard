@@ -23,11 +23,11 @@ class CardImpl extends Card {
     } // CardImpl(Mat, Mat, Color, Content, String) (Class Constructor)
 
     /**
-     * @return For non-wild cards, return card's color. For wild cards, return
-     * the specified wild color by the player who played this card, or
-     * Color.NONE if this card is in hand or card deck.
+     * @return Card's color.
+     * @deprecated Please access this.color directly.
      */
     @Override
+    @Deprecated
     public Color getRealColor() {
         return color;
     } // getRealColor()

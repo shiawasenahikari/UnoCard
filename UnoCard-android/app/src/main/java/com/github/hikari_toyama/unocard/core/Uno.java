@@ -156,6 +156,11 @@ public abstract class Uno {
     List<Card> recent;
 
     /**
+     * Colors of recent played cards.
+     */
+    List<Color> recentColors;
+
+    /**
      * In MainActivity Class, get Uno instance here.
      *
      * @param context Pass a context object to let us get the card image
@@ -346,6 +351,21 @@ public abstract class Uno {
      * @return Recent played cards.
      */
     public abstract List<Card> getRecent();
+
+    /**
+     * @return Colors of recent played cards.
+     */
+    public abstract List<Color> getRecentColors();
+
+    /**
+     * @return Color of the last played card.
+     */
+    public abstract Color lastColor();
+
+    /**
+     * @return Color of the next-to-last played card.
+     */
+    public abstract Color next2lastColor();
 
     /**
      * Start a new Uno game. Shuffle cards, let everyone draw 7 cards,

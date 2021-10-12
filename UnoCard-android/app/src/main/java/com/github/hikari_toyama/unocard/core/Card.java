@@ -33,14 +33,14 @@ public abstract class Card {
     public final String name;
 
     /**
+     * Card's color, e.g. Color.BLUE
+     */
+    public final Color color;
+
+    /**
      * Card's content, e.g. Content.NUM3
      */
     public final Content content;
-
-    /**
-     * Card's color, e.g. Color.BLUE
-     */
-    Color color;
 
     /**
      * Card's order. Used in the hand card sorting procedure.
@@ -81,10 +81,10 @@ public abstract class Card {
     } // Card(Mat, Mat, Color, Content, String) (Class Constructor)
 
     /**
-     * @return For non-wild cards, return card's color. For wild cards, return
-     * the specified wild color by the player who played this card, or
-     * Color.NONE if this card is in hand or card deck.
+     * @return Card's color.
+     * @deprecated Please access this.color directly.
      */
+    @Deprecated
     public abstract Color getRealColor();
 
     /**

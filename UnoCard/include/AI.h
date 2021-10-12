@@ -32,11 +32,9 @@ public:
      * AI strategies of determining if it's necessary to challenge previous
      * player's [wild +4] card's legality.
      *
-     * @param challenger Who challenges. Must be one of the following values:
-     *                   Player::YOU, Player::COM1, Player::COM2, Player::COM3.
      * @return True if it's necessary to make a challenge.
      */
-    bool needToChallenge(int challenger);
+    bool needToChallenge();
 
     /**
      * AI Strategies (Difficulty: EASY). Analyze current player's hand cards,

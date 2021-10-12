@@ -59,16 +59,16 @@ class AIImpl extends AI {
             switch (card.content) {
                 case REV:
                 case NUM0:
-                    score[card.getRealColor().ordinal()] += 2;
+                    score[card.color.ordinal()] += 2;
                     break; // case REV, NUM0
 
                 case SKIP:
                 case DRAW2:
-                    score[card.getRealColor().ordinal()] += 5;
+                    score[card.color.ordinal()] += 5;
                     break; // case SKIP, DRAW2
 
                 default:
-                    score[card.getRealColor().ordinal()] += 4;
+                    score[card.color.ordinal()] += 4;
                     break; // default
             } // switch (card.content)
         } // for (Card card : curr.getHandCards())
@@ -102,22 +102,20 @@ class AIImpl extends AI {
     public int bestSwapTarget4NowPlayer() {
         int who;
         Color lastColor;
-        List<Card> recent;
         Player next, oppo, target;
 
         // Swap with your previous player as default
         who = uno.getPrev();
-        recent = uno.getRecent();
         target = uno.getPlayer(who);
-        lastColor = recent.get(recent.size() - 1).getRealColor();
+        lastColor = uno.lastColor();
 
         // If your opponent player has the strong color matching the last card,
         // or it holds fewer cards, change the swap target to it
         oppo = uno.getPlayer(uno.getOppo());
-        if (oppo.getHandSize() < target.getHandSize()
-                && oppo.getWeakColor() != lastColor
-                || oppo.getStrongColor() == lastColor
-                && target.getStrongColor() != lastColor) {
+        if ((oppo.getHandSize() < target.getHandSize()
+                && oppo.getWeakColor() != lastColor)
+                || (oppo.getStrongColor() == lastColor
+                && target.getStrongColor() != lastColor)) {
             who = uno.getOppo();
             target = uno.getPlayer(who);
         } // if (oppo.getHandSize() < target.getHandSize() && ...)
@@ -125,10 +123,10 @@ class AIImpl extends AI {
         // If your next player has the strong color matching the last card,
         // or it holds fewer cards, change the swap target to it
         next = uno.getPlayer(uno.getNext());
-        if (next.getHandSize() < next.getHandSize()
-                && next.getWeakColor() != lastColor
-                || next.getStrongColor() == lastColor
-                && target.getStrongColor() != lastColor) {
+        if ((next.getHandSize() < next.getHandSize()
+                && next.getWeakColor() != lastColor)
+                || (next.getStrongColor() == lastColor
+                && target.getStrongColor() != lastColor)) {
             who = uno.getNext();
         } // if (next.getHandSize() < target.getHandSize() && ...)
 
@@ -139,36 +137,19 @@ class AIImpl extends AI {
      * AI strategies of determining if it's necessary to challenge previous
      * player's [wild +4] card's legality.
      *
-     * @param challenger Who challenges. Must be one of the following values:
-     *                   Player.YOU, Player.COM1, Player.COM2, Player.COM3.
      * @return True if it's necessary to make a challenge.
      */
     @Override
-    public boolean needToChallenge(int challenger) {
-        int size;
-        Card next2last;
-        boolean challenge;
-        List<Card> recent;
-        Color draw4Color, colorBeforeDraw4;
+    public boolean needToChallenge() {
+        int size = uno.getPlayer(uno.getNext()).getHandSize();
 
-        size = uno.getPlayer(challenger).getHandSize();
-        if (size == 1 || size >= Uno.MAX_HOLD_CARDS - 4) {
-            // Challenge when defending my UNO dash
-            // Challenge when I have 10 or more cards already
-            // For the latter, even if challenge failed, I draw 4 cards at most
-            challenge = true;
-        } // if (size == 1 || size >= Uno.MAX_HOLD_CARDS - 4)
-        else {
-            // Challenge when legal color has not been changed
-            recent = uno.getRecent();
-            next2last = recent.get(recent.size() - 2);
-            colorBeforeDraw4 = next2last.getRealColor();
-            draw4Color = recent.get(recent.size() - 1).getRealColor();
-            challenge = draw4Color == colorBeforeDraw4;
-        } // else
-
-        return challenge;
-    } // needToChallenge(int)
+        // Challenge when defending my UNO dash
+        // Challenge when I have 10 or more cards already
+        // Challenge when legal color has not been changed
+        return (size == 1 ||
+                size >= Uno.MAX_HOLD_CARDS - 4 ||
+                uno.lastColor() == uno.next2lastColor());
+    } // needToChallenge()
 
     /**
      * AI Strategies (Difficulty: EASY). Analyze current player's hand cards,
@@ -191,11 +172,11 @@ class AIImpl extends AI {
     @Override
     public int easyAI_bestCardIndex4NowPlayer(Card drawnCard,
                                               Color[] outColor) {
+        Card card;
         boolean legal;
         String errMsg;
         int i, idxBest;
-        Card card, last;
-        List<Card> hand, recent;
+        List<Card> hand;
         Color bestColor, lastColor;
         int yourSize, nextSize, prevSize;
         int idxNum, idxRev, idxSkip, idxDraw2, idxWild, idxWD4;
@@ -211,16 +192,15 @@ class AIImpl extends AI {
         if (yourSize == 1) {
             // Only one card remained. Play it when it's legal.
             card = hand.get(0);
-            outColor[0] = card.getRealColor();
+            outColor[0] = card.color;
             return uno.isLegalToPlay(card) ? 0 : -1;
         } // if (yourSize == 1)
 
-        hasNum = hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
-        idxBest = idxNum = idxRev = idxSkip = idxDraw2 = idxWild = idxWD4 = -1;
+        idxBest = -1;
+        lastColor = uno.lastColor();
         bestColor = calcBestColor4NowPlayer();
-        recent = uno.getRecent();
-        last = recent.get(recent.size() - 1);
-        lastColor = last.getRealColor();
+        idxNum = idxRev = idxSkip = idxDraw2 = idxWild = idxWD4 = -1;
+        hasNum = hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
         for (i = 0; i < yourSize; ++i) {
             // Index of any kind
             card = hand.get(i);
@@ -234,24 +214,24 @@ class AIImpl extends AI {
             if (legal) {
                 switch (card.content) {
                     case DRAW2:
-                        if (!hasDraw2 || card.getRealColor() == bestColor) {
+                        if (!hasDraw2 || card.color == bestColor) {
                             idxDraw2 = i;
                             hasDraw2 = true;
-                        } // if (!hasDraw2 || card.getRealColor() == bestColor)
+                        } // if (!hasDraw2 || card.color == bestColor)
                         break; // case DRAW2
 
                     case SKIP:
-                        if (!hasSkip || card.getRealColor() == bestColor) {
+                        if (!hasSkip || card.color == bestColor) {
                             idxSkip = i;
                             hasSkip = true;
-                        } // if (!hasSkip || card.getRealColor() == bestColor)
+                        } // if (!hasSkip || card.color == bestColor)
                         break; // case SKIP
 
                     case REV:
-                        if (!hasRev || card.getRealColor() == bestColor) {
+                        if (!hasRev || card.color == bestColor) {
                             idxRev = i;
                             hasRev = true;
-                        } // if (!hasRev || card.getRealColor() == bestColor)
+                        } // if (!hasRev || card.color == bestColor)
                         break; // case REV
 
                     case WILD:
@@ -265,10 +245,10 @@ class AIImpl extends AI {
                         break; // case WILD_DRAW4
 
                     default: // number cards
-                        if (!hasNum || card.getRealColor() == bestColor) {
+                        if (!hasNum || card.color == bestColor) {
                             idxNum = i;
                             hasNum = true;
-                        } // if (!hasNum || card.getRealColor() == bestColor)
+                        } // if (!hasNum || card.color == bestColor)
                         break; // default
                 } // switch (card.content)
             } // if (legal)
@@ -350,11 +330,11 @@ class AIImpl extends AI {
     @SuppressWarnings("CStyleArrayDeclaration")
     public int hardAI_bestCardIndex4NowPlayer(Card drawnCard,
                                               Color[] outColor) {
+        Card card;
         String errMsg;
         int i, idxBest;
-        Card card, last;
+        List<Card> hand;
         boolean legal, allWild;
-        List<Card> hand, recent;
         Player curr, next, oppo, prev;
         Color bestColor, lastColor, safeColor;
         int yourSize, nextSize, oppoSize, prevSize;
@@ -374,19 +354,18 @@ class AIImpl extends AI {
         if (yourSize == 1) {
             // Only one card remained. Play it when it's legal.
             card = hand.get(0);
-            outColor[0] = card.getRealColor();
+            outColor[0] = card.color;
             return uno.isLegalToPlay(card) ? 0 : -1;
         } // if (yourSize == 1)
 
-        hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
-        idxBest = idxRev = idxSkip = idxDraw2 = idxWild = idxWD4 = -1;
-        hasNumIn = new boolean[]{false, false, false, false, false};
-        idxNumIn = new int[]{-1, -1, -1, -1, -1};
-        bestColor = calcBestColor4NowPlayer();
-        recent = uno.getRecent();
-        last = recent.get(recent.size() - 1);
-        lastColor = last.getRealColor();
+        idxBest = -1;
         allWild = true;
+        lastColor = uno.lastColor();
+        bestColor = calcBestColor4NowPlayer();
+        idxNumIn = new int[]{-1, -1, -1, -1, -1};
+        idxRev = idxSkip = idxDraw2 = idxWild = idxWD4 = -1;
+        hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
+        hasNumIn = new boolean[]{false, false, false, false, false};
         for (i = 0; i < yourSize; ++i) {
             // Index of any kind
             card = hand.get(i);
@@ -401,24 +380,24 @@ class AIImpl extends AI {
             if (legal) {
                 switch (card.content) {
                     case DRAW2:
-                        if (!hasDraw2 || card.getRealColor() == bestColor) {
+                        if (!hasDraw2 || card.color == bestColor) {
                             idxDraw2 = i;
                             hasDraw2 = true;
-                        } // if (!hasDraw2 || card.getRealColor() == bestColor)
+                        } // if (!hasDraw2 || card.color == bestColor)
                         break; // case DRAW2
 
                     case SKIP:
-                        if (!hasSkip || card.getRealColor() == bestColor) {
+                        if (!hasSkip || card.color == bestColor) {
                             idxSkip = i;
                             hasSkip = true;
-                        } // if (!hasSkip || card.getRealColor() == bestColor)
+                        } // if (!hasSkip || card.color == bestColor)
                         break; // case SKIP
 
                     case REV:
-                        if (!hasRev || card.getRealColor() == bestColor) {
+                        if (!hasRev || card.color == bestColor) {
                             idxRev = i;
                             hasRev = true;
-                        } // if (!hasRev || card.getRealColor() == bestColor)
+                        } // if (!hasRev || card.color == bestColor)
                         break; // case REV
 
                     case WILD:
@@ -432,10 +411,10 @@ class AIImpl extends AI {
                         break; // case WILD_DRAW4
 
                     default: // number cards
-                        if (!hasNumIn[card.getRealColor().ordinal()]) {
-                            idxNumIn[card.getRealColor().ordinal()] = i;
-                            hasNumIn[card.getRealColor().ordinal()] = true;
-                        } // if (!hasNumIn[card.getRealColor().ordinal()])
+                        if (!hasNumIn[card.color.ordinal()]) {
+                            idxNumIn[card.color.ordinal()] = i;
+                            hasNumIn[card.color.ordinal()] = true;
+                        } // if (!hasNumIn[card.color.ordinal()])
                         break; // default
                 } // switch (card.content)
             } // if (legal)
@@ -465,8 +444,8 @@ class AIImpl extends AI {
 
             // Now calculate your safe color, which can make your
             // next player NOT to win the game.
-            if (nextStrongColor != NONE && nextStrongColor != bestColor ||
-                    nextWeakColor == NONE) {
+            if ((nextStrongColor != NONE && nextStrongColor != bestColor)
+                    || nextWeakColor == NONE) {
                 safeColor = bestColor;
             } // if (nextStrongColor != NONE && ...)
             else {
@@ -474,8 +453,8 @@ class AIImpl extends AI {
             } // else
 
             while (safeColor == nextStrongColor
-                    || oppoSize == 1 && safeColor == oppoStrongColor
-                    || prevSize == 1 && safeColor == prevStrongColor) {
+                    || (oppoSize == 1 && safeColor == oppoStrongColor)
+                    || (prevSize == 1 && safeColor == prevStrongColor)) {
                 // Determine your best color in dangerous cases. Firstly
                 // choose next player's weak color, but be careful of the
                 // conflict with other opponents' strong colors!
@@ -567,11 +546,11 @@ class AIImpl extends AI {
                 } // else if (hasNumIn[YELLOW.ordinal()] && ...)
                 else if (hasRev &&
                         prevSize >= 4 &&
-                        hand.get(idxRev).getRealColor() != nextStrongColor) {
+                        hand.get(idxRev).color != nextStrongColor) {
                     idxBest = idxRev;
                 } // else if (hasRev && ...)
                 else if (hasSkip &&
-                        hand.get(idxSkip).getRealColor() != nextStrongColor) {
+                        hand.get(idxSkip).color != nextStrongColor) {
                     idxBest = idxSkip;
                 } // else if (hasSkip && ...)
             } // else if (nextStrongColor != NONE)
@@ -639,8 +618,8 @@ class AIImpl extends AI {
             // played, you can use these cards to limit your previous player's
             // action. Now calculate your safe color, which can make your
             // previous player NOT to win the game.
-            if (prevStrongColor != NONE && prevStrongColor != bestColor ||
-                    prevWeakColor == NONE) {
+            if ((prevStrongColor != NONE && prevStrongColor != bestColor)
+                    || prevWeakColor == NONE) {
                 safeColor = bestColor;
             } // if (prevStrongColor != NONE && ...)
             else {
@@ -648,7 +627,7 @@ class AIImpl extends AI {
             } // else
 
             while (safeColor == prevStrongColor
-                    || oppoSize == 1 && safeColor == oppoStrongColor) {
+                    || (oppoSize == 1 && safeColor == oppoStrongColor)) {
                 // Determine your best color in dangerous cases. Firstly
                 // choose previous player's weak color, but be careful of
                 // the conflict with other opponents' strong colors!
@@ -660,7 +639,7 @@ class AIImpl extends AI {
                 // in its last action. You have to change the following legal
                 // color, or you will approximately 100% lose this game.
                 if (hasSkip &&
-                        hand.get(idxSkip).getRealColor() != prevStrongColor) {
+                        hand.get(idxSkip).color != prevStrongColor) {
                     // When your opposite player played a [skip], and you have a
                     // [skip] with different color, play it.
                     idxBest = idxSkip;
@@ -758,8 +737,8 @@ class AIImpl extends AI {
             // directly limit your opposite player's action. Now calculate
             // your safe color, which can make your opposite player NOT to
             // win the game.
-            if (oppoStrongColor != NONE && oppoStrongColor != bestColor ||
-                    oppoWeakColor == NONE) {
+            if ((oppoStrongColor != NONE && oppoStrongColor != bestColor)
+                    || oppoWeakColor == NONE) {
                 safeColor = bestColor;
             } // if (oppoStrongColor != NONE && ...)
             else {
@@ -804,15 +783,15 @@ class AIImpl extends AI {
                     idxBest = idxNumIn[YELLOW.ordinal()];
                 } // else if (hasNumIn[YELLOW.ordinal()] && ...)
                 else if (hasRev &&
-                        hand.get(idxRev).getRealColor() != oppoStrongColor) {
+                        hand.get(idxRev).color != oppoStrongColor) {
                     idxBest = idxRev;
                 } // else if (hasRev && ...)
                 else if (hasSkip &&
-                        hand.get(idxSkip).getRealColor() != oppoStrongColor) {
+                        hand.get(idxSkip).color != oppoStrongColor) {
                     idxBest = idxSkip;
                 } // else if (hasSkip && ...)
                 else if (hasDraw2 &&
-                        hand.get(idxDraw2).getRealColor() != oppoStrongColor) {
+                        hand.get(idxDraw2).color != oppoStrongColor) {
                     idxBest = idxDraw2;
                 } // else if (hasDraw2 && ...)
                 else if (hasWild) {
@@ -873,17 +852,17 @@ class AIImpl extends AI {
                     idxBest = idxNumIn[YELLOW.ordinal()];
                 } // else if (hasNumIn[YELLOW.ordinal()] && ...)
                 else if (hasRev &&
-                        hand.get(idxRev).getRealColor() != oppoStrongColor) {
+                        hand.get(idxRev).color != oppoStrongColor) {
                     idxBest = idxRev;
                 } // else if (hasRev && ...)
                 else if (hasSkip &&
                         nextSize <= 4 &&
-                        hand.get(idxSkip).getRealColor() != oppoStrongColor) {
+                        hand.get(idxSkip).color != oppoStrongColor) {
                     idxBest = idxSkip;
                 } // else if (hasSkip && ...)
                 else if (hasDraw2 &&
                         nextSize <= 4 &&
-                        hand.get(idxDraw2).getRealColor() != oppoStrongColor) {
+                        hand.get(idxDraw2).color != oppoStrongColor) {
                     idxBest = idxDraw2;
                 } // else if (hasDraw2 && ...)
             } // else if (oppoStrongColor != NONE)
@@ -994,12 +973,12 @@ class AIImpl extends AI {
             } // else if (hasRev && ...)
             else if (hasSkip &&
                     oppoSize >= 3 &&
-                    hand.get(idxSkip).getRealColor() == bestColor) {
+                    hand.get(idxSkip).color == bestColor) {
                 idxBest = idxSkip;
             } // else if (hasSkip && ...)
             else if (hasDraw2 &&
                     oppoSize >= 3 &&
-                    hand.get(idxDraw2).getRealColor() == bestColor) {
+                    hand.get(idxDraw2).color == bestColor) {
                 idxBest = idxDraw2;
             } // else if (hasDraw2 && ...)
         } // else if (lastColor == nextWeakColor && yourSize > 2)
@@ -1047,7 +1026,7 @@ class AIImpl extends AI {
             } // else if (hasRev && prevSize >= 4)
             else if (hasSkip &&
                     oppoSize >= 3 &&
-                    hand.get(idxSkip).getRealColor() == bestColor) {
+                    hand.get(idxSkip).color == bestColor) {
                 // Unless keeping or changing to your best color, you do not
                 // need to play your limitation/wild cards when your next player
                 // still has a number of cards. Use them in more dangerous cases.
@@ -1055,7 +1034,7 @@ class AIImpl extends AI {
             } // else if (hasSkip && ...)
             else if (hasDraw2 &&
                     oppoSize >= 3 &&
-                    hand.get(idxDraw2).getRealColor() == bestColor) {
+                    hand.get(idxDraw2).color == bestColor) {
                 idxBest = idxDraw2;
             } // else if (hasDraw2 && ...)
             else if (hasWild && nextSize <= 4) {
@@ -1126,11 +1105,11 @@ class AIImpl extends AI {
     @Override
     public int sevenZeroAI_bestCardIndex4NowPlayer(Card drawnCard,
                                                    Color[] outColor) {
+        Card card;
         boolean legal;
         String errMsg;
         int i, idxBest;
-        Card card, last;
-        List<Card> hand, recent;
+        List<Card> hand;
         Player next, oppo, prev;
         Color bestColor, lastColor;
         int idx0, idxNum, idxWild, idxWD4;
@@ -1150,18 +1129,17 @@ class AIImpl extends AI {
         if (yourSize == 1) {
             // Only one card remained. Play it when it's legal.
             card = hand.get(0);
-            outColor[0] = card.getRealColor();
+            outColor[0] = card.color;
             return uno.isLegalToPlay(card) ? 0 : -1;
         } // if (yourSize == 1)
 
+        idxBest = -1;
+        lastColor = uno.lastColor();
+        bestColor = calcBestColor4NowPlayer();
         idx0 = idxNum = idxWild = idxWD4 = -1;
         has0 = hasNum = hasWild = hasWD4 = false;
+        idx7 = idxRev = idxSkip = idxDraw2 = -1;
         has7 = hasRev = hasSkip = hasDraw2 = false;
-        idxBest = idx7 = idxRev = idxSkip = idxDraw2 = -1;
-        bestColor = calcBestColor4NowPlayer();
-        recent = uno.getRecent();
-        last = recent.get(recent.size() - 1);
-        lastColor = last.getRealColor();
         for (i = 0; i < yourSize; ++i) {
             // Index of any kind
             card = hand.get(i);
@@ -1175,24 +1153,24 @@ class AIImpl extends AI {
             if (legal) {
                 switch (card.content) {
                     case DRAW2:
-                        if (!hasDraw2 || card.getRealColor() == bestColor) {
+                        if (!hasDraw2 || card.color == bestColor) {
                             idxDraw2 = i;
                             hasDraw2 = true;
-                        } // if (!hasDraw2 || card.getRealColor() == bestColor)
+                        } // if (!hasDraw2 || card.color == bestColor)
                         break; // case DRAW2
 
                     case SKIP:
-                        if (!hasSkip || card.getRealColor() == bestColor) {
+                        if (!hasSkip || card.color == bestColor) {
                             idxSkip = i;
                             hasSkip = true;
-                        } // if (!hasSkip || card.getRealColor() == bestColor)
+                        } // if (!hasSkip || card.color == bestColor)
                         break; // case SKIP
 
                     case REV:
-                        if (!hasRev || card.getRealColor() == bestColor) {
+                        if (!hasRev || card.color == bestColor) {
                             idxRev = i;
                             hasRev = true;
-                        } // if (!hasRev || card.getRealColor() == bestColor)
+                        } // if (!hasRev || card.color == bestColor)
                         break; // case REV
 
                     case WILD:
@@ -1206,24 +1184,24 @@ class AIImpl extends AI {
                         break; // case WILD_DRAW4
 
                     case NUM7:
-                        if (!has7 || card.getRealColor() == bestColor) {
+                        if (!has7 || card.color == bestColor) {
                             idx7 = i;
                             has7 = true;
-                        } // if (!has7 || card.getRealColor() == bestColor)
+                        } // if (!has7 || card.color == bestColor)
                         break; // case NUM7
 
                     case NUM0:
-                        if (!has0 || card.getRealColor() == bestColor) {
+                        if (!has0 || card.color == bestColor) {
                             idx0 = i;
                             has0 = true;
-                        } // if (!has0 || card.getRealColor() == bestColor)
+                        } // if (!has0 || card.color == bestColor)
                         break; // case NUM0
 
                     default: // number cards
-                        if (!hasNum || card.getRealColor() == bestColor) {
+                        if (!hasNum || card.color == bestColor) {
                             idxNum = i;
                             hasNum = true;
-                        } // if (!hasNum || card.getRealColor() == bestColor)
+                        } // if (!hasNum || card.color == bestColor)
                         break; // default
                 } // switch (card.content)
             } // if (legal)
@@ -1247,14 +1225,14 @@ class AIImpl extends AI {
                     || hand.get(1 - idx7).content != Content.NUM7
                     && hand.get(1 - idx7).content != Content.WILD
                     && hand.get(1 - idx7).content != Content.WILD_DRAW4
-                    && hand.get(1 - idx7).getRealColor() != hand.get(idx7).getRealColor())) {
+                    && hand.get(1 - idx7).color != hand.get(idx7).color)) {
                 idxBest = idx7;
             } // if (has7 && ...)
             else if (has0 && (yourSize > 2
                     || hand.get(1 - idx0).content != Content.NUM0
                     && hand.get(1 - idx0).content != Content.WILD
                     && hand.get(1 - idx0).content != Content.WILD_DRAW4
-                    && hand.get(1 - idx0).getRealColor() != hand.get(idx0).getRealColor())) {
+                    && hand.get(1 - idx0).color != hand.get(idx0).color)) {
                 idxBest = idx0;
             } // else if (has0 && ...)
             else if (hasDraw2) {
@@ -1273,7 +1251,7 @@ class AIImpl extends AI {
                 idxBest = idxWild;
             } // else if (hasWild && lastColor != bestColor)
             else if (hasNum &&
-                    hand.get(idxNum).getRealColor() != nextStrongColor) {
+                    hand.get(idxNum).color != nextStrongColor) {
                 idxBest = idxNum;
             } // else if (hasNum && ...)
             else if (hasWild && (has7 || has0)) {
@@ -1293,11 +1271,11 @@ class AIImpl extends AI {
                 idxBest = idxNum;
             } // else if (hasNum)
             else if (hasSkip &&
-                    hand.get(idxSkip).getRealColor() != prevStrongColor) {
+                    hand.get(idxSkip).color != prevStrongColor) {
                 idxBest = idxSkip;
             } // else if (hasSkip && ...)
             else if (hasDraw2 &&
-                    hand.get(idxDraw2).getRealColor() != prevStrongColor) {
+                    hand.get(idxDraw2).color != prevStrongColor) {
                 idxBest = idxDraw2;
             } // else if (hasDraw2 && ...)
             else if (hasWild && bestColor != prevStrongColor) {
@@ -1323,11 +1301,11 @@ class AIImpl extends AI {
                 idxBest = idxRev;
             } // else if (hasRev && prevSize > nextSize)
             else if (hasSkip &&
-                    hand.get(idxSkip).getRealColor() != oppoStrongColor) {
+                    hand.get(idxSkip).color != oppoStrongColor) {
                 idxBest = idxSkip;
             } // else if (hasSkip && ...)
             else if (hasDraw2 &&
-                    hand.get(idxDraw2).getRealColor() != oppoStrongColor) {
+                    hand.get(idxDraw2).color != oppoStrongColor) {
                 idxBest = idxDraw2;
             } // else if (hasDraw2 && ...)
             else if (hasWild && bestColor != prevStrongColor) {
@@ -1339,12 +1317,12 @@ class AIImpl extends AI {
         } // else if (oppoSize == 1)
         else {
             // Normal strategies
-            if (has0 && hand.get(idx0).getRealColor() == prevStrongColor) {
+            if (has0 && hand.get(idx0).color == prevStrongColor) {
                 idxBest = idx0;
-            } // if (has0 && hand.at(idx0)->getRealColor() == nextStrongColor)
-            else if (has7 && (hand.get(idx7).getRealColor() == prevStrongColor
-                    || hand.get(idx7).getRealColor() == oppoStrongColor
-                    || hand.get(idx7).getRealColor() == nextStrongColor)) {
+            } // if (has0 && hand.at(idx0).color == nextStrongColor)
+            else if (has7 && (hand.get(idx7).color == prevStrongColor
+                    || hand.get(idx7).color == oppoStrongColor
+                    || hand.get(idx7).color == nextStrongColor)) {
                 idxBest = idx7;
             } // else if (has7 && ...)
             else if (hasRev && prevSize > nextSize) {
@@ -1366,7 +1344,7 @@ class AIImpl extends AI {
                     || hand.get(1 - idx0).content != Content.NUM0
                     && hand.get(1 - idx0).content != Content.WILD
                     && hand.get(1 - idx0).content != Content.WILD_DRAW4
-                    && hand.get(1 - idx0).getRealColor() != hand.get(idx0).getRealColor())) {
+                    && hand.get(1 - idx0).color != hand.get(idx0).color)) {
                 idxBest = idx0;
             } // else if (has0 && ...)
             else if (has7) {

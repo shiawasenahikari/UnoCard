@@ -119,7 +119,12 @@ Uno::Uno() {
         } // if (br.empty() || ...)
         else {
             std::string n = std::string(color_long[a]) + ' ' + content_long[b];
+#ifdef _WIN32
+            const char* name = _strdup(n.c_str());
+#else
             const char* name = strdup(n.c_str());
+#endif
+
             table.push_back(Card(br, dk, Color(a + 1), Content(b), name));
             if (b > 0) {
                 // One zero-card in every color
@@ -475,6 +480,27 @@ const std::vector<Card*>& Uno::getRecent() {
 } // getRecent()
 
 /**
+ * @return Colors of recent played cards.
+ */
+const std::vector<Color>& Uno::getRecentColors() {
+    return recentColors;
+} // getRecentColors()
+
+/**
+ * @return Color of the last played card.
+ */
+Color Uno::lastColor() {
+    return recentColors.back();
+} // lastColor()
+
+/**
+ * @return Color of the next-to-last played card.
+ */
+Color Uno::next2lastColor() {
+    return recentColors.at(recentColors.size() - 2);
+} // next2lastColor()
+
+/**
  * Start a new Uno game. Shuffle cards, let everyone draw 7 cards,
  * then determine our start card.
  */
@@ -493,6 +519,7 @@ void Uno::start() {
     deck.clear();
     used.clear();
     recent.clear();
+    recentColors.clear();
     for (i = Player::YOU; i <= Player::COM3; ++i) {
         player[i].handCards.clear();
         player[i].weakColor = NONE;
@@ -501,11 +528,6 @@ void Uno::start() {
 
     // Generate a temporary sequenced card deck
     for (i = 0; i < 108; ++i) {
-        if (table[i].isWild()) {
-            // reset the wild cards' colors
-            table[i].color = NONE;
-        } // if (table[i].isWild())
-
         deck.push_back(&table[i]);
     } // for (i = 0; i < 108; ++i)
 
@@ -546,6 +568,7 @@ void Uno::start() {
             // Any non-wild card can be start card
             // Start card determined
             recent.push_back(card);
+            recentColors.push_back(card->color);
         } // else
     } while (recent.empty());
 
@@ -573,7 +596,6 @@ void Uno::start() {
  */
 int Uno::draw(int who, bool force) {
     Card* card;
-    Card* picked;
     int i, index, size;
     std::vector<Card*>* hand;
     std::vector<Card*>::iterator it;
@@ -585,7 +607,7 @@ int Uno::draw(int who, bool force) {
         } // if (draw2StackCount > 0)
         else if (!force) {
             // Draw a card by player itself, register weak color
-            player[who].weakColor = recent.back()->color;
+            player[who].weakColor = lastColor();
             if (player[who].weakColor == player[who].strongColor) {
                 // Weak color cannot also be strong color
                 player[who].strongColor = NONE;
@@ -611,16 +633,9 @@ int Uno::draw(int who, bool force) {
                 // Re-use the used cards when there are no more cards in deck
                 size = int(used.size());
                 while (size > 0) {
-                    index = rand() % size;
-                    picked = used.at(index);
-                    if (picked->isWild()) {
-                        // reset the used wild cards' colors
-                        picked->color = NONE;
-                    } // if (picked->isWild())
-
-                    deck.push_back(picked);
+                    index = rand() % size--;
+                    deck.push_back(used.at(index));
                     used.erase(used.begin() + index);
-                    --size;
                 } // while (size > 0)
             } // if (deck.empty())
         } // if (hand->size() < MAX_HOLD_CARDS)
@@ -644,7 +659,6 @@ int Uno::draw(int who, bool force) {
  */
 bool Uno::isLegalToPlay(Card* card) {
     bool result;
-    Card* previous;
 
     if (card == nullptr || recent.empty()) {
         // Null Pointer
@@ -662,9 +676,8 @@ bool Uno::isLegalToPlay(Card* card) {
         // Same content to previous: LEGAL
         // Same color to previous: LEGAL
         // Other cards: ILLEGAL
-        previous = recent.back();
-        result = card->color == previous->color
-            || card->content == previous->content;
+        result = card->color == lastColor()
+            || card->content == recent.back()->content;
     } // else
 
     return result;
@@ -718,7 +731,6 @@ Card* Uno::play(int who, int index, Color color) {
             if (card->isWild()) {
                 // When a wild card is played, register the specified
                 // following legal color as the player's strong color
-                card->color = color;
                 player[who].strongColor = color;
                 player[who].strongCount = 1 + size / 3;
                 if (color == player[who].weakColor) {
@@ -745,9 +757,11 @@ Card* Uno::play(int who, int index, Color color) {
 
             player[who].recent = card;
             recent.push_back(card);
+            recentColors.push_back(card->isWild() ? color : card->color);
             if (recent.size() > 5) {
                 used.push_back(recent.front());
                 recent.erase(recent.begin());
+                recentColors.erase(recentColors.begin());
             } // if (recent.size() > 5)
 
             if (hand->size() == 0) {

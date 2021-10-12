@@ -188,7 +188,7 @@ public class MainActivity extends AppCompatActivity
         Color[] bestColor;
 
         if (mChallengeAsk) {
-            onChallengeChance(mAI.needToChallenge(mStatus));
+            onChallengeChance(mAI.needToChallenge());
         } // if (mChallengeAsk)
         else {
             now = mStatus;
@@ -229,7 +229,7 @@ public class MainActivity extends AppCompatActivity
         Color[] bestColor;
 
         if (mChallengeAsk) {
-            onChallengeChance(mAI.needToChallenge(mStatus));
+            onChallengeChance(mAI.needToChallenge());
         } // if (mChallengeAsk)
         else {
             now = mStatus;
@@ -270,7 +270,7 @@ public class MainActivity extends AppCompatActivity
         Color[] bestColor;
 
         if (mChallengeAsk) {
-            onChallengeChance(mAI.needToChallenge(mStatus));
+            onChallengeChance(mAI.needToChallenge());
         } // if (mChallengeAsk)
         else {
             now = mStatus;
@@ -313,10 +313,8 @@ public class MainActivity extends AppCompatActivity
         Size axes;
         int counter;
         Point center;
-        Card next2last;
         String message;
         Mat areaToErase;
-        List<Card> recent;
 
         switch (status) {
             case STAT_WELCOME:
@@ -433,11 +431,9 @@ public class MainActivity extends AppCompatActivity
                     mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
                 } // else if (mImmPlayAsk)
                 else if (mChallengeAsk) {
-                    recent = mUno.getRecent();
-                    next2last = recent.get(recent.size() - 2);
                     message = "^ Do you think "
                             + NAME[mUno.getNow()] + " still has "
-                            + CL[next2last.getRealColor().ordinal()] + "?";
+                            + CL[mUno.next2lastColor().ordinal()] + "?";
                     refreshScreen(message);
                     rect = new Rect(338, 270, 121, 181);
                     areaToErase = new Mat(mUno.getBackground(), rect);
@@ -724,8 +720,9 @@ public class MainActivity extends AppCompatActivity
         Point point;
         String info;
         Size textSize;
-        List<Card> hand;
         boolean beChallenged;
+        List<Card> hand, recent;
+        List<Color> recentColors;
         int i, remain, size, status, used, width;
 
         // Lock the value of member [mStatus]
@@ -937,25 +934,26 @@ public class MainActivity extends AppCompatActivity
         image = mUno.getBackImage();
         roi = new Rect(338, 270, 121, 181);
         image.copyTo(new Mat(mScr, roi), image);
-        hand = mUno.getRecent();
-        size = hand.size();
+        recentColors = mUno.getRecentColors();
+        recent = mUno.getRecent();
+        size = recent.size();
         width = 45 * size + 75;
         roi.x = 792 - width / 2;
         roi.y = 270;
-        for (Card recent : hand) {
-            if (recent.content == Content.WILD) {
-                image = mUno.getColoredWildImage(recent.getRealColor());
-            } // if (recent.content == Content.WILD)
-            else if (recent.content == Content.WILD_DRAW4) {
-                image = mUno.getColoredWildDraw4Image(recent.getRealColor());
-            } // else if (recent.content == Content.WILD_DRAW4)
+        for (i = 0; i < size; ++i) {
+            if (recent.get(i).content == Content.WILD) {
+                image = mUno.getColoredWildImage(recentColors.get(i));
+            } // if (recent.get(i).content == Content.WILD)
+            else if (recent.get(i).content == Content.WILD_DRAW4) {
+                image = mUno.getColoredWildDraw4Image(recentColors.get(i));
+            } // else if (recent.get(i).content == Content.WILD_DRAW4)
             else {
-                image = recent.image;
+                image = recent.get(i).image;
             } // else
 
             image.copyTo(new Mat(mScr, roi), image);
             roi.x += 45;
-        } // for (Card recent : hand)
+        } // for (i = 0; i < size; ++i)
 
         // Left-top corner: remain / used
         point.x = 20;
@@ -1507,12 +1505,9 @@ public class MainActivity extends AppCompatActivity
      */
     @WorkerThread
     private void onChallengeChance(boolean challenged) {
-        Card next2last;
         String message;
-        List<Card> recent;
         boolean draw4IsLegal;
         int curr, challenger;
-        Color colorBeforeDraw4;
 
         mStatus = STAT_IDLE; // block tap down events when idle
         mChallenged = challenged;
@@ -1520,30 +1515,27 @@ public class MainActivity extends AppCompatActivity
         if (challenged) {
             curr = mUno.getNow();
             challenger = mUno.getNext();
-            recent = mUno.getRecent();
-            next2last = recent.get(recent.size() - 2);
-            colorBeforeDraw4 = next2last.getRealColor();
             if (curr == Player.YOU) {
                 message = NAME[challenger]
                         + " doubted that you still have "
-                        + CL[colorBeforeDraw4.ordinal()];
+                        + CL[mUno.next2lastColor().ordinal()];
             } // if (curr == Player.YOU)
             else {
                 message = NAME[challenger]
                         + " doubted that " + NAME[curr]
-                        + " still has " + CL[colorBeforeDraw4.ordinal()];
+                        + " still has " + CL[mUno.next2lastColor().ordinal()];
             } // else
 
             refreshScreen(message);
             threadSleep(1500);
             draw4IsLegal = true;
             for (Card card : mUno.getPlayer(curr).getHandCards()) {
-                if (card.getRealColor() == colorBeforeDraw4) {
+                if (card.color == mUno.next2lastColor()) {
                     // Found a card that matches the next-to-last recent
                     // played card's color, [wild +4] is illegally used
                     draw4IsLegal = false;
                     break;
-                } // if (card.getRealColor() == colorBeforeDraw4)
+                } // if (card.color == mUno.next2lastColor())
             } // for (Card card : mUno.getPlayer(curr).getHandCards())
 
             if (draw4IsLegal) {
@@ -1771,7 +1763,7 @@ public class MainActivity extends AppCompatActivity
                                         onStatusChanged(mStatus);
                                     } // if (card.isWild() && size > 1)
                                     else {
-                                        play(index, card.getRealColor());
+                                        play(index, card.color);
                                     } // else
                                 } // if (card == mDrawnCard)
                             } // if (x >= startX && x <= startX + width)
@@ -1794,7 +1786,7 @@ public class MainActivity extends AppCompatActivity
                                             onStatusChanged(mStatus);
                                         } // if (card.isWild() && size > 1)
                                         else {
-                                            play(index, card.getRealColor());
+                                            play(index, card.color);
                                         } // else
                                         break;
                                     } // if (card == mDrawnCard)
@@ -1851,7 +1843,7 @@ public class MainActivity extends AppCompatActivity
                                 onStatusChanged(mStatus);
                             } // else if (card.isWild() && size > 1)
                             else if (mUno.isLegalToPlay(card)) {
-                                play(index, card.getRealColor());
+                                play(index, card.color);
                             } // else if (mUno.isLegalToPlay(card))
                             else {
                                 refreshScreen("Cannot play " + card.name);
