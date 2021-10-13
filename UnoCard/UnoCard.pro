@@ -33,8 +33,8 @@ SOURCES += \
     src/main.cpp
 
 macx {
-    DEPENDPATH += /opt/homebrew/include $$PWD/include
-    INCLUDEPATH += /opt/homebrew/include $$PWD/include
+    DEPENDPATH += $$PWD/include
+    INCLUDEPATH += $$PWD/include
     LIBS += \
         -L/opt/homebrew/lib -lopencv_core \
         -L/opt/homebrew/lib -lopencv_highgui \
@@ -43,13 +43,17 @@ macx {
 } # end of macx
 
 unix:!macx {
-    DEPENDPATH += /usr/local/include $$PWD/include
-    INCLUDEPATH += /usr/local/include $$PWD/include
+    DEPENDPATH += $$PWD/include
+    INCLUDEPATH += $$PWD/include
     LIBS += \
-        -L/usr/local/lib -lopencv_core \
-        -L/usr/local/lib -lopencv_highgui \
-        -L/usr/local/lib -lopencv_imgproc \
-        -L/usr/local/lib -lopencv_imgcodecs
+        -L/usr/local/lib64 -lopencv_core \
+        -L/usr/local/lib64 -lopencv_highgui \
+        -L/usr/local/lib64 -lopencv_imgproc \
+        -L/usr/local/lib64 -lopencv_imgcodecs \
+        -L/usr/lib/x86_64-linux-gnu -lopencv_core \
+        -L/usr/lib/x86_64-linux-gnu -lopencv_highgui \
+        -L/usr/lib/x86_64-linux-gnu -lopencv_imgproc \
+        -L/usr/lib/x86_64-linux-gnu -lopencv_imgcodecs
 } # end of unix:!macx
 
 win32-msvc2015 {

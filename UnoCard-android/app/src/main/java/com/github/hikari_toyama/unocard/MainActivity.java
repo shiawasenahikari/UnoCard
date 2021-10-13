@@ -693,14 +693,22 @@ public class MainActivity extends AppCompatActivity
             case STAT_GAME_OVER:
                 // Game over
                 if (mAdjustOptions) {
-                    message = "SPECIAL RULES";
+                    refreshScreen("SPECIAL RULES");
                 } // if (mAdjustOptions)
                 else {
                     message = "Your score is " + mScore
                             + ". Click the card deck to restart";
+                    refreshScreen(message);
+                    if (mAuto && !mAdjustOptions) {
+                        threadSleep(5000);
+                        if (mAuto
+                                && !mAdjustOptions
+                                && mStatus == STAT_GAME_OVER) {
+                            mStatus = STAT_NEW_GAME;
+                            onStatusChanged(mStatus);
+                        } // if (mAuto && ...)
+                    } // if (mAuto && !mAdjustOptions)
                 } // else
-
-                refreshScreen(message);
                 break; // case STAT_GAME_OVER
 
             default:

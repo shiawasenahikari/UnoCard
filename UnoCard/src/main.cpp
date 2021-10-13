@@ -670,14 +670,20 @@ static void onStatusChanged(int status) {
     case STAT_GAME_OVER:
         // Game over
         if (sAdjustOptions) {
-            message = "SPECIAL RULES";
+            refreshScreen("SPECIAL RULES");
         } // if (sAdjustOptions)
         else {
             message = "Your score is " + std::to_string(sScore)
                 + ". Click the card deck to restart";
+            refreshScreen(message);
+            if (sAuto && !sAdjustOptions) {
+                cv::waitKey(5000);
+                if (sAuto && !sAdjustOptions && sStatus == STAT_GAME_OVER) {
+                    sStatus = STAT_NEW_GAME;
+                    onStatusChanged(sStatus);
+                } // if (sAuto && !sAdjustOptions && sStatus == STAT_GAME_OVER)
+            } // if (sAuto && !sAdjustOptions)
         } // else
-
-        refreshScreen(message);
         break; // case STAT_GAME_OVER
 
     default:

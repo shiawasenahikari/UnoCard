@@ -16,7 +16,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/releases) page and download the
-   latest version in zip file `(UnoCard-v1.6.zip)`.
+   latest version in zip file `(UnoCard-v2.0.zip)`.
 2. Unzip the downloaded zip file, then execute `UnoCard.exe` and have fun!
 3. If there's a message box shows that `msvcp140.dll` is missing, install the VC++ library by
    executing `vcredist_x64.exe`.
@@ -25,7 +25,7 @@ Download the source code and compile manually
 ---------------------------------------------
 
 1. Before continuing, make sure that you have `Visual Studio 2015`, `Qt 5.12.11 MSVC2015 64bit` and
-   `Qt Creator 4.11.1` installed on your computer. You can download the Qt 5.12 offline installer
+   `Qt Creator 4.15.0` installed on your computer. You can download the Qt 5.12 offline installer
    from: [Download Offline Installers](https://www.qt.io/offline-installers)
 2. Clone this repository by executing the following command in Windows Terminal or Git Bash (replace
    `<proj_root>` with a directory path where you want to store this repository):
@@ -68,14 +68,37 @@ qmake && make && ./UnoCard
 sudo apt install libqt5* qt5* qtmultimedia5-dev
 
 # For Fedora/CentOS/RHEL users:
-sudo yum install qt5-devel
+sudo yum install epel-release && sudo yum install qt5*
 ```
-2. Ensure that you have installed OpenCV 4 library on your computer. If not, install it according
-   to the following steps:
-   [OpenCV: Installation in Linux](https://docs.opencv.org/4.5.3/d7/d9f/tutorial_linux_install.html)
-3. Ensure that you have installed GStreamer library on your computer. If not, install it according
-   to the following steps:
-   [Installing on Linux](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html)
+2. Ensure that you have installed OpenCV 4 library on your computer. If not, install it by
+   executing the following commands in your bash terminal:
+```Bash
+# For Ubuntu/Debian users:
+sudo apt install libopencv-dev
+
+# For Fedora/CentOS/RHEL users:
+cd /tmp
+sudo yum install epel-release
+sudo yum install cmake ffmpeg ffmpeg-devel gtk2-devel pkgconfig
+wget https://github.com/opencv/opencv/archive/4.5.4.zip
+unzip 4.5.4.zip && cd opencv-4.5.4 && mkdir build && cd build
+cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/usr/local ..
+make -j8 && sudo make install
+```
+3. Ensure that you have installed GStreamer library on your computer. If not, install it by
+   executing the following commands in your bash terminal:
+```Bash
+# For Ubuntu/Debian users:
+sudo apt install libgstreamer1.0-dev
+sudo apt install libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev
+sudo apt install gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad
+sudo apt install gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools
+sudo apt install gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5
+sudo apt install gstreamer1.0-pulseaudio
+
+# For Fedora/CentOS/RHEL users:
+sudo yum install epel-release && sudo yum install gstreamer*
+```
 4. Clone this repository by executing the following command in your bash terminal (replace
    `<proj_root>` with a directory path where you want to store this repository):
 ```Bash
@@ -94,7 +117,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/release) page and download the
-   latest version in apk file `(UnoCard-v1.6.apk)`.
+   latest version in apk file `(UnoCard-v2.0.apk)`.
 2. On your Android phone, open [Settings] app, go to [Security] page, then check the [Unknown
    sources] toggle.
 3. Push the downloaded file to your Android phone, then install and launch it to have fun!
@@ -185,6 +208,22 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 8. Before playing your next-to-last card, you must say "UNO". In this application, "UNO" will be
    said automatically. Who successfully played his/her last card becomes the winner.
 
+💡Special Rules
+===============
+
+How to Enable
+-------------
+Click the `<OPTIONS>` button in the left-bottom corner, and enable your favorite special rules.
+
+7-0
+---
+When someone plays a 7, that player must swap hands with another player.
+When anyone plays a 0, everyone rotates hands in the direction of play.
+
+Stack
+-----
++2 cards can be stacked. A player that can't add to the stack must draw the total.
+
 <a name="chs" />
 
 🔍简介
@@ -199,7 +238,7 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/releases) 页面下载最新版本的 zip 包
-   `(UnoCard-v1.6.zip)`.
+   `(UnoCard-v2.0.zip)`.
 2. 解压并执行 `UnoCard.exe` 开始游戏。
 3. 如果弹窗提示丢失 `msvcp140.dll`，则执行 `vcredist_x64.exe` 以安装 VC++ 运行库。
 
@@ -207,7 +246,7 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ------------------
 
 1. 在您开始编译前，请确认您的电脑上已安装 `Visual Studio 2015`, `Qt 5.12.11 MSVC2015 64bit` 和
-   `Qt Creator 4.11.1`。您可以访问以下页面下载 Qt 5.12 离线安装包：
+   `Qt Creator 4.15.0`。您可以访问以下页面下载 Qt 5.12 离线安装包：
    [Download Offline Installers](https://www.qt.io/offline-installers)
 2. 在 Windows 命令提示符或 Git Bash 中执行如下命令以克隆本仓库
    (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
@@ -247,12 +286,35 @@ qmake && make && ./UnoCard
 sudo apt install libqt5* qt5* qtmultimedia5-dev
 
 # Fedora/CentOS/RHEL 发行版用户执行该条
-sudo yum install qt5-devel
+sudo yum install epel-release && sudo yum install qt5*
 ```
-2. 请确认您的电脑上已安装 OpenCV 4。若您尚未安装，则请按照下述指示安装：
-   [OpenCV: Installation in Linux](https://docs.opencv.org/4.5.3/d7/d9f/tutorial_linux_install.html)
-3. 请确认您的电脑上已安装 GStreamer。若您尚未安装，则请按照下述指示安装：
-   [Installing on Linux](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html)
+2. 请确认您的电脑上已安装 OpenCV 4。若您尚未安装，则在 Bash 终端中执行如下命令以安装：
+```Bash
+# Ubuntu/Debian 发行版用户执行以下命令
+sudo apt install libopencv-dev
+
+# Fedora/CentOS/RHEL 发行版用户执行以下命令
+sudo yum install epel-release
+sudo yum install cmake ffmpeg ffmpeg-devel gtk2-devel pkgconfig
+cd /tmp
+wget https://github.com/opencv/opencv/archive/4.5.4.zip
+unzip 4.5.4.zip && cd opencv-4.5.4 && mkdir build && cd build
+cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/usr/local ..
+make -j8 && sudo make install
+```
+3. 请确认您的电脑上已安装 GStreamer。若您尚未安装，则在 Bash 终端中执行如下命令以安装：
+```Bash
+# Ubuntu/Debian 发行版用户执行以下命令
+sudo apt install libgstreamer1.0-dev
+sudo apt install libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev
+sudo apt install gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad
+sudo apt install gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools
+sudo apt install gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5
+sudo apt install gstreamer1.0-pulseaudio
+
+# Fedora/CentOS/RHEL 发行版用户执行以下命令
+sudo yum install epel-release && sudo yum install gstreamer*
+```
 4. 在 Bash 中执行如下命令以克隆本仓库 (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
 ```Bash
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
@@ -270,7 +332,7 @@ qmake && make && ./UnoCard
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/release) 页面下载最新版本的 apk 包
-   `(UnoCard-v1.6.apk)`.
+   `(UnoCard-v2.0.apk)`.
 2. 打开您的 Android 设备中的 [设置] 应用，进入 [安全] 页面，勾选 [未知来源] 复选框。
 3. 将已下载的安装包传到手机中，安装并运行即可开始游戏。
 
@@ -351,6 +413,22 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 
 8. 当您打出了倒数第二张牌 (即出完此牌后只剩一张牌)，您必须大声喊出 UNO。
    本程序会在满足条件时自动喊出 UNO。最先出完手中所有牌的玩家获胜。
+
+💡特殊规则
+==========
+
+如何开启
+--------
+点击左下角的 `<OPTIONS>` 按钮，然后在选项界面中开启您喜欢的特殊规则。
+
+7-0
+---
+当一位玩家打出 7 时，该玩家需要和另一位玩家交换手牌。
+当一位玩家打出 0 时，所有玩家将手牌传给各自的下家。
+
+叠加
+----
+当一位玩家使用 +2 牌时，下家可以叠加另一张 +2 以免去惩罚。最终无法叠加 +2 的玩家摸取所有的罚牌。
 
 🔗Acknowledgements
 ==================
