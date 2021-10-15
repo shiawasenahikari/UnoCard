@@ -81,13 +81,6 @@ public abstract class Card {
     } // Card(Mat, Mat, Color, Content, String) (Class Constructor)
 
     /**
-     * @return Card's color.
-     * @deprecated Please access this.color directly.
-     */
-    @Deprecated
-    public abstract Color getRealColor();
-
-    /**
      * @return Whether the card is a [wild] or [wild +4].
      */
     public abstract boolean isWild();

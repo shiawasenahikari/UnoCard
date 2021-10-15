@@ -59,10 +59,10 @@ static bool sAuto;
 static int sScore;
 static int sStatus;
 static int sWinner;
+static int sWildIndex;
 static bool sAIRunning;
 static cv::Mat sScreen;
 static Card* sDrawnCard;
-static bool sImmPlayAsk;
 static bool sChallenged;
 static bool sChallengeAsk;
 static bool sAdjustOptions;
@@ -89,6 +89,7 @@ static void onMouse(int event, int x, int y, int flags, void* param);
  */
 int main(int argc, char* argv[]) {
     int len, hash;
+    QString bgmPath;
     std::ifstream reader;
     QApplication a(argc, argv);
     int dw[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -99,9 +100,9 @@ int main(int argc, char* argv[]) {
     sSoundPool = new SoundPool;
     sMediaPlay = new QMediaPlayer;
     sMediaList = new QMediaPlaylist;
+    bgmPath = QFileInfo("resource/bgm.mp3").absoluteFilePath();
+    sMediaList->addMedia(QUrl::fromLocalFile(bgmPath));
     sMediaList->setPlaybackMode(QMediaPlaylist::Loop);
-    sMediaList->addMedia(QUrl::fromLocalFile(
-        QFileInfo("resource/bgm.mp3").absoluteFilePath()));
     sMediaPlay->setPlaylist(sMediaList);
     sMediaPlay->setVolume(50);
     reader = std::ifstream("UnoCard.stat", std::ios::in | std::ios::binary);
@@ -150,7 +151,7 @@ int main(int argc, char* argv[]) {
  * AI Strategies (Difficulty: EASY).
  */
 static void easyAI() {
-    int idxBest, now;
+    int idxBest;
     Color bestColor[1];
 
     sAIRunning = true;
@@ -162,30 +163,15 @@ static void easyAI() {
             onChallengeChance(sAI.needToChallenge());
         } // if (sChallengeAsk)
         else {
-            now = sStatus;
             sStatus = STAT_IDLE; // block mouse click events when idle
-            idxBest = sAI.easyAI_bestCardIndex4NowPlayer(
-                /* drawnCard */ sImmPlayAsk ? sDrawnCard : nullptr,
-                /* outColor  */ bestColor
-            ); // idxBest = sAI.easyAI_bestCardIndex4NowPlayer()
-
+            idxBest = sAI.easyAI_bestCardIndex4NowPlayer(bestColor);
             if (idxBest >= 0) {
                 // Found an appropriate card to play
-                sImmPlayAsk = false;
                 play(idxBest, bestColor[0]);
             } // if (idxBest >= 0)
             else {
                 // No appropriate cards to play, or no card is legal to play
-                if (sImmPlayAsk) {
-                    sImmPlayAsk = false;
-                    refreshScreen(NAME[now] + ": Pass");
-                    cv::waitKey(750);
-                    sStatus = sUno->switchNow();
-                    onStatusChanged(sStatus);
-                } // if (sImmPlayAsk)
-                else {
-                    draw();
-                } // else
+                draw();
             } // else
         } // else
     } // while (sStatus == Player::COM1 || ...)
@@ -197,7 +183,7 @@ static void easyAI() {
  * AI Strategies (Difficulty: HARD).
  */
 static void hardAI() {
-    int idxBest, now;
+    int idxBest;
     Color bestColor[1];
 
     sAIRunning = true;
@@ -209,30 +195,15 @@ static void hardAI() {
             onChallengeChance(sAI.needToChallenge());
         } // if (sChallengeAsk)
         else {
-            now = sStatus;
             sStatus = STAT_IDLE; // block mouse click events when idle
-            idxBest = sAI.hardAI_bestCardIndex4NowPlayer(
-                /* drawnCard */ sImmPlayAsk ? sDrawnCard : nullptr,
-                /* outColor  */ bestColor
-            ); // idxBest = sAI.hardAI_bestCardIndex4NowPlayer()
-
+            idxBest = sAI.hardAI_bestCardIndex4NowPlayer(bestColor);
             if (idxBest >= 0) {
                 // Found an appropriate card to play
-                sImmPlayAsk = false;
                 play(idxBest, bestColor[0]);
             } // if (idxBest >= 0)
             else {
                 // No appropriate cards to play, or no card is legal to play
-                if (sImmPlayAsk) {
-                    sImmPlayAsk = false;
-                    refreshScreen(NAME[now] + ": Pass");
-                    cv::waitKey(750);
-                    sStatus = sUno->switchNow();
-                    onStatusChanged(sStatus);
-                } // if (sImmPlayAsk)
-                else {
-                    draw();
-                } // else
+                draw();
             } // else
         } // else
     } // while (sStatus == Player::COM1 || ...)
@@ -244,7 +215,7 @@ static void hardAI() {
  * Special AI strategies in 7-0 rule.
  */
 static void sevenZeroAI() {
-    int idxBest, now;
+    int idxBest;
     Color bestColor[1];
 
     sAIRunning = true;
@@ -256,30 +227,15 @@ static void sevenZeroAI() {
             onChallengeChance(sAI.needToChallenge());
         } // if (sChallengeAsk)
         else {
-            now = sStatus;
             sStatus = STAT_IDLE; // block mouse click events when idle
-            idxBest = sAI.sevenZeroAI_bestCardIndex4NowPlayer(
-                /* drawnCard */ sImmPlayAsk ? sDrawnCard : nullptr,
-                /* outColor  */ bestColor
-            ); // idxBest = sAI.sevenZeroAI_bestCardIndex4NowPlayer()
-
+            idxBest = sAI.sevenZeroAI_bestCardIndex4NowPlayer(bestColor);
             if (idxBest >= 0) {
                 // Found an appropriate card to play
-                sImmPlayAsk = false;
                 play(idxBest, bestColor[0]);
             } // if (idxBest >= 0)
             else {
                 // No appropriate cards to play, or no card is legal to play
-                if (sImmPlayAsk) {
-                    sImmPlayAsk = false;
-                    refreshScreen(NAME[now] + ": Pass");
-                    cv::waitKey(750);
-                    sStatus = sUno->switchNow();
-                    onStatusChanged(sStatus);
-                } // if (sImmPlayAsk)
-                else {
-                    draw();
-                } // else
+                draw();
             } // else
         } // else
     } // while (sStatus == Player::COM1 || ...)
@@ -358,62 +314,6 @@ static void onStatusChanged(int status) {
                 } // else
             } // if (!sAIRunning)
         } // if (sAuto)
-        else if (sImmPlayAsk) {
-            sSelectedCard = sDrawnCard;
-            message = "^ Play " + std::string(sDrawnCard->name) + "?";
-            refreshScreen(message);
-            rect = cv::Rect(338, 270, 121, 181);
-            sUno->getBackground()(rect).copyTo(sScreen(rect));
-            center = cv::Point(405, 315);
-            axes = cv::Size(135, 135);
-
-            // Draw YES button
-            cv::ellipse(
-                /* img        */ sScreen,
-                /* center     */ center,
-                /* axes       */ axes,
-                /* angle      */ 0,
-                /* startAngle */ 0,
-                /* endAngle   */ -180,
-                /* color      */ RGB_GREEN,
-                /* thickness  */ -1,
-                /* lineType   */ cv::LINE_AA
-            ); // cv::ellipse()
-            cv::putText(
-                /* img       */ sScreen,
-                /* text      */ "YES",
-                /* org       */ cv::Point(346, 295),
-                /* fontFace  */ FONT_SANS,
-                /* fontScale */ 2.0,
-                /* color     */ RGB_WHITE,
-                /* thickness */ 2
-            ); // cv::putText()
-
-            // Draw NO button
-            cv::ellipse(
-                /* img        */ sScreen,
-                /* center     */ center,
-                /* axes       */ axes,
-                /* angle      */ 0,
-                /* startAngle */ 0,
-                /* endAngle   */ 180,
-                /* color      */ RGB_RED,
-                /* thickness  */ -1,
-                /* lineType   */ cv::LINE_AA
-            ); // cv::ellipse()
-            cv::putText(
-                /* img       */ sScreen,
-                /* text      */ "NO",
-                /* org       */ cv::Point(360, 378),
-                /* fontFace  */ FONT_SANS,
-                /* fontScale */ 2.0,
-                /* color     */ RGB_WHITE,
-                /* thickness */ 2
-            ); // cv::putText()
-
-            // Show screen
-            imshow("Uno", sScreen);
-        } // else if (sImmPlayAsk)
         else if (sChallengeAsk) {
             message = "^ Do you think " + NAME[sUno->getNow()]
                 + " still has " + CL[sUno->next2lastColor()] + "?";
@@ -1073,24 +973,13 @@ static void refreshScreen(const std::string& message) {
             for (Card* card : hand) {
                 switch (status) {
                 case Player::YOU:
-                    if (sImmPlayAsk) {
-                        if (card == sDrawnCard) {
-                            image = card->image;
-                            roi.y = 490;
-                        } // if (card == sDrawnCard)
-                        else {
-                            image = card->darkImg;
-                            roi.y = 520;
-                        } // else
-                    } // if (sImmPlayAsk)
-                    else if (sChallengeAsk || sChallenged) {
+                    if (sChallengeAsk || sChallenged) {
                         image = card->darkImg;
                         roi.y = 520;
-                    } // else if (sChallengeAsk || sChallenged)
+                    } // if (sChallengeAsk || sChallenged)
                     else {
                         image = sUno->isLegalToPlay(card) ?
-                            card->image :
-                            card->darkImg;
+                            card->image : card->darkImg;
                         roi.y = card == sSelectedCard ? 490 : 520;
                     } // else
                     break; // case Player::YOU
@@ -1341,6 +1230,7 @@ static void draw(int count, bool force) {
     sStatus = STAT_IDLE; // block mouse click events when idle
     counter = sUno->getDraw2StackCount();
     count = counter > 0 ? counter : count;
+    index = -1;
     now = sUno->getNow();
     sSelectedCard = nullptr;
     for (i = 0; i < count; ++i) {
@@ -1416,9 +1306,20 @@ static void draw(int count, bool force) {
         sUno->isLegalToPlay(sDrawnCard)) {
         // Player drew one card by itself, the drawn card
         // can be played immediately if it's legal to play
-        sStatus = now;
-        sImmPlayAsk = true;
-        onStatusChanged(sStatus);
+        if (!sDrawnCard->isWild()) {
+            play(index);
+        } // if (!sDrawnCard->isWild())
+        else if (sAuto || now != Player::YOU) {
+            play(index, sAI.calcBestColor4NowPlayer());
+        } // else if (sAuto || now != Player::YOU)
+        else {
+            // Store index value as global value. This value
+            // will be used after the wild color determined.
+            sWildIndex = index;
+            sSelectedCard = sDrawnCard;
+            sStatus = STAT_WILD_COLOR;
+            onStatusChanged(sStatus);
+        } // else
     } // if (count == 1 && ...)
     else {
         refreshScreen(NAME[now] + ": Pass");
@@ -1727,66 +1628,6 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
                 // Do operations automatically by AI strategies
                 break; // case Player::YOU
             } // if (sAuto)
-            else if (sImmPlayAsk) {
-                // Asking if you want to play the drawn card immediately
-                if (y >= 520 && y <= 700) {
-                    hand = sUno->getPlayer(Player::YOU)->getHandCards();
-                    size = int(hand.size());
-                    width = 45 * size + 75;
-                    startX = 640 - width / 2;
-                    if (x >= startX && x <= startX + width) {
-                        // Hand card area
-                        // Calculate which card clicked by the X-coordinate
-                        index = (x - startX) / 45;
-                        if (index >= size) {
-                            index = size - 1;
-                        } // if (index >= size)
-
-                        // If clicked the drawn card, play it
-                        card = hand.at(index);
-                        if (card == sDrawnCard) {
-                            sImmPlayAsk = false;
-                            if (card->isWild() && size > 1) {
-                                sStatus = STAT_WILD_COLOR;
-                                onStatusChanged(sStatus);
-                            } // if (card->isWild() && size > 1)
-                            else {
-                                play(index);
-                            } // else
-                        } // if (card == sDrawnCard)
-                    } // if (x >= startX && x <= startX + width)
-                } // if (y >= 520 && y <= 700)
-                else if (x > 310 && x < 500) {
-                    if (y > 220 && y < 315) {
-                        // YES button, play the drawn card
-                        hand = sUno->getPlayer(sStatus)->getHandCards();
-                        size = int(hand.size());
-                        for (index = 0; index < size; ++index) {
-                            card = hand.at(index);
-                            if (card == sDrawnCard) {
-                                sImmPlayAsk = false;
-                                if (card->isWild() && size > 1) {
-                                    sStatus = STAT_WILD_COLOR;
-                                    onStatusChanged(sStatus);
-                                } // if (card->isWild() && size > 1)
-                                else {
-                                    play(index);
-                                } // else
-                                break;
-                            } // if (card == sDrawnCard)
-                        } // for (index = 0; index < size; ++index)
-                    } // if (y > 220 && y < 315)
-                    else if (y > 315 && y < 410) {
-                        // NO button, go to next player's round
-                        sStatus = STAT_IDLE; // block mouse events when idle
-                        sImmPlayAsk = false;
-                        refreshScreen(NAME[Player::YOU] + ": Pass");
-                        cv::waitKey(750);
-                        sStatus = sUno->switchNow();
-                        onStatusChanged(sStatus);
-                    } // else if (y > 315 && y < 410)
-                } // else if (x > 310 && x < 500)
-            } // else if (sImmPlayAsk)
             else if (sChallengeAsk) {
                 // Asking if you want to challenge your previous player
                 if (x > 310 && x < 500) {
@@ -1820,6 +1661,9 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
                         onStatusChanged(sStatus);
                     } // if (card != sSelectedCard)
                     else if (card->isWild() && size > 1) {
+                        // Store index value as global value. This value
+                        // will be used after the wild color determined.
+                        sWildIndex = index;
                         sStatus = STAT_WILD_COLOR;
                         onStatusChanged(sStatus);
                     } // else if (card->isWild() && size > 1)
@@ -1847,24 +1691,24 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
                 if (x > 310 && x < 405) {
                     // Red sector
                     sStatus = Player::YOU;
-                    play(index, RED);
+                    play(sWildIndex, RED);
                 } // if (x > 310 && x < 405)
                 else if (x > 405 && x < 500) {
                     // Blue sector
                     sStatus = Player::YOU;
-                    play(index, BLUE);
+                    play(sWildIndex, BLUE);
                 } // else if (x > 405 && x < 500)
             } // if (y > 220 && y < 315)
             else if (y > 315 && y < 410) {
                 if (x > 310 && x < 405) {
                     // Yellow sector
                     sStatus = Player::YOU;
-                    play(index, YELLOW);
+                    play(sWildIndex, YELLOW);
                 } // if (x > 310 && x < 405)
                 else if (x > 405 && x < 500) {
                     // Green sector
                     sStatus = Player::YOU;
-                    play(index, GREEN);
+                    play(sWildIndex, GREEN);
                 } // else if (x > 405 && x < 500)
             } // else if (y > 315 && y < 410)
             break; // case STAT_WILD_COLOR

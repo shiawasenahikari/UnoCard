@@ -23,16 +23,6 @@ class CardImpl extends Card {
     } // CardImpl(Mat, Mat, Color, Content, String) (Class Constructor)
 
     /**
-     * @return Card's color.
-     * @deprecated Please access this.color directly.
-     */
-    @Override
-    @Deprecated
-    public Color getRealColor() {
-        return color;
-    } // getRealColor()
-
-    /**
      * @return Whether the card is a [wild] or [wild +4].
      */
     @Override

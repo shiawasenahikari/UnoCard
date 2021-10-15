@@ -26,15 +26,6 @@ Card::Card(cv::Mat image, cv::Mat darkImg,
 } // Card(Mat, Mat, Color, Content, const char*) (Class Constructor)
 
 /**
- * @return Card's color.
- * @deprecated Please access this->color directly.
- */
-[[deprecated]]
-Color Card::getRealColor() {
-    return color;
-} // getRealColor()
-
-/**
  * @return Whether the card is a [wild] or [wild +4].
  */
 bool Card::isWild() {

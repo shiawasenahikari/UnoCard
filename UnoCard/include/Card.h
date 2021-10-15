@@ -45,13 +45,6 @@ public:
     const Content content;
 
     /**
-     * @return Card's color.
-     * @deprecated Please access this->color directly.
-     */
-    [[deprecated]]
-    Color getRealColor();
-
-    /**
      * @return Whether the card is a [wild] or [wild +4].
      */
     bool isWild();

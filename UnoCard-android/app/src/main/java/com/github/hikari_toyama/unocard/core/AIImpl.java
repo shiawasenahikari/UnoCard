@@ -14,6 +14,10 @@ import static com.github.hikari_toyama.unocard.core.Color.GREEN;
 import static com.github.hikari_toyama.unocard.core.Color.NONE;
 import static com.github.hikari_toyama.unocard.core.Color.RED;
 import static com.github.hikari_toyama.unocard.core.Color.YELLOW;
+import static com.github.hikari_toyama.unocard.core.Content.NUM0;
+import static com.github.hikari_toyama.unocard.core.Content.NUM7;
+import static com.github.hikari_toyama.unocard.core.Content.WILD;
+import static com.github.hikari_toyama.unocard.core.Content.WILD_DRAW4;
 
 import android.content.Context;
 
@@ -30,15 +34,14 @@ class AIImpl extends AI {
     private static final Random RND = new Random();
 
     /**
-     * Uno runtime.
-     */
-    private final Uno uno;
-
-    /**
      * Constructor.
+     *
+     * @param context Pass a Context (MainActivity.this) to let us get the Uno
+     *                runtime instance. Uno runtime needs a Context to refer
+     *                application resources, such as card images.
      */
     AIImpl(Context context) {
-        uno = Uno.getInstance(context);
+        super(context);
     } // AIImpl(Context) (Class Constructor)
 
     /**
@@ -50,44 +53,100 @@ class AIImpl extends AI {
      *
      * @return Current player's best color.
      */
-    private Color calcBestColor4NowPlayer() {
-        Color best = RED;
-        int[] score = {0, 0, 0, 0, 0};
-        Player curr = uno.getPlayer(uno.getNow());
+    @Override
+    public Color calcBestColor4NowPlayer() {
+        Color bestColor;
+        Player next, oppo, prev;
+        Color nextWeak, nextStrong;
+        Color oppoWeak, oppoStrong;
+        Color prevWeak, prevStrong;
+        boolean nextIsUno, oppoIsUno, prevIsUno;
 
-        for (Card card : curr.getHandCards()) {
-            switch (card.content) {
-                case REV:
-                case NUM0:
-                    score[card.color.ordinal()] += 2;
-                    break; // case REV, NUM0
+        // When defensing UNO dash, use others' weak color as your best color
+        next = uno.getPlayer(uno.getNext());
+        oppo = uno.getPlayer(uno.getOppo());
+        prev = uno.getPlayer(uno.getPrev());
+        nextIsUno = next.getHandSize() == 1;
+        oppoIsUno = oppo.getHandSize() == 1;
+        prevIsUno = prev.getHandSize() == 1;
+        nextWeak = next.getWeakColor();
+        oppoWeak = oppo.getWeakColor();
+        prevWeak = prev.getWeakColor();
+        if (nextIsUno && nextWeak != NONE) {
+            bestColor = nextWeak;
+        } // if (nextIsUno && nextWeak != NONE)
+        else if (oppoIsUno && oppoWeak != NONE) {
+            bestColor = oppoWeak;
+        } // else if (oppoIsUno && oppoWeak != NONE)
+        else if (prevIsUno && prevWeak != NONE) {
+            bestColor = prevWeak;
+        } // else if (prevIsUno && prevWeak != NONE)
+        else {
+            int[] score = {0, 0, 0, 0, 0};
+            Player curr = uno.getPlayer(uno.getNow());
 
-                case SKIP:
-                case DRAW2:
-                    score[card.color.ordinal()] += 5;
-                    break; // case SKIP, DRAW2
+            for (Card card : curr.getHandCards()) {
+                switch (card.content) {
+                    case WILD:
+                    case WILD_DRAW4:
+                        break; // case WILD, WILD_DRAW4
 
-                default:
-                    score[card.color.ordinal()] += 4;
-                    break; // default
-            } // switch (card.content)
-        } // for (Card card : curr.getHandCards())
+                    case REV:
+                    case NUM0:
+                        score[card.color.ordinal()] += 2;
+                        break; // case REV, NUM0
 
-        // default to red, when only wild cards in hand,
-        // function will return Color.RED
-        if (score[BLUE.ordinal()] > score[best.ordinal()]) {
-            best = BLUE;
-        } // if (score[BLUE.ordinal()] > score[best.ordinal()])
+                    case SKIP:
+                    case DRAW2:
+                        score[card.color.ordinal()] += 5;
+                        break; // case SKIP, DRAW2
 
-        if (score[GREEN.ordinal()] > score[best.ordinal()]) {
-            best = GREEN;
-        } // if (score[GREEN.ordinal()] > score[best.ordinal()])
+                    default:
+                        score[card.color.ordinal()] += 4;
+                        break; // default
+                } // switch (card.content)
+            } // for (Card card : curr.getHandCards())
 
-        if (score[YELLOW.ordinal()] > score[best.ordinal()]) {
-            best = YELLOW;
-        } // if (score[YELLOW.ordinal()] > score[best.ordinal()])
+            // Calculate the best color
+            bestColor = NONE;
+            if (score[RED.ordinal()] > score[bestColor.ordinal()]) {
+                bestColor = RED;
+            } // if (score[RED.ordinal()] > score[bestColor.ordinal()])
 
-        return best;
+            if (score[BLUE.ordinal()] > score[bestColor.ordinal()]) {
+                bestColor = BLUE;
+            } // if (score[BLUE.ordinal()] > score[bestColor.ordinal()])
+
+            if (score[GREEN.ordinal()] > score[bestColor.ordinal()]) {
+                bestColor = GREEN;
+            } // if (score[GREEN.ordinal()] > score[bestColor.ordinal()])
+
+            if (score[YELLOW.ordinal()] > score[bestColor.ordinal()]) {
+                bestColor = YELLOW;
+            } // if (score[YELLOW.ordinal()] > score[bestColor.ordinal()])
+
+            if (bestColor == NONE) {
+                // Only wild cards in hand
+                // Use others' weak color as your best color
+                bestColor
+                        = prevWeak != NONE ? prevWeak
+                        : oppoWeak != NONE ? oppoWeak
+                        : nextWeak != NONE ? nextWeak : RED;
+            } // if (bestColor == NONE)
+        } // else
+
+        // Determine your best color in dangerous cases. Be careful of the
+        // conflict with other opponents' strong colors.
+        nextStrong = next.getStrongColor();
+        oppoStrong = oppo.getStrongColor();
+        prevStrong = prev.getStrongColor();
+        while ((nextIsUno && bestColor == nextStrong)
+                || (oppoIsUno && bestColor == oppoStrong)
+                || (prevIsUno && bestColor == prevStrong)) {
+            bestColor = Color.values()[RND.nextInt(4) + 1];
+        } // while (nextIsUno && bestColor == nextStrong || ...)
+
+        return bestColor;
     } // calcBestColor4NowPlayer()
 
     /**
@@ -155,25 +214,19 @@ class AIImpl extends AI {
      * AI Strategies (Difficulty: EASY). Analyze current player's hand cards,
      * and calculate which is the best card to play out.
      *
-     * @param drawnCard When current player drew a card just now, pass the drawn
-     *                  card. If not, pass null. If drew a card from deck, then
-     *                  you can play only the drawn card, but not the other
-     *                  cards in your hand, immediately.
-     * @param outColor  This is a out parameter. Pass a Color array (length>=1)
-     *                  in order to let us pass the return value by assigning
-     *                  outColor[0]. When the best card to play becomes a wild
-     *                  card, outColor[0] will become the following legal color
-     *                  to change. When the best card to play becomes an action
-     *                  or a number card, outColor[0] will become the player's
-     *                  best color.
+     * @param outColor This is a out parameter. Pass a Color array (length>=1)
+     *                 in order to let us pass the return value by assigning
+     *                 outColor[0]. When the best card to play becomes a wild
+     *                 card, outColor[0] will become the following legal color
+     *                 to change. When the best card to play becomes an action
+     *                 or a number card, outColor[0] will become the player's
+     *                 best color.
      * @return Index of the best card to play, in current player's hand.
      * Or a negative number that means no appropriate card to play.
      */
     @Override
-    public int easyAI_bestCardIndex4NowPlayer(Card drawnCard,
-                                              Color[] outColor) {
+    public int easyAI_bestCardIndex4NowPlayer(Color[] outColor) {
         Card card;
-        boolean legal;
         String errMsg;
         int i, idxBest;
         List<Card> hand;
@@ -204,14 +257,7 @@ class AIImpl extends AI {
         for (i = 0; i < yourSize; ++i) {
             // Index of any kind
             card = hand.get(i);
-            if (drawnCard == null) {
-                legal = uno.isLegalToPlay(card);
-            } // if (drawnCard == null)
-            else {
-                legal = card == drawnCard;
-            } // else
-
-            if (legal) {
+            if (uno.isLegalToPlay(card)) {
                 switch (card.content) {
                     case DRAW2:
                         if (!hasDraw2 || card.color == bestColor) {
@@ -251,57 +297,44 @@ class AIImpl extends AI {
                         } // if (!hasNum || card.color == bestColor)
                         break; // default
                 } // switch (card.content)
-            } // if (legal)
+            } // if (uno.isLegalToPlay(card))
         } // for (i = 0; i < yourSize; ++i)
 
         // Decision tree
         nextSize = uno.getPlayer(uno.getNext()).getHandSize();
-        prevSize = uno.getPlayer(uno.getPrev()).getHandSize();
         if (nextSize == 1) {
             // Strategies when your next player remains only one card.
             // Limit your next player's action as well as you can.
-            if (hasDraw2) {
+            if (hasDraw2)
                 idxBest = idxDraw2;
-            } // if (hasDraw2)
-            else if (hasSkip) {
+            else if (hasSkip)
                 idxBest = idxSkip;
-            } // else if (hasSkip)
-            else if (hasRev) {
+            else if (hasRev)
                 idxBest = idxRev;
-            } // else if (hasRev)
-            else if (hasWD4 && lastColor != bestColor) {
+            else if (hasWD4 && lastColor != bestColor)
                 idxBest = idxWD4;
-            } // else if (hasWD4 && lastColor != bestColor)
-            else if (hasWild && lastColor != bestColor) {
+            else if (hasWild && lastColor != bestColor)
                 idxBest = idxWild;
-            } // else if (hasWild && lastColor != bestColor)
-            else if (hasNum) {
+            else if (hasNum)
                 idxBest = idxNum;
-            } // else if (hasNum)
         } // if (nextSize == 1)
         else {
             // Normal strategies
-            if (hasRev && prevSize > nextSize) {
+            prevSize = uno.getPlayer(uno.getPrev()).getHandSize();
+            if (hasRev && prevSize > nextSize)
                 idxBest = idxRev;
-            } // if (hasRev && prevSize > nextSize)
-            else if (hasNum) {
+            else if (hasNum)
                 idxBest = idxNum;
-            } // else if (hasNum)
-            else if (hasSkip) {
+            else if (hasSkip)
                 idxBest = idxSkip;
-            } // else if (hasSkip)
-            else if (hasDraw2) {
+            else if (hasDraw2)
                 idxBest = idxDraw2;
-            } // else if (hasDraw2)
-            else if (hasRev && prevSize > 1) {
+            else if (hasRev && prevSize > 1)
                 idxBest = idxRev;
-            } // else if (hasRev && prevSize > 1)
-            else if (hasWild) {
+            else if (hasWild)
                 idxBest = idxWild;
-            } // else if (hasWild)
-            else if (hasWD4) {
+            else if (hasWD4)
                 idxBest = idxWD4;
-            } // else if (hasWD4)
         } // else
 
         outColor[0] = bestColor;
@@ -312,34 +345,28 @@ class AIImpl extends AI {
      * AI Strategies (Difficulty: HARD). Analyze current player's hand cards,
      * and calculate which is the best card to play.
      *
-     * @param drawnCard When current player drew a card just now, pass the drawn
-     *                  card. If not, pass null. If drew a card from deck, then
-     *                  you can play only the drawn card, but not the other
-     *                  cards in your hand, immediately.
-     * @param outColor  This is a out parameter. Pass a Color array (length>=1)
-     *                  in order to let us pass the return value by assigning
-     *                  outColor[0]. When the best card to play becomes a wild
-     *                  card, outColor[0] will become the following legal color
-     *                  to change. When the best card to play becomes an action
-     *                  or a number card, outColor[0] will become the player's
-     *                  best color.
+     * @param outColor This is a out parameter. Pass a Color array (length>=1)
+     *                 in order to let us pass the return value by assigning
+     *                 outColor[0]. When the best card to play becomes a wild
+     *                 card, outColor[0] will become the following legal color
+     *                 to change. When the best card to play becomes an action
+     *                 or a number card, outColor[0] will become the player's
+     *                 best color.
      * @return Index of the best card to play, in current player's hand.
      * Or a negative number that means no appropriate card to play.
      */
     @Override
     @SuppressWarnings("CStyleArrayDeclaration")
-    public int hardAI_bestCardIndex4NowPlayer(Card drawnCard,
-                                              Color[] outColor) {
+    public int hardAI_bestCardIndex4NowPlayer(Color[] outColor) {
         Card card;
         String errMsg;
         int i, idxBest;
+        boolean allWild;
         List<Card> hand;
-        boolean legal, allWild;
-        Player curr, next, oppo, prev;
-        Color bestColor, lastColor, safeColor;
+        Player next, oppo, prev;
+        Color bestColor, lastColor;
         int yourSize, nextSize, oppoSize, prevSize;
-        Color nextWeakColor, oppoWeakColor, prevWeakColor;
-        Color nextStrongColor, oppoStrongColor, prevStrongColor;
+        Color nextWeak, nextStrong, oppoStrong, prevStrong;
         int idxNumIn[], idxRev, idxSkip, idxDraw2, idxWild, idxWD4;
         boolean hasNumIn[], hasRev, hasSkip, hasDraw2, hasWild, hasWD4;
 
@@ -348,8 +375,7 @@ class AIImpl extends AI {
             throw new IllegalArgumentException(errMsg);
         }  // if (outColor == null || outColor.length == 0)
 
-        curr = uno.getPlayer(uno.getNow());
-        hand = curr.getHandCards();
+        hand = uno.getPlayer(uno.getNow()).getHandCards();
         yourSize = hand.size();
         if (yourSize == 1) {
             // Only one card remained. Play it when it's legal.
@@ -370,14 +396,7 @@ class AIImpl extends AI {
             // Index of any kind
             card = hand.get(i);
             allWild = allWild && card.isWild();
-            if (drawnCard == null) {
-                legal = uno.isLegalToPlay(card);
-            } // if (drawnCard == null)
-            else {
-                legal = card == drawnCard;
-            } // else
-
-            if (legal) {
+            if (uno.isLegalToPlay(card)) {
                 switch (card.content) {
                     case DRAW2:
                         if (!hasDraw2 || card.color == bestColor) {
@@ -411,672 +430,414 @@ class AIImpl extends AI {
                         break; // case WILD_DRAW4
 
                     default: // number cards
-                        if (!hasNumIn[card.color.ordinal()]) {
-                            idxNumIn[card.color.ordinal()] = i;
-                            hasNumIn[card.color.ordinal()] = true;
-                        } // if (!hasNumIn[card.color.ordinal()])
+                        idxNumIn[card.color.ordinal()] = i;
+                        hasNumIn[card.color.ordinal()] = true;
                         break; // default
                 } // switch (card.content)
-            } // if (legal)
+            } // if (uno.isLegalToPlay(card))
         } // for (i = 0; i < yourSize; ++i)
 
         // Decision tree
         next = uno.getPlayer(uno.getNext());
         nextSize = next.getHandSize();
-        nextWeakColor = next.getWeakColor();
-        nextStrongColor = next.getStrongColor();
+        nextWeak = next.getWeakColor();
+        nextStrong = next.getStrongColor();
         oppo = uno.getPlayer(uno.getOppo());
         oppoSize = oppo.getHandSize();
-        oppoWeakColor = oppo.getWeakColor();
-        oppoStrongColor = oppo.getStrongColor();
+        oppoStrong = oppo.getStrongColor();
         prev = uno.getPlayer(uno.getPrev());
         prevSize = prev.getHandSize();
-        prevWeakColor = prev.getWeakColor();
-        prevStrongColor = prev.getStrongColor();
+        prevStrong = prev.getStrongColor();
         if (nextSize == 1) {
             // Strategies when your next player remains only one card.
             // Limit your next player's action as well as you can.
-            if (hasDraw2) {
-                // Play a [+2] to make your next player draw two cards!
-                outColor[0] = bestColor;
-                return idxDraw2;
-            } // if (hasDraw2)
-
-            // Now calculate your safe color, which can make your
-            // next player NOT to win the game.
-            if ((nextStrongColor != NONE && nextStrongColor != bestColor)
-                    || nextWeakColor == NONE) {
-                safeColor = bestColor;
-            } // if (nextStrongColor != NONE && ...)
-            else {
-                safeColor = nextWeakColor;
-            } // else
-
-            while (safeColor == nextStrongColor
-                    || (oppoSize == 1 && safeColor == oppoStrongColor)
-                    || (prevSize == 1 && safeColor == prevStrongColor)) {
-                // Determine your best color in dangerous cases. Firstly
-                // choose next player's weak color, but be careful of the
-                // conflict with other opponents' strong colors!
-                safeColor = Color.values()[RND.nextInt(4) + 1];
-            } // while (safeColor == nextStrongColor || ...)
-
-            if (lastColor == nextStrongColor) {
-                // Your next player played a wild card, started an UNO dash
-                // in its last action, and what's worse is that the legal color
-                // has not been changed yet. You have to change the following
-                // legal color, or you will approximately 100% lose this game.
-                if (hasNumIn[safeColor.ordinal()]) {
-                    idxBest = idxNumIn[safeColor.ordinal()];
-                } // if (hasNumIn[safeColor.ordinal()])
-                else if (hasNumIn[RED.ordinal()] &&
-                        (prevSize > 1 || prevStrongColor != RED) &&
-                        (oppoSize > 1 || oppoStrongColor != RED) &&
-                        nextStrongColor != RED) {
+            if (hasDraw2)
+                idxBest = idxDraw2;
+            else if (lastColor == nextStrong) {
+                // Priority when next called Uno & lastColor == nextStrong:
+                // 0: Number cards, NOT in color of nextStrong
+                // 1: Skip cards, in any color
+                // 2: Wild cards, switch to your best color
+                // 3: Wild +4 cards, switch to your best color
+                // 4: Reverse cards, in any color
+                // 5: Draw one, and pray to get one of the above...
+                if (hasNumIn[bestColor.ordinal()])
+                    idxBest = idxNumIn[bestColor.ordinal()];
+                else if (hasNumIn[RED.ordinal()] && nextStrong != RED
+                        && (prevSize > 1 || prevStrong != RED)
+                        && (oppoSize > 1 || oppoStrong != RED))
                     idxBest = idxNumIn[RED.ordinal()];
-                } // else if (hasNumIn[RED.ordinal()] && ...)
-                else if (hasNumIn[BLUE.ordinal()] &&
-                        (prevSize > 1 || prevStrongColor != BLUE) &&
-                        (oppoSize > 1 || oppoStrongColor != BLUE) &&
-                        nextStrongColor != BLUE) {
+                else if (hasNumIn[BLUE.ordinal()] && nextStrong != BLUE
+                        && (prevSize > 1 || prevStrong != BLUE)
+                        && (oppoSize > 1 || oppoStrong != BLUE))
                     idxBest = idxNumIn[BLUE.ordinal()];
-                } // else if (hasNumIn[BLUE.ordinal()] && ...)
-                else if (hasNumIn[GREEN.ordinal()] &&
-                        (prevSize > 1 || prevStrongColor != GREEN) &&
-                        (oppoSize > 1 || oppoStrongColor != GREEN) &&
-                        nextStrongColor != GREEN) {
+                else if (hasNumIn[GREEN.ordinal()] && nextStrong != GREEN
+                        && (prevSize > 1 || prevStrong != GREEN)
+                        && (oppoSize > 1 || oppoStrong != GREEN))
                     idxBest = idxNumIn[GREEN.ordinal()];
-                } // else if (hasNumIn[GREEN.ordinal()] && ...)
-                else if (hasNumIn[YELLOW.ordinal()] &&
-                        (prevSize > 1 || prevStrongColor != YELLOW) &&
-                        (oppoSize > 1 || oppoStrongColor != YELLOW) &&
-                        nextStrongColor != YELLOW) {
+                else if (hasNumIn[YELLOW.ordinal()] && nextStrong != YELLOW
+                        && (prevSize > 1 || prevStrong != YELLOW)
+                        && (oppoSize > 1 || oppoStrong != YELLOW))
                     idxBest = idxNumIn[YELLOW.ordinal()];
-                } // else if (hasNumIn[YELLOW.ordinal()] && ...)
-                else if (hasSkip) {
-                    // Play a [skip] to skip its turn and wait for more chances.
+                else if (hasSkip)
                     idxBest = idxSkip;
-                } // else if (hasSkip)
-                else if (hasWD4) {
-                    // Now start to use wild cards.
-                    bestColor = safeColor;
-                    idxBest = idxWD4;
-                } // else if (hasWD4)
-                else if (hasWild) {
-                    bestColor = safeColor;
+                else if (hasWild)
                     idxBest = idxWild;
-                } // else if (hasWild)
-                else if (hasRev) {
-                    // Finally play a [reverse] to get help from other players.
-                    // If you even do not have this choice, you lose this game.
-                    idxBest = idxRev;
-                } // else if (hasRev)
-            } // if (lastColor == nextStrongColor)
-            else if (nextStrongColor != NONE) {
-                // Your next player played a wild card, started an UNO dash
-                // in its last action, but fortunately the legal color has been
-                // changed already. Just be careful not to re-change the legal
-                // color to the strong color again.
-                if (hasNumIn[safeColor.ordinal()]) {
-                    idxBest = idxNumIn[safeColor.ordinal()];
-                } // if (hasNumIn[safeColor.ordinal()])
-                else if (hasNumIn[RED.ordinal()] &&
-                        (prevSize > 1 || prevStrongColor != RED) &&
-                        (oppoSize > 1 || oppoStrongColor != RED) &&
-                        nextStrongColor != RED) {
-                    idxBest = idxNumIn[RED.ordinal()];
-                } // else if (hasNumIn[RED.ordinal()] && ...)
-                else if (hasNumIn[BLUE.ordinal()] &&
-                        (prevSize > 1 || prevStrongColor != BLUE) &&
-                        (oppoSize > 1 || oppoStrongColor != BLUE) &&
-                        nextStrongColor != BLUE) {
-                    idxBest = idxNumIn[BLUE.ordinal()];
-                } // else if (hasNumIn[BLUE.ordinal()] && ...)
-                else if (hasNumIn[GREEN.ordinal()] &&
-                        (prevSize > 1 || prevStrongColor != GREEN) &&
-                        (oppoSize > 1 || oppoStrongColor != GREEN) &&
-                        nextStrongColor != GREEN) {
-                    idxBest = idxNumIn[GREEN.ordinal()];
-                } // else if (hasNumIn[GREEN.ordinal()] && ...)
-                else if (hasNumIn[YELLOW.ordinal()] &&
-                        (prevSize > 1 || prevStrongColor != YELLOW) &&
-                        (oppoSize > 1 || oppoStrongColor != YELLOW) &&
-                        nextStrongColor != YELLOW) {
-                    idxBest = idxNumIn[YELLOW.ordinal()];
-                } // else if (hasNumIn[YELLOW.ordinal()] && ...)
-                else if (hasRev &&
-                        prevSize >= 4 &&
-                        hand.get(idxRev).color != nextStrongColor) {
-                    idxBest = idxRev;
-                } // else if (hasRev && ...)
-                else if (hasSkip &&
-                        hand.get(idxSkip).color != nextStrongColor) {
-                    idxBest = idxSkip;
-                } // else if (hasSkip && ...)
-            } // else if (nextStrongColor != NONE)
-            else {
-                // Your next player started an UNO dash without playing a wild
-                // card, so use normal defense strategies.
-                if (hasSkip) {
-                    // Play a [skip] to skip its turn and wait for more chances.
-                    idxBest = idxSkip;
-                } // if (hasSkip)
-                else if (hasWD4 && !hasNumIn[lastColor.ordinal()]) {
-                    // Then play a [wild +4] to make your next player draw four
-                    // cards (if it's legal to play this card).
-                    if (oppoSize == 1 || prevSize == 1) {
-                        // Be careful when multiple opponents UNOed.
-                        bestColor = safeColor;
-                    } // if (oppoSize == 1 || prevSize == 1)
-
+                else if (hasWD4)
                     idxBest = idxWD4;
-                } // else if (hasWD4 && !hasNumIn[lastColor.ordinal()])
-                else if (hasRev) {
-                    // Play a [reverse] to get help from your opposite player.
+                else if (hasRev)
                     idxBest = idxRev;
-                } // else if (hasRev)
-                else if (hasNumIn[safeColor.ordinal()]) {
-                    // Play a number card or a wild card to change legal color
-                    // to your best as far as you can.
-                    idxBest = idxNumIn[safeColor.ordinal()];
-                } // else if (hasNumIn[safeColor.ordinal()])
-                else if (lastColor != safeColor) {
-                    if (hasWild) {
-                        bestColor = safeColor;
-                        idxBest = idxWild;
-                    } // if (hasWild)
-                    else if (hasWD4) {
-                        bestColor = safeColor;
-                        idxBest = idxWD4;
-                    } // else if (hasWD4)
-                    else if (hasNumIn[RED.ordinal()] &&
-                            (prevSize > 1 || prevStrongColor != RED) &&
-                            (oppoSize > 1 || oppoStrongColor != RED)) {
-                        idxBest = idxNumIn[RED.ordinal()];
-                    } // else if (hasNumIn[RED.ordinal()] && ...)
-                    else if (hasNumIn[BLUE.ordinal()] &&
-                            (prevSize > 1 || prevStrongColor != BLUE) &&
-                            (oppoSize > 1 || oppoStrongColor != BLUE)) {
-                        idxBest = idxNumIn[BLUE.ordinal()];
-                    } // else if (hasNumIn[BLUE.ordinal()] && ...)
-                    else if (hasNumIn[GREEN.ordinal()] &&
-                            (prevSize > 1 || prevStrongColor != GREEN) &&
-                            (oppoSize > 1 || oppoStrongColor != GREEN)) {
-                        idxBest = idxNumIn[GREEN.ordinal()];
-                    } // else if (hasNumIn[GREEN.ordinal()] && ...)
-                    else if (hasNumIn[YELLOW.ordinal()] &&
-                            (prevSize > 1 || prevStrongColor != YELLOW) &&
-                            (oppoSize > 1 || oppoStrongColor != YELLOW)) {
-                        idxBest = idxNumIn[YELLOW.ordinal()];
-                    } // else if (hasNumIn[YELLOW.ordinal()] && ...)
-                } // else if (lastColor != safeColor)
+            } // if (lastColor == nextStrong)
+            else if (nextStrong != NONE) {
+                // Priority when next called Uno & lastColor != nextStrong:
+                // (nextStrong is known)
+                // 0: Number cards, NOT in color of nextStrong
+                // 1: Reverse cards, NOT in color of nextStrong
+                // 2: Skip cards, NOT in color of nextStrong
+                // 3: Draw one because it's not necessary to use wild cards
+                if (hasNumIn[bestColor.ordinal()])
+                    idxBest = idxNumIn[bestColor.ordinal()];
+                else if (hasNumIn[RED.ordinal()] && nextStrong != RED
+                        && (prevSize > 1 || prevStrong != RED)
+                        && (oppoSize > 1 || oppoStrong != RED))
+                    idxBest = idxNumIn[RED.ordinal()];
+                else if (hasNumIn[BLUE.ordinal()] && nextStrong != BLUE
+                        && (prevSize > 1 || prevStrong != BLUE)
+                        && (oppoSize > 1 || oppoStrong != BLUE))
+                    idxBest = idxNumIn[BLUE.ordinal()];
+                else if (hasNumIn[GREEN.ordinal()] && nextStrong != GREEN
+                        && (prevSize > 1 || prevStrong != GREEN)
+                        && (oppoSize > 1 || oppoStrong != GREEN))
+                    idxBest = idxNumIn[GREEN.ordinal()];
+                else if (hasNumIn[YELLOW.ordinal()] && nextStrong != YELLOW
+                        && (prevSize > 1 || prevStrong != YELLOW)
+                        && (oppoSize > 1 || oppoStrong != YELLOW))
+                    idxBest = idxNumIn[YELLOW.ordinal()];
+                else if (hasRev && prevSize >= 4
+                        && hand.get(idxRev).color != nextStrong)
+                    idxBest = idxRev;
+                else if (hasSkip && hand.get(idxSkip).color != nextStrong)
+                    idxBest = idxSkip;
+            } // else if (nextStrong != NONE)
+            else {
+                // Priority when next called Uno & nextStrong is unknown:
+                // 0: Skip cards, in any color
+                // 1: Reverse cards, in any color
+                // 2: Wild +4 cards, if no cards matching last color
+                // 3: Number cards, in your best color
+                // 4: Wild cards, switch to your best color
+                // 5: Wild +4 cards, switch to your best color
+                // 6: Number cards, in any color
+                if (hasSkip)
+                    idxBest = idxSkip;
+                else if (hasRev)
+                    idxBest = idxRev;
+                else if (hasWD4 && !hasNumIn[lastColor.ordinal()])
+                    idxBest = idxWD4;
+                else if (hasNumIn[bestColor.ordinal()])
+                    idxBest = idxNumIn[bestColor.ordinal()];
+                else if (hasWild)
+                    idxBest = idxWild;
+                else if (hasWD4)
+                    idxBest = idxWD4;
+                else if (hasNumIn[RED.ordinal()]
+                        && (prevSize > 1 || prevStrong != RED)
+                        && (oppoSize > 1 || oppoStrong != RED))
+                    idxBest = idxNumIn[RED.ordinal()];
+                else if (hasNumIn[BLUE.ordinal()]
+                        && (prevSize > 1 || prevStrong != BLUE)
+                        && (oppoSize > 1 || oppoStrong != BLUE))
+                    idxBest = idxNumIn[BLUE.ordinal()];
+                else if (hasNumIn[GREEN.ordinal()]
+                        && (prevSize > 1 || prevStrong != GREEN)
+                        && (oppoSize > 1 || oppoStrong != GREEN))
+                    idxBest = idxNumIn[GREEN.ordinal()];
+                else if (hasNumIn[YELLOW.ordinal()]
+                        && (prevSize > 1 || prevStrong != YELLOW)
+                        && (oppoSize > 1 || oppoStrong != YELLOW))
+                    idxBest = idxNumIn[YELLOW.ordinal()];
             } // else
         } // if (nextSize == 1)
         else if (prevSize == 1) {
             // Strategies when your previous player remains only one card.
-            // Save your action cards as much as you can. once a reverse card is
-            // played, you can use these cards to limit your previous player's
-            // action. Now calculate your safe color, which can make your
-            // previous player NOT to win the game.
-            if ((prevStrongColor != NONE && prevStrongColor != bestColor)
-                    || prevWeakColor == NONE) {
-                safeColor = bestColor;
-            } // if (prevStrongColor != NONE && ...)
-            else {
-                safeColor = prevWeakColor;
-            } // else
-
-            while (safeColor == prevStrongColor
-                    || (oppoSize == 1 && safeColor == oppoStrongColor)) {
-                // Determine your best color in dangerous cases. Firstly
-                // choose previous player's weak color, but be careful of
-                // the conflict with other opponents' strong colors!
-                safeColor = Color.values()[RND.nextInt(4) + 1];
-            } // while (safeColor == prevStrongColor || ...)
-
-            if (lastColor == prevStrongColor) {
-                // Your previous player played a wild card, started an UNO dash
-                // in its last action. You have to change the following legal
-                // color, or you will approximately 100% lose this game.
-                if (hasSkip &&
-                        hand.get(idxSkip).color != prevStrongColor) {
-                    // When your opposite player played a [skip], and you have a
-                    // [skip] with different color, play it.
+            // Save your action cards as much as you can, because once a reverse
+            // card is put down, you can use these cards to limit your previous
+            // player's action.
+            if (lastColor == prevStrong) {
+                // Priority when prev called Uno & lastColor == prevStrong:
+                // 0: Skip cards, NOT in color of prevStrong
+                // 1: Wild cards, switch to your best color
+                // 2: Wild +4 cards, switch to your best color
+                // 3: Number cards, in any color, but firstly your best color
+                // 4: Draw one because it's not necessary to use other cards
+                if (hasSkip && hand.get(idxSkip).color != prevStrong)
                     idxBest = idxSkip;
-                } // if (hasSkip && ...)
-                else if (hasWild) {
-                    // Now start to use wild cards.
-                    bestColor = safeColor;
+                else if (hasWild)
                     idxBest = idxWild;
-                } // else if (hasWild)
-                else if (hasWD4) {
-                    bestColor = safeColor;
+                else if (hasWD4)
                     idxBest = idxWD4;
-                } // else if (hasWD4)
-                else if (hasNumIn[bestColor.ordinal()]) {
-                    // When you have no wild cards, play a number card and try
-                    // to get help from other players.
+                else if (hasNumIn[bestColor.ordinal()])
                     idxBest = idxNumIn[bestColor.ordinal()];
-                } // else if (hasNumIn[bestColor.ordinal()])
-                else if (hasNumIn[RED.ordinal()]) {
+                else if (hasNumIn[RED.ordinal()])
                     idxBest = idxNumIn[RED.ordinal()];
-                } // else if (hasNumIn[RED.ordinal()])
-                else if (hasNumIn[BLUE.ordinal()]) {
+                else if (hasNumIn[BLUE.ordinal()])
                     idxBest = idxNumIn[BLUE.ordinal()];
-                } // else if (hasNumIn[BLUE.ordinal()])
-                else if (hasNumIn[GREEN.ordinal()]) {
+                else if (hasNumIn[GREEN.ordinal()])
                     idxBest = idxNumIn[GREEN.ordinal()];
-                } // else if (hasNumIn[GREEN.ordinal()])
-                else if (hasNumIn[YELLOW.ordinal()]) {
+                else if (hasNumIn[YELLOW.ordinal()])
                     idxBest = idxNumIn[YELLOW.ordinal()];
-                } // else if (hasNumIn[YELLOW.ordinal()])
-            } // if (lastColor == prevStrongColor)
-            else if (prevStrongColor != NONE) {
-                // Your previous player played a wild card, started an UNO dash
-                // in its last action, but fortunately the legal color has been
-                // changed already. Just be careful not to re-change the legal
-                // color to the strong color again.
-                if (hasNumIn[safeColor.ordinal()]) {
-                    idxBest = idxNumIn[safeColor.ordinal()];
-                } // if (hasNumIn[safeColor.ordinal()])
-                else if (hasNumIn[RED.ordinal()] &&
-                        (oppoSize > 1 || oppoStrongColor != RED) &&
-                        prevStrongColor != RED) {
+            } // if (lastColor == prevStrong)
+            else if (prevStrong != NONE) {
+                // Priority when prev called Uno & lastColor != prevStrong:
+                // (prevStrong is known)
+                // 0: Reverse cards, NOT in color of prevStrong
+                // 1: Number cards, NOT in color of prevStrong
+                // 2: Draw one because it's not necessary to use other cards
+                if (hasRev && hand.get(idxRev).color != prevStrong)
+                    idxBest = idxRev;
+                else if (hasNumIn[bestColor.ordinal()])
+                    idxBest = idxNumIn[bestColor.ordinal()];
+                else if (hasNumIn[RED.ordinal()] && prevStrong != RED
+                        && (oppoSize > 1 || oppoStrong != RED))
                     idxBest = idxNumIn[RED.ordinal()];
-                } // else if (hasNumIn[RED.ordinal()] && ...)
-                else if (hasNumIn[BLUE.ordinal()] &&
-                        (oppoSize > 1 || oppoStrongColor != BLUE) &&
-                        prevStrongColor != BLUE) {
+                else if (hasNumIn[BLUE.ordinal()] && prevStrong != BLUE
+                        && (oppoSize > 1 || oppoStrong != BLUE))
                     idxBest = idxNumIn[BLUE.ordinal()];
-                } // else if (hasNumIn[BLUE.ordinal()] && ...)
-                else if (hasNumIn[GREEN.ordinal()] &&
-                        (oppoSize > 1 || oppoStrongColor != GREEN) &&
-                        prevStrongColor != GREEN) {
+                else if (hasNumIn[GREEN.ordinal()] && prevStrong != GREEN
+                        && (oppoSize > 1 || oppoStrong != GREEN))
                     idxBest = idxNumIn[GREEN.ordinal()];
-                } // else if (hasNumIn[GREEN.ordinal()] && ...)
-                else if (hasNumIn[YELLOW.ordinal()] &&
-                        (oppoSize > 1 || oppoStrongColor != YELLOW) &&
-                        prevStrongColor != YELLOW) {
+                else if (hasNumIn[YELLOW.ordinal()] && prevStrong != YELLOW
+                        && (oppoSize > 1 || oppoStrong != YELLOW))
                     idxBest = idxNumIn[YELLOW.ordinal()];
-                } // else if (hasNumIn[YELLOW.ordinal()] && ...)
-            } // else if (prevStrongColor != NONE)
+            } // else if (prevStrong != NONE)
             else {
-                // Your previous player started an UNO dash without playing a
-                // wild card, so use normal defense strategies.
-                if (hasNumIn[safeColor.ordinal()]) {
-                    idxBest = idxNumIn[safeColor.ordinal()];
-                } // if (hasNumIn[safeColor.ordinal()])
-                else if (hasWild && lastColor != safeColor) {
-                    bestColor = safeColor;
-                    idxBest = idxWild;
-                } // else if (hasWild && lastColor != safeColor)
-                else if (hasWD4 && lastColor != safeColor) {
-                    bestColor = safeColor;
-                    idxBest = idxWD4;
-                } // else if (hasWD4 && lastColor != safeColor)
-                else if (hasNumIn[bestColor.ordinal()]) {
+                // Priority when prev called Uno & prevStrong is unknown:
+                // 0: Number cards, in your best color
+                // 1: Wild cards, switch to your best color
+                // 2: Wild +4 cards, switch to your best color
+                // 3: Number cards, in any color
+                // 4: Draw one. DO NOT PLAY REVERSE CARDS!
+                if (hasNumIn[bestColor.ordinal()])
                     idxBest = idxNumIn[bestColor.ordinal()];
-                } // else if (hasNumIn[bestColor.ordinal()])
-                else if (hasNumIn[RED.ordinal()]) {
+                else if (hasWild && lastColor != bestColor)
+                    idxBest = idxWild;
+                else if (hasWD4 && lastColor != bestColor)
+                    idxBest = idxWD4;
+                else if (hasNumIn[RED.ordinal()])
                     idxBest = idxNumIn[RED.ordinal()];
-                } // else if (hasNumIn[RED.ordinal()])
-                else if (hasNumIn[BLUE.ordinal()]) {
+                else if (hasNumIn[BLUE.ordinal()])
                     idxBest = idxNumIn[BLUE.ordinal()];
-                } // else if (hasNumIn[BLUE.ordinal()])
-                else if (hasNumIn[GREEN.ordinal()]) {
+                else if (hasNumIn[GREEN.ordinal()])
                     idxBest = idxNumIn[GREEN.ordinal()];
-                } // else if (hasNumIn[GREEN.ordinal()])
-                else if (hasNumIn[YELLOW.ordinal()]) {
+                else if (hasNumIn[YELLOW.ordinal()])
                     idxBest = idxNumIn[YELLOW.ordinal()];
-                } // else if (hasNumIn[YELLOW.ordinal()])
             } // else
         } // else if (prevSize == 1)
         else if (oppoSize == 1) {
             // Strategies when your opposite player remains only one card.
             // Give more freedom to your next player, the only one that can
-            // directly limit your opposite player's action. Now calculate
-            // your safe color, which can make your opposite player NOT to
-            // win the game.
-            if ((oppoStrongColor != NONE && oppoStrongColor != bestColor)
-                    || oppoWeakColor == NONE) {
-                safeColor = bestColor;
-            } // if (oppoStrongColor != NONE && ...)
-            else {
-                safeColor = oppoWeakColor;
-            } // else
-
-            while (safeColor == oppoStrongColor) {
-                // Determine your best color in dangerous cases. Firstly
-                // choose opposite player's weak color, but be careful of
-                // the conflict with other opponents' strong colors!
-                safeColor = Color.values()[RND.nextInt(4) + 1];
-            } // while (safeColor == oppoStrongColor)
-
-            if (lastColor == oppoStrongColor) {
-                // Your opposite player played a wild card, started an UNO dash
-                // in its last action, and what's worse is that the legal color
-                // has not been changed yet. You have to change the following
-                // legal color, or you will approximately 100% lose this game.
-                if (hasNumIn[safeColor.ordinal()]) {
-                    // At first, try to change legal color by playing an action
-                    // card or a number card, instead of using wild cards.
-                    idxBest = idxNumIn[safeColor.ordinal()];
-                } // if (hasNumIn[safeColor.ordinal()])
-                else if (hasNumIn[bestColor.ordinal()]
-                        && oppoStrongColor != bestColor) {
+            // directly limit your opposite player's action.
+            if (lastColor == oppoStrong) {
+                // Priority when oppo called Uno & lastColor == oppoStrong:
+                // 0: Number cards, NOT in color of oppoStrong
+                // 1: Reverse cards, NOT in color of oppoStrong
+                // 2: Skip cards, NOT in color of oppoStrong
+                // 3: +2 cards, NOT in color of oppoStrong
+                // 4: Wild cards, switch to your best color
+                // 5: Wild +4 cards, switch to your best color
+                // 6: Reverse cards, in color of oppoStrong
+                //    (only when prevSize > nextSize)
+                //    (pray that prev can limit oppo!)
+                // 7: Number cards, in color of oppoStrong
+                //    (pray that next can limit oppo!)
+                if (hasNumIn[bestColor.ordinal()])
                     idxBest = idxNumIn[bestColor.ordinal()];
-                } // else if (hasNumIn[bestColor.ordinal()] && ...)
-                else if (hasNumIn[RED.ordinal()]
-                        && oppoStrongColor != RED) {
+                else if (hasNumIn[RED.ordinal()] && oppoStrong != RED)
                     idxBest = idxNumIn[RED.ordinal()];
-                } // else if (hasNumIn[RED.ordinal()] && ...)
-                else if (hasNumIn[BLUE.ordinal()]
-                        && oppoStrongColor != BLUE) {
+                else if (hasNumIn[BLUE.ordinal()] && oppoStrong != BLUE)
                     idxBest = idxNumIn[BLUE.ordinal()];
-                } // else if (hasNumIn[BLUE.ordinal()] && ...)
-                else if (hasNumIn[GREEN.ordinal()]
-                        && oppoStrongColor != GREEN) {
+                else if (hasNumIn[GREEN.ordinal()] && oppoStrong != GREEN)
                     idxBest = idxNumIn[GREEN.ordinal()];
-                } // else if (hasNumIn[GREEN.ordinal()] && ...)
-                else if (hasNumIn[YELLOW.ordinal()]
-                        && oppoStrongColor != YELLOW) {
+                else if (hasNumIn[YELLOW.ordinal()] && oppoStrong != YELLOW)
                     idxBest = idxNumIn[YELLOW.ordinal()];
-                } // else if (hasNumIn[YELLOW.ordinal()] && ...)
-                else if (hasRev &&
-                        hand.get(idxRev).color != oppoStrongColor) {
+                else if (hasRev && hand.get(idxRev).color != oppoStrong)
                     idxBest = idxRev;
-                } // else if (hasRev && ...)
-                else if (hasSkip &&
-                        hand.get(idxSkip).color != oppoStrongColor) {
+                else if (hasSkip && hand.get(idxSkip).color != oppoStrong)
                     idxBest = idxSkip;
-                } // else if (hasSkip && ...)
-                else if (hasDraw2 &&
-                        hand.get(idxDraw2).color != oppoStrongColor) {
+                else if (hasDraw2 && hand.get(idxDraw2).color != oppoStrong)
                     idxBest = idxDraw2;
-                } // else if (hasDraw2 && ...)
-                else if (hasWild) {
-                    // Now start to use your wild cards.
-                    bestColor = safeColor;
+                else if (hasWild)
                     idxBest = idxWild;
-                } // else if (hasWild)
-                else if (hasWD4) {
-                    bestColor = safeColor;
+                else if (hasWD4)
                     idxBest = idxWD4;
-                } // else if (hasWD4)
-                else if (hasRev && prevSize - nextSize >= 3) {
-                    // Finally try to get help from other players.
+                else if (hasRev && prevSize > nextSize)
                     idxBest = idxRev;
-                } // else if (hasRev && prevSize - nextSize >= 3)
-                else if (hasNumIn[bestColor.ordinal()]) {
-                    idxBest = idxNumIn[bestColor.ordinal()];
-                } // else if (hasNumIn[bestColor.ordinal()])
-                else if (hasNumIn[RED.ordinal()]) {
+                else if (hasNumIn[RED.ordinal()])
                     idxBest = idxNumIn[RED.ordinal()];
-                } // else if (hasNumIn[RED.ordinal()])
-                else if (hasNumIn[BLUE.ordinal()]) {
+                else if (hasNumIn[BLUE.ordinal()])
                     idxBest = idxNumIn[BLUE.ordinal()];
-                } // else if (hasNumIn[BLUE.ordinal()])
-                else if (hasNumIn[GREEN.ordinal()]) {
+                else if (hasNumIn[GREEN.ordinal()])
                     idxBest = idxNumIn[GREEN.ordinal()];
-                } // else if (hasNumIn[GREEN.ordinal()])
-                else if (hasNumIn[YELLOW.ordinal()]) {
+                else if (hasNumIn[YELLOW.ordinal()])
                     idxBest = idxNumIn[YELLOW.ordinal()];
-                } // else if (hasNumIn[YELLOW.ordinal()])
-            } // if (lastColor == oppoStrongColor)
-            else if (oppoStrongColor != NONE) {
-                // Your opposite player played a wild card, started an UNO dash
-                // in its last action, but fortunately the legal color has been
-                // changed already. Just be careful not to re-change the legal
-                // color to the strong color again.
-                if (hasNumIn[safeColor.ordinal()]) {
-                    idxBest = idxNumIn[safeColor.ordinal()];
-                } // if (hasNumIn[safeColor.ordinal()])
-                else if (hasNumIn[bestColor.ordinal()]
-                        && oppoStrongColor != bestColor) {
+            } // if (lastColor == oppoStrong)
+            else if (oppoStrong != NONE) {
+                // Priority when oppo called Uno & lastColor != oppoStrong:
+                // (oppoStrong is known)
+                // 0: Number cards, NOT in color of oppoStrong
+                // 1: Reverse cards, NOT in color of oppoStrong
+                // 2: Skip cards, NOT in color of oppoStrong
+                // 3: +2 cards, NOT in color of oppoStrong
+                // 4: Draw one because it's not necessary to use other cards
+                if (hasNumIn[bestColor.ordinal()])
                     idxBest = idxNumIn[bestColor.ordinal()];
-                } // else if (hasNumIn[bestColor.ordinal()] && ...)
-                else if (hasNumIn[RED.ordinal()]
-                        && oppoStrongColor != RED) {
+                else if (hasNumIn[RED.ordinal()] && oppoStrong != RED)
                     idxBest = idxNumIn[RED.ordinal()];
-                } // else if (hasNumIn[RED.ordinal()] && ...)
-                else if (hasNumIn[BLUE.ordinal()]
-                        && oppoStrongColor != BLUE) {
+                else if (hasNumIn[BLUE.ordinal()] && oppoStrong != BLUE)
                     idxBest = idxNumIn[BLUE.ordinal()];
-                } // else if (hasNumIn[BLUE.ordinal()] && ...)
-                else if (hasNumIn[GREEN.ordinal()]
-                        && oppoStrongColor != GREEN) {
+                else if (hasNumIn[GREEN.ordinal()] && oppoStrong != GREEN)
                     idxBest = idxNumIn[GREEN.ordinal()];
-                } // else if (hasNumIn[GREEN.ordinal()] && ...)
-                else if (hasNumIn[YELLOW.ordinal()]
-                        && oppoStrongColor != YELLOW) {
+                else if (hasNumIn[YELLOW.ordinal()] && oppoStrong != YELLOW)
                     idxBest = idxNumIn[YELLOW.ordinal()];
-                } // else if (hasNumIn[YELLOW.ordinal()] && ...)
-                else if (hasRev &&
-                        hand.get(idxRev).color != oppoStrongColor) {
+                else if (hasRev && hand.get(idxRev).color != oppoStrong)
                     idxBest = idxRev;
-                } // else if (hasRev && ...)
-                else if (hasSkip &&
-                        nextSize <= 4 &&
-                        hand.get(idxSkip).color != oppoStrongColor) {
+                else if (hasSkip && nextSize <= 4
+                        && hand.get(idxSkip).color != oppoStrong)
                     idxBest = idxSkip;
-                } // else if (hasSkip && ...)
-                else if (hasDraw2 &&
-                        nextSize <= 4 &&
-                        hand.get(idxDraw2).color != oppoStrongColor) {
+                else if (hasDraw2 && nextSize <= 4
+                        && hand.get(idxDraw2).color != oppoStrong)
                     idxBest = idxDraw2;
-                } // else if (hasDraw2 && ...)
-            } // else if (oppoStrongColor != NONE)
+            } // else if (oppoStrong != NONE)
             else {
-                // Your opposite player started an UNO dash without playing a
-                // wild card, so use normal defense strategies.
-                if (hasRev && prevSize - nextSize >= 3) {
-                    // Firstly play a [reverse] when your next player remains
-                    // only a few cards but your previous player remains a lot
-                    // of cards, because it seems that your previous player has
-                    // more possibility to limit your opposite player's action.
+                // Priority when oppo called Uno & oppoStrong is unknown:
+                // 0: Reverse cards, in any color
+                //    (only when prevSize > nextSize)
+                // 1: Number cards, in any color, but firstly your best color
+                // 2: Wild cards, switch to your best color
+                // 3: Wild +4 cards, switch to your best color
+                // 4: Draw one because it's not necessary to use other cards
+                if (hasRev && prevSize > nextSize)
                     idxBest = idxRev;
-                } // if (hasRev && prevSize - nextSize >= 3)
-                else if (hasNumIn[safeColor.ordinal()]) {
-                    // Then you can play a number card.
-                    idxBest = idxNumIn[safeColor.ordinal()];
-                } // else if (hasNumIn[safeColor.ordinal()])
-                else if (hasNumIn[RED.ordinal()]) {
+                else if (hasNumIn[bestColor.ordinal()])
+                    idxBest = idxNumIn[bestColor.ordinal()];
+                else if (hasNumIn[RED.ordinal()])
                     idxBest = idxNumIn[RED.ordinal()];
-                } // else if (hasNumIn[RED.ordinal()])
-                else if (hasNumIn[BLUE.ordinal()]) {
+                else if (hasNumIn[BLUE.ordinal()])
                     idxBest = idxNumIn[BLUE.ordinal()];
-                } // else if (hasNumIn[BLUE.ordinal()])
-                else if (hasNumIn[GREEN.ordinal()]) {
+                else if (hasNumIn[GREEN.ordinal()])
                     idxBest = idxNumIn[GREEN.ordinal()];
-                } // else if (hasNumIn[GREEN.ordinal()])
-                else if (hasNumIn[YELLOW.ordinal()]) {
+                else if (hasNumIn[YELLOW.ordinal()])
                     idxBest = idxNumIn[YELLOW.ordinal()];
-                } // else if (hasNumIn[YELLOW.ordinal()])
-                else if (hasWild && lastColor != safeColor) {
-                    // When you have no more legal number/reverse cards to play,
-                    // try to play a wild card and change the legal color to
-                    // your best. Do not play any [+2]/[skip] to your next
-                    // player!
-                    bestColor = safeColor;
+                else if (hasWild && lastColor != bestColor)
                     idxBest = idxWild;
-                } // else if (hasWild && lastColor != safeColor)
-                else if (hasWD4 && lastColor != safeColor && nextSize <= 4) {
-                    // When you have no more legal number/reverse cards to play,
-                    // try to play a wild card and change the legal color to
-                    // your best. Specially, for [wild +4] cards, you can only
-                    // play it when your next player remains only a few cards,
-                    // and what you did can help your next player find more
-                    // useful cards, such as action cards, or [wild +4] cards.
-                    bestColor = safeColor;
+                else if (hasWD4 && lastColor != bestColor && nextSize <= 4)
                     idxBest = idxWD4;
-                } // else if (hasWD4 && lastColor != safeColor && nextSize <= 4)
             } // else
         } // else if (oppoSize == 1)
         else if (allWild) {
             // Strategies when you remain only wild cards.
-            // Set the following legal color to one of your opponents' weak
-            // colors, in order to prevent them from playing a [+2] to you.
-            if (prevWeakColor != NONE) {
-                bestColor = prevWeakColor;
-            } // if (prevWeakColor != NONE)
-            else if (oppoWeakColor != NONE) {
-                bestColor = oppoWeakColor;
-            } // else if (oppoWeakColor != NONE)
-            else if (nextWeakColor != NONE) {
-                bestColor = nextWeakColor;
-            } // else if (nextWeakColor != NONE)
-            else {
-                while (bestColor == prevStrongColor
-                        || bestColor == oppoStrongColor
-                        || bestColor == nextStrongColor) {
-                    bestColor = Color.values()[RND.nextInt(4) + 1];
-                } // while (bestColor == prevStrongColor || ...)
-            } // else
-
             // When your next player remains only a few cards, use [Wild +4]
             // cards at first. Otherwise, use [Wild] cards at first.
-            if (nextSize <= 4) {
+            if (nextSize <= 4)
                 idxBest = hasWD4 ? idxWD4 : idxWild;
-            } // if (nextSize <= 4)
-            else {
+            else
                 idxBest = hasWild ? idxWild : idxWD4;
-            } // else
         } // else if (allWild)
-        else if (lastColor == nextWeakColor && yourSize > 2) {
+        else if (lastColor == nextWeak && yourSize > 2) {
             // Strategies when your next player drew a card in its last action.
             // Unless keeping or changing to your best color, you do not need to
             // play your limitation/wild cards. Use them in more dangerous cases.
-            if (hasRev && prevSize - nextSize >= 3) {
+            // Priority:
+            // 0: Reverse cards, in any color
+            //    (only when prevSize > nextSize)
+            // 1: Number cards, in (nextWeak > bestColor > others)
+            // 2: Reverse cards, in any color
+            // 3: Skip cards, in your best color
+            // 4: +2 cards, in your best color
+            if (hasRev && prevSize > nextSize)
                 idxBest = idxRev;
-            } // if (hasRev && prevSize - nextSize >= 3)
-            else if (hasNumIn[nextWeakColor.ordinal()]) {
-                idxBest = idxNumIn[nextWeakColor.ordinal()];
-            } // else if (hasNumIn[nextWeakColor.ordinal()])
-            else if (hasNumIn[bestColor.ordinal()]) {
+            else if (hasNumIn[nextWeak.ordinal()])
+                idxBest = idxNumIn[nextWeak.ordinal()];
+            else if (hasNumIn[bestColor.ordinal()])
                 idxBest = idxNumIn[bestColor.ordinal()];
-            } // else if (hasNumIn[bestColor.ordinal()])
-            else if (hasNumIn[RED.ordinal()]) {
+            else if (hasNumIn[RED.ordinal()])
                 idxBest = idxNumIn[RED.ordinal()];
-            } // else if (hasNumIn[RED.ordinal()])
-            else if (hasNumIn[BLUE.ordinal()]) {
+            else if (hasNumIn[BLUE.ordinal()])
                 idxBest = idxNumIn[BLUE.ordinal()];
-            } // else if (hasNumIn[BLUE.ordinal()])
-            else if (hasNumIn[GREEN.ordinal()]) {
+            else if (hasNumIn[GREEN.ordinal()])
                 idxBest = idxNumIn[GREEN.ordinal()];
-            } // else if (hasNumIn[GREEN.ordinal()])
-            else if (hasNumIn[YELLOW.ordinal()]) {
+            else if (hasNumIn[YELLOW.ordinal()])
                 idxBest = idxNumIn[YELLOW.ordinal()];
-            } // else if (hasNumIn[YELLOW.ordinal()])
-            else if (hasRev &&
-                    (prevSize >= 4 || prev.getRecent() == null)) {
+            else if (hasRev && (prevSize >= 4 || prev.getRecent() == null))
                 idxBest = idxRev;
-            } // else if (hasRev && ...)
-            else if (hasSkip &&
-                    oppoSize >= 3 &&
-                    hand.get(idxSkip).color == bestColor) {
+            else if (hasSkip && oppoSize >= 3
+                    && hand.get(idxSkip).color == bestColor)
                 idxBest = idxSkip;
-            } // else if (hasSkip && ...)
-            else if (hasDraw2 &&
-                    oppoSize >= 3 &&
-                    hand.get(idxDraw2).color == bestColor) {
+            else if (hasDraw2 && oppoSize >= 3
+                    && hand.get(idxDraw2).color == bestColor)
                 idxBest = idxDraw2;
-            } // else if (hasDraw2 && ...)
-        } // else if (lastColor == nextWeakColor && yourSize > 2)
+        } // else if (lastColor == nextWeak && yourSize > 2)
         else {
             // Normal strategies
-            if (hasDraw2 && nextSize <= 4 && nextSize - oppoSize <= 1) {
-                // Play a [+2] when your next player remains only a few cards.
+            // Priority:
+            // 0: +2 cards, in any color, when nextSize <= 4
+            // 1: Skip cards, in any color, when nextSize <= 4
+            // 2: Reverse cards, in any color, when prevSize > nextSize,
+            //    or prev drew a card in its last action
+            // 3: Number cards, in any color, but firstly your best color
+            // 4: Skip cards, in your best color
+            // 5: +2 cards, in your best color
+            // 6: Wild cards, switch to your best color, when nextSize <= 4
+            // 7: Wild +4 cards, switch to your best color, when nextSize <= 4
+            // 8: Wild +4 cards, when yourSize == 2 && prevSize <= 3 (UNO dash!)
+            // 9: Wild cards, when yourSize == 2 && prevSize <= 3 (UNO dash!)
+            if (hasDraw2 && nextSize <= 4 && nextSize - oppoSize <= 1)
                 idxBest = idxDraw2;
-            } // if (hasDraw2 && nextSize <= 4 && nextSize - oppoSize <= 1)
-            else if (hasSkip && nextSize <= 4 && nextSize - oppoSize <= 1) {
-                // Play a [skip] when your next player remains only a few cards.
+            else if (hasSkip && nextSize <= 4 && nextSize - oppoSize <= 1)
                 idxBest = idxSkip;
-            } // else if (hasSkip && nextSize <= 4 && nextSize - oppoSize <= 1)
             else if (hasRev &&
-                    (prevSize - nextSize >= 3 || prev.getRecent() == null)) {
-                // Play a [reverse] when your next player remains only a few
-                // cards but your previous player remains a lot of cards, in
-                // order to balance everyone's hand-card amount.  Also, when
-                // your previous player drew a card in its last action, you
-                // can play a reverse card too. What you did probably makes
-                // it draw a card again.
+                    (prevSize > nextSize || prev.getRecent() == null))
                 idxBest = idxRev;
-            } // else if (hasRev && ...)
-            else if (hasNumIn[bestColor.ordinal()]) {
-                // Play number cards.
+            else if (hasNumIn[bestColor.ordinal()])
                 idxBest = idxNumIn[bestColor.ordinal()];
-            } // else if (hasNumIn[bestColor.ordinal()])
-            else if (hasNumIn[RED.ordinal()]) {
+            else if (hasNumIn[RED.ordinal()])
                 idxBest = idxNumIn[RED.ordinal()];
-            } // else if (hasNumIn[RED.ordinal()])
-            else if (hasNumIn[BLUE.ordinal()]) {
+            else if (hasNumIn[BLUE.ordinal()])
                 idxBest = idxNumIn[BLUE.ordinal()];
-            } // else if (hasNumIn[BLUE.ordinal()])
-            else if (hasNumIn[GREEN.ordinal()]) {
+            else if (hasNumIn[GREEN.ordinal()])
                 idxBest = idxNumIn[GREEN.ordinal()];
-            } // else if (hasNumIn[GREEN.ordinal()])
-            else if (hasNumIn[YELLOW.ordinal()]) {
+            else if (hasNumIn[YELLOW.ordinal()])
                 idxBest = idxNumIn[YELLOW.ordinal()];
-            } // else if (hasNumIn[YELLOW.ordinal()])
-            else if (hasRev && prevSize >= 4) {
-                // When you have no more legal number cards to play, you can
-                // play a [reverse] safely when your previous player still has
-                // a number of cards.
+            else if (hasRev && prevSize >= 4)
                 idxBest = idxRev;
-            } // else if (hasRev && prevSize >= 4)
-            else if (hasSkip &&
-                    oppoSize >= 3 &&
-                    hand.get(idxSkip).color == bestColor) {
-                // Unless keeping or changing to your best color, you do not
-                // need to play your limitation/wild cards when your next player
-                // still has a number of cards. Use them in more dangerous cases.
+            else if (hasSkip && oppoSize >= 3
+                    && hand.get(idxSkip).color == bestColor)
                 idxBest = idxSkip;
-            } // else if (hasSkip && ...)
-            else if (hasDraw2 &&
-                    oppoSize >= 3 &&
-                    hand.get(idxDraw2).color == bestColor) {
+            else if (hasDraw2 && oppoSize >= 3
+                    && hand.get(idxDraw2).color == bestColor)
                 idxBest = idxDraw2;
-            } // else if (hasDraw2 && ...)
-            else if (hasWild && nextSize <= 4) {
-                // When your next player remains only a few cards, and you have
-                // no more legal number/action cards to play, try to play a
-                // wild card and change the legal color to your best color.
+            else if (hasWild && nextSize <= 4)
                 idxBest = idxWild;
-            } // else if (hasWild && nextSize <= 4)
-            else if (hasWD4 && nextSize <= 4) {
-                // When your next player remains only a few cards, and you have
-                // no more legal number/action cards to play, try to play a
-                // wild card and change the legal color to your best color.
+            else if (hasWD4 && nextSize <= 4)
                 idxBest = idxWD4;
-            } // else if (hasWD4 && nextSize <= 4)
-            else if (hasWild && yourSize == 2 && prevSize <= 3) {
-                // When you remain only 2 cards, including a wild card, and your
-                // previous player seems no enough power to limit you (has too
-                // few cards), start your UNO dash!
+            else if (hasWD4 && yourSize == 2 && prevSize <= 3)
+                idxBest = idxWD4;
+            else if (hasWild && yourSize == 2 && prevSize <= 3)
                 idxBest = idxWild;
-            } // else if (hasWild && yourSize == 2 && prevSize <= 3)
-            else if (hasWD4 && yourSize == 2 && prevSize <= 3) {
-                idxBest = idxWD4;
-            } // else if (hasWD4 && yourSize == 2 && prevSize <= 3)
             else if (yourSize == Uno.MAX_HOLD_CARDS) {
                 // When you are holding 14 cards, which means you cannot hold
                 // more cards, you need to play your action/wild cards to keep
                 // game running, even if it's not worth enough to use them.
-                if (hasSkip) {
+                if (hasSkip)
                     idxBest = idxSkip;
-                } // if (hasSkip)
-                else if (hasDraw2) {
+                else if (hasDraw2)
                     idxBest = idxDraw2;
-                } // else if (hasDraw2)
-                else if (hasRev) {
+                else if (hasRev)
                     idxBest = idxRev;
-                } // else if (hasRev)
-                else if (hasWild) {
+                else if (hasWild)
                     idxBest = idxWild;
-                } // else if (hasWild)
-                else if (hasWD4) {
+                else if (hasWD4)
                     idxBest = idxWD4;
-                } // else if (hasWD4)
             } // else if (yourSize == Uno.MAX_HOLD_CARDS)
         } // else
 
@@ -1088,25 +849,19 @@ class AIImpl extends AI {
      * AI Strategies in 7-0 special rule. Analyze current player's hand cards,
      * and calculate which is the best card to play out.
      *
-     * @param drawnCard When current player drew a card just now, pass the drawn
-     *                  card. If not, pass null. If drew a card from deck, then
-     *                  you can play only the drawn card, but not the other
-     *                  cards in your hand, immediately.
-     * @param outColor  This is a out parameter. Pass a Color array (length>=1)
-     *                  in order to let us pass the return value by assigning
-     *                  outColor[0]. When the best card to play becomes a wild
-     *                  card, outColor[0] will become the following legal color
-     *                  to change. When the best card to play becomes an action
-     *                  or a number card, outColor[0] will become the player's
-     *                  best color.
+     * @param outColor This is a out parameter. Pass a Color array (length>=1)
+     *                 in order to let us pass the return value by assigning
+     *                 outColor[0]. When the best card to play becomes a wild
+     *                 card, outColor[0] will become the following legal color
+     *                 to change. When the best card to play becomes an action
+     *                 or a number card, outColor[0] will become the player's
+     *                 best color.
      * @return Index of the best card to play, in current player's hand.
      * Or a negative number that means no appropriate card to play.
      */
     @Override
-    public int sevenZeroAI_bestCardIndex4NowPlayer(Card drawnCard,
-                                                   Color[] outColor) {
+    public int sevenZeroAI_bestCardIndex4NowPlayer(Color[] outColor) {
         Card card;
-        boolean legal;
         String errMsg;
         int i, idxBest;
         List<Card> hand;
@@ -1116,13 +871,13 @@ class AIImpl extends AI {
         int idx7, idxRev, idxSkip, idxDraw2;
         boolean has0, hasNum, hasWild, hasWD4;
         boolean has7, hasRev, hasSkip, hasDraw2;
+        Color nextStrong, oppoStrong, prevStrong;
         int yourSize, nextSize, oppoSize, prevSize;
-        Color nextStrongColor, oppoStrongColor, prevStrongColor;
 
-        if (outColor == null) {
-            errMsg = "outColor[] cannot be nullptr";
+        if (outColor == null || outColor.length == 0) {
+            errMsg = "outColor cannot be null or Color[0]";
             throw new IllegalArgumentException(errMsg);
-        } // if (outColor == null)
+        }  // if (outColor == null || outColor.length == 0)
 
         hand = uno.getPlayer(uno.getNow()).getHandCards();
         yourSize = hand.size();
@@ -1143,14 +898,7 @@ class AIImpl extends AI {
         for (i = 0; i < yourSize; ++i) {
             // Index of any kind
             card = hand.get(i);
-            if (drawnCard == null) {
-                legal = uno.isLegalToPlay(card);
-            } // if (drawnCard == null)
-            else {
-                legal = card == drawnCard;
-            } // else
-
-            if (legal) {
+            if (uno.isLegalToPlay(card)) {
                 switch (card.content) {
                     case DRAW2:
                         if (!hasDraw2 || card.color == bestColor) {
@@ -1204,158 +952,118 @@ class AIImpl extends AI {
                         } // if (!hasNum || card.color == bestColor)
                         break; // default
                 } // switch (card.content)
-            } // if (legal)
+            } // if (uno.isLegalToPlay(card))
         } // for (i = 0; i < yourSize; ++i)
 
         // Decision tree
         next = uno.getPlayer(uno.getNext());
         nextSize = next.getHandSize();
-        nextStrongColor = next.getStrongColor();
+        nextStrong = next.getStrongColor();
         oppo = uno.getPlayer(uno.getOppo());
         oppoSize = oppo.getHandSize();
-        oppoStrongColor = oppo.getStrongColor();
+        oppoStrong = oppo.getStrongColor();
         prev = uno.getPlayer(uno.getPrev());
         prevSize = prev.getHandSize();
-        prevStrongColor = prev.getStrongColor();
+        prevStrong = prev.getStrongColor();
         if (nextSize == 1) {
             // Strategies when your next player remains only one card.
             // Firstly consider to use a 7 to steal the UNO, if can't,
             // limit your next player's action as well as you can.
             if (has7 && (yourSize > 2
-                    || hand.get(1 - idx7).content != Content.NUM7
-                    && hand.get(1 - idx7).content != Content.WILD
-                    && hand.get(1 - idx7).content != Content.WILD_DRAW4
-                    && hand.get(1 - idx7).color != hand.get(idx7).color)) {
+                    || hand.get(1 - idx7).content != NUM7
+                    && hand.get(1 - idx7).content != WILD
+                    && hand.get(1 - idx7).content != WILD_DRAW4
+                    && hand.get(1 - idx7).color != hand.get(idx7).color))
                 idxBest = idx7;
-            } // if (has7 && ...)
             else if (has0 && (yourSize > 2
-                    || hand.get(1 - idx0).content != Content.NUM0
-                    && hand.get(1 - idx0).content != Content.WILD
-                    && hand.get(1 - idx0).content != Content.WILD_DRAW4
-                    && hand.get(1 - idx0).color != hand.get(idx0).color)) {
+                    || hand.get(1 - idx0).content != NUM0
+                    && hand.get(1 - idx0).content != WILD
+                    && hand.get(1 - idx0).content != WILD_DRAW4
+                    && hand.get(1 - idx0).color != hand.get(idx0).color))
                 idxBest = idx0;
-            } // else if (has0 && ...)
-            else if (hasDraw2) {
+            else if (hasDraw2)
                 idxBest = idxDraw2;
-            } // else if (hasDraw2)
-            else if (hasSkip) {
+            else if (hasSkip)
                 idxBest = idxSkip;
-            } // else if (hasSkip)
-            else if (hasRev) {
+            else if (hasRev)
                 idxBest = idxRev;
-            } // else if (hasRev)
-            else if (hasWD4 && lastColor != bestColor) {
+            else if (hasWD4 && lastColor != bestColor)
                 idxBest = idxWD4;
-            } // else if (hasWD4 && lastColor != bestColor)
-            else if (hasWild && lastColor != bestColor) {
+            else if (hasWild && lastColor != bestColor)
                 idxBest = idxWild;
-            } // else if (hasWild && lastColor != bestColor)
-            else if (hasNum &&
-                    hand.get(idxNum).color != nextStrongColor) {
+            else if (hasNum && hand.get(idxNum).color != nextStrong)
                 idxBest = idxNum;
-            } // else if (hasNum && ...)
-            else if (hasWild && (has7 || has0)) {
+            else if (hasWild && (has7 || has0))
                 idxBest = idxWild;
-            } // else if (hasWild && (has7 || has0))
         } // if (nextSize == 1)
         else if (prevSize == 1) {
             // Strategies when your previous player remains only one card.
             // Consider to use a 0 or 7 to steal the UNO.
-            if (has0) {
+            if (has0)
                 idxBest = idx0;
-            } // if (has0)
-            else if (has7) {
+            else if (has7)
                 idxBest = idx7;
-            } // else if (has7)
-            else if (hasNum) {
+            else if (hasNum)
                 idxBest = idxNum;
-            } // else if (hasNum)
-            else if (hasSkip &&
-                    hand.get(idxSkip).color != prevStrongColor) {
+            else if (hasSkip && hand.get(idxSkip).color != prevStrong)
                 idxBest = idxSkip;
-            } // else if (hasSkip && ...)
-            else if (hasDraw2 &&
-                    hand.get(idxDraw2).color != prevStrongColor) {
+            else if (hasDraw2 && hand.get(idxDraw2).color != prevStrong)
                 idxBest = idxDraw2;
-            } // else if (hasDraw2 && ...)
-            else if (hasWild && bestColor != prevStrongColor) {
+            else if (hasWild)
                 idxBest = idxWild;
-            } // else if (hasWild && bestColor != prevStrongColor)
-            else if (hasWD4 && bestColor != prevStrongColor) {
+            else if (hasWD4)
                 idxBest = idxWD4;
-            } // else if (hasWD4 && bestColor != prevStrongColor)
         } // else if (prevSize == 1)
         else if (oppoSize == 1) {
             // Strategies when your opposite player remains only one card.
             // Consider to use a 7 to steal the UNO.
-            if (has7) {
+            if (has7)
                 idxBest = idx7;
-            } // if (has7)
-            else if (has0) {
+            else if (has0)
                 idxBest = idx0;
-            } // else if (has0)
-            else if (hasNum) {
+            else if (hasNum)
                 idxBest = idxNum;
-            } // else if (hasNum)
-            else if (hasRev && prevSize > nextSize) {
+            else if (hasRev && prevSize > nextSize)
                 idxBest = idxRev;
-            } // else if (hasRev && prevSize > nextSize)
-            else if (hasSkip &&
-                    hand.get(idxSkip).color != oppoStrongColor) {
+            else if (hasSkip && hand.get(idxSkip).color != oppoStrong)
                 idxBest = idxSkip;
-            } // else if (hasSkip && ...)
-            else if (hasDraw2 &&
-                    hand.get(idxDraw2).color != oppoStrongColor) {
+            else if (hasDraw2 && hand.get(idxDraw2).color != oppoStrong)
                 idxBest = idxDraw2;
-            } // else if (hasDraw2 && ...)
-            else if (hasWild && bestColor != prevStrongColor) {
+            else if (hasWild)
                 idxBest = idxWild;
-            } // else if (hasWild && bestColor != prevStrongColor)
-            else if (hasWD4 && bestColor != prevStrongColor) {
+            else if (hasWD4)
                 idxBest = idxWD4;
-            } // else if (hasWD4 && bestColor != prevStrongColor)
         } // else if (oppoSize == 1)
         else {
             // Normal strategies
-            if (has0 && hand.get(idx0).color == prevStrongColor) {
+            if (has0 && hand.get(idx0).color == prevStrong)
                 idxBest = idx0;
-            } // if (has0 && hand.at(idx0).color == nextStrongColor)
-            else if (has7 && (hand.get(idx7).color == prevStrongColor
-                    || hand.get(idx7).color == oppoStrongColor
-                    || hand.get(idx7).color == nextStrongColor)) {
+            else if (has7 && (hand.get(idx7).color == prevStrong
+                    || hand.get(idx7).color == oppoStrong
+                    || hand.get(idx7).color == nextStrong))
                 idxBest = idx7;
-            } // else if (has7 && ...)
-            else if (hasRev && prevSize > nextSize) {
+            else if (hasRev && prevSize > nextSize)
                 idxBest = idxRev;
-            } // else if (hasRev && prevSize > nextSize)
-            else if (hasNum) {
+            else if (hasNum)
                 idxBest = idxNum;
-            } // else if (hasNum)
-            else if (hasSkip) {
+            else if (hasSkip)
                 idxBest = idxSkip;
-            } // else if (hasSkip)
-            else if (hasDraw2) {
+            else if (hasDraw2)
                 idxBest = idxDraw2;
-            } // else if (hasDraw2)
-            else if (hasRev) {
+            else if (hasRev)
                 idxBest = idxRev;
-            } // else if (hasRev)
             else if (has0 && (yourSize > 2
-                    || hand.get(1 - idx0).content != Content.NUM0
-                    && hand.get(1 - idx0).content != Content.WILD
-                    && hand.get(1 - idx0).content != Content.WILD_DRAW4
-                    && hand.get(1 - idx0).color != hand.get(idx0).color)) {
+                    || hand.get(1 - idx0).content != NUM0
+                    && hand.get(1 - idx0).content != WILD
+                    && hand.get(1 - idx0).content != WILD_DRAW4
+                    && hand.get(1 - idx0).color != hand.get(idx0).color))
                 idxBest = idx0;
-            } // else if (has0 && ...)
-            else if (has7) {
+            else if (has7)
                 idxBest = idx7;
-            } // else if (has7)
-            else if (hasWild) {
+            else if (hasWild)
                 idxBest = idxWild;
-            } // else if (hasWild)
-            else if (hasWD4) {
+            else if (hasWD4)
                 idxBest = idxWD4;
-            } // else if (hasWD4)
         } // else
 
         outColor[0] = bestColor;

@@ -76,7 +76,6 @@ public class MainActivity extends AppCompatActivity
     private SoundPool mSoundPool;
     private ImageView mImgScreen;
     private boolean mChallenged;
-    private boolean mImmPlayAsk;
     private Card mSelectedCard;
     private Handler mHandler;
     private Card mDrawnCard;
@@ -184,38 +183,23 @@ public class MainActivity extends AppCompatActivity
      */
     @WorkerThread
     private void easyAI() {
-        int idxBest, now;
+        int idxBest;
         Color[] bestColor;
 
         if (mChallengeAsk) {
             onChallengeChance(mAI.needToChallenge());
         } // if (mChallengeAsk)
         else {
-            now = mStatus;
             mStatus = STAT_IDLE; // block tap down events when idle
             bestColor = new Color[1];
-            idxBest = mAI.easyAI_bestCardIndex4NowPlayer(
-                    /* drawnCard */ mImmPlayAsk ? mDrawnCard : null,
-                    /* outColor  */ bestColor
-            ); // idxBest = mAI.easyAI_bestCardIndex4NowPlayer()
-
+            idxBest = mAI.easyAI_bestCardIndex4NowPlayer(bestColor);
             if (idxBest >= 0) {
                 // Found an appropriate card to play
-                mImmPlayAsk = false;
                 play(idxBest, bestColor[0]);
             } // if (idxBest >= 0)
             else {
                 // No appropriate cards to play, or no card is legal to play
-                if (mImmPlayAsk) {
-                    mImmPlayAsk = false;
-                    refreshScreen(NAME[now] + ": Pass");
-                    threadSleep(750);
-                    mStatus = mUno.switchNow();
-                    onStatusChanged(mStatus);
-                } // if (mImmPlayAsk)
-                else {
-                    draw(1, /* force */ false);
-                } // else
+                draw(1, /* force */ false);
             } // else
         } // else
     } // easyAI()
@@ -225,38 +209,23 @@ public class MainActivity extends AppCompatActivity
      */
     @WorkerThread
     private void hardAI() {
-        int idxBest, now;
+        int idxBest;
         Color[] bestColor;
 
         if (mChallengeAsk) {
             onChallengeChance(mAI.needToChallenge());
         } // if (mChallengeAsk)
         else {
-            now = mStatus;
             mStatus = STAT_IDLE; // block tap down events when idle
             bestColor = new Color[1];
-            idxBest = mAI.hardAI_bestCardIndex4NowPlayer(
-                    /* drawnCard */ mImmPlayAsk ? mDrawnCard : null,
-                    /* outColor  */ bestColor
-            ); // idxBest = mAI.hardAI_bestCardIndex4NowPlayer()
-
+            idxBest = mAI.hardAI_bestCardIndex4NowPlayer(bestColor);
             if (idxBest >= 0) {
                 // Found an appropriate card to play
-                mImmPlayAsk = false;
                 play(idxBest, bestColor[0]);
             } // if (idxBest >= 0)
             else {
                 // No appropriate cards to play, or no card is legal to play
-                if (mImmPlayAsk) {
-                    mImmPlayAsk = false;
-                    refreshScreen(NAME[now] + ": Pass");
-                    threadSleep(750);
-                    mStatus = mUno.switchNow();
-                    onStatusChanged(mStatus);
-                } // if (mImmPlayAsk)
-                else {
-                    draw(1, /* force */ false);
-                } // else
+                draw(1, /* force */ false);
             } // else
         } // else
     } // hardAI()
@@ -266,38 +235,23 @@ public class MainActivity extends AppCompatActivity
      */
     @WorkerThread
     private void sevenZeroAI() {
-        int idxBest, now;
+        int idxBest;
         Color[] bestColor;
 
         if (mChallengeAsk) {
             onChallengeChance(mAI.needToChallenge());
         } // if (mChallengeAsk)
         else {
-            now = mStatus;
             mStatus = STAT_IDLE; // block tap down events when idle
             bestColor = new Color[1];
-            idxBest = mAI.sevenZeroAI_bestCardIndex4NowPlayer(
-                    /* drawnCard */ mImmPlayAsk ? mDrawnCard : null,
-                    /* outColor  */ bestColor
-            ); // idxBest = mAI.sevenZeroAI_bestCardIndex4NowPlayer()
-
+            idxBest = mAI.sevenZeroAI_bestCardIndex4NowPlayer(bestColor);
             if (idxBest >= 0) {
                 // Found an appropriate card to play
-                mImmPlayAsk = false;
                 play(idxBest, bestColor[0]);
             } // if (idxBest >= 0)
             else {
                 // No appropriate cards to play, or no card is legal to play
-                if (mImmPlayAsk) {
-                    mImmPlayAsk = false;
-                    refreshScreen(NAME[now] + ": Pass");
-                    threadSleep(750);
-                    mStatus = mUno.switchNow();
-                    onStatusChanged(mStatus);
-                } // if (mImmPlayAsk)
-                else {
-                    draw(1, /* force */ false);
-                } // else
+                draw(1, /* force */ false);
             } // else
         } // else
     } // sevenZeroAI()
@@ -373,63 +327,6 @@ public class MainActivity extends AppCompatActivity
                         hardAI();
                     } // else
                 } // if (mAuto)
-                else if (mImmPlayAsk) {
-                    mSelectedCard = mDrawnCard;
-                    refreshScreen("^ Play " + mDrawnCard + "?");
-                    rect = new Rect(338, 270, 121, 181);
-                    areaToErase = new Mat(mUno.getBackground(), rect);
-                    areaToErase.copyTo(new Mat(mScr, rect));
-                    center = new Point(405, 315);
-                    axes = new Size(135, 135);
-
-                    // Draw YES button
-                    Imgproc.ellipse(
-                            /* img        */ mScr,
-                            /* center     */ center,
-                            /* axes       */ axes,
-                            /* angle      */ 0,
-                            /* startAngle */ 0,
-                            /* endAngle   */ -180,
-                            /* color      */ RGB_GREEN,
-                            /* thickness  */ -1,
-                            /* lineType   */ Imgproc.LINE_AA
-                    ); // Imgproc.ellipse()
-                    Imgproc.putText(
-                            /* img       */ mScr,
-                            /* text      */ "YES",
-                            /* org       */ new Point(346, 295),
-                            /* fontFace  */ FONT_SANS,
-                            /* fontScale */ 2.0,
-                            /* color     */ RGB_WHITE,
-                            /* thickness */ 2
-                    ); // Imgproc.putText()
-
-                    // Draw NO button
-                    Imgproc.ellipse(
-                            /* img        */ mScr,
-                            /* center     */ center,
-                            /* axes       */ axes,
-                            /* angle      */ 0,
-                            /* startAngle */ 0,
-                            /* endAngle   */ 180,
-                            /* color      */ RGB_RED,
-                            /* thickness  */ -1,
-                            /* lineType   */ Imgproc.LINE_AA
-                    ); // Imgproc.ellipse()
-                    Imgproc.putText(
-                            /* img        */ mScr,
-                            /* text       */ "NO",
-                            /* org        */ new Point(360, 378),
-                            /* fontFace   */ FONT_SANS,
-                            /* fontScale  */ 2.0,
-                            /* color      */ RGB_WHITE,
-                            /* thickness  */ 2
-                    ); // Imgproc.putText()
-
-                    // Show screen
-                    Utils.matToBitmap(mScr, mBmp);
-                    mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
-                } // else if (mImmPlayAsk)
                 else if (mChallengeAsk) {
                     message = "^ Do you think "
                             + NAME[mUno.getNow()] + " still has "
@@ -1103,24 +1000,13 @@ public class MainActivity extends AppCompatActivity
             for (Card card : hand) {
                 switch (status) {
                     case Player.YOU:
-                        if (mImmPlayAsk) {
-                            if (card == mDrawnCard) {
-                                image = card.image;
-                                roi.y = 490;
-                            } // if (card == mDrawnCard)
-                            else {
-                                image = card.darkImg;
-                                roi.y = 520;
-                            } // else
-                        } // if (mImmPlayAsk)
-                        else if (mChallengeAsk || mChallenged) {
+                        if (mChallengeAsk || mChallenged) {
                             image = card.darkImg;
                             roi.y = 520;
-                        } // else if (mChallengeAsk || mChallenged)
+                        } // if (mChallengeAsk || mChallenged)
                         else {
                             image = mUno.isLegalToPlay(card) ?
-                                    card.image :
-                                    card.darkImg;
+                                    card.image : card.darkImg;
                             roi.y = card == mSelectedCard ? 490 : 520;
                         } // else
                         break; // case Player.YOU
@@ -1379,6 +1265,7 @@ public class MainActivity extends AppCompatActivity
         mStatus = STAT_IDLE; // block tap down events when idle
         counter = mUno.getDraw2StackCount();
         count = counter > 0 ? counter : count;
+        index = -1;
         now = mUno.getNow();
         mSelectedCard = null;
         for (i = 0; i < count; ++i) {
@@ -1454,16 +1341,27 @@ public class MainActivity extends AppCompatActivity
                 mUno.isLegalToPlay(mDrawnCard)) {
             // Player drew one card by itself, the drawn card
             // can be played immediately if it's legal to play
-            mStatus = now;
-            mImmPlayAsk = true;
+            if (!mDrawnCard.isWild()) {
+                play(index, mDrawnCard.color);
+            } // if (!mDrawnCard.isWild())
+            else if (mAuto || now != Player.YOU) {
+                play(index, mAI.calcBestColor4NowPlayer());
+            } // else if (mAuto || now != Player.YOU)
+            else {
+                // Store index value as global value. This value
+                // will be used after the wild color determined.
+                mWildIndex = index;
+                mSelectedCard = mDrawnCard;
+                mStatus = STAT_WILD_COLOR;
+                onStatusChanged(mStatus);
+            } // else
         } // if (count == 1 && ...)
         else {
             refreshScreen(NAME[now] + ": Pass");
             threadSleep(750);
             mStatus = mUno.switchNow();
+            onStatusChanged(mStatus);
         } // else
-
-        onStatusChanged(mStatus);
     } // draw(int, boolean)
 
     /**
@@ -1743,74 +1641,6 @@ public class MainActivity extends AppCompatActivity
                         // Do operations automatically by AI strategies
                         break; // case Player.YOU
                     } // if (mAuto)
-                    else if (mImmPlayAsk) {
-                        // Asking if you want to play the drawn card immediately
-                        if (y >= 520 && y <= 700) {
-                            hand = mUno.getPlayer(Player.YOU).getHandCards();
-                            size = hand.size();
-                            width = 60 * size + 60;
-                            startX = 640 - width / 2;
-                            if (x >= startX && x <= startX + width) {
-                                // Hand card area
-                                // Calculate which card clicked
-                                index = (x - startX) / 60;
-                                if (index >= size) {
-                                    index = size - 1;
-                                } // if (index >= size)
-
-                                // If clicked the drawn card, play it
-                                card = hand.get(index);
-                                if (card == mDrawnCard) {
-                                    mImmPlayAsk = false;
-                                    if (card.isWild() && size > 1) {
-                                        // Store index value as class member.
-                                        // This value will be used after the
-                                        // wild color determined.
-                                        mWildIndex = index;
-                                        mStatus = STAT_WILD_COLOR;
-                                        onStatusChanged(mStatus);
-                                    } // if (card.isWild() && size > 1)
-                                    else {
-                                        play(index, card.color);
-                                    } // else
-                                } // if (card == mDrawnCard)
-                            } // if (x >= startX && x <= startX + width)
-                        } // if (y >= 520 && y <= 700)
-                        else if (x > 310 && x < 500) {
-                            if (y > 220 && y < 315) {
-                                // YES button, play the drawn card
-                                hand = mUno.getPlayer(mStatus).getHandCards();
-                                size = hand.size();
-                                for (index = 0; index < size; ++index) {
-                                    card = hand.get(index);
-                                    if (card == mDrawnCard) {
-                                        mImmPlayAsk = false;
-                                        if (card.isWild() && size > 1) {
-                                            // Store index value as class
-                                            // member. This value will be used
-                                            // after the wild color determined.
-                                            mWildIndex = index;
-                                            mStatus = STAT_WILD_COLOR;
-                                            onStatusChanged(mStatus);
-                                        } // if (card.isWild() && size > 1)
-                                        else {
-                                            play(index, card.color);
-                                        } // else
-                                        break;
-                                    } // if (card == mDrawnCard)
-                                } // for (index = 0; index < size; ++index)
-                            } // if (y > 220 && y < 315)
-                            else if (y > 315 && y < 410) {
-                                // NO button, go to next player's round
-                                mStatus = STAT_IDLE;
-                                mImmPlayAsk = false;
-                                refreshScreen(NAME[Player.YOU] + ": Pass");
-                                threadSleep(750);
-                                mStatus = mUno.switchNow();
-                                onStatusChanged(mStatus);
-                            } // else if (y > 315 && y < 410)
-                        } // else if (x > 310 && x < 500)
-                    } // else if (mImmPlayAsk)
                     else if (mChallengeAsk) {
                         // Asking if you want to challenge your previous player
                         if (x > 310 && x < 500) {
