@@ -62,7 +62,6 @@ static int sWinner;
 static int sWildIndex;
 static bool sAIRunning;
 static cv::Mat sScreen;
-static Card* sDrawnCard;
 static bool sChallenged;
 static bool sChallengeAsk;
 static bool sAdjustOptions;
@@ -92,7 +91,7 @@ int main(int argc, char* argv[]) {
     QString bgmPath;
     std::ifstream reader;
     QApplication a(argc, argv);
-    int dw[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+    int dw[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     char header[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     // Preparations
@@ -111,26 +110,27 @@ int main(int argc, char* argv[]) {
         reader.seekg(0, std::ios::end);
         len = int(reader.tellg());
         reader.seekg(0, std::ios::beg);
-        if (len == 8 + 8 * sizeof(int)) {
+        if (len == 8 + 9 * sizeof(int)) {
             reader.read(header, 8);
-            reader.read((char*)dw, 8 * sizeof(int));
-            for (hash = 0, len = 0; len < 7; ++len) {
+            reader.read((char*)dw, 9 * sizeof(int));
+            for (hash = 0, len = 0; len < 8; ++len) {
                 hash = 31 * hash + dw[len];
-            } // for (hash = 0, len = 0; len < 7; ++len)
+            } // for (hash = 0, len = 0; len < 8; ++len)
 
-            if (strcmp(header, FILE_HEADER) == 0 && hash == dw[7]) {
+            if (strcmp(header, FILE_HEADER) == 0 && hash == dw[8]) {
                 // File verification success
                 if (dw[0] > 9999) dw[0] = 9999;
                 else if (dw[0] < -999) dw[0] = -999;
                 sScore = dw[0];
                 sUno->setPlayers(dw[1]);
                 sUno->setDifficulty(dw[2]);
-                sUno->setSevenZeroRule(dw[3] != 0);
-                sUno->setDraw2StackRule(dw[4] != 0);
-                sSoundPool->setEnabled(dw[5] != 0);
-                sMediaPlay->setVolume(dw[6]);
-            } // if (strcmp(header, FILE_HEADER) == 0 && hash == dw[7])
-        } // if (len == 8 + 8 * sizeof(int))
+                sUno->setForcePlay(dw[3] != 0);
+                sUno->setSevenZeroRule(dw[4] != 0);
+                sUno->setDraw2StackRule(dw[5] != 0);
+                sSoundPool->setEnabled(dw[6] != 0);
+                sMediaPlay->setVolume(dw[7]);
+            } // if (strcmp(header, FILE_HEADER) == 0 && hash == dw[8])
+        } // if (len == 8 + 9 * sizeof(int))
 
         reader.close();
     } // if (!reader.fail())
@@ -257,7 +257,7 @@ static void onStatusChanged(int status) {
 
     switch (status) {
     case STAT_WELCOME:
-        refreshScreen(sAdjustOptions ? "SPECIAL RULES" :
+        refreshScreen(sAdjustOptions ? "RULE SETTINGS" :
             "WELCOME TO UNO CARD GAME, CLICK UNO TO START");
         break; // case STAT_WELCOME
 
@@ -570,7 +570,7 @@ static void onStatusChanged(int status) {
     case STAT_GAME_OVER:
         // Game over
         if (sAdjustOptions) {
-            refreshScreen("SPECIAL RULES");
+            refreshScreen("RULE SETTINGS");
         } // if (sAdjustOptions)
         else {
             message = "Your score is " + std::to_string(sScore)
@@ -735,44 +735,102 @@ static void refreshScreen(const std::string& message) {
         roi.x = 970;
         image.copyTo(sScreen(roi), image);
 
-        // Special rules
-        // 7-0 Rule
-        image = sUno->isSevenZeroRule() ?
-            sUno->findCard(RED, NUM7)->image :
-            sUno->findCard(RED, NUM7)->darkImg;
-        roi.x = 240;
-        roi.y = 520;
-        image.copyTo(sScreen(roi), image);
-        image = sUno->isSevenZeroRule() ?
-            sUno->findCard(YELLOW, REV)->image :
-            sUno->findCard(YELLOW, REV)->darkImg;
-        roi.x += 45;
-        image.copyTo(sScreen(roi), image);
-        image = sUno->isSevenZeroRule() ?
-            sUno->findCard(GREEN, NUM0)->image :
-            sUno->findCard(GREEN, NUM0)->darkImg;
-        roi.x += 45;
-        image.copyTo(sScreen(roi), image);
+        // Rule settings
+        // Force play switch
+        point.x = 60;
+        point.y = 540;
+        cv::putText(
+            /* img       */ sScreen,
+            /* text      */ "When you draw a playable card:",
+            /* org       */ point,
+            /* fontFace  */ FONT_SANS,
+            /* fontScale */ 1.0,
+            /* color     */ RGB_WHITE
+        ); // cv::putText()
 
-        // +2 Stack Rule
-        image = sUno->findCard(RED, DRAW2)->image;
-        roi.x = 790;
-        image.copyTo(sScreen(roi), image);
-        image = sUno->isDraw2StackRule() ?
-            sUno->findCard(BLUE, DRAW2)->image :
-            sUno->findCard(BLUE, DRAW2)->darkImg;
-        roi.x += 45;
-        image.copyTo(sScreen(roi), image);
-        image = sUno->isDraw2StackRule() ?
-            sUno->findCard(GREEN, DRAW2)->image :
-            sUno->findCard(GREEN, DRAW2)->darkImg;
-        roi.x += 45;
-        image.copyTo(sScreen(roi), image);
-        image = sUno->isDraw2StackRule() ?
-            sUno->findCard(YELLOW, DRAW2)->image :
-            sUno->findCard(YELLOW, DRAW2)->darkImg;
-        roi.x += 45;
-        image.copyTo(sScreen(roi), image);
+        point.x = 790;
+        cv::putText(
+            /* img       */ sScreen,
+            /* text      */ "<KEEP>",
+            /* org       */ point,
+            /* fontFace  */ FONT_SANS,
+            /* fontScale */ 1.0,
+            /* color     */ sUno->isForcePlay() ? RGB_WHITE : RGB_RED
+        ); // cv::putText()
+
+        point.x = 970;
+        cv::putText(
+            /* img       */ sScreen,
+            /* text      */ "<PLAY>",
+            /* org       */ point,
+            /* fontFace  */ FONT_SANS,
+            /* fontScale */ 1.0,
+            /* color     */ sUno->isForcePlay() ? RGB_GREEN : RGB_WHITE
+        ); // cv::putText()
+
+        // 7-0
+        point.x = 60;
+        point.y = 590;
+        cv::putText(
+            /* img       */ sScreen,
+            /* text      */ "7 to swap, 0 to rotate:",
+            /* org       */ point,
+            /* fontFace  */ FONT_SANS,
+            /* fontScale */ 1.0,
+            /* color     */ RGB_WHITE
+        ); // cv::putText()
+
+        point.x = 790;
+        cv::putText(
+            /* img       */ sScreen,
+            /* text      */ "<OFF>",
+            /* org       */ point,
+            /* fontFace  */ FONT_SANS,
+            /* fontScale */ 1.0,
+            /* color     */ sUno->isSevenZeroRule() ? RGB_WHITE : RGB_RED
+        ); // cv::putText()
+
+        point.x = 970;
+        cv::putText(
+            /* img       */ sScreen,
+            /* text      */ "<ON>",
+            /* org       */ point,
+            /* fontFace  */ FONT_SANS,
+            /* fontScale */ 1.0,
+            /* color     */ sUno->isSevenZeroRule() ? RGB_GREEN : RGB_WHITE
+        ); // cv::putText()
+
+        // +2 stack
+        point.x = 60;
+        point.y = 640;
+        cv::putText(
+            /* img       */ sScreen,
+            /* text      */ "+2 can be stacked:",
+            /* org       */ point,
+            /* fontFace  */ FONT_SANS,
+            /* fontScale */ 1.0,
+            /* color     */ RGB_WHITE
+        ); // cv::putText()
+
+        point.x = 790;
+        cv::putText(
+            /* img       */ sScreen,
+            /* text      */ "<OFF>",
+            /* org       */ point,
+            /* fontFace  */ FONT_SANS,
+            /* fontScale */ 1.0,
+            /* color     */ sUno->isDraw2StackRule() ? RGB_WHITE : RGB_RED
+        ); // cv::putText()
+
+        point.x = 970;
+        cv::putText(
+            /* img       */ sScreen,
+            /* text      */ "<ON>",
+            /* org       */ point,
+            /* fontFace  */ FONT_SANS,
+            /* fontScale */ 1.0,
+            /* color     */ sUno->isDraw2StackRule() ? RGB_GREEN : RGB_WHITE
+        ); // cv::putText()
     } // if (sAdjustOptions)
     else if (status == STAT_WELCOME) {
         // For welcome screen, show the start button and your score
@@ -1223,6 +1281,7 @@ static void play(int index, Color color) {
  *              card by itself in its action.
  */
 static void draw(int count, bool force) {
+    Card* drawn;
     cv::Mat image;
     std::string message;
     int i, index, counter, now, size, x2, y2;
@@ -1231,12 +1290,13 @@ static void draw(int count, bool force) {
     counter = sUno->getDraw2StackCount();
     count = counter > 0 ? counter : count;
     index = -1;
+    drawn = nullptr;
     now = sUno->getNow();
     sSelectedCard = nullptr;
     for (i = 0; i < count; ++i) {
         index = sUno->draw(now, force);
         if (index >= 0) {
-            sDrawnCard = sUno->getPlayer(now)->getHandCards().at(index);
+            drawn = sUno->getPlayer(now)->getHandCards().at(index);
             size = sUno->getPlayer(now)->getHandSize();
             switch (now) {
             case Player::COM1:
@@ -1279,10 +1339,10 @@ static void draw(int count, bool force) {
                 break; // case Player::COM3
 
             default:
-                image = sDrawnCard->image;
+                image = drawn->image;
                 x2 = (1205 - 45 * size + 90 * index) / 2;
                 y2 = 520;
-                message = NAME[now] + ": Draw " + sDrawnCard->name;
+                message = NAME[now] + ": Draw " + drawn->name;
                 break; // default
             } // switch (now)
 
@@ -1302,13 +1362,14 @@ static void draw(int count, bool force) {
 
     cv::waitKey(750);
     if (count == 1 &&
-        sDrawnCard != nullptr &&
-        sUno->isLegalToPlay(sDrawnCard)) {
+        drawn != nullptr &&
+        sUno->isForcePlay() &&
+        sUno->isLegalToPlay(drawn)) {
         // Player drew one card by itself, the drawn card
         // can be played immediately if it's legal to play
-        if (!sDrawnCard->isWild()) {
+        if (!drawn->isWild()) {
             play(index);
-        } // if (!sDrawnCard->isWild())
+        } // if (!drawn->isWild())
         else if (sAuto || now != Player::YOU) {
             play(index, sAI.calcBestColor4NowPlayer());
         } // else if (sAuto || now != Player::YOU)
@@ -1316,7 +1377,7 @@ static void draw(int count, bool force) {
             // Store index value as global value. This value
             // will be used after the wild color determined.
             sWildIndex = index;
-            sSelectedCard = sDrawnCard;
+            sSelectedCard = drawn;
             sStatus = STAT_WILD_COLOR;
             onStatusChanged(sStatus);
         } // else
@@ -1455,7 +1516,7 @@ static void animate(cv::Mat elem, int x1, int y1, int x2, int y2) {
  * @param param [UNUSED IN THIS CALLBACK]
  */
 static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
-    static int dw[8];
+    static int dw[9];
     static Card* card;
     static std::ofstream writer;
     static std::vector<Card*> hand;
@@ -1518,31 +1579,55 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
                     onStatusChanged(sStatus);
                 } // else if (x >= 970 && x <= 1090)
             } // else if (y >= 270 && y <= 450)
-            else if (y >= 520 && y <= 700) {
-                if (x >= 240 && x <= 450) {
-                    // 7-0 rule
-                    sUno->setSevenZeroRule(!sUno->isSevenZeroRule());
+            else if (y >= 519 && y <= 540) {
+                if (x >= 800 && x <= 927) {
+                    // Force play, <KEEP> button
+                    sUno->setForcePlay(false);
                     onStatusChanged(sStatus);
-                } // if (x >= 240 && x <= 450)
-                else if (x >= 790 && x <= 1045) {
-                    // +2 stacking rule
-                    sUno->setDraw2StackRule(!sUno->isDraw2StackRule());
+                } // if (x >= 800 && x <= 927)
+                else if (x >= 980 && x <= 1104) {
+                    // Force play, <PLAY> button
+                    sUno->setForcePlay(true);
                     onStatusChanged(sStatus);
-                } // else if (x >= 790 && x <= 1045)
-                else if (y >= 679) {
-                    if (x >= 20 && x <= 200) {
-                        // <OPTIONS> button
-                        // Leave options page
-                        sAdjustOptions = false;
-                        onStatusChanged(sStatus);
-                    } // if (x >= 20 && x <= 200)
-                    else if (x >= 1140 && x <= 1260) {
-                        // <AUTO> button
-                        sAuto = !sAuto;
-                        onStatusChanged(sStatus);
-                    } // else if (x >= 1140 && x <= 1260)
-                } // else if (y >= 679)
-            } // else if (y >= 520 && y <= 700)
+                } // else if (x >= 980 && x <= 1104)
+            } // else if (y >= 519 && y <= 540)
+            else if (y >= 569 && y <= 590) {
+                if (x >= 800 && x <= 906) {
+                    // 7-0, <OFF> button
+                    sUno->setSevenZeroRule(false);
+                    onStatusChanged(sStatus);
+                } // if (x >= 800 && x <= 906)
+                else if (x >= 980 && x <= 1072) {
+                    // 7-0, <ON> button
+                    sUno->setSevenZeroRule(true);
+                    onStatusChanged(sStatus);
+                } // else if (x >= 980 && x <= 1072)
+            } // else if (y >= 569 && y <= 540)
+            else if (y >= 619 && y <= 640) {
+                if (x >= 800 && x <= 906) {
+                    // +2 stack, <OFF> button
+                    sUno->setDraw2StackRule(false);
+                    onStatusChanged(sStatus);
+                } // if (x >= 800 && x <= 906)
+                else if (x >= 980 && x <= 1072) {
+                    // +2 stack, <ON> button
+                    sUno->setDraw2StackRule(true);
+                    onStatusChanged(sStatus);
+                } // else if (x >= 980 && x <= 1072)
+            } // else if (y >= 619 && y <= 640)
+            else if (y >= 679 && y <= 700) {
+                if (x >= 20 && x <= 200) {
+                    // <OPTIONS> button
+                    // Leave options page
+                    sAdjustOptions = false;
+                    onStatusChanged(sStatus);
+                } // if (x >= 20 && x <= 200)
+                else if (x >= 1140 && x <= 1260) {
+                    // <AUTO> button
+                    sAuto = !sAuto;
+                    onStatusChanged(sStatus);
+                } // else if (x >= 1140 && x <= 1260)
+            } // else if (y >= 679 && y <= 700)
         } // if (sAdjustOptions)
         else if (y >= 21 && y <= 42 && x >= 1140 && x <= 1260) {
             // <QUIT> button
@@ -1557,16 +1642,17 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/) {
                 dw[0] = sScore;
                 dw[1] = sUno->getPlayers();
                 dw[2] = sUno->getDifficulty();
-                dw[3] = sUno->isSevenZeroRule() ? 1 : 0;
-                dw[4] = sUno->isDraw2StackRule() ? 1 : 0;
-                dw[5] = sSoundPool->isEnabled() ? 1 : 0;
-                dw[6] = sMediaPlay->volume();
-                for (dw[7] = 0, i = 0; i < 7; ++i) {
-                    dw[7] = 31 * dw[7] + dw[i];
-                } // for (dw[7] = 0, i = 0; i < 7; ++i)
+                dw[3] = sUno->isForcePlay() ? 1 : 0;
+                dw[4] = sUno->isSevenZeroRule() ? 1 : 0;
+                dw[5] = sUno->isDraw2StackRule() ? 1 : 0;
+                dw[6] = sSoundPool->isEnabled() ? 1 : 0;
+                dw[7] = sMediaPlay->volume();
+                for (dw[8] = 0, i = 0; i < 8; ++i) {
+                    dw[8] = 31 * dw[8] + dw[i];
+                } // for (dw[8] = 0, i = 0; i < 8; ++i)
 
                 writer.write(FILE_HEADER, 8);
-                writer.write((char*)dw, 8 * sizeof(int));
+                writer.write((char*)dw, 9 * sizeof(int));
                 writer.close();
             } // if (!writer.fail())
 

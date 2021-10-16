@@ -116,6 +116,11 @@ public abstract class Uno {
     int difficulty;
 
     /**
+     * Whether the force play rule is enabled.
+     */
+    boolean forcePlay;
+
+    /**
      * Whether the 7-0 rule is enabled.
      */
     boolean sevenZeroRule;
@@ -289,6 +294,19 @@ public abstract class Uno {
      *                   Only LV_EASY and LV_HARD are available.
      */
     public abstract void setDifficulty(int difficulty);
+
+    /**
+     * @return This value tells that what's the next step
+     * after you drew a playable card in your action.
+     * When force play is enabled, play the card immediately.
+     * When force play is disabled, keep the card in your hand.
+     */
+    public abstract boolean isForcePlay();
+
+    /**
+     * @param enabled Enable/Disable the force play rule.
+     */
+    public abstract void setForcePlay(boolean enabled);
 
     /**
      * @return Whether the 7-0 rule is enabled. In 7-0 rule, when a seven card

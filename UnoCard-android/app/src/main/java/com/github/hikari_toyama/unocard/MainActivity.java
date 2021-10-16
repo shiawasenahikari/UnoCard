@@ -78,7 +78,6 @@ public class MainActivity extends AppCompatActivity
     private boolean mChallenged;
     private Card mSelectedCard;
     private Handler mHandler;
-    private Card mDrawnCard;
     private int mWildIndex;
     private boolean mAuto;
     private float mSndVol;
@@ -116,6 +115,7 @@ public class MainActivity extends AppCompatActivity
             mUno = Uno.getInstance(this);
             mUno.setPlayers(sp.getInt("players", 3));
             mUno.setDifficulty(sp.getInt("difficulty", Uno.LV_EASY));
+            mUno.setForcePlay(sp.getBoolean("forcePlay", true));
             mUno.setSevenZeroRule(sp.getBoolean("sevenZero", false));
             mUno.setDraw2StackRule(sp.getBoolean("stackDraw2", false));
             mSoundPool = new SoundPool(2, AudioManager.STREAM_MUSIC, 0);
@@ -272,7 +272,7 @@ public class MainActivity extends AppCompatActivity
 
         switch (status) {
             case STAT_WELCOME:
-                refreshScreen(mAdjustOptions ? "SPECIAL RULES" :
+                refreshScreen(mAdjustOptions ? "RULE SETTINGS" :
                         "WELCOME TO UNO CARD GAME, CLICK UNO TO START");
                 break; // case STAT_WELCOME
 
@@ -590,7 +590,7 @@ public class MainActivity extends AppCompatActivity
             case STAT_GAME_OVER:
                 // Game over
                 if (mAdjustOptions) {
-                    refreshScreen("SPECIAL RULES");
+                    refreshScreen("RULE SETTINGS");
                 } // if (mAdjustOptions)
                 else {
                     message = "Your score is " + mScore
@@ -752,44 +752,102 @@ public class MainActivity extends AppCompatActivity
             roi.x = 970;
             image.copyTo(new Mat(mScr, roi), image);
 
-            // Special rules
-            // 7-0 Rule
-            image = mUno.isSevenZeroRule() ?
-                    mUno.findCard(Color.RED, Content.NUM7).image :
-                    mUno.findCard(Color.RED, Content.NUM7).darkImg;
-            roi.x = 240;
-            roi.y = 520;
-            image.copyTo(new Mat(mScr, roi), image);
-            image = mUno.isSevenZeroRule() ?
-                    mUno.findCard(Color.YELLOW, Content.REV).image :
-                    mUno.findCard(Color.YELLOW, Content.REV).darkImg;
-            roi.x += 45;
-            image.copyTo(new Mat(mScr, roi), image);
-            image = mUno.isSevenZeroRule() ?
-                    mUno.findCard(Color.GREEN, Content.NUM0).image :
-                    mUno.findCard(Color.GREEN, Content.NUM0).darkImg;
-            roi.x += 45;
-            image.copyTo(new Mat(mScr, roi), image);
+            // Rule settings
+            // Force play switch
+            point.x = 60;
+            point.y = 540;
+            Imgproc.putText(
+                    /* img       */ mScr,
+                    /* text      */ "When you draw a playable card:",
+                    /* org       */ point,
+                    /* fontFace  */ FONT_SANS,
+                    /* fontScale */ 1.0,
+                    /* color     */ RGB_WHITE
+            ); // Imgproc.putText()
 
-            // +2 Stack Rule
-            image = mUno.findCard(Color.RED, Content.DRAW2).image;
-            roi.x = 790;
-            image.copyTo(new Mat(mScr, roi), image);
-            image = mUno.isDraw2StackRule() ?
-                    mUno.findCard(Color.BLUE, Content.DRAW2).image :
-                    mUno.findCard(Color.BLUE, Content.DRAW2).darkImg;
-            roi.x += 45;
-            image.copyTo(new Mat(mScr, roi), image);
-            image = mUno.isDraw2StackRule() ?
-                    mUno.findCard(Color.GREEN, Content.DRAW2).image :
-                    mUno.findCard(Color.GREEN, Content.DRAW2).darkImg;
-            roi.x += 45;
-            image.copyTo(new Mat(mScr, roi), image);
-            image = mUno.isDraw2StackRule() ?
-                    mUno.findCard(Color.YELLOW, Content.DRAW2).image :
-                    mUno.findCard(Color.YELLOW, Content.DRAW2).darkImg;
-            roi.x += 45;
-            image.copyTo(new Mat(mScr, roi), image);
+            point.x = 790;
+            Imgproc.putText(
+                    /* img       */ mScr,
+                    /* text      */ "<KEEP>",
+                    /* org       */ point,
+                    /* fontFace  */ FONT_SANS,
+                    /* fontScale */ 1.0,
+                    /* color     */ mUno.isForcePlay() ? RGB_WHITE : RGB_RED
+            ); // Imgproc.putText()
+
+            point.x = 970;
+            Imgproc.putText(
+                    /* img       */ mScr,
+                    /* text      */ "<PLAY>",
+                    /* org       */ point,
+                    /* fontFace  */ FONT_SANS,
+                    /* fontScale */ 1.0,
+                    /* color     */ mUno.isForcePlay() ? RGB_GREEN : RGB_WHITE
+            ); // Imgproc.putText()
+
+            // 7-0
+            point.x = 60;
+            point.y = 590;
+            Imgproc.putText(
+                    /* img       */ mScr,
+                    /* text      */ "7 to swap, 0 to rotate:",
+                    /* org       */ point,
+                    /* fontFace  */ FONT_SANS,
+                    /* fontScale */ 1.0,
+                    /* color     */ RGB_WHITE
+            ); // Imgproc.putText()
+
+            point.x = 790;
+            Imgproc.putText(
+                    /* img       */ mScr,
+                    /* text      */ "<OFF>",
+                    /* org       */ point,
+                    /* fontFace  */ FONT_SANS,
+                    /* fontScale */ 1.0,
+                    /* color     */ mUno.isSevenZeroRule() ? RGB_WHITE : RGB_RED
+            ); // Imgproc.putText()
+
+            point.x = 970;
+            Imgproc.putText(
+                    /* img       */ mScr,
+                    /* text      */ "<ON>",
+                    /* org       */ point,
+                    /* fontFace  */ FONT_SANS,
+                    /* fontScale */ 1.0,
+                    /* color     */ mUno.isSevenZeroRule() ? RGB_GREEN : RGB_WHITE
+            ); // Imgproc.putText()
+
+            // +2 stack
+            point.x = 60;
+            point.y = 640;
+            Imgproc.putText(
+                    /* img       */ mScr,
+                    /* text      */ "+2 can be stacked:",
+                    /* org       */ point,
+                    /* fontFace  */ FONT_SANS,
+                    /* fontScale */ 1.0,
+                    /* color     */ RGB_WHITE
+            ); // Imgproc.putText()
+
+            point.x = 790;
+            Imgproc.putText(
+                    /* img       */ mScr,
+                    /* text      */ "<OFF>",
+                    /* org       */ point,
+                    /* fontFace  */ FONT_SANS,
+                    /* fontScale */ 1.0,
+                    /* color     */ mUno.isDraw2StackRule() ? RGB_WHITE : RGB_RED
+            ); // Imgproc.putText()
+
+            point.x = 970;
+            Imgproc.putText(
+                    /* img       */ mScr,
+                    /* text      */ "<ON>",
+                    /* org       */ point,
+                    /* fontFace  */ FONT_SANS,
+                    /* fontScale */ 1.0,
+                    /* color     */ mUno.isDraw2StackRule() ? RGB_GREEN : RGB_WHITE
+            ); // Imgproc.putText()
 
             // Show image
             Utils.matToBitmap(mScr, mBmp);
@@ -1259,6 +1317,7 @@ public class MainActivity extends AppCompatActivity
     @WorkerThread
     private void draw(int count, boolean force) {
         Mat image;
+        Card drawn;
         String message;
         int i, index, counter, now, size, x2, y2;
 
@@ -1266,12 +1325,13 @@ public class MainActivity extends AppCompatActivity
         counter = mUno.getDraw2StackCount();
         count = counter > 0 ? counter : count;
         index = -1;
+        drawn = null;
         now = mUno.getNow();
         mSelectedCard = null;
         for (i = 0; i < count; ++i) {
             index = mUno.draw(now, force);
             if (index >= 0) {
-                mDrawnCard = mUno.getPlayer(now).getHandCards().get(index);
+                drawn = mUno.getPlayer(now).getHandCards().get(index);
                 size = mUno.getPlayer(now).getHandSize();
                 switch (now) {
                     case Player.COM1:
@@ -1314,10 +1374,10 @@ public class MainActivity extends AppCompatActivity
                         break; // case Player.COM3
 
                     default:
-                        image = mDrawnCard.image;
+                        image = drawn.image;
                         x2 = 610 - 30 * size + 60 * index;
                         y2 = 520;
-                        message = NAME[now] + ": Draw " + mDrawnCard.name;
+                        message = NAME[now] + ": Draw " + drawn.name;
                         break; // default
                 } // switch (now)
 
@@ -1337,13 +1397,14 @@ public class MainActivity extends AppCompatActivity
 
         threadSleep(750);
         if (count == 1 &&
-                mDrawnCard != null &&
-                mUno.isLegalToPlay(mDrawnCard)) {
+                drawn != null &&
+                mUno.isForcePlay() &&
+                mUno.isLegalToPlay(drawn)) {
             // Player drew one card by itself, the drawn card
             // can be played immediately if it's legal to play
-            if (!mDrawnCard.isWild()) {
-                play(index, mDrawnCard.color);
-            } // if (!mDrawnCard.isWild())
+            if (!drawn.isWild()) {
+                play(index, drawn.color);
+            } // if (!drawn.isWild())
             else if (mAuto || now != Player.YOU) {
                 play(index, mAI.calcBestColor4NowPlayer());
             } // else if (mAuto || now != Player.YOU)
@@ -1351,7 +1412,7 @@ public class MainActivity extends AppCompatActivity
                 // Store index value as global value. This value
                 // will be used after the wild color determined.
                 mWildIndex = index;
-                mSelectedCard = mDrawnCard;
+                mSelectedCard = drawn;
                 mStatus = STAT_WILD_COLOR;
                 onStatusChanged(mStatus);
             } // else
@@ -1556,31 +1617,55 @@ public class MainActivity extends AppCompatActivity
                         onStatusChanged(mStatus);
                     } // else if (x >= 970 && x <= 1090)
                 } // else if (y >= 270 && y <= 450)
-                else if (y >= 520 && y <= 700) {
-                    if (x >= 240 && x <= 450) {
-                        // 7-0 rule
-                        mUno.setSevenZeroRule(!mUno.isSevenZeroRule());
+                else if (y >= 519 && y <= 540) {
+                    if (x >= 800 && x <= 927) {
+                        // Force play, <KEEP> button
+                        mUno.setForcePlay(false);
                         onStatusChanged(mStatus);
-                    } // if (x >= 240 && x <= 450)
-                    else if (x >= 790 && x <= 1045) {
-                        // +2 stacking rule
-                        mUno.setDraw2StackRule(!mUno.isDraw2StackRule());
+                    } // if (x >= 800 && x <= 927)
+                    else if (x >= 980 && x <= 1104) {
+                        // Force play, <PLAY> button
+                        mUno.setForcePlay(true);
                         onStatusChanged(mStatus);
-                    } // else if (x >= 790 && x <= 1045)
-                    else if (y >= 679) {
-                        if (x >= 20 && x <= 200) {
-                            // <OPTIONS> button
-                            // Leave options page
-                            mAdjustOptions = false;
-                            onStatusChanged(mStatus);
-                        } // if (x >= 20 && x <= 200)
-                        else if (x >= 1140 && x <= 1260) {
-                            // <AUTO> button
-                            mAuto = !mAuto;
-                            onStatusChanged(mStatus);
-                        } // else if (x >= 1140 && x <= 1260)
-                    } // else if (y >= 679)
-                } // else if (y >= 520 && y <= 700)
+                    } // else if (x >= 980 && x <= 1104)
+                } // else if (y >= 519 && y <= 540)
+                else if (y >= 569 && y <= 590) {
+                    if (x >= 800 && x <= 906) {
+                        // 7-0, <OFF> button
+                        mUno.setSevenZeroRule(false);
+                        onStatusChanged(mStatus);
+                    } // if (x >= 800 && x <= 906)
+                    else if (x >= 980 && x <= 1072) {
+                        // 7-0, <ON> button
+                        mUno.setSevenZeroRule(true);
+                        onStatusChanged(mStatus);
+                    } // else if (x >= 980 && x <= 1072)
+                } // else if (y >= 569 && y <= 540)
+                else if (y >= 619 && y <= 640) {
+                    if (x >= 800 && x <= 906) {
+                        // +2 stack, <OFF> button
+                        mUno.setDraw2StackRule(false);
+                        onStatusChanged(mStatus);
+                    } // if (x >= 800 && x <= 906)
+                    else if (x >= 980 && x <= 1072) {
+                        // +2 stack, <ON> button
+                        mUno.setDraw2StackRule(true);
+                        onStatusChanged(mStatus);
+                    } // else if (x >= 980 && x <= 1072)
+                } // else if (y >= 619 && y <= 640)
+                else if (y >= 679 && y <= 700) {
+                    if (x >= 20 && x <= 200) {
+                        // <OPTIONS> button
+                        // Leave options page
+                        mAdjustOptions = false;
+                        onStatusChanged(mStatus);
+                    } // if (x >= 20 && x <= 200)
+                    else if (x >= 1140 && x <= 1260) {
+                        // <AUTO> button
+                        mAuto = !mAuto;
+                        onStatusChanged(mStatus);
+                    } // else if (x >= 1140 && x <= 1260)
+                } // else if (y >= 679 && y <= 700)
 
                 return;
             } // if (mAdjustOptions)
@@ -1809,6 +1894,7 @@ public class MainActivity extends AppCompatActivity
             editor.putFloat("bgmVol", mBgmVol);
             editor.putInt("players", mUno.getPlayers());
             editor.putInt("difficulty", mUno.getDifficulty());
+            editor.putBoolean("forcePlay", mUno.isForcePlay());
             editor.putBoolean("sevenZero", mUno.isSevenZeroRule());
             editor.putBoolean("stackDraw2", mUno.isDraw2StackRule());
             editor.apply();

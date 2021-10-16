@@ -202,6 +202,7 @@ Uno::Uno() {
     // Initialize other members
     players = 3;
     now = rand() % 4;
+    forcePlay = true;
     difficulty = LV_EASY;
     draw2StackCount = direction = 0;
     draw2StackRule = sevenZeroRule = false;
@@ -387,6 +388,23 @@ void Uno::setDifficulty(int difficulty) {
         this->difficulty = difficulty;
     } // if (difficulty == LV_EASY || difficulty == LV_HARD)
 } // setDifficulty(int)
+
+/**
+ * @return This value tells that what's the next step
+ *         after you drew a playable card in your action.
+ *         When force play is enabled, play the card immediately.
+ *         When force play is disabled, keep the card in your hand.
+ */
+bool Uno::isForcePlay() {
+    return forcePlay;
+} // isForcePlay()
+
+/**
+ * @param enabled Enable/Disable the force play rule.
+ */
+void Uno::setForcePlay(bool enabled) {
+    forcePlay = enabled;
+} // setForcePlay(bool)
 
 /**
  * @return Whether the 7-0 rule is enabled. In 7-0 rule, when a seven card

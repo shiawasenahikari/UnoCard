@@ -52,7 +52,7 @@ class UnoImpl extends Uno {
     /**
      * Random number generator.
      */
-    private static final Random rnd = new Random();
+    private static final Random RND = new Random();
 
     /**
      * Tag name for Android Logcat.
@@ -378,7 +378,8 @@ class UnoImpl extends Uno {
 
         // Initialize other members
         players = 3;
-        now = rnd.nextInt(4);
+        now = RND.nextInt(4);
+        forcePlay = true;
         difficulty = LV_EASY;
         direction = draw2StackCount = 0;
         sevenZeroRule = draw2StackRule = false;
@@ -586,6 +587,25 @@ class UnoImpl extends Uno {
     } // setDifficulty(int)
 
     /**
+     * @return This value tells that what's the next step
+     * after you drew a playable card in your action.
+     * When force play is enabled, play the card immediately.
+     * When force play is disabled, keep the card in your hand.
+     */
+    @Override
+    public boolean isForcePlay() {
+        return forcePlay;
+    } // isForcePlay()
+
+    /**
+     * @param enabled Enable/Disable the force play rule.
+     */
+    @Override
+    public void setForcePlay(boolean enabled) {
+        forcePlay = enabled;
+    } // setForcePlay(boolean)
+
+    /**
      * @return Whether the 7-0 rule is enabled. In 7-0 rule, when a seven card
      * is put down, the player must swap hand cards with another player
      * immediately. When a zero card is put down, everyone need to pass
@@ -744,7 +764,7 @@ class UnoImpl extends Uno {
         // Shuffle cards
         size = deck.size();
         while (size > 0) {
-            i = rnd.nextInt(size--);
+            i = RND.nextInt(size--);
             card = deck.get(i);
             deck.set(i, deck.get(size));
             deck.set(size, card);
@@ -787,7 +807,7 @@ class UnoImpl extends Uno {
         // In the case of (last winner = NORTH) & (game mode = 3 player mode)
         // Re-specify the dealer randomly
         if (players == 3 && now == Player.COM2) {
-            now = (3 + rnd.nextInt(3)) % 4;
+            now = (3 + RND.nextInt(3)) % 4;
         } // if (players == 3 && now == Player.COM2)
     } // start()
 
@@ -845,7 +865,7 @@ class UnoImpl extends Uno {
                     // Re-use the used cards when there are no more cards in deck
                     size = used.size();
                     while (size > 0) {
-                        index = rnd.nextInt(size--);
+                        index = RND.nextInt(size--);
                         deck.add(used.get(index));
                         used.remove(index);
                     } // while (size > 0)

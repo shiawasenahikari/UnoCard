@@ -84,6 +84,11 @@ private:
     int difficulty;
 
     /**
+     * Whether the force play rule is enabled.
+     */
+    bool forcePlay;
+
+    /**
      * Whether the 7-0 rule is enabled.
      */
     bool sevenZeroRule;
@@ -279,6 +284,19 @@ public:
      *                   Only LV_EASY and LV_HARD are available.
      */
     void setDifficulty(int difficulty);
+
+    /**
+     * @return This value tells that what's the next step
+     *         after you drew a playable card in your action.
+     *         When force play is enabled, play the card immediately.
+     *         When force play is disabled, keep the card in your hand.
+     */
+    bool isForcePlay();
+
+    /**
+     * @param enabled Enable/Disable the force play rule.
+     */
+    void setForcePlay(bool enabled);
 
     /**
      * @return Whether the 7-0 rule is enabled. In 7-0 rule, when a seven card
