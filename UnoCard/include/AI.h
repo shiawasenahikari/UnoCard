@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Uno Card Game
+// Uno Card Game 4 PC
 // Author: Hikari Toyama
 // Compile Environment: Qt 5 with Qt Creator
 // COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
@@ -10,9 +10,9 @@
 #ifndef __AI_H_494649FDFA62B3C015120BCB9BE17613__
 #define __AI_H_494649FDFA62B3C015120BCB9BE17613__
 
-#include <Uno.h>
-#include <Card.h>
-#include <Color.h>
+#include "include/Uno.h"
+#include "include/Card.h"
+#include "include/Color.h"
 
 /**
  * AI Strategies.
@@ -24,7 +24,19 @@ private:
      */
     Uno* uno = Uno::getInstance();
 
+    /**
+     * Default constructor.
+     */
+    AI() = default;
+
 public:
+    /**
+     * In main.cpp, get AI instance here.
+     *
+     * @return Reference of our singleton.
+     */
+    static AI* getInstance();
+
     /**
      * Evaluate which color is the best for current player. In our evaluation
      * system, zero cards / reverse cards are worth 2 points, non-zero number
@@ -44,7 +56,7 @@ public:
      * @return Current player swaps with whom. Must be one of the following:
      *         Player::YOU, Player::COM1, Player::COM2, Player::COM3.
      */
-    int bestSwapTarget4NowPlayer();
+    int calcBestSwapTarget4NowPlayer();
 
     /**
      * AI strategies of determining if it's necessary to challenge previous

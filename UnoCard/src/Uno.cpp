@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Uno Card Game
+// Uno Card Game 4 PC
 // Author: Hikari Toyama
 // Compile Environment: Qt 5 with Qt Creator
 // COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
@@ -8,17 +8,26 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <ctime>
-#include <Uno.h>
-#include <string>
+#include <QImage>
 #include <vector>
-#include <Card.h>
 #include <cstdlib>
-#include <cstring>
-#include <Color.h>
+#include <QString>
 #include <iostream>
-#include <Player.h>
-#include <Content.h>
-#include <opencv2/highgui.hpp>
+#include "include/Uno.h"
+#include "include/Card.h"
+#include "include/Color.h"
+#include "include/Player.h"
+#include "include/Content.h"
+
+static const QString A[] = {
+    "k", "r", "b", "g", "y"
+}; // A[]
+
+static const QString B[] = {
+    "0", "1", "2", "3", "4",
+    "5", "6", "7", "8", "9",
+    "+", "@", "$", "w", "w+"
+}; // B[]
 
 static const char* BROKEN_IMAGE_RESOURCES_EXCEPTION =
 "One or more image resources are broken. Re-install this application.";
@@ -26,9 +35,8 @@ static const char* BROKEN_IMAGE_RESOURCES_EXCEPTION =
 /**
  * Singleton, hide default constructor.
  */
-Uno::Uno() {
-    cv::Mat br, dk;
-    std::string path;
+Uno::Uno(unsigned seed) {
+    QImage br, dk;
     int i, done, total;
 
     // Preparations
@@ -37,189 +45,115 @@ Uno::Uno() {
     std::cout << "Loading... (0%)" << std::endl;
 
     // Load background image resources
-    bgWelcome = cv::imread("resource/bg_welcome.png");
-    bgCounter = cv::imread("resource/bg_counter.png");
-    bgClockwise = cv::imread("resource/bg_clockwise.png");
-    if (bgWelcome.empty() ||
-        bgWelcome.rows != 720 ||
-        bgWelcome.cols != 1280 ||
-        bgCounter.empty() ||
-        bgCounter.rows != 720 ||
-        bgCounter.cols != 1280 ||
-        bgClockwise.empty() ||
-        bgClockwise.rows != 720 ||
-        bgClockwise.cols != 1280) {
-        std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
-        exit(1);
-    } // if (bgWelcome.empty() || ...)
-    else {
+    if (bgWelcome.load("resource/bg_welcome.png") &&
+        bgWelcome.width() == 1280 && bgWelcome.height() == 720 &&
+        bgCounter.load("resource/bg_counter.png") &&
+        bgCounter.width() == 1280 && bgCounter.height() == 720 &&
+        bgClockwise.load("resource/bg_clockwise.png") &&
+        bgClockwise.width() == 1280 && bgClockwise.height() == 720) {
         done += 3;
         std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
+    } // if (bgWelcome.load("resource/bg_welcome.png") && ...)
+    else {
+        std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
+        exit(1);
     } // else
 
     // Load card back image resource
-    backImage = cv::imread("resource/back.png");
-    if (backImage.empty() ||
-        backImage.rows != 181 ||
-        backImage.cols != 121) {
-        std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
-        exit(1);
-    } // if (backImage.empty() || ...)
-    else {
+    if (backImage.load("resource/back.png") &&
+        backImage.width() == 121 && backImage.height() == 181) {
         ++done;
         std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
+    } // if (backImage.load("resource/back.png") && ...)
+    else {
+        std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
+        exit(1);
     } // else
 
     // Load difficulty image resources
-    easyImage = cv::imread("resource/lv_easy.png");
-    hardImage = cv::imread("resource/lv_hard.png");
-    easyImage_d = cv::imread("resource/lv_easy_dark.png");
-    hardImage_d = cv::imread("resource/lv_hard_dark.png");
-    if (easyImage.empty() ||
-        easyImage.rows != 181 ||
-        easyImage.cols != 121 ||
-        hardImage.empty() ||
-        hardImage.rows != 181 ||
-        hardImage.cols != 121 ||
-        easyImage_d.empty() ||
-        easyImage_d.rows != 181 ||
-        easyImage_d.cols != 121 ||
-        hardImage_d.empty() ||
-        hardImage_d.rows != 181 ||
-        hardImage_d.cols != 121) {
-        std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
-        exit(1);
-    } // if (easyImage.empty() || ...)
-    else {
+    if (easyImage.load("resource/lv_easy.png") &&
+        easyImage.width() == 121 && easyImage.height() == 181 &&
+        hardImage.load("resource/lv_hard.png") &&
+        hardImage.width() == 121 && hardImage.height() == 181 &&
+        easyImage_d.load("resource/lv_easy_dark.png") &&
+        easyImage_d.width() == 121 && easyImage_d.height() == 181 &&
+        hardImage_d.load("resource/lv_hard_dark.png") &&
+        hardImage_d.width() == 121 && hardImage_d.height() == 181) {
         done += 4;
         std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
+    } // if (easyImage.load("resource/lv_easy.png") && ...)
+    else {
+        std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
+        exit(1);
     } // else
 
-    // Generate number cards and action cards
-    const char* color_short = "rbgy";
-    const char* content_short = "0123456789+@$";
-    const char* color_long[] = { "Red", "Blue", "Green", "Yellow" };
-    const char* content_long[] = {
-        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-        "Draw 2", "Skip", "Reverse"
-    }; // content_long[]
-
-    for (i = 0; i < 52; ++i) {
-        int a = i / 13, b = i % 13;
-        path = "resource/front_";
-        path = path + color_short[a] + content_short[b] + ".png";
-        br = cv::imread(path);
-        path = "resource/dark_";
-        path = path + color_short[a] + content_short[b] + ".png";
-        dk = cv::imread(path);
-        if (br.empty() || br.rows != 181 || br.cols != 121 ||
-            dk.empty() || dk.rows != 181 || dk.cols != 121) {
+    // Generate 54 types of cards
+    for (i = 0; i < 54; ++i) {
+        Color a = i < 52 ? Color(i / 13 + 1) : Color(0);
+        Content b = i < 52 ? Content(i % 13) : Content(i - 39);
+        if (br.load("resource/front_" + A[a] + B[b] + ".png") &&
+            br.width() == 121 && br.height() == 181 &&
+            dk.load("resource/dark_" + A[a] + B[b] + ".png") &&
+            dk.width() == 121 && dk.height() == 181) {
+            done += 2;
+            table.push_back(Card(br, dk, a, b));
+            std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
+        } // if (br.load("resource/front_" + A[a] + B[b] + ".png") && ...)
+        else {
             std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
             exit(1);
-        } // if (br.empty() || ...)
-        else {
-            std::string n = std::string(color_long[a]) + ' ' + content_long[b];
-#ifdef _WIN32
-            const char* name = _strdup(n.c_str());
-#else
-            const char* name = strdup(n.c_str());
-#endif
-
-            table.push_back(Card(br, dk, Color(a + 1), Content(b), name));
-            if (b > 0) {
-                // One zero-card in every color
-                // Two other number/action cards in every color
-                table.push_back(Card(br, dk, Color(a + 1), Content(b), name));
-            } // if (b > 0)
-
-            done += 2;
-            std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
         } // else
-    } // for (i = 0; i < 52; ++i)
-
-    // Generate wild cards
-    br = cv::imread("resource/front_kw.png");
-    dk = cv::imread("resource/dark_kw.png");
-    if (br.empty() || br.rows != 181 || br.cols != 121 ||
-        dk.empty() || dk.rows != 181 || dk.cols != 121) {
-        std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
-        exit(1);
-    } // if (br.empty() || ...)
-    else {
-        wildImage[0] = br;
-        for (i = 0; i < 4; ++i) {
-            table.push_back(Card(br, dk, NONE, WILD, "Wild"));
-        } // for (i = 0; i < 4; ++i)
-
-        done += 2;
-        std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
-    } // else
-
-    // Generate wild +4 cards
-    br = cv::imread("resource/front_kw+.png");
-    dk = cv::imread("resource/dark_kw+.png");
-    if (br.empty() || br.rows != 181 || br.cols != 121 ||
-        dk.empty() || dk.rows != 181 || dk.cols != 121) {
-        std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
-        exit(1);
-    } // if (br.empty() || ...)
-    else {
-        wildDraw4Image[0] = br;
-        for (i = 0; i < 4; ++i) {
-            table.push_back(Card(br, dk, NONE, WILD_DRAW4, "Wild +4"));
-        } // for (i = 0; i < 4; ++i)
-
-        done += 2;
-        std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
-    } // else
+    } // for (i = 0; i < 54; ++i)
 
     // Load colored wild & wild +4 image resources
+    wildImage[0] = table.at(39 + WILD).image;
+    wildDraw4Image[0] = table.at(39 + WILD_DRAW4).image;
     for (i = 1; i < 5; ++i) {
-        path = "resource/front_";
-        path = path + color_short[i - 1] + "w.png";
-        wildImage[i] = cv::imread(path);
-        path = "resource/front_";
-        path = path + color_short[i - 1] + "w+.png";
-        wildDraw4Image[i] = cv::imread(path);
-        if (wildImage[i].empty() ||
-            wildImage[i].rows != 181 ||
-            wildImage[i].cols != 121 ||
-            wildDraw4Image[i].empty() ||
-            wildDraw4Image[i].rows != 181 ||
-            wildDraw4Image[i].cols != 121) {
+        if (br.load("resource/front_" + A[i] + B[WILD] + ".png") &&
+            br.width() == 121 && br.height() == 181 &&
+            dk.load("resource/front_" + A[i] + B[WILD_DRAW4] + ".png") &&
+            dk.width() == 121 && dk.height() == 181) {
+            done += 2;
+            wildImage[i] = br;
+            wildDraw4Image[i] = dk;
+            std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
+        } // if (br.load("resource/front_" + A[i] + B[WILD] + ".png" && ...)
+        else {
             std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
             exit(1);
-        } // if (wildImage[i].empty() || ...)
-        else {
-            done += 2;
-            std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
         } // else
     } // for (i = 1; i < 5; ++i)
 
     // Generate a random seed based on the current time stamp
-    srand((unsigned)time(nullptr));
+    if (seed == 0U) {
+        seed = unsigned(time(nullptr));
+    } // if (seed == 0U)
+
+    std::cout << "Random seed is " << seed << std::endl;
+    srand(seed);
 
     // Initialize other members
     players = 3;
+    legality = 0;
     now = rand() % 4;
     forcePlay = true;
     difficulty = LV_EASY;
     draw2StackCount = direction = 0;
     draw2StackRule = sevenZeroRule = false;
-} // Uno() (Class Constructor)
+} // Uno(unsigned) (Class Constructor)
 
 /**
  * @return Reference of our singleton.
  */
-Uno* Uno::getInstance() {
-    static Uno instance;
+Uno* Uno::getInstance(unsigned seed) {
+    static Uno instance(seed);
     return &instance;
-} // getInstance()
+} // getInstance(unsigned)
 
 /**
  * @return Card back image resource.
  */
-const cv::Mat& Uno::getBackImage() {
+const QImage& Uno::getBackImage() {
     return backImage;
 } // getBackImage()
 
@@ -229,7 +163,7 @@ const cv::Mat& Uno::getBackImage() {
  *                or false if you want to get a dark image.
  * @return Corresponding difficulty button image.
  */
-const cv::Mat& Uno::getLevelImage(int level, bool hiLight) {
+const QImage& Uno::getLevelImage(int level, bool hiLight) {
     return level == LV_EASY ?
         /* level == LV_EASY */ (hiLight ? easyImage : easyImage_d) :
         /* level == LV_HARD */ (hiLight ? hardImage : hardImage_d);
@@ -238,7 +172,7 @@ const cv::Mat& Uno::getLevelImage(int level, bool hiLight) {
 /**
  * @return Background image resource in current direction.
  */
-const cv::Mat& Uno::getBackground() {
+const QImage& Uno::getBackground() {
     switch (direction) {
     case DIR_LEFT:
         return bgClockwise; // case DIR_LEFT
@@ -259,7 +193,7 @@ const cv::Mat& Uno::getBackground() {
  * @param color The wild image with which color filled you want to get.
  * @return Corresponding color-filled image.
  */
-const cv::Mat& Uno::getColoredWildImage(Color color) {
+const QImage& Uno::getColoredWildImage(Color color) {
     return wildImage[color];
 } // getColoredWildImage(Color)
 
@@ -271,7 +205,7 @@ const cv::Mat& Uno::getColoredWildImage(Color color) {
  * @param color The wild +4 image with which color filled you want to get.
  * @return Corresponding color-filled image.
  */
-const cv::Mat& Uno::getColoredWildDraw4Image(Color color) {
+const QImage& Uno::getColoredWildDraw4Image(Color color) {
     return wildDraw4Image[color];
 } // getColoredWildDraw4Image(Color)
 
@@ -334,6 +268,43 @@ int Uno::getPrev() {
 } // getPrev()
 
 /**
+ * @param who Get which player's instance. Must be one of the following:
+ *            Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+ * @return Specified player's instance.
+ */
+Player* Uno::getPlayer(int who) {
+    return who < Player::YOU || who > Player::COM3 ? nullptr : &player[who];
+} // getPlayer(int)
+
+/**
+ * @return &this->player[this->getNow()].
+ */
+Player* Uno::getCurrPlayer() {
+    return &player[getNow()];
+} // getCurrPlayer()
+
+/**
+ * @return &this->player[this->getNext()].
+ */
+Player* Uno::getNextPlayer() {
+    return &player[getNext()];
+} // getNextPlayer()
+
+/**
+ * @return &this->player[this->getOppo()].
+ */
+Player* Uno::getOppoPlayer() {
+    return &player[getOppo()];
+} // getOppoPlayer()
+
+/**
+ * @return &this->player[this->getPrev()].
+ */
+Player* Uno::getPrevPlayer() {
+    return &player[getPrev()];
+} // getPrevPlayer()
+
+/**
  * @return How many players in game (3 or 4).
  */
 int Uno::getPlayers() {
@@ -360,15 +331,6 @@ void Uno::setPlayers(int players) {
 int Uno::switchDirection() {
     return (direction = 4 - direction);
 } // switchDirection()
-
-/**
- * @param who Get which player's instance. Must be one of the following:
- *            Player::YOU, Player::COM1, Player::COM2, Player::COM3.
- * @return Specified player's instance.
- */
-Player* Uno::getPlayer(int who) {
-    return who < Player::YOU || who > Player::COM3 ? nullptr : &player[who];
-} // getPlayer(int)
 
 /**
  * @return Current difficulty (LV_EASY / LV_HARD).
@@ -462,18 +424,13 @@ int Uno::getDraw2StackCount() {
  * @return Corresponding card instance.
  */
 Card* Uno::findCard(Color color, Content content) {
-    int i;
-    Card* result;
-
-    result = nullptr;
-    for (i = 0; i < 108; ++i) {
-        if (table[i].color == color && table[i].content == content) {
-            result = &table[i];
-            break;
-        } // if (table[i].color == color && table[i].content == content)
-    } // for (i = 0; i < 108; ++i)
-
-    return result;
+    return color == NONE && content == WILD
+        ? &table.at(39 + WILD)
+        : color == NONE && content == WILD_DRAW4
+        ? &table.at(39 + WILD_DRAW4)
+        : color != NONE && content != WILD && content != WILD_DRAW4
+        ? &table.at(13 * (color - 1) + content)
+        : nullptr;
 } // findCard(Color, Content)
 
 /**
@@ -542,12 +499,27 @@ void Uno::start() {
         player[i].handCards.clear();
         player[i].weakColor = NONE;
         player[i].strongColor = NONE;
+        player[i].open = i == Player::YOU;
     } // for (i = Player::YOU; i <= Player::COM3; ++i)
 
     // Generate a temporary sequenced card deck
-    for (i = 0; i < 108; ++i) {
-        deck.push_back(&table[i]);
-    } // for (i = 0; i < 108; ++i)
+    for (i = 0; i < 54; ++i) {
+        card = &table.at(i);
+        switch (card->content) {
+        case WILD:
+        case WILD_DRAW4:
+            deck.push_back(card);
+            deck.push_back(card);
+            // fall through
+
+        default:
+            deck.push_back(card);
+            // fall through
+
+        case NUM0:
+            deck.push_back(card);
+        } // switch (card->content)
+    } // for (i = 0; i < 54; ++i)
 
     // Shuffle cards
     size = int(deck.size());
@@ -555,6 +527,23 @@ void Uno::start() {
         i = rand() % size--;
         card = deck[i]; deck[i] = deck[size]; deck[size] = card;
     } // while (size > 0)
+
+    // Determine a start card as the previous played card
+    do {
+        card = deck.back();
+        deck.pop_back();
+        if (card->isWild()) {
+            // Start card cannot be a wild card, so return it
+            // to the bottom of card deck and pick another card
+            deck.insert(deck.begin(), card);
+        } // if (card->isWild())
+        else {
+            // Any non-wild card can be start card
+            // Start card determined
+            recent.push_back(card);
+            recentColors.push_back(card->color);
+        } // else
+    } while (recent.empty());
 
     // Let everyone draw 7 cards
     if (players == 3) {
@@ -573,22 +562,10 @@ void Uno::start() {
         } // for (i = 0; i < 7; ++i)
     } // else
 
-    // Determine a start card as the previous played card
-    do {
-        card = deck.back();
-        deck.pop_back();
-        if (card->isWild()) {
-            // Start card cannot be a wild card, so return it
-            // to the bottom of card deck and pick another card
-            deck.insert(deck.begin(), card);
-        } // if (card->isWild())
-        else {
-            // Any non-wild card can be start card
-            // Start card determined
-            recent.push_back(card);
-            recentColors.push_back(card->color);
-        } // else
-    } while (recent.empty());
+    // Update the legality binary
+    legality = 0x30000000000000LL
+        | (0x1fffLL << 13 * (card->color - 1))
+        | (0x8004002001LL << card->content);
 
     // In the case of (last winner = NORTH) & (game mode = 3 player mode)
     // Re-specify the dealer randomly
@@ -638,15 +615,18 @@ int Uno::draw(int who, bool force) {
             card = deck.back();
             deck.pop_back();
             for (i = 0, it = hand->begin(); it != hand->end(); ++i, ++it) {
-                if ((*it)->order > card->order) {
+                if ((*it)->id > card->id) {
                     // Found an appropriate position to insert the new card,
                     // which keeps the player's hand cards sequenced
                     break;
-                } // if ((*it)->order > card->order)
+                } // if ((*it)->id > card->id)
             } // for (i = 0, it = hand->begin(); it != hand->end(); ++i, ++it)
 
             hand->insert(it, card);
             player[who].recent = nullptr;
+            player[who].open = (who == Player::YOU) || (player[who].open
+                && !force && forcePlay && isLegalToPlay(card));
+
             if (deck.empty()) {
                 // Re-use the used cards when there are no more cards in deck
                 size = int(used.size());
@@ -663,6 +643,17 @@ int Uno::draw(int who, bool force) {
             // the counter to zero.
             draw2StackCount = 0;
         } // else
+
+        if (draw2StackCount == 0) {
+            // Update the legality binary when necessary
+            card = recent.back();
+            legality = card->isWild()
+                ? 0x30000000000000LL
+                | (0x1fffLL << 13 * (lastColor() - 1))
+                : 0x30000000000000LL
+                | (0x1fffLL << 13 * (lastColor() - 1))
+                | (0x8004002001LL << card->content);
+        } // if (draw2StackCount == 0)
     } // if (who >= Player::YOU && who <= Player::COM3)
 
     return i;
@@ -676,29 +667,7 @@ int Uno::draw(int who, bool force) {
  * @return Whether the specified card is legal to play.
  */
 bool Uno::isLegalToPlay(Card* card) {
-    bool result;
-
-    if (card == nullptr || recent.empty()) {
-        // Null Pointer
-        result = false;
-    } // if (card == nullptr || recent.empty())
-    else if (draw2StackCount > 0) {
-        // When in +2 stacking procedure, only +2 cards are legal
-        result = card->content == DRAW2;
-    } // else if (draw2StackCount > 0)
-    else if (card->isWild()) {
-        // Wild cards: LEGAL
-        result = true;
-    } // else if (card->isWild())
-    else {
-        // Same content to previous: LEGAL
-        // Same color to previous: LEGAL
-        // Other cards: ILLEGAL
-        result = card->color == lastColor()
-            || card->content == recent.back()->content;
-    } // else
-
-    return result;
+    return ((legality >> card->id) & 0x01LL) == 0x01LL;
 } // isLegalToPlay(Card*)
 
 /**
@@ -782,6 +751,15 @@ Card* Uno::play(int who, int index, Color color) {
                 recentColors.erase(recentColors.begin());
             } // if (recent.size() > 5)
 
+            // Update the legality binary
+            legality = draw2StackCount > 0
+                ? (0x8004002001LL << DRAW2)
+                : card->isWild()
+                ? 0x30000000000000LL
+                | (0x1fffLL << 13 * (lastColor() - 1))
+                : 0x30000000000000LL
+                | (0x1fffLL << 13 * (lastColor() - 1))
+                | (0x8004002001LL << card->content);
             if (hand->size() == 0) {
                 // Game over, change background image
                 direction = 0;
@@ -806,6 +784,7 @@ void Uno::swap(int a, int b) {
     Player store = player[a];
     player[a] = player[b];
     player[b] = store;
+    player[Player::YOU].open = true;
 } // swap(int, int)
 
 /**
@@ -819,6 +798,7 @@ void Uno::cycle() {
     player[prev] = player[oppo];
     player[oppo] = player[next];
     player[next] = store;
+    player[Player::YOU].open = true;
 } // cycle()
 
 // E.O.F

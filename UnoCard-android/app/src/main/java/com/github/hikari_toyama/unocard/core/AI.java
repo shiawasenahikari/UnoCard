@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Uno Card Game
+// Uno Card Game 4 Droid
 // Author: Hikari Toyama
 // Compile Environment: Android Studio Arctic Fox, with Android SDK 30
 // COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
@@ -8,8 +8,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 package com.github.hikari_toyama.unocard.core;
-
-import android.content.Context;
 
 /**
  * AI Strategies.
@@ -23,25 +21,21 @@ public abstract class AI {
     /**
      * Constructor.
      *
-     * @param context Pass a Context (MainActivity.this) to let us get the Uno
-     *                runtime instance. Uno runtime needs a Context to refer
-     *                application resources, such as card images.
+     * @param uno Provide the Uno runtime instance.
      */
-    AI(Context context) {
-        uno = Uno.getInstance(context);
-    } // AI(Context) (Class Constructor)
+    AI(Uno uno) {
+        this.uno = uno;
+    } // AI(Uno) (Class Constructor)
 
     /**
      * In MainActivity Class, get AI instance here.
      *
-     * @param context Pass a Context (MainActivity.this) to let us get the Uno
-     *                runtime instance. Uno runtime needs a Context to refer
-     *                application resources, such as card images.
+     * @param uno Provide the Uno runtime instance.
      * @return Reference of our singleton.
      */
-    public static AI getInstance(Context context) {
-        return new AIImpl(context);
-    } // getInstance()
+    public static AI getInstance(Uno uno) {
+        return new AIImpl(uno);
+    } // getInstance(Uno)
 
     /**
      * Evaluate which color is the best for current player. In our evaluation
@@ -62,7 +56,7 @@ public abstract class AI {
      * @return Current player swaps with whom. Must be one of the following:
      * Player.YOU, Player.COM1, Player.COM2, Player.COM3.
      */
-    public abstract int bestSwapTarget4NowPlayer();
+    public abstract int calcBestSwapTarget4NowPlayer();
 
     /**
      * AI strategies of determining if it's necessary to challenge previous

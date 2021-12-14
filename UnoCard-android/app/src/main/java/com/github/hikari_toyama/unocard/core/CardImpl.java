@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Uno Card Game
+// Uno Card Game 4 Droid
 // Author: Hikari Toyama
 // Compile Environment: Android Studio Arctic Fox, with Android SDK 30
 // COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
@@ -18,16 +18,16 @@ class CardImpl extends Card {
     /**
      * Constructor. Provide parameters for an Uno card and create its instance.
      */
-    CardImpl(Mat image, Mat darkImg, Color color, Content content, String name) {
-        super(image, darkImg, color, content, name);
-    } // CardImpl(Mat, Mat, Color, Content, String) (Class Constructor)
+    CardImpl(Mat image, Mat darkImg, Color color, Content content) {
+        super(image, darkImg, color, content);
+    } // CardImpl(Mat, Mat, Color, Content) (Class Constructor)
 
     /**
      * @return Whether the card is a [wild] or [wild +4].
      */
     @Override
     public boolean isWild() {
-        return content == Content.WILD || content == Content.WILD_DRAW4;
+        return color == Color.NONE;
     } // isWild()
 
     /**

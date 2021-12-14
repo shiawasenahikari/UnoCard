@@ -1,35 +1,50 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Uno Card Game
+// Uno Card Game 4 PC
 // Author: Hikari Toyama
 // Compile Environment: Qt 5 with Qt Creator
 // COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <Card.h>
-#include <Color.h>
-#include <Content.h>
-#include <opencv2/core.hpp>
+#include <QImage>
+#include <QString>
+#include "include/Card.h"
+#include "include/Color.h"
+#include "include/Content.h"
+
+/**
+ * Color part of name string.
+ */
+static const QString A[] = {
+    "", "Red ", "Blue ", "Green ", "Yellow "
+}; // A[]
+
+/**
+ * Content part of name string.
+ */
+static const QString B[] = {
+    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+    "+2", "Skip", "Reverse", "Wild", "Wild +4"
+}; // B[]
 
 /**
  * Constructor. Provide parameters for an Uno card and create its instance.
  */
-Card::Card(cv::Mat image, cv::Mat darkImg,
-    Color color, Content content, const char* name) :
-    name(name),
+Card::Card(QImage image, QImage darkImg, Color color, Content content) :
     color(color),
     image(image),
     darkImg(darkImg),
     content(content),
-    order((color << 8) | content) {
-} // Card(Mat, Mat, Color, Content, const char*) (Class Constructor)
+    name(A[color] + B[content]),
+    id(isWild() ? 39 + content : 13 * (color - 1) + content) {
+} // Card(QImage, QImage, Color, Content) (Class Constructor)
 
 /**
  * @return Whether the card is a [wild] or [wild +4].
  */
 bool Card::isWild() {
-    return content == WILD || content == WILD_DRAW4;
+    return color == NONE;
 } // isWild()
 
 // E.O.F

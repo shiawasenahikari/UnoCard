@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Uno Card Game
+// Uno Card Game 4 Droid
 // Author: Hikari Toyama
 // Compile Environment: Android Studio Arctic Fox, with Android SDK 30
 // COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
@@ -20,13 +20,14 @@ class PlayerImpl extends Player {
     /**
      * Hand cards (read only version, provide for external accesses).
      */
-    private final List<Card> handCards_readOnly;
+    private final List<Card> handCards_readOnly =
+            Collections.unmodifiableList(handCards);
 
     /**
      * Default constructor.
      */
     PlayerImpl() {
-        handCards_readOnly = Collections.unmodifiableList(handCards);
+        // NOP (only change accessibility to package-private)
     } // PlayerImpl() (Class Constructor)
 
     /**
@@ -113,6 +114,17 @@ class PlayerImpl extends Player {
     public Card getRecent() {
         return recent;
     } // getRecent()
+
+    /**
+     * @return Whether this player's hand cards are known by you, i.e. the
+     * unique non-AI player. In 7-0 rule, when a seven or zero card is
+     * put down, and your hand cards are transferred to someone else
+     * (for example, A), then A's all hand cards are known by you.
+     */
+    @Override
+    public boolean isOpen() {
+        return open;
+    } // isOpen()
 } // PlayerImpl Class
 
 // E.O.F

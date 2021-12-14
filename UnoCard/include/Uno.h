@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Uno Card Game
+// Uno Card Game 4 PC
 // Author: Hikari Toyama
 // Compile Environment: Qt 5 with Qt Creator
 // COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
@@ -10,12 +10,12 @@
 #ifndef __UNO_H_494649FDFA62B3C015120BCB9BE17613__
 #define __UNO_H_494649FDFA62B3C015120BCB9BE17613__
 
+#include <QImage>
 #include <vector>
-#include <Card.h>
-#include <Color.h>
-#include <Player.h>
-#include <Content.h>
-#include <opencv2/core.hpp>
+#include "include/Card.h"
+#include "include/Color.h"
+#include "include/Player.h"
+#include "include/Content.h"
 
 /**
  * Uno Runtime Class (Singleton).
@@ -25,42 +25,42 @@ private:
     /**
      * Card back image resource.
      */
-    cv::Mat backImage;
+    QImage backImage;
 
     /**
      * Background image resource (for welcome screen).
      */
-    cv::Mat bgWelcome;
+    QImage bgWelcome;
 
     /**
      * Background image resource (Direction: COUNTER CLOCKWISE).
      */
-    cv::Mat bgCounter;
+    QImage bgCounter;
 
     /**
      * Background image resource (Direction: CLOCKWISE).
      */
-    cv::Mat bgClockwise;
+    QImage bgClockwise;
 
     /**
      * Image resources for wild cards.
      */
-    cv::Mat wildImage[5];
+    QImage wildImage[5];
 
     /**
      * Image resources for wild +4 cards.
      */
-    cv::Mat wildDraw4Image[5];
+    QImage wildDraw4Image[5];
 
     /**
      * Difficulty button image resources (EASY).
      */
-    cv::Mat easyImage, easyImage_d;
+    QImage easyImage, easyImage_d;
 
     /**
      * Difficulty button image resources (HARD).
      */
-    cv::Mat hardImage, hardImage_d;
+    QImage hardImage, hardImage_d;
 
     /**
      * Player in turn. Must be one of the following:
@@ -109,6 +109,14 @@ private:
     int draw2StackCount;
 
     /**
+     * This binary value shows that which cards are legal to play. When
+     * 0x01LL == ((legality >> i) & 0x01LL), the card with id number i
+     * is legal to play. When the recent-played-card queue changes,
+     * this value will be updated automatically.
+     */
+    long long legality;
+
+    /**
      * Game players.
      */
     Player player[4];
@@ -124,7 +132,7 @@ private:
     std::vector<Card*> used;
 
     /**
-     * Card table.
+     * Card map. table[i] stores the card instance of id number i.
      */
     std::vector<Card> table;
 
@@ -141,7 +149,7 @@ private:
     /**
      * Singleton, hide default constructor.
      */
-    Uno();
+    Uno(unsigned seed);
 
 public:
     /**
@@ -172,12 +180,12 @@ public:
     /**
      * @return Reference of our singleton.
      */
-    static Uno* getInstance();
+    static Uno* getInstance(unsigned seed = 0U);
 
     /**
      * @return Card back image resource.
      */
-    const cv::Mat& getBackImage();
+    const QImage& getBackImage();
 
     /**
      * @param level   Pass LV_EASY or LV_HARD.
@@ -185,12 +193,12 @@ public:
      *                or false if you want to get a dark image.
      * @return Corresponding difficulty button image.
      */
-    const cv::Mat& getLevelImage(int level, bool hiLight);
+    const QImage& getLevelImage(int level, bool hiLight);
 
     /**
      * @return Background image resource in current direction.
      */
-    const cv::Mat& getBackground();
+    const QImage& getBackground();
 
     /**
      * When a player played a wild card and specified a following legal color,
@@ -200,7 +208,7 @@ public:
      * @param color The wild image with which color filled you want to get.
      * @return Corresponding color-filled image.
      */
-    const cv::Mat& getColoredWildImage(Color color);
+    const QImage& getColoredWildImage(Color color);
 
     /**
      * When a player played a wild +4 card and specified a following legal
@@ -210,7 +218,7 @@ public:
      * @param color The wild +4 image with which color filled you want to get.
      * @return Corresponding color-filled image.
      */
-    const cv::Mat& getColoredWildDraw4Image(Color color);
+    const QImage& getColoredWildDraw4Image(Color color);
 
     /**
      * @return Player in turn. Must be one of the following:
@@ -246,6 +254,33 @@ public:
     int getPrev();
 
     /**
+     * @param who Get which player's instance. Must be one of the following:
+     *            Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+     * @return Specified player's instance.
+     */
+    Player* getPlayer(int who);
+
+    /**
+     * @return &this->player[this->getNow()].
+     */
+    Player* getCurrPlayer();
+
+    /**
+     * @return &this->player[this->getNext()].
+     */
+    Player* getNextPlayer();
+
+    /**
+     * @return &this->player[this->getOppo()].
+     */
+    Player* getOppoPlayer();
+
+    /**
+     * @return &this->player[this->getPrev()].
+     */
+    Player* getPrevPlayer();
+
+    /**
      * @return How many players in game (3 or 4).
      */
     int getPlayers();
@@ -264,13 +299,6 @@ public:
      *         or DIR_RIGHT for counter-clockwise.
      */
     int switchDirection();
-
-    /**
-     * @param who Get which player's instance. Must be one of the following:
-     *            Player::YOU, Player::COM1, Player::COM2, Player::COM3.
-     * @return Specified player's instance.
-     */
-    Player* getPlayer(int who);
 
     /**
      * @return Current difficulty (LV_EASY / LV_HARD).

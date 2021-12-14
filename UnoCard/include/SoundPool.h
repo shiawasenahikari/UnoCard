@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Uno Card Game
+// Uno Card Game 4 PC
 // Author: Hikari Toyama
 // Compile Environment: Qt 5 with Qt Creator
 // COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
@@ -23,11 +23,11 @@ class SoundPool : public QObject {
 private:
     bool enabled;
     QThread thread;
-    QSoundEffect sndUno;
-    QSoundEffect sndWin;
-    QSoundEffect sndLose;
-    QSoundEffect sndDraw;
-    QSoundEffect sndPlay;
+    QSoundEffect* sndUno;
+    QSoundEffect* sndWin;
+    QSoundEffect* sndLose;
+    QSoundEffect* sndDraw;
+    QSoundEffect* sndPlay;
 
 public:
     static const int SND_UNO = 0;
@@ -40,15 +40,15 @@ public:
     bool isEnabled();
     ~SoundPool();
 
-public slots:
-    void play(int which);
-
 signals:
     void playSndUno();
     void playSndWin();
     void playSndLose();
     void playSndDraw();
     void playSndPlay();
+
+public slots:
+    void play(int which);
 }; // SoundPool Class
 
 #endif // __SOUND_POOL_H_494649FDFA62B3C015120BCB9BE17613__

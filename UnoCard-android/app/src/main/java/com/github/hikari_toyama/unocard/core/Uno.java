@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Uno Card Game
+// Uno Card Game 4 Droid
 // Author: Hikari Toyama
 // Compile Environment: Android Studio Arctic Fox, with Android SDK 30
 // COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
@@ -13,7 +13,10 @@ import android.content.Context;
 
 import org.opencv.core.Mat;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Uno Runtime Class (Singleton).
@@ -45,12 +48,17 @@ public abstract class Uno {
     public static final int MAX_HOLD_CARDS = 14;
 
     /**
+     * Random number generator.
+     */
+    public static final Random RNG = new Random();
+
+    /**
      * Singleton.
      */
     private static volatile Uno INSTANCE;
 
     /**
-     * Card table.
+     * Card map. table[i] stores the card instance of id number i.
      */
     Card[] table;
 
@@ -141,6 +149,14 @@ public abstract class Uno {
     int draw2StackCount;
 
     /**
+     * This binary value shows that which cards are legal to play. When
+     * 0x01L == ((legality >> i) & 0x01L), the card with id number i
+     * is legal to play. When the recent-played-card queue changes,
+     * this value will be updated automatically.
+     */
+    long legality;
+
+    /**
      * Game players.
      */
     Player[] player;
@@ -148,22 +164,22 @@ public abstract class Uno {
     /**
      * Card deck (ready to use).
      */
-    List<Card> deck;
+    List<Card> deck = new ArrayList<>();
 
     /**
      * Used cards.
      */
-    List<Card> used;
+    List<Card> used = new ArrayList<>();
 
     /**
      * Recent played cards.
      */
-    List<Card> recent;
+    List<Card> recent = new ArrayList<>();
 
     /**
      * Colors of recent played cards.
      */
-    List<Color> recentColors;
+    List<Color> recentColors = new ArrayList<>();
 
     /**
      * In MainActivity Class, get Uno instance here.
@@ -172,17 +188,21 @@ public abstract class Uno {
      *                resources stored in this application.
      * @return Reference of our singleton.
      */
-    public static Uno getInstance(Context context) {
+    public static synchronized Uno getInstance(Context context) {
         if (INSTANCE == null) {
-            synchronized (Uno.class) {
-                if (INSTANCE == null) {
-                    INSTANCE = new UnoImpl(context);
-                } // if (INSTANCE == null)
-            } // synchronized (Uno.class)
+            try {
+                INSTANCE = new UnoImpl(context);
+            } // try
+            catch (IOException e) {
+                // Thrown if failed to load image resources, but won't happen
+                // here, because our image resources are not in the external
+                // storage, but packed in the application package
+                throw new AssertionError(e);
+            } // catch (IOException e)
         } // if (INSTANCE == null)
 
         return INSTANCE;
-    } // getInstance()
+    } // getInstance(Context)
 
     /**
      * @return Card back image resource.
@@ -256,6 +276,33 @@ public abstract class Uno {
     public abstract int getPrev();
 
     /**
+     * @param who Get which player's instance. Must be one of the following:
+     *            Player.YOU, Player.COM1, Player.COM2, Player.COM3.
+     * @return Specified player's instance.
+     */
+    public abstract Player getPlayer(int who);
+
+    /**
+     * @return this.player[this.getNow()].
+     */
+    public abstract Player getCurrPlayer();
+
+    /**
+     * @return this.player[this.getNext()].
+     */
+    public abstract Player getNextPlayer();
+
+    /**
+     * @return this.player[this.getOppo()].
+     */
+    public abstract Player getOppoPlayer();
+
+    /**
+     * @return this.player[this.getPrev()].
+     */
+    public abstract Player getPrevPlayer();
+
+    /**
      * @return How many players in game (3 or 4).
      */
     public abstract int getPlayers();
@@ -274,13 +321,6 @@ public abstract class Uno {
      * or DIR_RIGHT for counter-clockwise.
      */
     public abstract int switchDirection();
-
-    /**
-     * @param who Get which player's instance. Must be one of the following:
-     *            Player.YOU, Player.COM1, Player.COM2, Player.COM3.
-     * @return Specified player's instance.
-     */
-    public abstract Player getPlayer(int who);
 
     /**
      * @return Current difficulty (LV_EASY / LV_HARD).

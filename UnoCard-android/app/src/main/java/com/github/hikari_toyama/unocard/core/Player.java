@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Uno Card Game
+// Uno Card Game 4 Droid
 // Author: Hikari Toyama
 // Compile Environment: Android Studio Arctic Fox, with Android SDK 30
 // COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
@@ -40,7 +40,7 @@ public abstract class Player {
     /**
      * Hand cards.
      */
-    List<Card> handCards;
+    List<Card> handCards = new ArrayList<>();
 
     /**
      * Strong color.
@@ -67,10 +67,16 @@ public abstract class Player {
     int strongCount = 0;
 
     /**
+     * Whether this player's hand cards are known by you, i.e. the unique
+     * non-AI player.
+     */
+    boolean open = false;
+
+    /**
      * Default constructor.
      */
     Player() {
-        handCards = new ArrayList<>();
+        // NOP (only change accessibility to package-private)
     } // Player() (Class Constructor)
 
     /**
@@ -119,6 +125,14 @@ public abstract class Player {
      * one or more cards in its previous action.
      */
     public abstract Card getRecent();
+
+    /**
+     * @return Whether this player's hand cards are known by you, i.e. the
+     * unique non-AI player. In 7-0 rule, when a seven or zero card is
+     * put down, and your hand cards are transferred to someone else
+     * (for example, A), then A's all hand cards are known by you.
+     */
+    public abstract boolean isOpen();
 } // Player Abstract Class
 
 // E.O.F

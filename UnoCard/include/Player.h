@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Uno Card Game
+// Uno Card Game 4 PC
 // Author: Hikari Toyama
 // Compile Environment: Qt 5 with Qt Creator
 // COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
@@ -11,8 +11,8 @@
 #define __PLAYER_H_494649FDFA62B3C015120BCB9BE17613__
 
 #include <vector>
-#include <Card.h>
-#include <Color.h>
+#include "include/Card.h"
+#include "include/Color.h"
 
 /**
  * Store an Uno player's real-time information,
@@ -53,6 +53,12 @@ private:
      * card, and how many dangerous cards are played after that wild card.
      */
     int strongCount = 0;
+
+    /**
+     * Whether this player's hand cards are known by you, i.e. the unique
+     * non-AI player.
+     */
+    bool open = false;
 
     /**
      * Grant Uno class to access our constructors (to create Player instances)
@@ -127,6 +133,14 @@ public:
      *         one or more cards in its previous action.
      */
     Card* getRecent();
+
+    /**
+     * @return Whether this player's hand cards are known by you, i.e. the
+     *         unique non-AI player. In 7-0 rule, when a seven or zero card is
+     *         put down, and your hand cards are transferred to someone else
+     *         (for example, A), then A's all hand cards are known by you.
+     */
+    bool isOpen();
 }; // Player Class
 
 #endif // __PLAYER_H_494649FDFA62B3C015120BCB9BE17613__

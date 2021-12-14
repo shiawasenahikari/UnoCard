@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Uno Card Game
+// Uno Card Game 4 PC
 // Author: Hikari Toyama
 // Compile Environment: Qt 5 with Qt Creator
 // COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
@@ -8,9 +8,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
-#include <Card.h>
-#include <Color.h>
-#include <Player.h>
+#include "include/Card.h"
+#include "include/Color.h"
+#include "include/Player.h"
 
 /**
  * @return This player's all hand cards.
@@ -90,5 +90,15 @@ Color Player::getWeakColor() {
 Card* Player::getRecent() {
     return recent;
 } // getRecent()
+
+/**
+ * @return Whether this player's hand cards are known by you, i.e. the
+ *         unique non-AI player. In 7-0 rule, when a seven or zero card is
+ *         put down, and your hand cards are transferred to someone else
+ *         (for example, A), then A's all hand cards are known by you.
+ */
+bool Player::isOpen() {
+    return open;
+} // isOpen()
 
 // E.O.F

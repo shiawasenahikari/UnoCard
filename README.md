@@ -16,10 +16,8 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/releases) page and download the
-   latest version in zip file `(UnoCard-v2.0.zip)`.
+   latest version in zip file `(UnoCard-v3.0.zip)`.
 2. Unzip the downloaded zip file, then execute `UnoCard.exe` and have fun!
-3. If there's a message box shows that `msvcp140.dll` is missing, install the VC++ library by
-   executing `vcredist_x64.exe`.
 
 Download the source code and compile manually
 ---------------------------------------------
@@ -42,10 +40,10 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 💻For MAC OS X PC Devices
 =========================
 
-1. Ensure that you have installed OpenCV library and Qt Toolkit on your computer. If not, install
-   them by executing the following command in your bash terminal:
+1. Ensure that you have installed Qt Toolkit on your computer. If not, install it by executing the
+   following command in your bash terminal:
 ```Bash
-brew install opencv qt5
+brew install qt5
 ```
 2. Clone this repository by executing the following command in your bash terminal (replace
    `<proj_root>` with a directory path where you want to store this repository):
@@ -70,22 +68,7 @@ sudo apt install libqt5* qt5* qtmultimedia5-dev
 # For Fedora/CentOS/RHEL users:
 sudo yum install epel-release && sudo yum install qt5*
 ```
-2. Ensure that you have installed OpenCV 4 library on your computer. If not, install it by
-   executing the following commands in your bash terminal:
-```Bash
-# For Ubuntu/Debian users:
-sudo apt install libopencv-dev
-
-# For Fedora/CentOS/RHEL users:
-cd /tmp
-sudo yum install epel-release
-sudo yum install cmake ffmpeg ffmpeg-devel gtk2-devel pkgconfig
-wget https://github.com/opencv/opencv/archive/4.5.4.zip
-unzip 4.5.4.zip && cd opencv-4.5.4 && mkdir build && cd build
-cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/usr/local ..
-make -j8 && sudo make install
-```
-3. Ensure that you have installed GStreamer library on your computer. If not, install it by
+2. Ensure that you have installed GStreamer library on your computer. If not, install it by
    executing the following commands in your bash terminal:
 ```Bash
 # For Ubuntu/Debian users:
@@ -99,12 +82,12 @@ sudo apt install gstreamer1.0-pulseaudio
 # For Fedora/CentOS/RHEL users:
 sudo yum install epel-release && sudo yum install gstreamer*
 ```
-4. Clone this repository by executing the following command in your bash terminal (replace
+3. Clone this repository by executing the following command in your bash terminal (replace
    `<proj_root>` with a directory path where you want to store this repository):
 ```Bash
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
-5. Build and run
+4. Build and run
 ```Bash
 cd <proj_root>/UnoCard
 qmake && make && ./UnoCard
@@ -117,7 +100,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/release) page and download the
-   latest version in apk file `(UnoCard-v2.0.apk)`.
+   latest version in apk file `(UnoCard-v3.0.apk)`.
 2. On your Android phone, open [Settings] app, go to [Security] page, then check the [Unknown
    sources] toggle.
 3. Push the downloaded file to your Android phone, then install and launch it to have fun!
@@ -238,9 +221,8 @@ Stack
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/releases) 页面下载最新版本的 zip 包
-   `(UnoCard-v2.0.zip)`.
+   `(UnoCard-v3.0.zip)`.
 2. 解压并执行 `UnoCard.exe` 开始游戏。
-3. 如果弹窗提示丢失 `msvcp140.dll`，则执行 `vcredist_x64.exe` 以安装 VC++ 运行库。
 
 下载源码并手动编译
 ------------------
@@ -263,9 +245,9 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 💻在 MAC OS X PC 设备上运行
 ===========================
 
-1. 请确认您的电脑上已安装 OpenCV 库和 Qt 工具包。若您尚未安装，则在 Bash 终端中执行如下命令安装：
+1. 请确认您的电脑上已安装 Qt 工具包。若您尚未安装，则在 Bash 终端中执行如下命令安装：
 ```Bash
-brew install opencv qt5
+brew install qt5
 ```
 2. 在 Bash 中执行如下命令以克隆本仓库 (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
 ```Bash
@@ -288,21 +270,7 @@ sudo apt install libqt5* qt5* qtmultimedia5-dev
 # Fedora/CentOS/RHEL 发行版用户执行该条
 sudo yum install epel-release && sudo yum install qt5*
 ```
-2. 请确认您的电脑上已安装 OpenCV 4。若您尚未安装，则在 Bash 终端中执行如下命令以安装：
-```Bash
-# Ubuntu/Debian 发行版用户执行以下命令
-sudo apt install libopencv-dev
-
-# Fedora/CentOS/RHEL 发行版用户执行以下命令
-sudo yum install epel-release
-sudo yum install cmake ffmpeg ffmpeg-devel gtk2-devel pkgconfig
-cd /tmp
-wget https://github.com/opencv/opencv/archive/4.5.4.zip
-unzip 4.5.4.zip && cd opencv-4.5.4 && mkdir build && cd build
-cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/usr/local ..
-make -j8 && sudo make install
-```
-3. 请确认您的电脑上已安装 GStreamer。若您尚未安装，则在 Bash 终端中执行如下命令以安装：
+2. 请确认您的电脑上已安装 GStreamer。若您尚未安装，则在 Bash 终端中执行如下命令以安装：
 ```Bash
 # Ubuntu/Debian 发行版用户执行以下命令
 sudo apt install libgstreamer1.0-dev
@@ -315,11 +283,11 @@ sudo apt install gstreamer1.0-pulseaudio
 # Fedora/CentOS/RHEL 发行版用户执行以下命令
 sudo yum install epel-release && sudo yum install gstreamer*
 ```
-4. 在 Bash 中执行如下命令以克隆本仓库 (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
+3. 在 Bash 中执行如下命令以克隆本仓库 (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
 ```Bash
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
-5. 编译并运行
+4. 编译并运行
 ```Bash
 cd <proj_root>/UnoCard
 qmake && make && ./UnoCard
@@ -332,7 +300,7 @@ qmake && make && ./UnoCard
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/release) 页面下载最新版本的 apk 包
-   `(UnoCard-v2.0.apk)`.
+   `(UnoCard-v3.0.apk)`.
 2. 打开您的 Android 设备中的 [设置] 应用，进入 [安全] 页面，勾选 [未知来源] 复选框。
 3. 将已下载的安装包传到手机中，安装并运行即可开始游戏。
 
@@ -434,9 +402,9 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ==================
 
 * The card images are from [Wikipedia](https://commons.wikimedia.org/wiki/File:UNO_cards_deck.svg).
-* This application is using the GUI module provided by the [OpenCV](https://opencv.org) library
-  and the [Qt](https://www.qt.io) library.
-* The Android application is using a custom UI when crashes, which is provided by the
+* The PC app is using the [Qt](https://www.qt.io) GUI library.
+* The Android app is using the [OpenCV](https://opencv.org) GUI library.
+* The Android app is using a custom UI when crashes, which is provided by the
   [CustomActivityOnCrash](https://github.com/Ereza/CustomActivityOnCrash) library.
 * The background music is from:
   [兔子跳儿童欢快音乐_站长素材](https://sc.chinaz.com/yinxiao/210502415031.htm)

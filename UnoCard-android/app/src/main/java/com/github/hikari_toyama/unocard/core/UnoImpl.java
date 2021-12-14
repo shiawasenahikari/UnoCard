@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Uno Card Game
+// Uno Card Game 4 Droid
 // Author: Hikari Toyama
 // Compile Environment: Android Studio Arctic Fox, with Android SDK 30
 // COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
@@ -9,24 +9,8 @@
 
 package com.github.hikari_toyama.unocard.core;
 
-import static com.github.hikari_toyama.unocard.core.Color.BLUE;
-import static com.github.hikari_toyama.unocard.core.Color.GREEN;
 import static com.github.hikari_toyama.unocard.core.Color.NONE;
-import static com.github.hikari_toyama.unocard.core.Color.RED;
-import static com.github.hikari_toyama.unocard.core.Color.YELLOW;
 import static com.github.hikari_toyama.unocard.core.Content.DRAW2;
-import static com.github.hikari_toyama.unocard.core.Content.NUM0;
-import static com.github.hikari_toyama.unocard.core.Content.NUM1;
-import static com.github.hikari_toyama.unocard.core.Content.NUM2;
-import static com.github.hikari_toyama.unocard.core.Content.NUM3;
-import static com.github.hikari_toyama.unocard.core.Content.NUM4;
-import static com.github.hikari_toyama.unocard.core.Content.NUM5;
-import static com.github.hikari_toyama.unocard.core.Content.NUM6;
-import static com.github.hikari_toyama.unocard.core.Content.NUM7;
-import static com.github.hikari_toyama.unocard.core.Content.NUM8;
-import static com.github.hikari_toyama.unocard.core.Content.NUM9;
-import static com.github.hikari_toyama.unocard.core.Content.REV;
-import static com.github.hikari_toyama.unocard.core.Content.SKIP;
 import static com.github.hikari_toyama.unocard.core.Content.WILD;
 import static com.github.hikari_toyama.unocard.core.Content.WILD_DRAW4;
 
@@ -40,20 +24,13 @@ import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 /**
  * Uno Runtime Class (Singleton).
  */
 class UnoImpl extends Uno {
-    /**
-     * Random number generator.
-     */
-    private static final Random RND = new Random();
-
     /**
      * Tag name for Android Logcat.
      */
@@ -62,21 +39,24 @@ class UnoImpl extends Uno {
     /**
      * Recent played cards (read-only version, provide for external accesses).
      */
-    private final List<Card> recent_readOnly;
+    private final List<Card> recent_readOnly
+            = Collections.unmodifiableList(recent);
 
     /**
      * Colors of recent played cards
      * (read-only version, provide for external accesses).
      */
-    private final List<Color> recentColors_readOnly;
+    private final List<Color> recentColors_readOnly
+            = Collections.unmodifiableList(recentColors);
 
     /**
      * Singleton, hide default constructor.
      *
      * @param context Pass a context object to let us get the card image
      *                resources stored in this application.
+     * @throws IOException Thrown if failed to load image resources.
      */
-    UnoImpl(Context context) {
+    UnoImpl(Context context) throws IOException {
         Mat[] br, dk;
         int i, loaded, total;
 
@@ -86,309 +66,195 @@ class UnoImpl extends Uno {
         total = 124;
         Log.i(TAG, "Loading... (0%)");
 
-        try {
-            // Load background image resources
-            bgWelcome = Utils.loadResource(context, R.raw.bg_welcome);
-            bgCounter = Utils.loadResource(context, R.raw.bg_counter);
-            bgClockwise = Utils.loadResource(context, R.raw.bg_clockwise);
-            Imgproc.cvtColor(bgWelcome, bgWelcome, Imgproc.COLOR_BGR2RGB);
-            Imgproc.cvtColor(bgCounter, bgCounter, Imgproc.COLOR_BGR2RGB);
-            Imgproc.cvtColor(bgClockwise, bgClockwise, Imgproc.COLOR_BGR2RGB);
-            loaded += 3;
+        // Load background image resources
+        bgWelcome = Utils.loadResource(context, R.raw.bg_welcome);
+        bgCounter = Utils.loadResource(context, R.raw.bg_counter);
+        bgClockwise = Utils.loadResource(context, R.raw.bg_clockwise);
+        Imgproc.cvtColor(bgWelcome, bgWelcome, Imgproc.COLOR_BGR2RGB);
+        Imgproc.cvtColor(bgCounter, bgCounter, Imgproc.COLOR_BGR2RGB);
+        Imgproc.cvtColor(bgClockwise, bgClockwise, Imgproc.COLOR_BGR2RGB);
+        loaded += 3;
+        Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
+
+        // Load card back image resource
+        backImage = Utils.loadResource(context, R.raw.back);
+        Imgproc.cvtColor(backImage, backImage, Imgproc.COLOR_BGR2RGB);
+        ++loaded;
+        Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
+
+        // Load difficulty image resources
+        easyImage = Utils.loadResource(context, R.raw.lv_easy);
+        hardImage = Utils.loadResource(context, R.raw.lv_hard);
+        easyImage_d = Utils.loadResource(context, R.raw.lv_easy_dark);
+        hardImage_d = Utils.loadResource(context, R.raw.lv_hard_dark);
+        Imgproc.cvtColor(easyImage, easyImage, Imgproc.COLOR_BGR2RGB);
+        Imgproc.cvtColor(hardImage, hardImage, Imgproc.COLOR_BGR2RGB);
+        Imgproc.cvtColor(easyImage_d, easyImage_d, Imgproc.COLOR_BGR2RGB);
+        Imgproc.cvtColor(hardImage_d, hardImage_d, Imgproc.COLOR_BGR2RGB);
+        loaded += 4;
+        Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
+
+        // Load cards' front image resources
+        br = new Mat[]{
+                Utils.loadResource(context, R.raw.front_r0),
+                Utils.loadResource(context, R.raw.front_r1),
+                Utils.loadResource(context, R.raw.front_r2),
+                Utils.loadResource(context, R.raw.front_r3),
+                Utils.loadResource(context, R.raw.front_r4),
+                Utils.loadResource(context, R.raw.front_r5),
+                Utils.loadResource(context, R.raw.front_r6),
+                Utils.loadResource(context, R.raw.front_r7),
+                Utils.loadResource(context, R.raw.front_r8),
+                Utils.loadResource(context, R.raw.front_r9),
+                Utils.loadResource(context, R.raw.front_rr),
+                Utils.loadResource(context, R.raw.front_rs),
+                Utils.loadResource(context, R.raw.front_rd2),
+                Utils.loadResource(context, R.raw.front_b0),
+                Utils.loadResource(context, R.raw.front_b1),
+                Utils.loadResource(context, R.raw.front_b2),
+                Utils.loadResource(context, R.raw.front_b3),
+                Utils.loadResource(context, R.raw.front_b4),
+                Utils.loadResource(context, R.raw.front_b5),
+                Utils.loadResource(context, R.raw.front_b6),
+                Utils.loadResource(context, R.raw.front_b7),
+                Utils.loadResource(context, R.raw.front_b8),
+                Utils.loadResource(context, R.raw.front_b9),
+                Utils.loadResource(context, R.raw.front_br),
+                Utils.loadResource(context, R.raw.front_bs),
+                Utils.loadResource(context, R.raw.front_bd2),
+                Utils.loadResource(context, R.raw.front_g0),
+                Utils.loadResource(context, R.raw.front_g1),
+                Utils.loadResource(context, R.raw.front_g2),
+                Utils.loadResource(context, R.raw.front_g3),
+                Utils.loadResource(context, R.raw.front_g4),
+                Utils.loadResource(context, R.raw.front_g5),
+                Utils.loadResource(context, R.raw.front_g6),
+                Utils.loadResource(context, R.raw.front_g7),
+                Utils.loadResource(context, R.raw.front_g8),
+                Utils.loadResource(context, R.raw.front_g9),
+                Utils.loadResource(context, R.raw.front_gr),
+                Utils.loadResource(context, R.raw.front_gs),
+                Utils.loadResource(context, R.raw.front_gd2),
+                Utils.loadResource(context, R.raw.front_y0),
+                Utils.loadResource(context, R.raw.front_y1),
+                Utils.loadResource(context, R.raw.front_y2),
+                Utils.loadResource(context, R.raw.front_y3),
+                Utils.loadResource(context, R.raw.front_y4),
+                Utils.loadResource(context, R.raw.front_y5),
+                Utils.loadResource(context, R.raw.front_y6),
+                Utils.loadResource(context, R.raw.front_y7),
+                Utils.loadResource(context, R.raw.front_y8),
+                Utils.loadResource(context, R.raw.front_y9),
+                Utils.loadResource(context, R.raw.front_yr),
+                Utils.loadResource(context, R.raw.front_ys),
+                Utils.loadResource(context, R.raw.front_yd2),
+                Utils.loadResource(context, R.raw.front_kw),
+                Utils.loadResource(context, R.raw.front_kw4)
+        }; // br = new Mat[]{}
+        dk = new Mat[]{
+                Utils.loadResource(context, R.raw.dark_r0),
+                Utils.loadResource(context, R.raw.dark_r1),
+                Utils.loadResource(context, R.raw.dark_r2),
+                Utils.loadResource(context, R.raw.dark_r3),
+                Utils.loadResource(context, R.raw.dark_r4),
+                Utils.loadResource(context, R.raw.dark_r5),
+                Utils.loadResource(context, R.raw.dark_r6),
+                Utils.loadResource(context, R.raw.dark_r7),
+                Utils.loadResource(context, R.raw.dark_r8),
+                Utils.loadResource(context, R.raw.dark_r9),
+                Utils.loadResource(context, R.raw.dark_rr),
+                Utils.loadResource(context, R.raw.dark_rs),
+                Utils.loadResource(context, R.raw.dark_rd2),
+                Utils.loadResource(context, R.raw.dark_b0),
+                Utils.loadResource(context, R.raw.dark_b1),
+                Utils.loadResource(context, R.raw.dark_b2),
+                Utils.loadResource(context, R.raw.dark_b3),
+                Utils.loadResource(context, R.raw.dark_b4),
+                Utils.loadResource(context, R.raw.dark_b5),
+                Utils.loadResource(context, R.raw.dark_b6),
+                Utils.loadResource(context, R.raw.dark_b7),
+                Utils.loadResource(context, R.raw.dark_b8),
+                Utils.loadResource(context, R.raw.dark_b9),
+                Utils.loadResource(context, R.raw.dark_br),
+                Utils.loadResource(context, R.raw.dark_bs),
+                Utils.loadResource(context, R.raw.dark_bd2),
+                Utils.loadResource(context, R.raw.dark_g0),
+                Utils.loadResource(context, R.raw.dark_g1),
+                Utils.loadResource(context, R.raw.dark_g2),
+                Utils.loadResource(context, R.raw.dark_g3),
+                Utils.loadResource(context, R.raw.dark_g4),
+                Utils.loadResource(context, R.raw.dark_g5),
+                Utils.loadResource(context, R.raw.dark_g6),
+                Utils.loadResource(context, R.raw.dark_g7),
+                Utils.loadResource(context, R.raw.dark_g8),
+                Utils.loadResource(context, R.raw.dark_g9),
+                Utils.loadResource(context, R.raw.dark_gr),
+                Utils.loadResource(context, R.raw.dark_gs),
+                Utils.loadResource(context, R.raw.dark_gd2),
+                Utils.loadResource(context, R.raw.dark_y0),
+                Utils.loadResource(context, R.raw.dark_y1),
+                Utils.loadResource(context, R.raw.dark_y2),
+                Utils.loadResource(context, R.raw.dark_y3),
+                Utils.loadResource(context, R.raw.dark_y4),
+                Utils.loadResource(context, R.raw.dark_y5),
+                Utils.loadResource(context, R.raw.dark_y6),
+                Utils.loadResource(context, R.raw.dark_y7),
+                Utils.loadResource(context, R.raw.dark_y8),
+                Utils.loadResource(context, R.raw.dark_y9),
+                Utils.loadResource(context, R.raw.dark_yr),
+                Utils.loadResource(context, R.raw.dark_ys),
+                Utils.loadResource(context, R.raw.dark_yd2),
+                Utils.loadResource(context, R.raw.dark_kw),
+                Utils.loadResource(context, R.raw.dark_kw4)
+        }; // dk = new Mat[]{}
+        for (i = 0; i < 54; ++i) {
+            Imgproc.cvtColor(br[i], br[i], Imgproc.COLOR_BGR2RGB);
+            Imgproc.cvtColor(dk[i], dk[i], Imgproc.COLOR_BGR2RGB);
+            loaded += 2;
             Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
+        } // for (i = 0; i < 54; ++i)
 
-            // Load card back image resource
-            backImage = Utils.loadResource(context, R.raw.back);
-            Imgproc.cvtColor(backImage, backImage, Imgproc.COLOR_BGR2RGB);
-            ++loaded;
+        // Load wild & wild +4 image resources
+        wImage = new Mat[]{
+                br[52],
+                Utils.loadResource(context, R.raw.front_rw),
+                Utils.loadResource(context, R.raw.front_bw),
+                Utils.loadResource(context, R.raw.front_gw),
+                Utils.loadResource(context, R.raw.front_yw)
+        }; // wImage = new Mat[]{}
+        w4Image = new Mat[]{
+                br[53],
+                Utils.loadResource(context, R.raw.front_rw4),
+                Utils.loadResource(context, R.raw.front_bw4),
+                Utils.loadResource(context, R.raw.front_gw4),
+                Utils.loadResource(context, R.raw.front_yw4)
+        }; // w4Image = new Mat[]{}
+        for (i = 1; i < 5; ++i) {
+            Imgproc.cvtColor(wImage[i], wImage[i], Imgproc.COLOR_BGR2RGB);
+            Imgproc.cvtColor(w4Image[i], w4Image[i], Imgproc.COLOR_BGR2RGB);
+            loaded += 2;
             Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
+        } // for (i = 1; i < 5; ++i)
 
-            // Load difficulty image resources
-            easyImage = Utils.loadResource(context, R.raw.lv_easy);
-            hardImage = Utils.loadResource(context, R.raw.lv_hard);
-            easyImage_d = Utils.loadResource(context, R.raw.lv_easy_dark);
-            hardImage_d = Utils.loadResource(context, R.raw.lv_hard_dark);
-            Imgproc.cvtColor(easyImage, easyImage, Imgproc.COLOR_BGR2RGB);
-            Imgproc.cvtColor(hardImage, hardImage, Imgproc.COLOR_BGR2RGB);
-            Imgproc.cvtColor(easyImage_d, easyImage_d, Imgproc.COLOR_BGR2RGB);
-            Imgproc.cvtColor(hardImage_d, hardImage_d, Imgproc.COLOR_BGR2RGB);
-            loaded += 4;
-            Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
-
-            // Load cards' front image resources
-            br = new Mat[]{
-                    Utils.loadResource(context, R.raw.front_r0),
-                    Utils.loadResource(context, R.raw.front_r1),
-                    Utils.loadResource(context, R.raw.front_r2),
-                    Utils.loadResource(context, R.raw.front_r3),
-                    Utils.loadResource(context, R.raw.front_r4),
-                    Utils.loadResource(context, R.raw.front_r5),
-                    Utils.loadResource(context, R.raw.front_r6),
-                    Utils.loadResource(context, R.raw.front_r7),
-                    Utils.loadResource(context, R.raw.front_r8),
-                    Utils.loadResource(context, R.raw.front_r9),
-                    Utils.loadResource(context, R.raw.front_rd2),
-                    Utils.loadResource(context, R.raw.front_rs),
-                    Utils.loadResource(context, R.raw.front_rr),
-                    Utils.loadResource(context, R.raw.front_b0),
-                    Utils.loadResource(context, R.raw.front_b1),
-                    Utils.loadResource(context, R.raw.front_b2),
-                    Utils.loadResource(context, R.raw.front_b3),
-                    Utils.loadResource(context, R.raw.front_b4),
-                    Utils.loadResource(context, R.raw.front_b5),
-                    Utils.loadResource(context, R.raw.front_b6),
-                    Utils.loadResource(context, R.raw.front_b7),
-                    Utils.loadResource(context, R.raw.front_b8),
-                    Utils.loadResource(context, R.raw.front_b9),
-                    Utils.loadResource(context, R.raw.front_bd2),
-                    Utils.loadResource(context, R.raw.front_bs),
-                    Utils.loadResource(context, R.raw.front_br),
-                    Utils.loadResource(context, R.raw.front_g0),
-                    Utils.loadResource(context, R.raw.front_g1),
-                    Utils.loadResource(context, R.raw.front_g2),
-                    Utils.loadResource(context, R.raw.front_g3),
-                    Utils.loadResource(context, R.raw.front_g4),
-                    Utils.loadResource(context, R.raw.front_g5),
-                    Utils.loadResource(context, R.raw.front_g6),
-                    Utils.loadResource(context, R.raw.front_g7),
-                    Utils.loadResource(context, R.raw.front_g8),
-                    Utils.loadResource(context, R.raw.front_g9),
-                    Utils.loadResource(context, R.raw.front_gd2),
-                    Utils.loadResource(context, R.raw.front_gs),
-                    Utils.loadResource(context, R.raw.front_gr),
-                    Utils.loadResource(context, R.raw.front_y0),
-                    Utils.loadResource(context, R.raw.front_y1),
-                    Utils.loadResource(context, R.raw.front_y2),
-                    Utils.loadResource(context, R.raw.front_y3),
-                    Utils.loadResource(context, R.raw.front_y4),
-                    Utils.loadResource(context, R.raw.front_y5),
-                    Utils.loadResource(context, R.raw.front_y6),
-                    Utils.loadResource(context, R.raw.front_y7),
-                    Utils.loadResource(context, R.raw.front_y8),
-                    Utils.loadResource(context, R.raw.front_y9),
-                    Utils.loadResource(context, R.raw.front_yd2),
-                    Utils.loadResource(context, R.raw.front_ys),
-                    Utils.loadResource(context, R.raw.front_yr),
-                    Utils.loadResource(context, R.raw.front_kw),
-                    Utils.loadResource(context, R.raw.front_kw4)
-            }; // br = new Mat[]{}
-            dk = new Mat[]{
-                    Utils.loadResource(context, R.raw.dark_r0),
-                    Utils.loadResource(context, R.raw.dark_r1),
-                    Utils.loadResource(context, R.raw.dark_r2),
-                    Utils.loadResource(context, R.raw.dark_r3),
-                    Utils.loadResource(context, R.raw.dark_r4),
-                    Utils.loadResource(context, R.raw.dark_r5),
-                    Utils.loadResource(context, R.raw.dark_r6),
-                    Utils.loadResource(context, R.raw.dark_r7),
-                    Utils.loadResource(context, R.raw.dark_r8),
-                    Utils.loadResource(context, R.raw.dark_r9),
-                    Utils.loadResource(context, R.raw.dark_rd2),
-                    Utils.loadResource(context, R.raw.dark_rs),
-                    Utils.loadResource(context, R.raw.dark_rr),
-                    Utils.loadResource(context, R.raw.dark_b0),
-                    Utils.loadResource(context, R.raw.dark_b1),
-                    Utils.loadResource(context, R.raw.dark_b2),
-                    Utils.loadResource(context, R.raw.dark_b3),
-                    Utils.loadResource(context, R.raw.dark_b4),
-                    Utils.loadResource(context, R.raw.dark_b5),
-                    Utils.loadResource(context, R.raw.dark_b6),
-                    Utils.loadResource(context, R.raw.dark_b7),
-                    Utils.loadResource(context, R.raw.dark_b8),
-                    Utils.loadResource(context, R.raw.dark_b9),
-                    Utils.loadResource(context, R.raw.dark_bd2),
-                    Utils.loadResource(context, R.raw.dark_bs),
-                    Utils.loadResource(context, R.raw.dark_br),
-                    Utils.loadResource(context, R.raw.dark_g0),
-                    Utils.loadResource(context, R.raw.dark_g1),
-                    Utils.loadResource(context, R.raw.dark_g2),
-                    Utils.loadResource(context, R.raw.dark_g3),
-                    Utils.loadResource(context, R.raw.dark_g4),
-                    Utils.loadResource(context, R.raw.dark_g5),
-                    Utils.loadResource(context, R.raw.dark_g6),
-                    Utils.loadResource(context, R.raw.dark_g7),
-                    Utils.loadResource(context, R.raw.dark_g8),
-                    Utils.loadResource(context, R.raw.dark_g9),
-                    Utils.loadResource(context, R.raw.dark_gd2),
-                    Utils.loadResource(context, R.raw.dark_gs),
-                    Utils.loadResource(context, R.raw.dark_gr),
-                    Utils.loadResource(context, R.raw.dark_y0),
-                    Utils.loadResource(context, R.raw.dark_y1),
-                    Utils.loadResource(context, R.raw.dark_y2),
-                    Utils.loadResource(context, R.raw.dark_y3),
-                    Utils.loadResource(context, R.raw.dark_y4),
-                    Utils.loadResource(context, R.raw.dark_y5),
-                    Utils.loadResource(context, R.raw.dark_y6),
-                    Utils.loadResource(context, R.raw.dark_y7),
-                    Utils.loadResource(context, R.raw.dark_y8),
-                    Utils.loadResource(context, R.raw.dark_y9),
-                    Utils.loadResource(context, R.raw.dark_yd2),
-                    Utils.loadResource(context, R.raw.dark_ys),
-                    Utils.loadResource(context, R.raw.dark_yr),
-                    Utils.loadResource(context, R.raw.dark_kw),
-                    Utils.loadResource(context, R.raw.dark_kw4)
-            }; // dk = new Mat[]{}
-            for (i = 0; i < 54; ++i) {
-                Imgproc.cvtColor(br[i], br[i], Imgproc.COLOR_BGR2RGB);
-                Imgproc.cvtColor(dk[i], dk[i], Imgproc.COLOR_BGR2RGB);
-                loaded += 2;
-                Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
-            } // for (i = 0; i < 54; ++i)
-
-            // Load wild & wild +4 image resources
-            wImage = new Mat[]{
-                    br[52],
-                    Utils.loadResource(context, R.raw.front_rw),
-                    Utils.loadResource(context, R.raw.front_bw),
-                    Utils.loadResource(context, R.raw.front_gw),
-                    Utils.loadResource(context, R.raw.front_yw)
-            }; // wImage = new Mat[]{}
-            w4Image = new Mat[]{
-                    br[53],
-                    Utils.loadResource(context, R.raw.front_rw4),
-                    Utils.loadResource(context, R.raw.front_bw4),
-                    Utils.loadResource(context, R.raw.front_gw4),
-                    Utils.loadResource(context, R.raw.front_yw4)
-            }; // w4Image = new Mat[]{}
-            for (i = 1; i < 5; ++i) {
-                Imgproc.cvtColor(wImage[i], wImage[i], Imgproc.COLOR_BGR2RGB);
-                Imgproc.cvtColor(w4Image[i], w4Image[i], Imgproc.COLOR_BGR2RGB);
-                loaded += 2;
-                Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
-            } // for (i = 1; i < 5; ++i)
-        } // try
-        catch (IOException e) {
-            // Thrown if error occurred when loading image resources, but won't
-            // happen here, because our image resources are not in the external
-            // storage, but packed in the application package
-            throw new AssertionError(e);
-        } // catch (IOException e)
-
-        // Generate card table
-        table = new Card[]{
-                new CardImpl(br[0], dk[0], RED, NUM0, "Red 0"),
-                new CardImpl(br[1], dk[1], RED, NUM1, "Red 1"),
-                new CardImpl(br[2], dk[2], RED, NUM2, "Red 2"),
-                new CardImpl(br[3], dk[3], RED, NUM3, "Red 3"),
-                new CardImpl(br[4], dk[4], RED, NUM4, "Red 4"),
-                new CardImpl(br[5], dk[5], RED, NUM5, "Red 5"),
-                new CardImpl(br[6], dk[6], RED, NUM6, "Red 6"),
-                new CardImpl(br[7], dk[7], RED, NUM7, "Red 7"),
-                new CardImpl(br[8], dk[8], RED, NUM8, "Red 8"),
-                new CardImpl(br[9], dk[9], RED, NUM9, "Red 9"),
-                new CardImpl(br[10], dk[10], RED, DRAW2, "Red +2"),
-                new CardImpl(br[11], dk[11], RED, SKIP, "Red Skip"),
-                new CardImpl(br[12], dk[12], RED, REV, "Red Reverse"),
-                new CardImpl(br[13], dk[13], BLUE, NUM0, "Blue 0"),
-                new CardImpl(br[14], dk[14], BLUE, NUM1, "Blue 1"),
-                new CardImpl(br[15], dk[15], BLUE, NUM2, "Blue 2"),
-                new CardImpl(br[16], dk[16], BLUE, NUM3, "Blue 3"),
-                new CardImpl(br[17], dk[17], BLUE, NUM4, "Blue 4"),
-                new CardImpl(br[18], dk[18], BLUE, NUM5, "Blue 5"),
-                new CardImpl(br[19], dk[19], BLUE, NUM6, "Blue 6"),
-                new CardImpl(br[20], dk[20], BLUE, NUM7, "Blue 7"),
-                new CardImpl(br[21], dk[21], BLUE, NUM8, "Blue 8"),
-                new CardImpl(br[22], dk[22], BLUE, NUM9, "Blue 9"),
-                new CardImpl(br[23], dk[23], BLUE, DRAW2, "Blue +2"),
-                new CardImpl(br[24], dk[24], BLUE, SKIP, "Blue Skip"),
-                new CardImpl(br[25], dk[25], BLUE, REV, "Blue Reverse"),
-                new CardImpl(br[26], dk[26], GREEN, NUM0, "Green 0"),
-                new CardImpl(br[27], dk[27], GREEN, NUM1, "Green 1"),
-                new CardImpl(br[28], dk[28], GREEN, NUM2, "Green 2"),
-                new CardImpl(br[29], dk[29], GREEN, NUM3, "Green 3"),
-                new CardImpl(br[30], dk[30], GREEN, NUM4, "Green 4"),
-                new CardImpl(br[31], dk[31], GREEN, NUM5, "Green 5"),
-                new CardImpl(br[32], dk[32], GREEN, NUM6, "Green 6"),
-                new CardImpl(br[33], dk[33], GREEN, NUM7, "Green 7"),
-                new CardImpl(br[34], dk[34], GREEN, NUM8, "Green 8"),
-                new CardImpl(br[35], dk[35], GREEN, NUM9, "Green 9"),
-                new CardImpl(br[36], dk[36], GREEN, DRAW2, "Green +2"),
-                new CardImpl(br[37], dk[37], GREEN, SKIP, "Green Skip"),
-                new CardImpl(br[38], dk[38], GREEN, REV, "Green Reverse"),
-                new CardImpl(br[39], dk[39], YELLOW, NUM0, "Yellow 0"),
-                new CardImpl(br[40], dk[40], YELLOW, NUM1, "Yellow 1"),
-                new CardImpl(br[41], dk[41], YELLOW, NUM2, "Yellow 2"),
-                new CardImpl(br[42], dk[42], YELLOW, NUM3, "Yellow 3"),
-                new CardImpl(br[43], dk[43], YELLOW, NUM4, "Yellow 4"),
-                new CardImpl(br[44], dk[44], YELLOW, NUM5, "Yellow 5"),
-                new CardImpl(br[45], dk[45], YELLOW, NUM6, "Yellow 6"),
-                new CardImpl(br[46], dk[46], YELLOW, NUM7, "Yellow 7"),
-                new CardImpl(br[47], dk[47], YELLOW, NUM8, "Yellow 8"),
-                new CardImpl(br[48], dk[48], YELLOW, NUM9, "Yellow 9"),
-                new CardImpl(br[49], dk[49], YELLOW, DRAW2, "Yellow +2"),
-                new CardImpl(br[50], dk[50], YELLOW, SKIP, "Yellow Skip"),
-                new CardImpl(br[51], dk[51], YELLOW, REV, "Yellow Reverse"),
-                new CardImpl(br[52], dk[52], NONE, WILD, "Wild"),
-                new CardImpl(br[52], dk[52], NONE, WILD, "Wild"),
-                new CardImpl(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4"),
-                new CardImpl(br[1], dk[1], RED, NUM1, "Red 1"),
-                new CardImpl(br[2], dk[2], RED, NUM2, "Red 2"),
-                new CardImpl(br[3], dk[3], RED, NUM3, "Red 3"),
-                new CardImpl(br[4], dk[4], RED, NUM4, "Red 4"),
-                new CardImpl(br[5], dk[5], RED, NUM5, "Red 5"),
-                new CardImpl(br[6], dk[6], RED, NUM6, "Red 6"),
-                new CardImpl(br[7], dk[7], RED, NUM7, "Red 7"),
-                new CardImpl(br[8], dk[8], RED, NUM8, "Red 8"),
-                new CardImpl(br[9], dk[9], RED, NUM9, "Red 9"),
-                new CardImpl(br[10], dk[10], RED, DRAW2, "Red +2"),
-                new CardImpl(br[11], dk[11], RED, SKIP, "Red Skip"),
-                new CardImpl(br[12], dk[12], RED, REV, "Red Reverse"),
-                new CardImpl(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4"),
-                new CardImpl(br[14], dk[14], BLUE, NUM1, "Blue 1"),
-                new CardImpl(br[15], dk[15], BLUE, NUM2, "Blue 2"),
-                new CardImpl(br[16], dk[16], BLUE, NUM3, "Blue 3"),
-                new CardImpl(br[17], dk[17], BLUE, NUM4, "Blue 4"),
-                new CardImpl(br[18], dk[18], BLUE, NUM5, "Blue 5"),
-                new CardImpl(br[19], dk[19], BLUE, NUM6, "Blue 6"),
-                new CardImpl(br[20], dk[20], BLUE, NUM7, "Blue 7"),
-                new CardImpl(br[21], dk[21], BLUE, NUM8, "Blue 8"),
-                new CardImpl(br[22], dk[22], BLUE, NUM9, "Blue 9"),
-                new CardImpl(br[23], dk[23], BLUE, DRAW2, "Blue +2"),
-                new CardImpl(br[24], dk[24], BLUE, SKIP, "Blue Skip"),
-                new CardImpl(br[25], dk[25], BLUE, REV, "Blue Reverse"),
-                new CardImpl(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4"),
-                new CardImpl(br[27], dk[27], GREEN, NUM1, "Green 1"),
-                new CardImpl(br[28], dk[28], GREEN, NUM2, "Green 2"),
-                new CardImpl(br[29], dk[29], GREEN, NUM3, "Green 3"),
-                new CardImpl(br[30], dk[30], GREEN, NUM4, "Green 4"),
-                new CardImpl(br[31], dk[31], GREEN, NUM5, "Green 5"),
-                new CardImpl(br[32], dk[32], GREEN, NUM6, "Green 6"),
-                new CardImpl(br[33], dk[33], GREEN, NUM7, "Green 7"),
-                new CardImpl(br[34], dk[34], GREEN, NUM8, "Green 8"),
-                new CardImpl(br[35], dk[35], GREEN, NUM9, "Green 9"),
-                new CardImpl(br[36], dk[36], GREEN, DRAW2, "Green +2"),
-                new CardImpl(br[37], dk[37], GREEN, SKIP, "Green Skip"),
-                new CardImpl(br[38], dk[38], GREEN, REV, "Green Reverse"),
-                new CardImpl(br[53], dk[53], NONE, WILD_DRAW4, "Wild +4"),
-                new CardImpl(br[40], dk[40], YELLOW, NUM1, "Yellow 1"),
-                new CardImpl(br[41], dk[41], YELLOW, NUM2, "Yellow 2"),
-                new CardImpl(br[42], dk[42], YELLOW, NUM3, "Yellow 3"),
-                new CardImpl(br[43], dk[43], YELLOW, NUM4, "Yellow 4"),
-                new CardImpl(br[44], dk[44], YELLOW, NUM5, "Yellow 5"),
-                new CardImpl(br[45], dk[45], YELLOW, NUM6, "Yellow 6"),
-                new CardImpl(br[46], dk[46], YELLOW, NUM7, "Yellow 7"),
-                new CardImpl(br[47], dk[47], YELLOW, NUM8, "Yellow 8"),
-                new CardImpl(br[48], dk[48], YELLOW, NUM9, "Yellow 9"),
-                new CardImpl(br[49], dk[49], YELLOW, DRAW2, "Yellow +2"),
-                new CardImpl(br[50], dk[50], YELLOW, SKIP, "Yellow Skip"),
-                new CardImpl(br[51], dk[51], YELLOW, REV, "Yellow Reverse"),
-                new CardImpl(br[52], dk[52], NONE, WILD, "Wild"),
-                new CardImpl(br[52], dk[52], NONE, WILD, "Wild")
-        }; // table = new Card[]{}
+        // Generate 54 types of cards
+        table = new Card[54];
+        for (i = 0; i < 54; ++i) {
+            table[i] = new CardImpl(
+                    /* image   */ br[i],
+                    /* darkImg */ dk[i],
+                    /* color   */ Color.values()[i < 52 ? i / 13 + 1 : 0],
+                    /* content */ Content.values()[i < 52 ? i % 13 : i - 39]
+            ); // new CardImpl(Mat, Mat, Color, Content)
+        } // for (i = 0; i < 54; ++i)
 
         // Initialize other members
         players = 3;
-        now = RND.nextInt(4);
+        legality = 0;
+        now = Uno.RNG.nextInt(4);
         forcePlay = true;
         difficulty = LV_EASY;
         direction = draw2StackCount = 0;
         sevenZeroRule = draw2StackRule = false;
-        used = new ArrayList<>();
-        deck = new ArrayList<>();
-        recent = new ArrayList<>();
-        recentColors = new ArrayList<>();
-        recent_readOnly = Collections.unmodifiableList(recent);
-        recentColors_readOnly = Collections.unmodifiableList(recentColors);
         player = new Player[]{
                 new PlayerImpl(), // YOU
                 new PlayerImpl(), // COM1
@@ -525,6 +391,48 @@ class UnoImpl extends Uno {
     } // getPrev()
 
     /**
+     * @param who Get which player's instance. Must be one of the following:
+     *            Player.YOU, Player.COM1, Player.COM2, Player.COM3.
+     * @return Specified player's instance.
+     */
+    @Override
+    public Player getPlayer(int who) {
+        return who < Player.YOU || who > Player.COM3 ? null : player[who];
+    } // getPlayer(int)
+
+    /**
+     * @return this.player[this.getNow()].
+     */
+    @Override
+    public Player getCurrPlayer() {
+        return player[getNow()];
+    } // getCurrPlayer()
+
+    /**
+     * @return this.player[this.getNext()].
+     */
+    @Override
+    public Player getNextPlayer() {
+        return player[getNext()];
+    } // getNextPlayer()
+
+    /**
+     * @return this.player[this.getOppo()].
+     */
+    @Override
+    public Player getOppoPlayer() {
+        return player[getOppo()];
+    } // getOppoPlayer()
+
+    /**
+     * @return this.player[this.getPrev()].
+     */
+    @Override
+    public Player getPrevPlayer() {
+        return player[getPrev()];
+    } // getPrevPlayer()
+
+    /**
      * @return How many players in game (3 or 4).
      */
     @Override
@@ -556,16 +464,8 @@ class UnoImpl extends Uno {
     } // switchDirection()
 
     /**
-     * @param who Get which player's instance. Must be one of the following:
-     *            Player.YOU, Player.COM1, Player.COM2, Player.COM3.
-     * @return Specified player's instance.
-     */
-    @Override
-    public Player getPlayer(int who) {
-        return who < Player.YOU || who > Player.COM3 ? null : player[who];
-    } // getPlayer(int)
-
-    /**
+     * /**
+     *
      * @return Current difficulty (LV_EASY / LV_HARD).
      */
     @Override
@@ -667,18 +567,13 @@ class UnoImpl extends Uno {
      */
     @Override
     public Card findCard(Color color, Content content) {
-        int i;
-        Card result;
-
-        result = null;
-        for (i = 0; i < 108; ++i) {
-            if (table[i].color == color && table[i].content == content) {
-                result = table[i];
-                break;
-            } // if (table[i].color == color && table[i].content == content)
-        } // for (i = 0; i < 108; ++i)
-
-        return result;
+        return color == NONE && content == WILD
+                ? table[39 + WILD.ordinal()]
+                : color == NONE && content == WILD_DRAW4
+                ? table[39 + WILD_DRAW4.ordinal()]
+                : color != NONE && content != WILD && content != WILD_DRAW4
+                ? table[13 * (color.ordinal() - 1) + content.ordinal()]
+                : null;
     } // findCard(Color, Content)
 
     /**
@@ -754,38 +649,36 @@ class UnoImpl extends Uno {
             player[i].handCards.clear();
             player[i].weakColor = NONE;
             player[i].strongColor = NONE;
+            player[i].open = i == Player.YOU;
         } // for (i = Player.YOU; i <= Player.COM3; ++i)
 
         // Generate a temporary sequenced card deck
-        for (i = 0; i < 108; ++i) {
-            deck.add(table[i]);
-        } // for (i = 0; i < 108; ++i)
+        for (i = 0; i < 54; ++i) {
+            card = table[i];
+            switch (card.content) {
+                case WILD:
+                case WILD_DRAW4:
+                    deck.add(card);
+                    deck.add(card);
+                    // fall through
+
+                default:
+                    deck.add(card);
+                    // fall through
+
+                case NUM0:
+                    deck.add(card);
+            } // switch (card.content)
+        } // for (i = 0; i < 54; ++i)
 
         // Shuffle cards
         size = deck.size();
         while (size > 0) {
-            i = RND.nextInt(size--);
+            i = Uno.RNG.nextInt(size--);
             card = deck.get(i);
             deck.set(i, deck.get(size));
             deck.set(size, card);
         } // while (size > 0)
-
-        // Let everyone draw 7 cards
-        if (players == 3) {
-            for (i = 0; i < 7; ++i) {
-                draw(Player.YOU,  /* force */ true);
-                draw(Player.COM1, /* force */ true);
-                draw(Player.COM3, /* force */ true);
-            } // for (i = 0; i < 7; ++i)
-        } // if (players == 3)
-        else {
-            for (i = 0; i < 7; ++i) {
-                draw(Player.YOU,  /* force */ true);
-                draw(Player.COM1, /* force */ true);
-                draw(Player.COM2, /* force */ true);
-                draw(Player.COM3, /* force */ true);
-            } // for (i = 0; i < 7; ++i)
-        } // else
 
         // Determine a start card as the previous played card
         do {
@@ -804,10 +697,32 @@ class UnoImpl extends Uno {
             } // else
         } while (recent.isEmpty());
 
+        // Let everyone draw 7 cards
+        if (players == 3) {
+            for (i = 0; i < 7; ++i) {
+                draw(Player.YOU,  /* force */ true);
+                draw(Player.COM1, /* force */ true);
+                draw(Player.COM3, /* force */ true);
+            } // for (i = 0; i < 7; ++i)
+        } // if (players == 3)
+        else {
+            for (i = 0; i < 7; ++i) {
+                draw(Player.YOU,  /* force */ true);
+                draw(Player.COM1, /* force */ true);
+                draw(Player.COM2, /* force */ true);
+                draw(Player.COM3, /* force */ true);
+            } // for (i = 0; i < 7; ++i)
+        } // else
+
+        // Update the legality binary
+        legality = 0x30000000000000L
+                | (0x1fffL << 13 * (card.color.ordinal() - 1))
+                | (0x8004002001L << card.content.ordinal());
+
         // In the case of (last winner = NORTH) & (game mode = 3 player mode)
         // Re-specify the dealer randomly
         if (players == 3 && now == Player.COM2) {
-            now = (3 + RND.nextInt(3)) % 4;
+            now = (3 + Uno.RNG.nextInt(3)) % 4;
         } // if (players == 3 && now == Player.COM2)
     } // start()
 
@@ -852,20 +767,23 @@ class UnoImpl extends Uno {
                 card = deck.get(deck.size() - 1);
                 deck.remove(deck.size() - 1);
                 for (i = 0; i < hand.size(); ++i) {
-                    if (hand.get(i).order > card.order) {
+                    if (hand.get(i).id > card.id) {
                         // Found an appropriate position to insert the new card,
                         // which keeps the player's hand cards sequenced
                         break;
-                    } // if (hand.get(i).order > card.order)
+                    } // if (hand.get(i).id > card.id)
                 } // for (i = 0; i < hand.size(); ++i)
 
                 hand.add(i, card);
                 player[who].recent = null;
+                player[who].open = (who == Player.YOU) || (player[who].open
+                        && !force && forcePlay && isLegalToPlay(card));
+
                 if (deck.isEmpty()) {
                     // Re-use the used cards when there are no more cards in deck
                     size = used.size();
                     while (size > 0) {
-                        index = RND.nextInt(size--);
+                        index = Uno.RNG.nextInt(size--);
                         deck.add(used.get(index));
                         used.remove(index);
                     } // while (size > 0)
@@ -877,6 +795,17 @@ class UnoImpl extends Uno {
                 // the counter to zero.
                 draw2StackCount = 0;
             } // else
+
+            if (draw2StackCount == 0) {
+                // Update the legality binary when necessary
+                card = recent.get(recent.size() - 1);
+                legality = card.isWild()
+                        ? 0x30000000000000L
+                        | (0x1fffL << 13 * (lastColor().ordinal() - 1))
+                        : 0x30000000000000L
+                        | (0x1fffL << 13 * (lastColor().ordinal() - 1))
+                        | (0x8004002001L << card.content.ordinal());
+            } // if (draw2StackCount == 0)
         } // if (who >= Player.YOU && who <= Player.COM3)
 
         return i;
@@ -891,29 +820,7 @@ class UnoImpl extends Uno {
      */
     @Override
     public boolean isLegalToPlay(Card card) {
-        boolean result;
-
-        if (card == null || recent.isEmpty()) {
-            // Null Pointer
-            result = false;
-        } // if (card == null || recent.isEmpty())
-        else if (draw2StackCount > 0) {
-            // When in +2 stacking procedure, only +2 cards are legal
-            result = card.content == DRAW2;
-        } // else if (draw2StackCount > 0)
-        else if (card.isWild()) {
-            // Wild cards: LEGAL
-            result = true;
-        } // else if (card.isWild())
-        else {
-            // Same content to previous: LEGAL
-            // Same color to previous: LEGAL
-            // Other cards: ILLEGAL
-            result = card.content == recent.get(recent.size() - 1).content
-                    || card.color == lastColor();
-        } // else
-
-        return result;
+        return ((legality >> card.id) & 0x01L) == 0x01L;
     } // isLegalToPlay(Card)
 
     /**
@@ -999,6 +906,15 @@ class UnoImpl extends Uno {
                     recentColors.remove(0);
                 } // if (recent.size() > 5)
 
+                // Update the legality binary
+                legality = draw2StackCount > 0
+                        ? (0x8004002001L << DRAW2.ordinal())
+                        : card.isWild()
+                        ? 0x30000000000000L
+                        | (0x1fffL << 13 * (lastColor().ordinal() - 1))
+                        : 0x30000000000000L
+                        | (0x1fffL << 13 * (lastColor().ordinal() - 1))
+                        | (0x8004002001L << card.content.ordinal());
                 if (hand.size() == 0) {
                     // Game over, change background image
                     direction = 0;
@@ -1024,6 +940,7 @@ class UnoImpl extends Uno {
         Player store = player[a];
         player[a] = player[b];
         player[b] = store;
+        player[Player.YOU].open = true;
     } // swap(int, int)
 
     /**
@@ -1038,6 +955,7 @@ class UnoImpl extends Uno {
         player[prev] = player[oppo];
         player[oppo] = player[next];
         player[next] = store;
+        player[Player.YOU].open = true;
     } // cycle()
 } // UnoImpl Class
 

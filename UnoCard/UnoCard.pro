@@ -1,6 +1,6 @@
 ################################################################################
 ##
-## Uno Card Game
+## Uno Card Game 4 PC
 ## Author: Hikari Toyama
 ## Compile Environment: Qt 5 with Qt Creator
 ## COPYRIGHT HIKARI TOYAMA, 1992-2022. ALL RIGHTS RESERVED.
@@ -8,12 +8,12 @@
 ################################################################################
 
 TEMPLATE = app
-CONFIG += console c++11
+CONFIG += c++11
 CONFIG -= app_bundle
 DESTDIR = $$PWD
 RC_FILE = UnoCard.rc
 RC_ICONS = UnoCard.ico
-QT += multimedia widgets
+QT += core gui multimedia widgets
 
 HEADERS += \
     include/AI.h \
@@ -22,7 +22,8 @@ HEADERS += \
     include/Content.h \
     include/Player.h \
     include/SoundPool.h \
-    include/Uno.h
+    include/Uno.h \
+    include/main.h
 
 SOURCES += \
     src/AI.cpp \
@@ -32,34 +33,7 @@ SOURCES += \
     src/Uno.cpp \
     src/main.cpp
 
-macx {
-    DEPENDPATH += $$PWD/include
-    INCLUDEPATH += $$PWD/include
-    LIBS += \
-        -L/opt/homebrew/lib -lopencv_core \
-        -L/opt/homebrew/lib -lopencv_highgui \
-        -L/opt/homebrew/lib -lopencv_imgproc \
-        -L/opt/homebrew/lib -lopencv_imgcodecs
-} # end of macx
-
-unix:!macx {
-    DEPENDPATH += $$PWD/include
-    INCLUDEPATH += $$PWD/include
-    LIBS += \
-        -L/usr/local/lib64 -lopencv_core \
-        -L/usr/local/lib64 -lopencv_highgui \
-        -L/usr/local/lib64 -lopencv_imgproc \
-        -L/usr/local/lib64 -lopencv_imgcodecs \
-        -L/usr/lib/x86_64-linux-gnu -lopencv_core \
-        -L/usr/lib/x86_64-linux-gnu -lopencv_highgui \
-        -L/usr/lib/x86_64-linux-gnu -lopencv_imgproc \
-        -L/usr/lib/x86_64-linux-gnu -lopencv_imgcodecs
-} # end of unix:!macx
-
-win32-msvc2015 {
-    DEPENDPATH += $$PWD/include
-    INCLUDEPATH += $$PWD/include
-    LIBS += $$PWD/lib/opencv_world411.lib
-} # end of win32-msvc2015
+FORMS += \
+    src/main.ui
 
 # E.O.F
