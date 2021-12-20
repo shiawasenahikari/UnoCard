@@ -22,6 +22,7 @@
 #include <QMediaPlaylist>
 #include "include/SoundPool.h"
 #include "include/Color.h"
+#include "include/i18n.h"
 #include "include/Uno.h"
 #include "include/AI.h"
 
@@ -51,6 +52,7 @@ private:
     // Global Variables
     AI* sAI;
     Uno* sUno;
+    I18N* i18n;
     bool sAuto;
     int sScore;
     int sStatus;
@@ -78,7 +80,7 @@ private:
     void setStatus(int status);
     void threadWait(int millis);
     void play(int index, Color color = NONE);
-    void draw(int count = 1, bool force = true);
+    void draw(int count = 1, bool force = false);
     void onChallengeChance(bool challenged = false);
     void refreshScreen(const QString& message = "");
     void animate(int layerCount, AnimateLayer layer[]);

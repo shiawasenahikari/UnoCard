@@ -23,6 +23,7 @@ HEADERS += \
     include/Player.h \
     include/SoundPool.h \
     include/Uno.h \
+    include/i18n.h \
     include/main.h
 
 SOURCES += \
@@ -35,5 +36,10 @@ SOURCES += \
 
 FORMS += \
     src/main.ui
+
+msvc {
+    QMAKE_CFLAGS += /utf-8
+    QMAKE_CXXFLAGS += /utf-8
+} # msvc
 
 # E.O.F

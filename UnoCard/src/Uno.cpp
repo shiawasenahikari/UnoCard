@@ -323,13 +323,11 @@ void Uno::setPlayers(int players) {
 } // setPlayers(int)
 
 /**
- * Switch current action sequence.
- *
- * @return Switched action sequence. DIR_LEFT for clockwise,
- *         or DIR_RIGHT for counter-clockwise.
+ * Switch current action sequence. The value of [direction] will be
+ * switched between DIR_LEFT and DIR_RIGHT.
  */
-int Uno::switchDirection() {
-    return (direction = 4 - direction);
+void Uno::switchDirection() {
+    direction = 4 - direction;
 } // switchDirection()
 
 /**

@@ -293,12 +293,10 @@ public:
     void setPlayers(int players);
 
     /**
-     * Switch current action sequence.
-     *
-     * @return Switched action sequence. DIR_LEFT for clockwise,
-     *         or DIR_RIGHT for counter-clockwise.
+     * Switch current action sequence. The value of [direction] will be
+     * switched between DIR_LEFT and DIR_RIGHT.
      */
-    int switchDirection();
+    void switchDirection();
 
     /**
      * @return Current difficulty (LV_EASY / LV_HARD).

@@ -21,11 +21,14 @@ import com.github.hikari_toyama.unocard.R;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
+import org.opencv.core.Rect;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Uno Runtime Class (Singleton).
@@ -35,6 +38,39 @@ class UnoImpl extends Uno {
      * Tag name for Android Logcat.
      */
     private static final String TAG = "Uno";
+
+    /**
+     * Our custom font's character-to-position map.
+     */
+    private static final Map<Character, Integer> CHAR_MAP = new HashMap<>();
+
+    static {
+        char[] chars = new char[]{
+                '一', '上', '下', '东', '为', '乐', '人', '仍',
+                '从', '令', '以', '传', '余', '你', '保', '再',
+                '准', '出', '击', '分', '则', '到', '剩', '功',
+                '加', '北', '南', '发', '变', '叠', '可', '合',
+                '向', '否', '和', '回', '堆', '备', '多', '失',
+                '始', '定', '家', '将', '已', '度', '开', '张',
+                '戏', '成', '或', '战', '所', '打', '托', '择',
+                '指', '挑', '换', '接', '摸', '改', '效', '数',
+                '新', '方', '无', '时', '是', '最', '有', '来',
+                '标', '次', '欢', '法', '游', '点', '牌', '留',
+                '的', '目', '管', '红', '给', '绿', '置', '色',
+                '蓝', '被', '西', '规', '认', '设', '败', '跳',
+                '过', '迎', '选', '重', '难', '音', '颜', '黄'
+        }; // new char[]{}
+
+        for (int i = 0x20; i <= 0x7f; ++i) {
+            int r = (i >>> 4) - 2, c = i & 0x0f;
+            CHAR_MAP.put((char) i, (r << 4) | c);
+        } // for (int i = 0x20; i <= 0x7f; ++i)
+
+        for (int i = 0; i < chars.length; ++i) {
+            int r = (i >>> 3) + 6, c = i & 0x07;
+            CHAR_MAP.put(chars[i], (r << 4) | c);
+        } // for (int i = 0; i < chars.length; ++i)
+    } // static
 
     /**
      * Recent played cards (read-only version, provide for external accesses).
@@ -63,7 +99,7 @@ class UnoImpl extends Uno {
         // Preparations
         context = context.getApplicationContext();
         loaded = 0;
-        total = 124;
+        total = 128;
         Log.i(TAG, "Loading... (0%)");
 
         // Load background image resources
@@ -236,6 +272,18 @@ class UnoImpl extends Uno {
             Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
         } // for (i = 1; i < 5; ++i)
 
+        // Load font images
+        fontR = Utils.loadResource(context, R.raw.font_r);
+        fontG = Utils.loadResource(context, R.raw.font_g);
+        fontW = Utils.loadResource(context, R.raw.font_w);
+        fontY = Utils.loadResource(context, R.raw.font_y);
+        Imgproc.cvtColor(fontR, fontR, Imgproc.COLOR_BGR2RGB);
+        Imgproc.cvtColor(fontG, fontG, Imgproc.COLOR_BGR2RGB);
+        Imgproc.cvtColor(fontW, fontW, Imgproc.COLOR_BGR2RGB);
+        Imgproc.cvtColor(fontY, fontY, Imgproc.COLOR_BGR2RGB);
+        loaded += 4;
+        Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
+
         // Generate 54 types of cards
         table = new Card[54];
         for (i = 0; i < 54; ++i) {
@@ -326,6 +374,64 @@ class UnoImpl extends Uno {
     public Mat getColoredWildDraw4Image(Color color) {
         return w4Image[color.ordinal()];
     } // getColoredWildDraw4Image(Color)
+
+    /**
+     * Measure the text width, using our custom font.
+     *
+     * @param text Measure which text's width.
+     * @return Width of the provided text (unit: pixels).
+     */
+    @Override
+    public int getTextWidth(String text) {
+        int r, width;
+        Integer position;
+
+        width = 0;
+        for (char ch : text.toCharArray()) {
+            position = CHAR_MAP.get(ch);
+            if (position == null) position = 0x1f;
+            r = position >>> 4;
+            width += r < 6 ? 17 : 33;
+        } // for (char ch : text.toCharArray())
+
+        return width;
+    } // getTextWidth(String)
+
+    /**
+     * Put text on image, using our custom font.
+     * Unknown characters will be replaced with the question mark '?'.
+     *
+     * @param m     Put on which image.
+     * @param text  Put which text.
+     * @param x     Put on where (x coordinate).
+     * @param y     Put on where (y coordinate).
+     * @param color Text color. Must be one of the following:
+     *              Color.RED, Color.GREEN, Color.YELLOW, null (as white).
+     */
+    @Override
+    public void putText(Mat m, String text, int x, int y, Color color) {
+        Mat font, cimg;
+        int r, c, width;
+        Rect roi1, roi2;
+        Integer position;
+
+        y -= 36;
+        font = color == Color.RED ? fontR
+                : color == Color.GREEN ? fontG
+                : color == Color.YELLOW ? fontY : fontW;
+        for (char ch : text.toCharArray()) {
+            position = CHAR_MAP.get(ch);
+            if (position == null) position = 0x1f;
+            r = position >>> 4;
+            c = position & 0x0f;
+            width = r < 6 ? 17 : 33;
+            roi1 = new Rect(width * c, 48 * r, width, 48);
+            cimg = new Mat(font, roi1);
+            roi2 = new Rect(x, y, width, 48);
+            cimg.copyTo(new Mat(m, roi2), cimg);
+            x += width;
+        } // for (char ch : text.toCharArray())
+    } // putText(Mat, String, int, int, Color)
 
     /**
      * @return Player in turn. Must be one of the following:
@@ -453,14 +559,12 @@ class UnoImpl extends Uno {
     } // setPlayers(int)
 
     /**
-     * Switch current action sequence.
-     *
-     * @return Switched action sequence. DIR_LEFT for clockwise,
-     * or DIR_RIGHT for counter-clockwise.
+     * Switch current action sequence. The value of [direction] will be
+     * switched between DIR_LEFT and DIR_RIGHT.
      */
     @Override
-    public int switchDirection() {
-        return (direction = 4 - direction);
+    public void switchDirection() {
+        direction = 4 - direction;
     } // switchDirection()
 
     /**

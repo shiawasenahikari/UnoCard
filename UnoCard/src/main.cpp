@@ -35,6 +35,7 @@
 #include "include/Player.h"
 #include "include/Color.h"
 #include "include/main.h"
+#include "include/i18n.h"
 #include "include/Card.h"
 #include "include/Uno.h"
 #include "include/AI.h"
@@ -54,10 +55,7 @@ static const QPen PEN_YELLOW(QColor(0xFF, 0xAA, 0x11));
 static const QBrush BRUSH_RED(QColor(0xFF, 0x55, 0x55));
 static const QBrush BRUSH_BLUE(QColor(0x55, 0x55, 0xFF));
 static const QBrush BRUSH_GREEN(QColor(0x55, 0xAA, 0x55));
-static const QBrush BRUSH_WHITE(QColor(0xCC, 0xCC, 0xCC));
 static const QBrush BRUSH_YELLOW(QColor(0xFF, 0xAA, 0x11));
-static const QString NAME[] = { "YOU", "WEST", "NORTH", "EAST" };
-static const QString CL[] = { "", "RED", "BLUE", "GREEN", "YELLOW" };
 static const char FILE_HEADER[] = {
     (char)('U' + 'N'),
     (char)('O' + '@'),
@@ -83,6 +81,13 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
     char header[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     // Preparations
+    if (strstr(argv[0], "zh") != nullptr) {
+        i18n = I18N_zh_CN::getInstance();
+    } // if (strstr(argv[0], "zh") != nullptr)
+    else {
+        i18n = I18N_en_US::getInstance();
+    } // else
+
     if (argc > 1) {
         unsigned seed = unsigned(atoi(argv[1]));
         sUno = Uno::getInstance(seed);
@@ -272,21 +277,21 @@ void Main::threadWait(int millis) {
  * @param status New status value. Only 31 low bits are available.
  */
 void Main::setStatus(int status) {
+    int c, width;
     QRect eraseArea;
-    QString message;
-    int counter, width;
 
     switch ((sStatus = (status & 0x7fffffff) | CLOSED_FLAG)) {
     case STAT_WELCOME:
-        refreshScreen(sAdjustOptions ? "RULE SETTINGS" :
-            "WELCOME TO UNO CARD GAME, CLICK UNO TO START");
+        refreshScreen(sAdjustOptions
+            ? i18n->info_ruleSettings()
+            : i18n->info_welcome());
         break; // case STAT_WELCOME
 
     case STAT_NEW_GAME:
         // New game
         sUno->start();
         sSelectedIdx = -1;
-        refreshScreen("GET READY");
+        refreshScreen(i18n->info_ready());
         threadWait(2000);
         switch (sUno->getRecent().at(0)->content) {
         case DRAW2:
@@ -296,7 +301,7 @@ void Main::setStatus(int status) {
 
         case SKIP:
             // If starting with a [skip], skip dealer's turn.
-            refreshScreen(NAME[sUno->getNow()] + ": Skipped");
+            refreshScreen(i18n->info_skipped(sUno->getNow()));
             threadWait(1500);
             setStatus(sUno->switchNow());
             break; // case SKIP
@@ -305,7 +310,7 @@ void Main::setStatus(int status) {
             // If starting with a [reverse], change the action
             // sequence to COUNTER CLOCKWISE.
             sUno->switchDirection();
-            refreshScreen("Direction changed");
+            refreshScreen(i18n->info_dirChanged());
             threadWait(1500);
             setStatus(sUno->getNow());
             break; // case REV
@@ -331,9 +336,7 @@ void Main::setStatus(int status) {
             } // else
         } // if (sAuto)
         else if (sChallengeAsk) {
-            message = "^ Do you think " + NAME[sUno->getNow()]
-                + " still has " + CL[sUno->next2lastColor()] + "?";
-            refreshScreen(message);
+            refreshScreen(i18n->ask_challenge(sUno->next2lastColor()));
             eraseArea = QRect(338, 270, 121, 181);
             sPainter->drawImage(eraseArea, sUno->getBackground(), eraseArea);
 
@@ -342,16 +345,16 @@ void Main::setStatus(int status) {
             sPainter->setBrush(BRUSH_GREEN);
             sPainter->drawPie(270, 180, 270, 270, 0, 180 * 16);
             sPainter->setPen(PEN_WHITE);
-            width = sPainter->fontMetrics().width("YES");
-            sPainter->drawText(405 - width / 2, 268, "YES");
+            width = sPainter->fontMetrics().width(i18n->label_yes());
+            sPainter->drawText(405 - width / 2, 268, i18n->label_yes());
 
             // Draw NO button
             sPainter->setPen(Qt::NoPen);
             sPainter->setBrush(BRUSH_RED);
             sPainter->drawPie(270, 180, 270, 270, 0, -180 * 16);
             sPainter->setPen(PEN_WHITE);
-            width = sPainter->fontMetrics().width("NO");
-            sPainter->drawText(405 - width / 2, 382, "NO");
+            width = sPainter->fontMetrics().width(i18n->label_no());
+            sPainter->drawText(405 - width / 2, 382, i18n->label_no());
 
             // Show screen
             update();
@@ -363,26 +366,23 @@ void Main::setStatus(int status) {
             play(0);
         } // else if (sUno->getPlayer(Player::YOU)->getHandSize() == 1)
         else if (sSelectedIdx < 0) {
-            counter = sUno->getDraw2StackCount();
-            if (counter == 0) {
-                message = "Select a card to play, or draw a card from deck";
-            } // if (counter == 0)
+            c = sUno->getDraw2StackCount();
+            if (c == 0) {
+                refreshScreen(i18n->info_yourTurn());
+            } // if (c == 0)
             else {
-                message = "Stack a +2 card, or draw "
-                    + QString::number(counter) + " cards from deck";
+                refreshScreen(i18n->info_yourTurn_stackDraw2(c));
             } // else
-
-            refreshScreen(message);
         } // else if (sSelectedIdx < 0)
         else {
-            refreshScreen("Click again to play");
+            refreshScreen(i18n->info_clickAgainToPlay());
         } // else
         break; // case Player::YOU
 
     case STAT_WILD_COLOR:
         // Need to specify the following legal color after played a
         // wild card. Draw color sectors in the center of screen
-        refreshScreen("^ Specify the following legal color");
+        refreshScreen(i18n->ask_color());
         eraseArea = QRect(338, 270, 121, 181);
         sPainter->drawImage(eraseArea, sUno->getBackground(), eraseArea);
 
@@ -418,7 +418,7 @@ void Main::setStatus(int status) {
         } // if (sAuto || sUno->getNow() != Player::YOU)
 
         // Seven-card is played by you. Select target manually.
-        refreshScreen("^ Specify the target to swap hand cards with");
+        refreshScreen(i18n->ask_target());
         eraseArea = QRect(338, 270, 121, 181);
         sPainter->drawImage(eraseArea, sUno->getBackground(), eraseArea);
 
@@ -468,12 +468,10 @@ void Main::setStatus(int status) {
     case STAT_GAME_OVER:
         // Game over
         if (sAdjustOptions) {
-            refreshScreen("RULE SETTINGS");
+            refreshScreen(i18n->info_ruleSettings());
         } // if (sAdjustOptions)
         else {
-            message = "Your score is " + QString::number(sScore)
-                + ". Click the card deck to restart";
-            refreshScreen(message);
+            refreshScreen(i18n->info_gameOver(sScore));
             if (sAuto && !sAdjustOptions) {
                 threadWait(5000);
                 if (sAuto && !sAdjustOptions && sStatus == STAT_GAME_OVER) {
@@ -515,22 +513,22 @@ void Main::refreshScreen(const QString& message) {
 
     // Right-bottom corner: <AUTO> button
     if (sAuto) sPainter->setPen(PEN_YELLOW);
-    width = sPainter->fontMetrics().width("<AUTO>");
-    sPainter->drawText(1260 - width, 700, "<AUTO>");
+    width = sPainter->fontMetrics().width(i18n->btn_auto());
+    sPainter->drawText(1260 - width, 700, i18n->btn_auto());
     if (sAuto) sPainter->setPen(PEN_WHITE);
 
     // Left-bottom corner: <OPTIONS> button
     // Shows only when game is not in process
     if (status == STAT_WELCOME || status == STAT_GAME_OVER) {
         if (sAdjustOptions) sPainter->setPen(PEN_YELLOW);
-        sPainter->drawText(20, 700, "<OPTIONS>");
+        sPainter->drawText(20, 700, i18n->btn_settings());
         if (sAdjustOptions) sPainter->setPen(PEN_WHITE);
     } // if (status == STAT_WELCOME || status == STAT_GAME_OVER)
 
     if (sAdjustOptions) {
         // Show special screen when configuring game options
         // BGM switch
-        sPainter->drawText(60, 160, "BGM");
+        sPainter->drawText(60, 160, i18n->label_bgm());
         image = sMediaPlay->volume() > 0 ?
             sUno->findCard(RED, SKIP)->darkImg :
             sUno->findCard(RED, SKIP)->image;
@@ -541,7 +539,7 @@ void Main::refreshScreen(const QString& message) {
         sPainter->drawImage(330, 60, image);
 
         // Sound effect switch
-        sPainter->drawText(60, 350, "SND");
+        sPainter->drawText(60, 350, i18n->label_snd());
         image = sSoundPool->isEnabled() ?
             sUno->findCard(RED, SKIP)->darkImg :
             sUno->findCard(RED, SKIP)->image;
@@ -552,7 +550,7 @@ void Main::refreshScreen(const QString& message) {
         sPainter->drawImage(330, 250, image);
 
         // [Level] option: easy / hard
-        sPainter->drawText(640, 160, "LEVEL");
+        sPainter->drawText(640, 160, i18n->label_level());
         if (sUno->isSevenZeroRule()) {
             image = sUno->getLevelImage(
                 /* level   */ Uno::LV_EASY,
@@ -582,7 +580,7 @@ void Main::refreshScreen(const QString& message) {
         sPainter->drawImage(970, 60, image);
 
         // [Players] option: 3 / 4
-        sPainter->drawText(640, 350, "PLAYERS");
+        sPainter->drawText(640, 350, i18n->label_players());
         image = sUno->getPlayers() == 3 ?
             sUno->findCard(GREEN, NUM3)->image :
             sUno->findCard(GREEN, NUM3)->darkImg;
@@ -594,35 +592,35 @@ void Main::refreshScreen(const QString& message) {
 
         // Rule settings
         // Force play switch
-        sPainter->drawText(60, 540, "When you draw a playable card:");
+        sPainter->drawText(60, 540, i18n->label_forcePlay());
         sPainter->setPen(sUno->isForcePlay() ? PEN_WHITE : PEN_RED);
-        sPainter->drawText(790, 540, "<KEEP>");
+        sPainter->drawText(790, 540, i18n->btn_keep());
         sPainter->setPen(sUno->isForcePlay() ? PEN_GREEN : PEN_WHITE);
-        sPainter->drawText(970, 540, "<PLAY>");
+        sPainter->drawText(970, 540, i18n->btn_play());
         sPainter->setPen(PEN_WHITE);
 
         // 7-0
-        sPainter->drawText(60, 590, "7 to swap, 0 to rotate:");
+        sPainter->drawText(60, 590, i18n->label_7_0());
         sPainter->setPen(sUno->isSevenZeroRule() ? PEN_WHITE : PEN_RED);
-        sPainter->drawText(790, 590, "<OFF>");
+        sPainter->drawText(790, 590, i18n->btn_off());
         sPainter->setPen(sUno->isSevenZeroRule() ? PEN_GREEN : PEN_WHITE);
-        sPainter->drawText(970, 590, "<ON>");
+        sPainter->drawText(970, 590, i18n->btn_on());
         sPainter->setPen(PEN_WHITE);
 
         // +2 stack
-        sPainter->drawText(60, 640, "+2 can be stacked:");
+        sPainter->drawText(60, 640, i18n->label_draw2Stack());
         sPainter->setPen(sUno->isDraw2StackRule() ? PEN_WHITE : PEN_RED);
-        sPainter->drawText(790, 640, "<OFF>");
+        sPainter->drawText(790, 640, i18n->btn_off());
         sPainter->setPen(sUno->isDraw2StackRule() ? PEN_GREEN : PEN_WHITE);
-        sPainter->drawText(970, 640, "<ON>");
+        sPainter->drawText(970, 640, i18n->btn_on());
         sPainter->setPen(PEN_WHITE);
     } // if (sAdjustOptions)
     else if (status == STAT_WELCOME) {
         // For welcome screen, show the start button and your score
         image = sUno->getBackImage();
         sPainter->drawImage(580, 270, image);
-        width = sPainter->fontMetrics().width("SCORE");
-        sPainter->drawText(340 - width, 620, "SCORE");
+        width = sPainter->fontMetrics().width(i18n->label_score());
+        sPainter->drawText(340 - width, 620, i18n->label_score());
         if (sScore < 0) {
             image = sUno->getColoredWildImage(NONE);
         } // if (sScore < 0)
@@ -667,8 +665,7 @@ void Main::refreshScreen(const QString& message) {
         // Left-top corner: remain / used
         remain = sUno->getDeckCount();
         used = sUno->getUsedCount();
-        info = "Remain/Used: " + QString::number(remain)
-            + "/" + QString::number(used);
+        info = i18n->label_remain_used(remain, used);
         sPainter->drawText(20, 42, info);
 
         // Left-center: Hand cards of Player West (COM1)
@@ -869,7 +866,7 @@ void Main::cycle() {
 
     setStatus(STAT_IDLE);
     sHideFlag = 0x0f;
-    refreshScreen("Hand cards transferred to next");
+    refreshScreen(i18n->info_0_rotate());
     curr = sUno->getNow();
     next = sUno->getNext();
     oppo = sUno->getOppo();
@@ -898,7 +895,7 @@ void Main::cycle() {
 
     sHideFlag = 0x00;
     sUno->cycle();
-    refreshScreen("Hand cards transferred to next");
+    refreshScreen(i18n->info_0_rotate());
     threadWait(1500);
     setStatus(sUno->switchNow());
 } // cycle()
@@ -918,7 +915,7 @@ void Main::swapWith(int whom) {
     setStatus(STAT_IDLE);
     curr = sUno->getNow();
     sHideFlag = (1 << curr) | (1 << whom);
-    refreshScreen(NAME[curr] + " swapped hands with " + NAME[whom]);
+    refreshScreen(i18n->info_7_swap(curr, whom));
     layer[0].elem = layer[1].elem = sUno->getBackImage();
     layer[0].x1 = x[curr]; layer[0].x2 = x[whom];
     layer[0].y1 = y[curr]; layer[0].y2 = y[whom];
@@ -927,7 +924,7 @@ void Main::swapWith(int whom) {
     animate(2, layer);
     sHideFlag = 0x00;
     sUno->swap(curr, whom);
-    refreshScreen(NAME[curr] + " swapped hands with " + NAME[whom]);
+    refreshScreen(i18n->info_7_swap(curr, whom));
     threadWait(1500);
     setStatus(sUno->switchNow());
 } // swapWith(int)
@@ -942,9 +939,8 @@ void Main::swapWith(int whom) {
  */
 void Main::play(int index, Color color) {
     Card* card;
-    QString message;
     AnimateLayer layer[1];
-    int counter, now, size, recentSize, next;
+    int c, now, size, recentSize, next;
 
     setStatus(STAT_IDLE); // block mouse click events when idle
     now = sUno->getNow();
@@ -1006,21 +1002,17 @@ void Main::play(int index, Color color) {
                 sSoundPool->play(SoundPool::SND_UNO);
             } // if (size == 2)
 
-            message = NAME[now];
             switch (card->content) {
             case DRAW2:
                 next = sUno->switchNow();
                 if (sUno->isDraw2StackRule()) {
-                    counter = sUno->getDraw2StackCount();
-                    message += ": Let " + NAME[next] + " draw ";
-                    message += QString::number(counter) + " cards";
-                    refreshScreen(message);
+                    c = sUno->getDraw2StackCount();
+                    refreshScreen(i18n->act_playDraw2(now, next, c));
                     threadWait(1500);
                     setStatus(next);
                 } // if (sUno->isDraw2StackRule())
                 else {
-                    message += ": Let " + NAME[next] + " draw 2 cards";
-                    refreshScreen(message);
+                    refreshScreen(i18n->act_playDraw2(now, next, 2));
                     threadWait(1500);
                     draw(2, /* force */ true);
                 } // else
@@ -1028,42 +1020,27 @@ void Main::play(int index, Color color) {
 
             case SKIP:
                 next = sUno->switchNow();
-                if (next == Player::YOU) {
-                    message += ": Skip your turn";
-                } // if (next == Player::YOU)
-                else {
-                    message += ": Skip " + NAME[next] + "'s turn";
-                } // else
-
-                refreshScreen(message);
+                refreshScreen(i18n->act_playSkip(now, next));
                 threadWait(1500);
                 setStatus(sUno->switchNow());
                 break; // case SKIP
 
             case REV:
-                if (sUno->switchDirection() == Uno::DIR_LEFT) {
-                    message += ": Change direction to CLOCKWISE";
-                } // if (sUno->switchDirection() == Uno::DIR_LEFT)
-                else {
-                    message += ": Change direction to COUNTER CLOCKWISE";
-                } // else
-
-                refreshScreen(message);
+                sUno->switchDirection();
+                refreshScreen(i18n->act_playRev(now));
                 threadWait(1500);
                 setStatus(sUno->switchNow());
                 break; // case REV
 
             case WILD:
-                message += ": Change the following legal color";
-                refreshScreen(message);
+                refreshScreen(i18n->act_playWild(now, color));
                 threadWait(1500);
                 setStatus(sUno->switchNow());
                 break; // case WILD
 
             case WILD_DRAW4:
                 next = sUno->getNext();
-                message += ": Let " + NAME[next] + " draw 4 cards";
-                refreshScreen(message);
+                refreshScreen(i18n->act_playWildDraw4(now, next));
                 threadWait(1500);
                 sChallengeAsk = true;
                 setStatus(next);
@@ -1071,8 +1048,7 @@ void Main::play(int index, Color color) {
 
             case NUM7:
                 if (sUno->isSevenZeroRule()) {
-                    message += ": " + card->name;
-                    refreshScreen(message);
+                    refreshScreen(i18n->act_playCard(now, card->name));
                     threadWait(750);
                     setStatus(STAT_SEVEN_TARGET);
                     break; // case NUM7
@@ -1081,8 +1057,7 @@ void Main::play(int index, Color color) {
 
             case NUM0:
                 if (sUno->isSevenZeroRule()) {
-                    message += ": " + card->name;
-                    refreshScreen(message);
+                    refreshScreen(i18n->act_playCard(now, card->name));
                     threadWait(750);
                     cycle();
                     break; // case NUM0
@@ -1090,8 +1065,7 @@ void Main::play(int index, Color color) {
                 // else fall through
 
             default:
-                message += ": " + card->name;
-                refreshScreen(message);
+                refreshScreen(i18n->act_playCard(now, card->name));
                 threadWait(1500);
                 setStatus(sUno->switchNow());
                 break; // default
@@ -1113,14 +1087,14 @@ void Main::draw(int count, bool force) {
     Card* drawn;
     QString message;
     AnimateLayer layer[1];
-    int i, index, counter, now, size;
+    int i, index, c, now, size;
 
     setStatus(STAT_IDLE); // block mouse click events when idle
-    counter = sUno->getDraw2StackCount();
-    if (counter > 0) {
-        count = counter;
+    c = sUno->getDraw2StackCount();
+    if (c > 0) {
+        count = c;
         force = true;
-    } // if (counter > 0)
+    } // if (c > 0)
 
     index = -1;
     drawn = nullptr;
@@ -1138,46 +1112,28 @@ void Main::draw(int count, bool force) {
                 layer[0].elem = sUno->getBackImage();
                 layer[0].x2 = 20;
                 layer[0].y2 = 290 - 20 * size + 40 * index;
-                if (count == 1) {
-                    message = NAME[now] + ": Draw a card";
-                } // if (count == 1)
-                else {
-                    message = NAME[now] + ": Draw "
-                        + QString::number(count) + " cards";
-                } // else
+                message = i18n->act_drawCardCount(now, count);
                 break; // case Player::COM1
 
             case Player::COM2:
                 layer[0].elem = sUno->getBackImage();
                 layer[0].x2 = (1205 - 45 * size + 90 * index) / 2;
                 layer[0].y2 = 20;
-                if (count == 1) {
-                    message = NAME[now] + ": Draw a card";
-                } // if (count == 1)
-                else {
-                    message = NAME[now] + ": Draw "
-                        + QString::number(count) + " cards";
-                } // else
+                message = i18n->act_drawCardCount(now, count);
                 break; // case Player::COM2
 
             case Player::COM3:
                 layer[0].elem = sUno->getBackImage();
                 layer[0].x2 = 1140;
                 layer[0].y2 = 290 - 20 * size + 40 * index;
-                if (count == 1) {
-                    message = NAME[now] + ": Draw a card";
-                } // if (count == 1)
-                else {
-                    message = NAME[now] + ": Draw "
-                        + QString::number(count) + " cards";
-                } // else
+                message = i18n->act_drawCardCount(now, count);
                 break; // case Player::COM3
 
             default:
                 layer[0].elem = drawn->image;
                 layer[0].x2 = (1205 - 45 * size + 90 * index) / 2;
                 layer[0].y2 = 520;
-                message = NAME[now] + ": Draw " + drawn->name;
+                message = i18n->act_drawCard(now, drawn->name);
                 break; // default
             } // switch (now)
 
@@ -1187,9 +1143,7 @@ void Main::draw(int count, bool force) {
             threadWait(300);
         } // if (index >= 0)
         else {
-            message = NAME[now]
-                + " cannot hold more than "
-                + QString::number(Uno::MAX_HOLD_CARDS) + " cards";
+            message = i18n->info_cannotDraw(now, Uno::MAX_HOLD_CARDS);
             refreshScreen(message);
             break;
         } // else
@@ -1216,7 +1170,7 @@ void Main::draw(int count, bool force) {
         } // else
     } // if (count == 1 && ...)
     else {
-        refreshScreen(NAME[now] + ": Pass");
+        refreshScreen(i18n->act_pass(now));
         threadWait(750);
         setStatus(sUno->switchNow());
     } // else
@@ -1234,7 +1188,6 @@ void Main::draw(int count, bool force) {
  *                   player(be challenged)'s [wild +4].
  */
 void Main::onChallengeChance(bool challenged) {
-    QString message;
     bool draw4IsLegal;
     int now, challenger;
 
@@ -1244,18 +1197,8 @@ void Main::onChallengeChance(bool challenged) {
     if (challenged) {
         now = sUno->getNow();
         challenger = sUno->getNext();
-        if (now == Player::YOU) {
-            message = NAME[challenger]
-                + " doubted that you still have "
-                + CL[sUno->next2lastColor()];
-        } // if (now == Player::YOU)
-        else {
-            message = NAME[challenger]
-                + " doubted that " + NAME[now]
-                + " still has " + CL[sUno->next2lastColor()];
-        } // else
-
-        refreshScreen(message);
+        refreshScreen(i18n->info_challenge(
+            challenger, now, sUno->next2lastColor()));
         threadWait(1500);
         draw4IsLegal = true;
         for (Card* card : sUno->getCurrPlayer()->getHandCards()) {
@@ -1269,15 +1212,7 @@ void Main::onChallengeChance(bool challenged) {
 
         if (draw4IsLegal) {
             // Challenge failure, challenger draws 6 cards
-            if (challenger == Player::YOU) {
-                message = "Challenge failure, you draw 6 cards";
-            } // if (challenger == Player::YOU)
-            else {
-                message = "Challenge failure, "
-                    + NAME[challenger] + " draws 6 cards";
-            } // else
-
-            refreshScreen(message);
+            refreshScreen(i18n->info_challengeFailure(challenger));
             threadWait(1500);
             sChallenged = false;
             sUno->switchNow();
@@ -1285,15 +1220,7 @@ void Main::onChallengeChance(bool challenged) {
         } // if (draw4IsLegal)
         else {
             // Challenge success, who played [wild +4] draws 4 cards
-            if (now == Player::YOU) {
-                message = "Challenge success, you draw 4 cards";
-            } // if (now == Player::YOU)
-            else {
-                message = "Challenge success, "
-                    + NAME[now] + " draws 4 cards";
-            } // else
-
-            refreshScreen(message);
+            refreshScreen(i18n->info_challengeSuccess(now));
             threadWait(1500);
             sChallenged = false;
             draw(4, /* force */ true);
@@ -1513,27 +1440,22 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 if (startX <= x && x <= startX + width) {
                     // Hand card area
                     // Calculate which card clicked by the X-coordinate
-                    int index = (x - startX) / 45;
-                    if (index >= size) {
-                        index = size - 1;
-                    } // if (index >= size)
+                    int index = qMin((x - startX) / 45, size - 1);
+                    Card* card = hand.at(index);
 
                     // Try to play it
                     if (index != sSelectedIdx) {
                         sSelectedIdx = index;
                         setStatus(sStatus);
                     } // if (index != sSelectedIdx)
+                    else if (!sUno->isLegalToPlay(card)) {
+                        refreshScreen(i18n->info_cannotPlay(card->name));
+                    } // else if (!sUno->isLegalToPlay(card))
+                    else if (card->isWild() && size > 1) {
+                        setStatus(STAT_WILD_COLOR);
+                    } // else if (card->isWild() && size > 1)
                     else {
-                        Card* card = hand.at(index);
-                        if (!sUno->isLegalToPlay(card)) {
-                            refreshScreen("Cannot play " + card->name);
-                        } // if (!sUno->isLegalToPlay(card))
-                        else if (card->isWild() && size > 1) {
-                            setStatus(STAT_WILD_COLOR);
-                        } // else if (card->isWild() && size > 1)
-                        else {
-                            play(index);
-                        } // else
+                        play(index);
                     } // else
                 } // if (startX <= x && x <= startX + width)
                 else {

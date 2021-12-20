@@ -103,6 +103,11 @@ public abstract class Uno {
     Mat hardImage, hardImage_d;
 
     /**
+     * Font images.
+     */
+    Mat fontR, fontG, fontY, fontW;
+
+    /**
      * Player in turn. Must be one of the following:
      * Player.YOU, Player.COM1, Player.COM2, Player.COM3.
      */
@@ -243,6 +248,27 @@ public abstract class Uno {
     public abstract Mat getColoredWildDraw4Image(Color color);
 
     /**
+     * Measure the text width, using our custom font.
+     *
+     * @param text Measure which text's width.
+     * @return Width of the provided text (unit: pixels).
+     */
+    public abstract int getTextWidth(String text);
+
+    /**
+     * Put text on image, using our custom font.
+     * Unknown characters will be replaced with the question mark '?'.
+     *
+     * @param m     Put on which image.
+     * @param text  Put which text.
+     * @param x     Put on where (x coordinate).
+     * @param y     Put on where (y coordinate).
+     * @param color Text color. Must be one of the following:
+     *              Color.RED, Color.GREEN, Color.YELLOW, null (as white).
+     */
+    public abstract void putText(Mat m, String text, int x, int y, Color color);
+
+    /**
      * @return Player in turn. Must be one of the following:
      * Player.YOU, Player.COM1, Player.COM2, Player.COM3.
      */
@@ -315,12 +341,10 @@ public abstract class Uno {
     public abstract void setPlayers(int players);
 
     /**
-     * Switch current action sequence.
-     *
-     * @return Switched action sequence. DIR_LEFT for clockwise,
-     * or DIR_RIGHT for counter-clockwise.
+     * Switch current action sequence. The value of [direction] will be
+     * switched between DIR_LEFT and DIR_RIGHT.
      */
-    public abstract int switchDirection();
+    public abstract void switchDirection();
 
     /**
      * @return Current difficulty (LV_EASY / LV_HARD).
