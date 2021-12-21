@@ -43,7 +43,7 @@ public:
     virtual QString info_challenge(int, int, int) = 0;
     virtual QString info_challengeFailure(int) = 0;
     virtual QString info_challengeSuccess(int) = 0;
-    virtual QString info_clickAgainToPlay() = 0;
+    virtual QString info_clickAgainToPlay(const QString&) = 0;
     virtual QString info_dirChanged() = 0;
     virtual QString info_gameOver(int) = 0;
     virtual QString info_ready() = 0;
@@ -197,9 +197,9 @@ public:
             : "Challenge success, " + p(i) + " draws 4 cards";
     } // info_challengeSuccess(int)
 
-    inline QString info_clickAgainToPlay() {
-        return "Click again to play";
-    } // info_clickAgainToPlay()
+    inline QString info_clickAgainToPlay(const QString& s) {
+        return "Click again to play " + s;
+    } // info_clickAgainToPlay(const QString&)
 
     inline QString info_dirChanged() {
         return "Direction changed";
@@ -401,9 +401,9 @@ public:
         return "挑战成功, " + p(i) + "摸 4 张牌";
     } // info_challengeSuccess(int)
 
-    inline QString info_clickAgainToPlay() {
-        return "再次点击以出牌";
-    } // info_clickAgainToPlay()
+    inline QString info_clickAgainToPlay(const QString& s) {
+        return "再次点击以打出 " + s;
+    } // info_clickAgainToPlay(const QString&)
 
     inline QString info_dirChanged() {
         return "方向已改变";

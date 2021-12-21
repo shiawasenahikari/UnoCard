@@ -63,8 +63,6 @@ private:
     QImage sScreen;
     bool sAIRunning;
     int sSelectedIdx;
-    bool sChallenged;
-    bool sChallengeAsk;
     QPainter* sPainter;
     bool sAdjustOptions;
     SoundPool* sSoundPool;
@@ -76,12 +74,12 @@ private:
     void easyAI();
     void hardAI();
     void sevenZeroAI();
+    void onChallenge();
     void swapWith(int whom);
     void setStatus(int status);
     void threadWait(int millis);
     void play(int index, Color color = NONE);
     void draw(int count = 1, bool force = false);
-    void onChallengeChance(bool challenged = false);
     void refreshScreen(const QString& message = "");
     void animate(int layerCount, AnimateLayer layer[]);
 

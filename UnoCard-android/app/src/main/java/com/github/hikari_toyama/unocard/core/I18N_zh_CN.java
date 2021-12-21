@@ -149,8 +149,8 @@ class I18N_zh_CN implements I18N {
     } // info_challengeSuccess(int)
 
     @Override
-    public String info_clickAgainToPlay() {
-        return "再次点击以出牌";
+    public String info_clickAgainToPlay(String s) {
+        return "再次点击以打出 " + s;
     } // info_clickAgainToPlay()
 
     @Override

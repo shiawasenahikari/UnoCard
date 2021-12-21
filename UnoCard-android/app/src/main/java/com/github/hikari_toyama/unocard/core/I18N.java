@@ -68,7 +68,7 @@ public interface I18N {
 
     String info_challengeSuccess(int i);
 
-    String info_clickAgainToPlay();
+    String info_clickAgainToPlay(String s);
 
     String info_dirChanged();
 

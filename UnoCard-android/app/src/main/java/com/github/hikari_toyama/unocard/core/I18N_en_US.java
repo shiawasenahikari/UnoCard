@@ -159,9 +159,9 @@ class I18N_en_US implements I18N {
     } // info_challengeSuccess(int)
 
     @Override
-    public String info_clickAgainToPlay() {
-        return "Click again to play";
-    } // info_clickAgainToPlay()
+    public String info_clickAgainToPlay(String s) {
+        return "Click again to play " + s;
+    } // info_clickAgainToPlay(String)
 
     @Override
     public String info_dirChanged() {

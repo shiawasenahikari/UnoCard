@@ -15,6 +15,7 @@ import static com.github.hikari_toyama.unocard.core.Content.WILD;
 import static com.github.hikari_toyama.unocard.core.Content.WILD_DRAW4;
 
 import android.content.Context;
+import android.os.Build;
 import android.util.Log;
 
 import com.github.hikari_toyama.unocard.R;
@@ -935,11 +936,17 @@ class UnoImpl extends Uno {
     public int legalCardsCount4NowPlayer() {
         int count = 0;
 
-        for (Card card : player[now].handCards) {
-            if (isLegalToPlay(card)) {
-                ++count;
-            } // if (isLegalToPlay(card))
-        } // for (Card card : player[now].handCards)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            for (Card card : player[now].handCards) {
+                if (isLegalToPlay(card)) {
+                    ++count;
+                } // if (isLegalToPlay(card))
+            } // for (Card card : player[now].handCards)
+        } // if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N)
+        else {
+            count += player[now].handCards.stream()
+                    .filter(this::isLegalToPlay).count();
+        } // else
 
         return count;
     } // legalCardsCount4NowPlayer()
@@ -1028,6 +1035,39 @@ class UnoImpl extends Uno {
 
         return card;
     } // play(int, int, Color)
+
+    /**
+     * When you think your previous player used a [wild +4] card illegally,
+     * i.e. it holds at least one card matching the next-to-last color,
+     * call this method to make a challenge.
+     *
+     * @param whom Challenge whom. Must be one of the following:
+     *             Player.YOU, Player.COM1, Player.COM2, Player.COM3.
+     * @return Tell the challenge result, true if challenge success,
+     * or false if challenge failure.
+     */
+    @Override
+    public boolean challenge(int whom) {
+        boolean result = false;
+
+        if (whom >= Player.YOU && whom <= Player.COM3) {
+            player[whom].open = true;
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                for (Card card : player[whom].handCards) {
+                    if (card.color == next2lastColor()) {
+                        result = true;
+                        break;
+                    } // if (card.color == next2lastColor())
+                } // for (Card card : player[whom].handCards)
+            } // if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N)
+            else {
+                result = player[whom].handCards.stream()
+                        .anyMatch(card -> card.color == next2lastColor());
+            } // else
+        } // if (whom >= Player.YOU && whom <= Player.COM3)
+
+        return result;
+    } // challenge(int)
 
     /**
      * In 7-0 rule, when someone put down a seven card, then the player must

@@ -16,7 +16,6 @@
 #include <QColor>
 #include <QImage>
 #include <QTimer>
-#include <vector>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -47,6 +46,7 @@ static const int STAT_WELCOME = 0x2222;
 static const int STAT_NEW_GAME = 0x3333;
 static const int STAT_GAME_OVER = 0x4444;
 static const int STAT_WILD_COLOR = 0x5555;
+static const int STAT_DOUBT_WILD4 = 0x6666;
 static const int STAT_SEVEN_TARGET = 0x7777;
 static const QPen PEN_RED(QColor(0xFF, 0x55, 0x55));
 static const QPen PEN_GREEN(QColor(0x55, 0xAA, 0x55));
@@ -141,8 +141,6 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
     sHideFlag = 0x00;
     sSelectedIdx = -1;
     sAIRunning = false;
-    sChallenged = false;
-    sChallengeAsk = false;
     sWinner = Player::YOU;
     sFont.setPointSize(20);
     sAdjustOptions = false;
@@ -169,20 +167,15 @@ void Main::easyAI() {
             || sStatus == Player::COM2
             || sStatus == Player::COM3
             || (sStatus == Player::YOU && sAuto)) {
-            if (sChallengeAsk) {
-                onChallengeChance(sAI->needToChallenge());
-            } // if (sChallengeAsk)
+            setStatus(STAT_IDLE); // block mouse click events when idle
+            idxBest = sAI->easyAI_bestCardIndex4NowPlayer(bestColor);
+            if (idxBest >= 0) {
+                // Found an appropriate card to play
+                play(idxBest, bestColor[0]);
+            } // if (idxBest >= 0)
             else {
-                setStatus(STAT_IDLE); // block mouse click events when idle
-                idxBest = sAI->easyAI_bestCardIndex4NowPlayer(bestColor);
-                if (idxBest >= 0) {
-                    // Found an appropriate card to play
-                    play(idxBest, bestColor[0]);
-                } // if (idxBest >= 0)
-                else {
-                    // No appropriate cards to play, or no card to play
-                    draw();
-                } // else
+                // No appropriate cards to play, or no card to play
+                draw();
             } // else
         } // while (sStatus == Player::COM1 || ...)
 
@@ -203,20 +196,15 @@ void Main::hardAI() {
             || sStatus == Player::COM2
             || sStatus == Player::COM3
             || (sStatus == Player::YOU && sAuto)) {
-            if (sChallengeAsk) {
-                onChallengeChance(sAI->needToChallenge());
-            } // if (sChallengeAsk)
+            setStatus(STAT_IDLE); // block mouse click events when idle
+            idxBest = sAI->hardAI_bestCardIndex4NowPlayer(bestColor);
+            if (idxBest >= 0) {
+                // Found an appropriate card to play
+                play(idxBest, bestColor[0]);
+            } // if (idxBest >= 0)
             else {
-                setStatus(STAT_IDLE); // block mouse click events when idle
-                idxBest = sAI->hardAI_bestCardIndex4NowPlayer(bestColor);
-                if (idxBest >= 0) {
-                    // Found an appropriate card to play
-                    play(idxBest, bestColor[0]);
-                } // if (idxBest >= 0)
-                else {
-                    // No appropriate cards to play, or no card to play
-                    draw();
-                } // else
+                // No appropriate cards to play, or no card to play
+                draw();
             } // else
         } // while (sStatus == Player::COM1 || ...)
 
@@ -237,20 +225,15 @@ void Main::sevenZeroAI() {
             || sStatus == Player::COM2
             || sStatus == Player::COM3
             || (sStatus == Player::YOU && sAuto)) {
-            if (sChallengeAsk) {
-                onChallengeChance(sAI->needToChallenge());
-            } // if (sChallengeAsk)
+            setStatus(STAT_IDLE); // block mouse click events when idle
+            idxBest = sAI->sevenZeroAI_bestCardIndex4NowPlayer(bestColor);
+            if (idxBest >= 0) {
+                // Found an appropriate card to play
+                play(idxBest, bestColor[0]);
+            } // if (idxBest >= 0)
             else {
-                setStatus(STAT_IDLE); // block mouse click events when idle
-                idxBest = sAI->sevenZeroAI_bestCardIndex4NowPlayer(bestColor);
-                if (idxBest >= 0) {
-                    // Found an appropriate card to play
-                    play(idxBest, bestColor[0]);
-                } // if (idxBest >= 0)
-                else {
-                    // No appropriate cards to play, or no card to play
-                    draw();
-                } // else
+                // No appropriate cards to play, or no card to play
+                draw();
             } // else
         } // while (sStatus == Player::COM1 || ...)
 
@@ -277,7 +260,7 @@ void Main::threadWait(int millis) {
  * @param status New status value. Only 31 low bits are available.
  */
 void Main::setStatus(int status) {
-    int c, width;
+    int width;
     QRect eraseArea;
 
     switch ((sStatus = (status & 0x7fffffff) | CLOSED_FLAG)) {
@@ -335,47 +318,26 @@ void Main::setStatus(int status) {
                 hardAI();
             } // else
         } // if (sAuto)
-        else if (sChallengeAsk) {
-            refreshScreen(i18n->ask_challenge(sUno->next2lastColor()));
-            eraseArea = QRect(338, 270, 121, 181);
-            sPainter->drawImage(eraseArea, sUno->getBackground(), eraseArea);
-
-            // Draw YES button
-            sPainter->setPen(Qt::NoPen);
-            sPainter->setBrush(BRUSH_GREEN);
-            sPainter->drawPie(270, 180, 270, 270, 0, 180 * 16);
-            sPainter->setPen(PEN_WHITE);
-            width = sPainter->fontMetrics().width(i18n->label_yes());
-            sPainter->drawText(405 - width / 2, 268, i18n->label_yes());
-
-            // Draw NO button
-            sPainter->setPen(Qt::NoPen);
-            sPainter->setBrush(BRUSH_RED);
-            sPainter->drawPie(270, 180, 270, 270, 0, -180 * 16);
-            sPainter->setPen(PEN_WHITE);
-            width = sPainter->fontMetrics().width(i18n->label_no());
-            sPainter->drawText(405 - width / 2, 382, i18n->label_no());
-
-            // Show screen
-            update();
-        } // else if (sChallengeAsk)
         else if (sUno->legalCardsCount4NowPlayer() == 0) {
             draw();
         } // else if (sUno->legalCardsCount4NowPlayer() == 0)
-        else if (sUno->getPlayer(Player::YOU)->getHandSize() == 1) {
-            play(0);
-        } // else if (sUno->getPlayer(Player::YOU)->getHandSize() == 1)
-        else if (sSelectedIdx < 0) {
-            c = sUno->getDraw2StackCount();
-            if (c == 0) {
-                refreshScreen(i18n->info_yourTurn());
-            } // if (c == 0)
-            else {
-                refreshScreen(i18n->info_yourTurn_stackDraw2(c));
-            } // else
-        } // else if (sSelectedIdx < 0)
         else {
-            refreshScreen(i18n->info_clickAgainToPlay());
+            auto hand = sUno->getPlayer(Player::YOU)->getHandCards();
+            if (hand.size() == 1) {
+                play(0);
+            } // if (hand.size() == 1)
+            else if (sSelectedIdx < 0) {
+                int c = sUno->getDraw2StackCount();
+                refreshScreen(c == 0
+                    ? i18n->info_yourTurn()
+                    : i18n->info_yourTurn_stackDraw2(c));
+            } // else if (sSelectedIdx < 0)
+            else {
+                Card* card = hand.at(sSelectedIdx);
+                refreshScreen(sUno->isLegalToPlay(card)
+                    ? i18n->info_clickAgainToPlay(card->name)
+                    : i18n->info_cannotPlay(card->name));
+            } // else
         } // else
         break; // case Player::YOU
 
@@ -407,6 +369,44 @@ void Main::setStatus(int status) {
         sPainter->setPen(PEN_WHITE);
         update();
         break; // case STAT_WILD_COLOR
+
+    case STAT_DOUBT_WILD4:
+        if (sAuto || sUno->getNext() != Player::YOU) {
+            // Challenge or not is decided by AI
+            if (sAI->needToChallenge()) {
+                onChallenge();
+            } // if (sAI->needToChallenge())
+            else {
+                sUno->switchNow();
+                draw(4, /* force */ true);
+            } // else
+            break; // case STAT_DOUBT_WILD4
+        } // if (sAuto || sUno->getNext() != Player::YOU)
+
+        // Challenge or not is decided by you
+        refreshScreen(i18n->ask_challenge(sUno->next2lastColor()));
+        eraseArea = QRect(338, 270, 121, 181);
+        sPainter->drawImage(eraseArea, sUno->getBackground(), eraseArea);
+
+        // Draw YES button
+        sPainter->setPen(Qt::NoPen);
+        sPainter->setBrush(BRUSH_GREEN);
+        sPainter->drawPie(270, 180, 270, 270, 0, 180 * 16);
+        sPainter->setPen(PEN_WHITE);
+        width = sPainter->fontMetrics().width(i18n->label_yes());
+        sPainter->drawText(405 - width / 2, 268, i18n->label_yes());
+
+        // Draw NO button
+        sPainter->setPen(Qt::NoPen);
+        sPainter->setBrush(BRUSH_RED);
+        sPainter->drawPie(270, 180, 270, 270, 0, -180 * 16);
+        sPainter->setPen(PEN_WHITE);
+        width = sPainter->fontMetrics().width(i18n->label_no());
+        sPainter->drawText(405 - width / 2, 382, i18n->label_no());
+
+        // Show screen
+        update();
+        break; // case STAT_DOUBT_WILD4
 
     case STAT_SEVEN_TARGET:
         // In 7-0 rule, when someone put down a seven card, the player
@@ -495,11 +495,7 @@ void Main::setStatus(int status) {
 void Main::refreshScreen(const QString& message) {
     QImage image;
     QString info;
-    Player* player;
-    bool beChallenged;
-    std::vector<Card*> hand, recent;
-    std::vector<Color> recentColors;
-    int i, remain, size, status, used, width;
+    int i, remain, status, used, width;
 
     // Lock the value of global variable [sStatus]
     status = sStatus;
@@ -642,12 +638,12 @@ void Main::refreshScreen(const QString& message) {
     } // else if (status == STAT_WELCOME)
     else {
         // Center: card deck & recent played card
+        auto recentColors = sUno->getRecentColors();
+        auto recent = sUno->getRecent();
+        int size = int(recent.size());
+        width = 45 * size + 75;
         image = sUno->getBackImage();
         sPainter->drawImage(338, 270, image);
-        recentColors = sUno->getRecentColors();
-        recent = sUno->getRecent();
-        size = int(recent.size());
-        width = 45 * size + 75;
         for (i = 0; i < size; ++i) {
             if (recent.at(i)->content == WILD) {
                 image = sUno->getColoredWildImage(recentColors.at(i));
@@ -677,11 +673,10 @@ void Main::refreshScreen(const QString& message) {
             sPainter->setPen(PEN_WHITE);
         } // if (status == STAT_GAME_OVER && sWinner == Player::COM1)
         else if (((sHideFlag >> 1) & 0x01) == 0x00) {
-            player = sUno->getPlayer(Player::COM1);
-            hand = player->getHandCards();
+            Player* player = sUno->getPlayer(Player::COM1);
+            auto hand = player->getHandCards();
             size = int(hand.size());
-            beChallenged = sChallenged && sUno->getNow() == Player::COM1;
-            if (beChallenged || player->isOpen() || status == STAT_GAME_OVER) {
+            if (player->isOpen() || status == STAT_GAME_OVER) {
                 // Show remained cards to everyone
                 // when being challenged or game over
                 for (i = 0; i < size; ++i) {
@@ -692,7 +687,7 @@ void Main::refreshScreen(const QString& message) {
                         /* image */ image
                     ); // drawImage(int, int, QImage&)
                 } // for (i = 0; i < size; ++i)
-            } // if (beChallenged || ...)
+            } // if (player->isOpen() || status == STAT_GAME_OVER)
             else {
                 // Only show card backs in game process
                 image = sUno->getBackImage();
@@ -723,11 +718,10 @@ void Main::refreshScreen(const QString& message) {
             sPainter->setPen(PEN_WHITE);
         } // if (status == STAT_GAME_OVER && sWinner == Player::COM2)
         else if (((sHideFlag >> 2) & 0x01) == 0x00) {
-            player = sUno->getPlayer(Player::COM2);
-            hand = player->getHandCards();
+            Player* player = sUno->getPlayer(Player::COM2);
+            auto hand = player->getHandCards();
             size = int(hand.size());
-            beChallenged = sChallenged && sUno->getNow() == Player::COM2;
-            if (beChallenged || player->isOpen() || status == STAT_GAME_OVER) {
+            if (player->isOpen() || status == STAT_GAME_OVER) {
                 // Show remained cards to everyone
                 // when being challenged or game over
                 for (i = 0; i < size; ++i) {
@@ -738,7 +732,7 @@ void Main::refreshScreen(const QString& message) {
                         /* image */ image
                     ); // drawImage(int, int, QImage&)
                 } // for (i = 0; i < size; ++i)
-            } // if (beChallenged || ...)
+            } // if (player->isOpen() || status == STAT_GAME_OVER)
             else {
                 // Only show card backs in game process
                 image = sUno->getBackImage();
@@ -769,11 +763,10 @@ void Main::refreshScreen(const QString& message) {
             sPainter->setPen(PEN_WHITE);
         } // if (status == STAT_GAME_OVER && sWinner == Player::COM3)
         else if (((sHideFlag >> 3) & 0x01) == 0x00) {
-            player = sUno->getPlayer(Player::COM3);
-            hand = player->getHandCards();
+            Player* player = sUno->getPlayer(Player::COM3);
+            auto hand = player->getHandCards();
             size = int(hand.size());
-            beChallenged = sChallenged && sUno->getNow() == Player::COM3;
-            if (beChallenged || player->isOpen() || status == STAT_GAME_OVER) {
+            if (player->isOpen() || status == STAT_GAME_OVER) {
                 // Show remained cards to everyone
                 // when being challenged or game over
                 for (i = 0; i < size; ++i) {
@@ -784,7 +777,7 @@ void Main::refreshScreen(const QString& message) {
                         /* image */ image
                     ); // drawImage(int, int, QImage&)
                 } // for (i = 0; i < size; ++i)
-            } // if (beChallenged || ...)
+            } // if (player->isOpen() || status == STAT_GAME_OVER)
             else {
                 // Only show card backs in game process
                 image = sUno->getBackImage();
@@ -816,15 +809,12 @@ void Main::refreshScreen(const QString& message) {
         } // if (status == STAT_GAME_OVER && sWinner == Player::YOU)
         else if ((sHideFlag & 0x01) == 0x00) {
             // Show your all hand cards
-            hand = sUno->getPlayer(Player::YOU)->getHandCards();
+            auto hand = sUno->getPlayer(Player::YOU)->getHandCards();
             size = int(hand.size());
             for (i = 0; i < size; ++i) {
                 Card* card = hand.at(i);
                 image = status == STAT_GAME_OVER
-                    || (status == Player::YOU
-                        && sUno->isLegalToPlay(card)
-                        && !sChallengeAsk
-                        && !sChallenged)
+                    || (status == Player::YOU && sUno->isLegalToPlay(card))
                     ? card->image
                     : card->darkImg;
                 sPainter->drawImage(
@@ -1042,8 +1032,7 @@ void Main::play(int index, Color color) {
                 next = sUno->getNext();
                 refreshScreen(i18n->act_playWildDraw4(now, next));
                 threadWait(1500);
-                sChallengeAsk = true;
-                setStatus(next);
+                setStatus(STAT_DOUBT_WILD4);
                 break; // case WILD_DRAW4
 
             case NUM7:
@@ -1177,62 +1166,6 @@ void Main::draw(int count, bool force) {
 } // draw(int, bool)
 
 /**
- * Triggered on challenge chance. When a player played a [wild +4], the next
- * player can challenge its legality. Only when you have no cards that match
- * the previous played card's color, you can play a [wild +4].
- * Next player does not challenge: next player draw 4 cards;
- * Challenge success: current player draw 4 cards;
- * Challenge failure: next player draw 6 cards.
- *
- * @param challenged Whether the next player (challenger) challenged current
- *                   player(be challenged)'s [wild +4].
- */
-void Main::onChallengeChance(bool challenged) {
-    bool draw4IsLegal;
-    int now, challenger;
-
-    setStatus(STAT_IDLE); // block mouse click events when idle
-    sChallenged = challenged;
-    sChallengeAsk = false;
-    if (challenged) {
-        now = sUno->getNow();
-        challenger = sUno->getNext();
-        refreshScreen(i18n->info_challenge(
-            challenger, now, sUno->next2lastColor()));
-        threadWait(1500);
-        draw4IsLegal = true;
-        for (Card* card : sUno->getCurrPlayer()->getHandCards()) {
-            if (card->color == sUno->next2lastColor()) {
-                // Found a card that matches the next-to-last recent
-                // played card's color, [wild +4] is illegally used
-                draw4IsLegal = false;
-                break;
-            } // if (card->color == sUno->next2lastColor())
-        } // for (Card* card : sUno->getCurrPlayer()->getHandCards())
-
-        if (draw4IsLegal) {
-            // Challenge failure, challenger draws 6 cards
-            refreshScreen(i18n->info_challengeFailure(challenger));
-            threadWait(1500);
-            sChallenged = false;
-            sUno->switchNow();
-            draw(6, /* force */ true);
-        } // if (draw4IsLegal)
-        else {
-            // Challenge success, who played [wild +4] draws 4 cards
-            refreshScreen(i18n->info_challengeSuccess(now));
-            threadWait(1500);
-            sChallenged = false;
-            draw(4, /* force */ true);
-        } // else
-    } // if (challenged)
-    else {
-        sUno->switchNow();
-        draw(4, /* force */ true);
-    } // else
-} // onChallengeChance(bool)
-
-/**
  * Do uniform motion for objects from somewhere to somewhere.
  * NOTE: This function does not draw the last frame. After animation,
  * you need to call refreshScreen() function to draw the last frame.
@@ -1284,6 +1217,40 @@ void Main::animate(int layerCount, AnimateLayer layer[]) {
         threadWait(30);
     } // for (i = 1; i < 5; ++i)
 } // animate(int, AnimateLayer[])
+
+/**
+ * Triggered on challenge chance. When a player played a [wild +4], the next
+ * player can challenge its legality. Only when you have no cards that match
+ * the previous played card's color, you can play a [wild +4].
+ * Next player does not challenge: next player draw 4 cards;
+ * Challenge success: current player draw 4 cards;
+ * Challenge failure: next player draw 6 cards.
+ */
+void Main::onChallenge() {
+    int now, challenger;
+    bool challengeSuccess;
+
+    setStatus(STAT_IDLE); // block mouse click events when idle
+    now = sUno->getNow();
+    challenger = sUno->getNext();
+    challengeSuccess = sUno->challenge(now);
+    refreshScreen(i18n->info_challenge(
+        challenger, now, sUno->next2lastColor()));
+    threadWait(1500);
+    if (challengeSuccess) {
+        // Challenge success, who played [wild +4] draws 4 cards
+        refreshScreen(i18n->info_challengeSuccess(now));
+        threadWait(1500);
+        draw(4, /* force */ true);
+    } // if (challengeSuccess)
+    else {
+        // Challenge failure, challenger draws 6 cards
+        refreshScreen(i18n->info_challengeFailure(challenger));
+        threadWait(1500);
+        sUno->switchNow();
+        draw(6, /* force */ true);
+    } // else
+} // onChallenge()
 
 /**
  * Triggered when a mouse press event occurred. Called by system.
@@ -1418,22 +1385,9 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 // Do operations automatically by AI strategies
                 break; // case Player::YOU
             } // if (sAuto)
-            else if (sChallengeAsk) {
-                // Asking if you want to challenge your previous player
-                if (310 < x && x < 500) {
-                    if (220 < y && y < 315) {
-                        // YES button, challenge wild +4
-                        onChallengeChance(true);
-                    } // if (220 < y && y < 315)
-                    else if (315 < y && y < 410) {
-                        // NO button, do not challenge wild +4
-                        onChallengeChance(false);
-                    } // else if (315 < y && y < 410)
-                } // if (310 < x && x < 500)
-            } // else if (sChallengeAsk)
             else if (520 <= y && y <= 700) {
                 Player* now = sUno->getPlayer(Player::YOU);
-                std::vector<Card*> hand = now->getHandCards();
+                auto hand = now->getHandCards();
                 int size = int(hand.size());
                 int width = 45 * size + 75;
                 int startX = 640 - width / 2;
@@ -1448,15 +1402,14 @@ void Main::mousePressEvent(QMouseEvent* event) {
                         sSelectedIdx = index;
                         setStatus(sStatus);
                     } // if (index != sSelectedIdx)
-                    else if (!sUno->isLegalToPlay(card)) {
-                        refreshScreen(i18n->info_cannotPlay(card->name));
-                    } // else if (!sUno->isLegalToPlay(card))
-                    else if (card->isWild() && size > 1) {
-                        setStatus(STAT_WILD_COLOR);
-                    } // else if (card->isWild() && size > 1)
-                    else {
-                        play(index);
-                    } // else
+                    else if (sUno->isLegalToPlay(card)) {
+                        if (card->isWild() && size > 1) {
+                            setStatus(STAT_WILD_COLOR);
+                        } // if (card->isWild() && size > 1)
+                        else {
+                            play(index);
+                        } // else
+                    } // else if (sUno->isLegalToPlay(card))
                 } // if (startX <= x && x <= startX + width)
                 else {
                     // Blank area, cancel your selection
@@ -1492,6 +1445,21 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 } // else if (405 < x && x < 500)
             } // else if (315 < y && y < 410)
             break; // case STAT_WILD_COLOR
+
+        case STAT_DOUBT_WILD4:
+            // Asking if you want to challenge your previous player
+            if (310 < x && x < 500) {
+                if (220 < y && y < 315) {
+                    // YES button, challenge wild +4
+                    onChallenge();
+                } // if (220 < y && y < 315)
+                else if (315 < y && y < 410) {
+                    // NO button, do not challenge wild +4
+                    sUno->switchNow();
+                    draw(4, /* force */ true);
+                } // else if (315 < y && y < 410)
+            } // if (310 < x && x < 500)
+            break; // case STAT_DOUBT_WILD4
 
         case STAT_SEVEN_TARGET:
             if (198 < y && y < 276 && sUno->getPlayers() == 4) {

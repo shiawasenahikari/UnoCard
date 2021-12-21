@@ -769,6 +769,32 @@ Card* Uno::play(int who, int index, Color color) {
 } // play(int, int, Color)
 
 /**
+ * When you think your previous player used a [wild +4] card illegally,
+ * i.e. it holds at least one card matching the next-to-last color,
+ * call this function to make a challenge.
+ *
+ * @param whom Challenge whom. Must be one of the following:
+ *             Player::YOU, Player::COM1, Player::COM2, Player::COM3.
+ * @return Tell the challenge result, true if challenge success,
+ *         or false if challenge failure.
+ */
+bool Uno::challenge(int whom) {
+    bool result = false;
+
+    if (whom >= Player::YOU && whom <= Player::COM3) {
+        player[whom].open = true;
+        for (Card* card : player[whom].handCards) {
+            if (card->color == next2lastColor()) {
+                result = true;
+                break;
+            } // if (card->color == next2lastColor())
+        } // for (Card* card : player[whom].handCards)
+    } // if (whom >= Player::YOU && whom <= Player::COM3)
+
+    return result;
+} // challenge(int)
+
+/**
  * In 7-0 rule, when someone put down a seven card, then the player must
  * swap hand cards with another player immediately.
  *
