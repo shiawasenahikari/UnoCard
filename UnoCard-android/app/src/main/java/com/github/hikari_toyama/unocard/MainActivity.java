@@ -41,6 +41,7 @@ import com.github.hikari_toyama.unocard.core.Uno;
 
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
@@ -88,6 +89,7 @@ public class MainActivity extends AppCompatActivity
     private boolean mAuto;
     private float mSndVol;
     private float mBgmVol;
+    private Mat[] mBackup;
     private int mHideFlag;
     private int mStatus;
     private int mWinner;
@@ -99,7 +101,6 @@ public class MainActivity extends AppCompatActivity
     private int sndUno;
     private int mScore;
     private I18N i18n;
-    private Mat mSc2;
     private Mat mScr;
     private Uno mUno;
     private AI mAI;
@@ -150,8 +151,13 @@ public class MainActivity extends AppCompatActivity
             mSelectedIdx = -1;
             mHideFlag = 0x00;
             mAuto = false;
-            mScr = mUno.getBackground().clone();
-            mSc2 = mUno.getBackground().clone();
+            mScr = Mat.zeros(720, 1280, CvType.CV_8UC3);
+            mBackup = new Mat[]{
+                    Mat.zeros(720, 1280, CvType.CV_8UC3),
+                    Mat.zeros(720, 1280, CvType.CV_8UC3),
+                    Mat.zeros(720, 1280, CvType.CV_8UC3),
+                    Mat.zeros(720, 1280, CvType.CV_8UC3)
+            }; // new Mat[]{}
             mBmp = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888);
             mImgScreen = findViewById(R.id.imgMainScreen);
             new Thread(() -> setStatus(STAT_WELCOME)).start();
@@ -1347,43 +1353,43 @@ public class MainActivity extends AppCompatActivity
     private void animate(int layerCount, AnimateLayer[] layer) {
         int i, j;
         Rect roi;
-        Mat canvas;
 
-        canvas = mSc2;
         roi = new Rect();
-        mScr.copyTo(mSc2);
-        for (j = 0; j < layerCount; ++j) {
-            roi.x = layer[j].x1;
-            roi.y = layer[j].y1;
-            roi.width = layer[j].elem.cols();
-            roi.height = layer[j].elem.rows();
-            layer[j].elem.copyTo(new Mat(canvas, roi), layer[j].elem);
-        } // for (j = 0; j < layerCount; ++j)
-
-        Utils.matToBitmap(canvas, mBmp);
-        mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
-        threadSleep(30);
-        for (i = 1; i < 5; ++i) {
-            for (j = 0; j < layerCount; ++j) {
-                roi.width = layer[j].elem.cols();
-                roi.height = layer[j].elem.rows();
-                roi.x = layer[j].x1 + (layer[j].x2 - layer[j].x1) * (i - 1) / 5;
-                roi.y = layer[j].y1 + (layer[j].y2 - layer[j].y1) * (i - 1) / 5;
-                new Mat(mScr, roi).copyTo(new Mat(canvas, roi));
-            } // for (j = 0; j < layerCount; ++j)
+        for (i = 0; i < 5; ++i) {
+            if (i < 4) {
+                for (j = 0; j < layerCount; ++j) {
+                    AnimateLayer l = layer[j];
+                    roi.x = l.x1 + (l.x2 - l.x1) * i / 5;
+                    roi.y = l.y1 + (l.y2 - l.y1) * i / 5;
+                    roi.width = l.elem.cols();
+                    roi.height = l.elem.rows();
+                    new Mat(mScr, roi).copyTo(new Mat(mBackup[j], roi));
+                } // for (j = 0; j < layerCount; ++j)
+            } // if (i < 4)
 
             for (j = 0; j < layerCount; ++j) {
-                roi.width = layer[j].elem.cols();
-                roi.height = layer[j].elem.rows();
-                roi.x = layer[j].x1 + (layer[j].x2 - layer[j].x1) * i / 5;
-                roi.y = layer[j].y1 + (layer[j].y2 - layer[j].y1) * i / 5;
-                layer[j].elem.copyTo(new Mat(canvas, roi), layer[j].elem);
+                AnimateLayer l = layer[j];
+                roi.x = l.x1 + (l.x2 - l.x1) * i / 5;
+                roi.y = l.y1 + (l.y2 - l.y1) * i / 5;
+                roi.width = l.elem.cols();
+                roi.height = l.elem.rows();
+                l.elem.copyTo(new Mat(mScr, roi), l.elem);
             } // for (j = 0; j < layerCount; ++j)
 
-            Utils.matToBitmap(canvas, mBmp);
+            Utils.matToBitmap(mScr, mBmp);
             mHandler.post(() -> mImgScreen.setImageBitmap(mBmp));
             threadSleep(30);
-        } // for (i = 1; i < 5; ++i)
+            if (i < 4) {
+                for (j = 0; j < layerCount; ++j) {
+                    AnimateLayer l = layer[j];
+                    roi.x = l.x1 + (l.x2 - l.x1) * i / 5;
+                    roi.y = l.y1 + (l.y2 - l.y1) * i / 5;
+                    roi.width = l.elem.cols();
+                    roi.height = l.elem.rows();
+                    new Mat(mBackup[j], roi).copyTo(new Mat(mScr, roi));
+                } // for (j = 0; j < layerCount; ++j)
+            } // if (i < 4)
+        } // for (i = 0; i < 5; ++i)
     } // animate(int, AnimateLayer[])
 
     /**

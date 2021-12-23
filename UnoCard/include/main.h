@@ -63,9 +63,11 @@ private:
     QImage sScreen;
     bool sAIRunning;
     int sSelectedIdx;
+    QImage sBackup[4];
     QPainter* sPainter;
     bool sAdjustOptions;
     SoundPool* sSoundPool;
+    QPainter* sBkPainter[4];
     QMediaPlayer* sMediaPlay;
     QMediaPlaylist* sMediaList;
 

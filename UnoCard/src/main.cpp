@@ -74,7 +74,7 @@ static int CLOSED_FLAG = 0x00000000;
  * Triggered when application starts.
  */
 Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
-    int len, hash;
+    int i, hash;
     QString bgmPath;
     std::ifstream reader;
     int dw[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -110,14 +110,14 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
     if (!reader.fail()) {
         // Using statistics data in UnoCard.stat file.
         reader.seekg(0, std::ios::end);
-        len = int(reader.tellg());
+        i = int(reader.tellg());
         reader.seekg(0, std::ios::beg);
-        if (len == 8 + 9 * sizeof(int)) {
+        if (i == 8 + 9 * sizeof(int)) {
             reader.read(header, 8);
             reader.read((char*)dw, 9 * sizeof(int));
-            for (hash = 0, len = 0; len < 8; ++len) {
-                hash = 31 * hash + dw[len];
-            } // for (hash = 0, len = 0; len < 8; ++len)
+            for (hash = 0, i = 0; i < 8; ++i) {
+                hash = 31 * hash + dw[i];
+            } // for (hash = 0, i = 0; i < 8; ++i)
 
             if (strcmp(header, FILE_HEADER) == 0 && hash == dw[8]) {
                 // File verification success
@@ -132,7 +132,7 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
                 sSoundPool->setEnabled(dw[6] != 0);
                 sMediaPlay->setVolume(dw[7]);
             } // if (strcmp(header, FILE_HEADER) == 0 && hash == dw[8])
-        } // if (len == 8 + 9 * sizeof(int))
+        } // if (i == 8 + 9 * sizeof(int))
 
         reader.close();
     } // if (!reader.fail())
@@ -144,6 +144,11 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
     sWinner = Player::YOU;
     sFont.setPointSize(20);
     sAdjustOptions = false;
+    for (i = 0; i <= 3; ++i) {
+        sBackup[i] = QImage(1280, 720, QImage::Format_RGB888);
+        sBkPainter[i] = new QPainter(&sBackup[i]);
+    } // for (i = 0; i <= 3; ++i)
+
     sScreen = QImage(1280, 720, QImage::Format_RGB888);
     sPainter = new QPainter(&sScreen);
     sPainter->setPen(PEN_WHITE);
@@ -841,7 +846,9 @@ void Main::refreshScreen(const QString& message) {
  * Draw [sScreen] on the window. Called by system.
  */
 void Main::paintEvent(QPaintEvent*) {
-    QPainter(this).drawImage(0, 0, sScreen);
+    if (CLOSED_FLAG == 0x00000000) {
+        QPainter(this).drawImage(0, 0, sScreen);
+    } // if (CLOSED_FLAG == 0x00000000)
 } // paintEvent(QPaintEvent*)
 
 /**
@@ -1182,30 +1189,22 @@ void Main::draw(int count, bool force) {
  */
 void Main::animate(int layerCount, AnimateLayer layer[]) {
     int i, j;
-    QImage origin;
+    QRect roi;
 
-    origin = sScreen.copy();
-    for (j = 0; j < layerCount; ++j) {
-        AnimateLayer l = layer[j];
-        sPainter->drawImage(l.x1, l.y1, l.elem);
-    } // for (j = 0; j < layerCount; ++j)
-
-    update();
-    threadWait(30);
-    for (i = 1; i < 5; ++i) {
-        for (j = 0; j < layerCount; ++j) {
-            AnimateLayer l = layer[j];
-            QRect eraseArea(
-                /* x */ l.x1 + (l.x2 - l.x1) * (i - 1) / 5,
-                /* y */ l.y1 + (l.y2 - l.y1) * (i - 1) / 5,
-                /* w */ l.elem.width(),
-                /* h */ l.elem.height()
-            ); // QRect(int * 4)
-            sPainter->drawImage(eraseArea, origin, eraseArea);
-        } // for (j = 0; j < layerCount; ++j)
+    for (i = 0; i < 5; ++i) {
+        if (i < 4) {
+            for (j = 0; j < layerCount; ++j) {
+                AnimateLayer& l = layer[j];
+                roi.setX(l.x1 + (l.x2 - l.x1) * i / 5);
+                roi.setY(l.y1 + (l.y2 - l.y1) * i / 5);
+                roi.setWidth(l.elem.width());
+                roi.setHeight(l.elem.height());
+                sBkPainter[j]->drawImage(roi, sScreen, roi);
+            } // for (j = 0; j < layerCount; ++j)
+        } // if (i < 4)
 
         for (j = 0; j < layerCount; ++j) {
-            AnimateLayer l = layer[j];
+            AnimateLayer& l = layer[j];
             sPainter->drawImage(
                 /* x     */ l.x1 + (l.x2 - l.x1) * i / 5,
                 /* y     */ l.y1 + (l.y2 - l.y1) * i / 5,
@@ -1215,7 +1214,17 @@ void Main::animate(int layerCount, AnimateLayer layer[]) {
 
         update();
         threadWait(30);
-    } // for (i = 1; i < 5; ++i)
+        if (i < 4) {
+            for (j = 0; j < layerCount; ++j) {
+                AnimateLayer& l = layer[j];
+                roi.setX(l.x1 + (l.x2 - l.x1) * i / 5);
+                roi.setY(l.y1 + (l.y2 - l.y1) * i / 5);
+                roi.setWidth(l.elem.width());
+                roi.setHeight(l.elem.height());
+                sPainter->drawImage(roi, sBackup[j], roi);
+            } // for (j = 0; j < layerCount; ++j)
+        } // if (i < 4)
+    } // for (i = 0; i < 5; ++i)
 } // animate(int, AnimateLayer[])
 
 /**
@@ -1510,14 +1519,19 @@ void Main::closeEvent(QCloseEvent*) {
  * Triggered when application finishes.
  */
 Main::~Main() {
+    int i;
     std::ofstream writer;
 
     delete ui;
     delete sPainter;
+    for (i = 3; i >= 0; --i) {
+        delete sBkPainter[i];
+    } // for (i = 3; i >= 0; --i)
+
     writer.open("UnoCard.stat", std::ios::out | std::ios::binary);
     if (!writer.fail()) {
         // Store statistics data to file
-        int i, dw[9];
+        int dw[9];
 
         dw[0] = sScore;
         dw[1] = sUno->getPlayers();
