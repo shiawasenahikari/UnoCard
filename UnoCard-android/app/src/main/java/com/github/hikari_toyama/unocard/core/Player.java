@@ -67,10 +67,10 @@ public abstract class Player {
     int strongCount = 0;
 
     /**
-     * Whether this player's hand cards are known by you, i.e. the unique
-     * non-AI player.
+     * This binary values shows the visibility of your cards. The card of
+     * handCards.at(i) is known by you when 0x01 == ((open >> i) & 0x01).
      */
-    boolean open = false;
+    int open = 0x00000000;
 
     /**
      * Default constructor.
@@ -127,12 +127,26 @@ public abstract class Player {
     public abstract Card getRecent();
 
     /**
-     * @return Whether this player's hand cards are known by you, i.e. the
-     * unique non-AI player. In 7-0 rule, when a seven or zero card is
-     * put down, and your hand cards are transferred to someone else
-     * (for example, A), then A's all hand cards are known by you.
+     * @deprecated Call this.isOpen(-1).
      */
-    public abstract boolean isOpen();
+    @Deprecated
+    public boolean isOpen() {
+        return isOpen(-1);
+    } // isOpen()
+
+    /**
+     * Check whether this player's hand cards are known by you, i.e. the unique
+     * non-AI player. In 7-0 rule, when a seven or zero card is put down, and
+     * your hand cards are transferred to someone else (for example, A), then
+     * A's all hand cards are known by you.
+     *
+     * @param index Index of the card to check (0 ~ this.handCards.size() - 1).
+     *              If you pass -1, check all hand cards.
+     * @return Whether this player's specified card is known by you. If index is
+     * -1, this method will return true only when ALL OF THIS PLAYER'S
+     * HAND CARDS are known by you.
+     */
+    public abstract boolean isOpen(int index);
 } // Player Abstract Class
 
 // E.O.F

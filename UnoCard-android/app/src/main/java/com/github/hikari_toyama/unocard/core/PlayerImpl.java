@@ -116,15 +116,23 @@ class PlayerImpl extends Player {
     } // getRecent()
 
     /**
-     * @return Whether this player's hand cards are known by you, i.e. the
-     * unique non-AI player. In 7-0 rule, when a seven or zero card is
-     * put down, and your hand cards are transferred to someone else
-     * (for example, A), then A's all hand cards are known by you.
+     * Check whether this player's hand cards are known by you, i.e. the unique
+     * non-AI player. In 7-0 rule, when a seven or zero card is put down, and
+     * your hand cards are transferred to someone else (for example, A), then
+     * A's all hand cards are known by you.
+     *
+     * @param index Index of the card to check (0 ~ this.handCards.size() - 1).
+     *              If you pass -1, check all hand cards.
+     * @return Whether this player's specified card is known by you. If index is
+     * -1, this method will return true only when ALL OF THIS PLAYER'S
+     * HAND CARDS are known by you.
      */
     @Override
-    public boolean isOpen() {
-        return open;
-    } // isOpen()
+    public boolean isOpen(int index) {
+        return index < 0
+                ? open == (~(0xffffffff << handCards.size()))
+                : 0x01 == (0x01 & (open >> index));
+    } // isOpen(int)
 } // PlayerImpl Class
 
 // E.O.F

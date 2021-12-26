@@ -640,29 +640,15 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
             Player* player = sUno->getPlayer(Player::COM1);
             auto hand = player->getHandCards();
             size = int(hand.size());
-            if (player->isOpen() || status == STAT_GAME_OVER) {
-                // Show remained cards to everyone
-                // when being challenged or game over
-                for (i = 0; i < size; ++i) {
-                    image = hand.at(i)->image;
-                    sPainter->drawImage(
-                        /* x     */ 20,
-                        /* y     */ 290 - 20 * size + 40 * i,
-                        /* image */ image
-                    ); // drawImage(int, int, QImage&)
-                } // for (i = 0; i < size; ++i)
-            } // if (player->isOpen() || status == STAT_GAME_OVER)
-            else {
-                // Only show card backs in game process
-                image = sUno->getBackImage();
-                for (i = 0; i < size; ++i) {
-                    sPainter->drawImage(
-                        /* x     */ 20,
-                        /* y     */ 290 - 20 * size + 40 * i,
-                        /* image */ image
-                    ); // drawImage(int, int, QImage&)
-                } // for (i = 0; i < size; ++i)
-            } // else
+            for (i = 0; i < size; ++i) {
+                image = status == STAT_GAME_OVER || player->isOpen(i) ?
+                    hand.at(i)->image : sUno->getBackImage();
+                sPainter->drawImage(
+                    /* x     */ 20,
+                    /* y     */ 290 - 20 * size + 40 * i,
+                    /* image */ image
+                ); // drawImage(int, int, QImage&)
+            } // for (i = 0; i < size; ++i)
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
@@ -686,29 +672,15 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
             Player* player = sUno->getPlayer(Player::COM2);
             auto hand = player->getHandCards();
             size = int(hand.size());
-            if (player->isOpen() || status == STAT_GAME_OVER) {
-                // Show remained cards to everyone
-                // when being challenged or game over
-                for (i = 0; i < size; ++i) {
-                    image = hand.at(i)->image;
-                    sPainter->drawImage(
-                        /* x     */ (1205 - 45 * size + 90 * i) / 2,
-                        /* y     */ 20,
-                        /* image */ image
-                    ); // drawImage(int, int, QImage&)
-                } // for (i = 0; i < size; ++i)
-            } // if (player->isOpen() || status == STAT_GAME_OVER)
-            else {
-                // Only show card backs in game process
-                image = sUno->getBackImage();
-                for (i = 0; i < size; ++i) {
-                    sPainter->drawImage(
-                        /* x     */ (1205 - 45 * size + 90 * i) / 2,
-                        /* y     */ 20,
-                        /* image */ image
-                    ); // drawImage(int, int, QImage&)
-                } // for (i = 0; i < size; ++i)
-            } // else
+            for (i = 0; i < size; ++i) {
+                image = status == STAT_GAME_OVER || player->isOpen(i) ?
+                    hand.at(i)->image : sUno->getBackImage();
+                sPainter->drawImage(
+                    /* x     */ (1205 - 45 * size + 90 * i) / 2,
+                    /* y     */ 20,
+                    /* image */ image
+                ); // drawImage(int, int, QImage&)
+            } // for (i = 0; i < size; ++i)
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
@@ -732,29 +704,15 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
             Player* player = sUno->getPlayer(Player::COM3);
             auto hand = player->getHandCards();
             size = int(hand.size());
-            if (player->isOpen() || status == STAT_GAME_OVER) {
-                // Show remained cards to everyone
-                // when being challenged or game over
-                for (i = 0; i < size; ++i) {
-                    image = hand.at(i)->image;
-                    sPainter->drawImage(
-                        /* x     */ 1140,
-                        /* y     */ 290 - 20 * size + 40 * i,
-                        /* image */ image
-                    ); // drawImage(int, int, QImage&)
-                } // for (i = 0; i < size; ++i)
-            } // if (player->isOpen() || status == STAT_GAME_OVER)
-            else {
-                // Only show card backs in game process
-                image = sUno->getBackImage();
-                for (i = 0; i < size; ++i) {
-                    sPainter->drawImage(
-                        /* x     */ 1140,
-                        /* y     */ 290 - 20 * size + 40 * i,
-                        /* image */ image
-                    ); // drawImage(int, int, QImage&)
-                } // for (i = 0; i < size; ++i)
-            } // else
+            for (i = 0; i < size; ++i) {
+                image = status == STAT_GAME_OVER || player->isOpen(i) ?
+                    hand.at(i)->image : sUno->getBackImage();
+                sPainter->drawImage(
+                    /* x     */ 1140,
+                    /* y     */ 290 - 20 * size + 40 * i,
+                    /* image */ image
+                ); // drawImage(int, int, QImage&)
+            } // for (i = 0; i < size; ++i)
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand

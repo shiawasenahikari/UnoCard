@@ -17,6 +17,10 @@
 #include "include/Player.h"
 #include "include/Content.h"
 
+#define MASK_I_TO_END(i) (0xffffffffU << (i))
+#define MASK_BEGIN_TO_I(i) (~(0xffffffffU << (i)))
+#define MASK_ALL(u, p) MASK_BEGIN_TO_I((u)->getPlayer(p)->getHandSize())
+
 /**
  * Uno Runtime Class (Singleton).
  */

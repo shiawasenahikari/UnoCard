@@ -494,10 +494,10 @@ void Uno::start() {
     recent.clear();
     recentColors.clear();
     for (i = Player::YOU; i <= Player::COM3; ++i) {
+        player[i].open = 0x00;
         player[i].handCards.clear();
         player[i].weakColor = NONE;
         player[i].strongColor = NONE;
-        player[i].open = i == Player::YOU;
     } // for (i = Player::YOU; i <= Player::COM3; ++i)
 
     // Generate a temporary sequenced card deck
@@ -622,8 +622,10 @@ int Uno::draw(int who, bool force) {
 
             hand->insert(it, card);
             player[who].recent = nullptr;
-            player[who].open = (who == Player::YOU) || (player[who].open
-                && !force && forcePlay && isLegalToPlay(card));
+            player[who].open = who == Player::YOU
+                ? MASK_ALL(this, Player::YOU)
+                : (player[who].open & MASK_BEGIN_TO_I(i))
+                | (player[who].open & MASK_I_TO_END(i)) << 1;
 
             if (deck.empty()) {
                 // Re-use the used cards when there are no more cards in deck
@@ -740,6 +742,10 @@ Card* Uno::play(int who, int index, Color color) {
                 draw2StackCount += 2;
             } // if (card->content == DRAW2 && draw2StackRule)
 
+            player[who].open = who == Player::YOU
+                ? MASK_ALL(this, Player::YOU)
+                : (player[who].open & MASK_BEGIN_TO_I(index))
+                | (player[who].open & MASK_I_TO_END(index + 1)) >> 1;
             player[who].recent = card;
             recent.push_back(card);
             recentColors.push_back(card->isWild() ? color : card->color);
@@ -782,7 +788,7 @@ bool Uno::challenge(int whom) {
     bool result = false;
 
     if (whom >= Player::YOU && whom <= Player::COM3) {
-        player[whom].open = true;
+        player[whom].open = MASK_ALL(this, whom);
         for (Card* card : player[whom].handCards) {
             if (card->color == next2lastColor()) {
                 result = true;
@@ -808,7 +814,7 @@ void Uno::swap(int a, int b) {
     Player store = player[a];
     player[a] = player[b];
     player[b] = store;
-    player[Player::YOU].open = true;
+    player[Player::YOU].open = MASK_ALL(this, Player::YOU);
 } // swap(int, int)
 
 /**
@@ -822,7 +828,7 @@ void Uno::cycle() {
     player[prev] = player[oppo];
     player[oppo] = player[next];
     player[next] = store;
-    player[Player::YOU].open = true;
+    player[Player::YOU].open = MASK_ALL(this, Player::YOU);
 } // cycle()
 
 // E.O.F

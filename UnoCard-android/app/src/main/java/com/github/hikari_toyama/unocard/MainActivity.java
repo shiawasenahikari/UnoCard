@@ -733,23 +733,13 @@ public class MainActivity extends AppCompatActivity
             size = hand.size();
             roi.x = 20;
             roi.y = 290 - 20 * size;
-            if (player.isOpen() || status == STAT_GAME_OVER) {
-                // Show remained cards to everyone
-                // when being challenged or game over
-                for (Card card : hand) {
-                    image = card.image;
-                    image.copyTo(new Mat(mScr, roi), image);
-                    roi.y += 40;
-                } // for (Card card : hand)
-            } // if (player.isOpen() || status == STAT_GAME_OVER)
-            else {
-                // Only show card backs in game process
-                image = mUno.getBackImage();
-                for (i = 0; i < size; ++i) {
-                    image.copyTo(new Mat(mScr, roi), image);
-                    roi.y += 40;
-                } // for (i = 0; i < size; ++i)
-            } // else
+            for (i = 0; i < size; ++i) {
+                image = mStatus == STAT_GAME_OVER || player.isOpen(i) ?
+                        hand.get(i).image :
+                        mUno.getBackImage();
+                image.copyTo(new Mat(mScr, roi), image);
+                roi.y += 40;
+            } // for (i = 0; i < size; ++i)
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
@@ -771,23 +761,13 @@ public class MainActivity extends AppCompatActivity
             size = hand.size();
             roi.x = (1205 - 45 * size) / 2;
             roi.y = 20;
-            if (player.isOpen() || status == STAT_GAME_OVER) {
-                // Show remained hand cards
-                // when being challenged or game over
-                for (Card card : hand) {
-                    image = card.image;
-                    image.copyTo(new Mat(mScr, roi), image);
-                    roi.x += 45;
-                } // for (Card card : hand)
-            } // if (player.isOpen() || status == STAT_GAME_OVER)
-            else {
-                // Only show card backs in game process
-                image = mUno.getBackImage();
-                for (i = 0; i < size; ++i) {
-                    image.copyTo(new Mat(mScr, roi), image);
-                    roi.x += 45;
-                } // for (i = 0; i < size; ++i)
-            } // else
+            for (i = 0; i < size; ++i) {
+                image = mStatus == STAT_GAME_OVER || player.isOpen(i) ?
+                        hand.get(i).image :
+                        mUno.getBackImage();
+                image.copyTo(new Mat(mScr, roi), image);
+                roi.x += 45;
+            } // for (i = 0; i < size; ++i)
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
@@ -809,23 +789,13 @@ public class MainActivity extends AppCompatActivity
             size = hand.size();
             roi.x = 1140;
             roi.y = 290 - 20 * size;
-            if (player.isOpen() || status == STAT_GAME_OVER) {
-                // Show remained hand cards
-                // when being challenged or game over
-                for (Card card : hand) {
-                    image = card.image;
-                    image.copyTo(new Mat(mScr, roi), image);
-                    roi.y += 40;
-                } // for (Card card : hand)
-            } // if (player.isOpen() || status == STAT_GAME_OVER)
-            else {
-                // Only show card backs in game process
-                image = mUno.getBackImage();
-                for (i = 0; i < size; ++i) {
-                    image.copyTo(new Mat(mScr, roi), image);
-                    roi.y += 40;
-                } // for (i = 0; i < size; ++i)
-            } // else
+            for (i = 0; i < size; ++i) {
+                image = mStatus == STAT_GAME_OVER || player.isOpen(i) ?
+                        hand.get(i).image :
+                        mUno.getBackImage();
+                image.copyTo(new Mat(mScr, roi), image);
+                roi.y += 40;
+            } // for (i = 0; i < size; ++i)
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand

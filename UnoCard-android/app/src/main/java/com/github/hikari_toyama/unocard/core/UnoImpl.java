@@ -751,10 +751,10 @@ class UnoImpl extends Uno {
         recent.clear();
         recentColors.clear();
         for (i = Player.YOU; i <= Player.COM3; ++i) {
+            player[i].open = 0x00;
             player[i].handCards.clear();
             player[i].weakColor = NONE;
             player[i].strongColor = NONE;
-            player[i].open = i == Player.YOU;
         } // for (i = Player.YOU; i <= Player.COM3; ++i)
 
         // Generate a temporary sequenced card deck
@@ -881,8 +881,10 @@ class UnoImpl extends Uno {
 
                 hand.add(i, card);
                 player[who].recent = null;
-                player[who].open = (who == Player.YOU) || (player[who].open
-                        && !force && forcePlay && isLegalToPlay(card));
+                player[who].open = who == Player.YOU
+                        ? MASK_ALL(this, Player.YOU)
+                        : (player[who].open & MASK_BEGIN_TO_I(i))
+                        | (player[who].open & MASK_I_TO_END(i)) << 1;
 
                 if (deck.isEmpty()) {
                     // Re-use the used cards when there are no more cards in deck
@@ -1008,6 +1010,10 @@ class UnoImpl extends Uno {
                     draw2StackCount += 2;
                 } // if (card.content == DRAW2 && draw2StackRule)
 
+                player[who].open = who == Player.YOU
+                        ? MASK_ALL(this, Player.YOU)
+                        : (player[who].open & MASK_BEGIN_TO_I(index))
+                        | (player[who].open & MASK_I_TO_END(index + 1)) >> 1;
                 player[who].recent = card;
                 recent.add(card);
                 recentColors.add(card.isWild() ? color : card.color);
@@ -1051,7 +1057,7 @@ class UnoImpl extends Uno {
         boolean result = false;
 
         if (whom >= Player.YOU && whom <= Player.COM3) {
-            player[whom].open = true;
+            player[whom].open = MASK_ALL(this, whom);
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
                 for (Card card : player[whom].handCards) {
                     if (card.color == next2lastColor()) {
@@ -1084,7 +1090,7 @@ class UnoImpl extends Uno {
         Player store = player[a];
         player[a] = player[b];
         player[b] = store;
-        player[Player.YOU].open = true;
+        player[Player.YOU].open = MASK_ALL(this, Player.YOU);
     } // swap(int, int)
 
     /**
@@ -1099,7 +1105,7 @@ class UnoImpl extends Uno {
         player[prev] = player[oppo];
         player[oppo] = player[next];
         player[next] = store;
-        player[Player.YOU].open = true;
+        player[Player.YOU].open = MASK_ALL(this, Player.YOU);
     } // cycle()
 } // UnoImpl Class
 

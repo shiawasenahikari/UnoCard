@@ -187,6 +187,30 @@ public abstract class Uno {
     List<Color> recentColors = new ArrayList<>();
 
     /**
+     * Fake C++ Macro
+     * #define MASK_I_TO_END(i) (0xffffffffU << (i))
+     */
+    public static int MASK_I_TO_END(int i) {
+        return 0xffffffff << i;
+    } // MASK_I_TO_END(int)
+
+    /**
+     * Fake C++ Macro
+     * #define MASK_BEGIN_TO_I(i) (~(0xffffffffU << (i)))
+     */
+    public static int MASK_BEGIN_TO_I(int i) {
+        return ~(0xffffffff << i);
+    } // MASK_BEGIN_TO_I(int)
+
+    /**
+     * Fake C++ Macro
+     * #define MASK_ALL(u, p) MASK_BEGIN_TO_I((u)->getPlayer(p)->getHandSize())
+     */
+    public static int MASK_ALL(Uno u, int p) {
+        return MASK_BEGIN_TO_I(u.getPlayer(p).getHandSize());
+    } // MASK_ALL(Uno, int)
+
+    /**
      * In MainActivity Class, get Uno instance here.
      *
      * @param context Pass a context object to let us get the card image
