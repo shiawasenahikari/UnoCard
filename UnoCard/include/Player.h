@@ -147,6 +147,12 @@ public:
      *         HAND CARDS are known by you.
      */
     bool isOpen(int index = -1);
+
+    /**
+     * Call this function to rearrange this player's hand cards.
+     * The cards with same color will be arranged together.
+     */
+    void sort();
 }; // Player Class
 
 #endif // __PLAYER_H_494649FDFA62B3C015120BCB9BE17613__

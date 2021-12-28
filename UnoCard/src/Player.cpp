@@ -109,4 +109,12 @@ bool Player::isOpen(int index) {
         : 0x01 == (0x01 & (open >> index));
 } // isOpen(int)
 
+/**
+ * Call this function to rearrange this player's hand cards.
+ * The cards with same color will be arranged together.
+ */
+void Player::sort() {
+    std::sort(handCards.begin(), handCards.end());
+} // sort()
+
 // E.O.F

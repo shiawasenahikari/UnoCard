@@ -147,6 +147,12 @@ public abstract class Player {
      * HAND CARDS are known by you.
      */
     public abstract boolean isOpen(int index);
+
+    /**
+     * Call this method to rearrange this player's hand cards.
+     * The cards with same color will be arranged together.
+     */
+    public abstract void sort();
 } // Player Abstract Class
 
 // E.O.F

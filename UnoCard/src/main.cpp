@@ -453,10 +453,10 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
     // Message area
     dirty.push_back(QRect(141, 451, 999, 48));
     width = sPainter->fontMetrics().width(message);
-    sPainter->drawText(640 - width / 2, 480, message);
+    sPainter->drawText(640 - width / 2, 487, message);
 
     // Right-bottom corner: <AUTO> button
-    dirty.push_back(QRect(960, 671, 300, 48));
+    dirty.push_back(QRect(960, 664, 300, 48));
     if (sAuto) sPainter->setPen(PEN_YELLOW);
     width = sPainter->fontMetrics().width(i18n->btn_auto());
     sPainter->drawText(1260 - width, 700, i18n->btn_auto());
@@ -465,7 +465,7 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
     // Left-bottom corner: <OPTIONS> button
     // Shows only when game is not in process
     if (status == STAT_WELCOME || status == STAT_GAME_OVER) {
-        dirty.push_back(QRect(20, 671, 300, 48));
+        dirty.push_back(QRect(20, 664, 300, 48));
         if (sAdjustOptions) sPainter->setPen(PEN_YELLOW);
         sPainter->drawText(20, 700, i18n->btn_settings());
         if (sAdjustOptions) sPainter->setPen(PEN_WHITE);
@@ -542,7 +542,7 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
 
         // Rule settings
         // Force play switch
-        dirty.push_back(QRect(60, 511, 1220, 48));
+        dirty.push_back(QRect(60, 504, 1220, 48));
         sPainter->drawText(60, 540, i18n->label_forcePlay());
         sPainter->setPen(sUno->isForcePlay() ? PEN_WHITE : PEN_RED);
         sPainter->drawText(790, 540, i18n->btn_keep());
@@ -551,7 +551,7 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
         sPainter->setPen(PEN_WHITE);
 
         // 7-0
-        dirty.push_back(QRect(60, 561, 1220, 48));
+        dirty.push_back(QRect(60, 554, 1220, 48));
         sPainter->drawText(60, 590, i18n->label_7_0());
         sPainter->setPen(sUno->isSevenZeroRule() ? PEN_WHITE : PEN_RED);
         sPainter->drawText(790, 590, i18n->btn_off());
@@ -560,7 +560,7 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
         sPainter->setPen(PEN_WHITE);
 
         // +2 stack
-        dirty.push_back(QRect(60, 611, 1220, 48));
+        dirty.push_back(QRect(60, 604, 1220, 48));
         sPainter->drawText(60, 640, i18n->label_draw2Stack());
         sPainter->setPen(sUno->isDraw2StackRule() ? PEN_WHITE : PEN_RED);
         sPainter->drawText(790, 640, i18n->btn_off());
@@ -573,7 +573,7 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
         dirty.push_back(QRect(580, 270, 121, 181));
         image = sUno->getBackImage();
         sPainter->drawImage(580, 270, image);
-        dirty.push_back(QRect(140, 591, 200, 48));
+        dirty.push_back(QRect(140, 584, 200, 48));
         width = sPainter->fontMetrics().width(i18n->label_score());
         sPainter->drawText(340 - width, 620, i18n->label_score());
         dirty.push_back(QRect(360, 520, 541, 181));
@@ -621,7 +621,7 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
         } // for (i = 0; i < size; ++i)
 
         // Left-top corner: remain / used
-        dirty.push_back(QRect(20, 13, 600, 48));
+        dirty.push_back(QRect(20, 6, 600, 48));
         remain = sUno->getDeckCount();
         used = sUno->getUsedCount();
         info = i18n->label_remain_used(remain, used);
@@ -637,17 +637,12 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
             sPainter->setPen(PEN_WHITE);
         } // if (status == STAT_GAME_OVER && sWinner == Player::COM1)
         else if (((sHideFlag >> 1) & 0x01) == 0x00) {
-            Player* player = sUno->getPlayer(Player::COM1);
-            auto hand = player->getHandCards();
+            Player* p = sUno->getPlayer(Player::COM1);
+            auto hand = p->getHandCards();
             size = int(hand.size());
             for (i = 0; i < size; ++i) {
-                image = status == STAT_GAME_OVER || player->isOpen(i) ?
-                    hand.at(i)->image : sUno->getBackImage();
-                sPainter->drawImage(
-                    /* x     */ 20,
-                    /* y     */ 290 - 20 * size + 40 * i,
-                    /* image */ image
-                ); // drawImage(int, int, QImage&)
+                image = p->isOpen(i) ? hand.at(i)->image : sUno->getBackImage();
+                sPainter->drawImage(20, 290 - 20 * size + 40 * i, image);
             } // for (i = 0; i < size; ++i)
 
             if (size == 1) {
@@ -669,17 +664,12 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
             sPainter->setPen(PEN_WHITE);
         } // if (status == STAT_GAME_OVER && sWinner == Player::COM2)
         else if (((sHideFlag >> 2) & 0x01) == 0x00) {
-            Player* player = sUno->getPlayer(Player::COM2);
-            auto hand = player->getHandCards();
+            Player* p = sUno->getPlayer(Player::COM2);
+            auto hand = p->getHandCards();
             size = int(hand.size());
             for (i = 0; i < size; ++i) {
-                image = status == STAT_GAME_OVER || player->isOpen(i) ?
-                    hand.at(i)->image : sUno->getBackImage();
-                sPainter->drawImage(
-                    /* x     */ (1205 - 45 * size + 90 * i) / 2,
-                    /* y     */ 20,
-                    /* image */ image
-                ); // drawImage(int, int, QImage&)
+                image = p->isOpen(i) ? hand.at(i)->image : sUno->getBackImage();
+                sPainter->drawImage((1205 - 45 * size + 90 * i) / 2, 20, image);
             } // for (i = 0; i < size; ++i)
 
             if (size == 1) {
@@ -701,17 +691,12 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
             sPainter->setPen(PEN_WHITE);
         } // if (status == STAT_GAME_OVER && sWinner == Player::COM3)
         else if (((sHideFlag >> 3) & 0x01) == 0x00) {
-            Player* player = sUno->getPlayer(Player::COM3);
-            auto hand = player->getHandCards();
+            Player* p = sUno->getPlayer(Player::COM3);
+            auto hand = p->getHandCards();
             size = int(hand.size());
             for (i = 0; i < size; ++i) {
-                image = status == STAT_GAME_OVER || player->isOpen(i) ?
-                    hand.at(i)->image : sUno->getBackImage();
-                sPainter->drawImage(
-                    /* x     */ 1140,
-                    /* y     */ 290 - 20 * size + 40 * i,
-                    /* image */ image
-                ); // drawImage(int, int, QImage&)
+                image = p->isOpen(i) ? hand.at(i)->image : sUno->getBackImage();
+                sPainter->drawImage(1140, 290 - 20 * size + 40 * i, image);
             } // for (i = 0; i < size; ++i)
 
             if (size == 1) {
@@ -724,7 +709,7 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
         } // else if (((sHideFlag >> 3) & 0x01) == 0x00)
 
         // Bottom: Your hand cards
-        dirty.push_back(QRect(141, 490, 999, 211));
+        dirty.push_back(QRect(141, 500, 999, 201));
         if (status == STAT_GAME_OVER && sWinner == Player::YOU) {
             // Played all hand cards, it's winner
             sPainter->setPen(PEN_YELLOW);
@@ -740,11 +725,10 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
                 Card* card = hand.at(i);
                 image = status == STAT_GAME_OVER
                     || (status == Player::YOU && sUno->isLegalToPlay(card))
-                    ? card->image
-                    : card->darkImg;
+                    ? card->image : card->darkImg;
                 sPainter->drawImage(
                     /* x     */ (1205 - 45 * size + 90 * i) / 2,
-                    /* y     */ i == sSelectedIdx ? 490 : 520,
+                    /* y     */ i == sSelectedIdx ? 500 : 520,
                     /* image */ image
                 ); // drawImage(int, int, QImage&)
             } // for (i = 0; i < size; ++i)
@@ -869,24 +853,34 @@ void Main::cycle() {
     oppo = sUno->getOppo();
     prev = sUno->getPrev();
     layer[0].elem = sUno->getBackImage();
-    layer[0].x1 = x[curr]; layer[0].y1 = y[curr];
-    layer[0].x2 = x[next]; layer[0].y2 = y[next];
+    layer[0].startLeft = x[curr];
+    layer[0].startTop = y[curr];
+    layer[0].endLeft = x[next];
+    layer[0].endTop = y[next];
     layer[1].elem = sUno->getBackImage();
-    layer[1].x1 = x[next]; layer[1].y1 = y[next];
-    layer[1].x2 = x[oppo]; layer[1].y2 = y[oppo];
+    layer[1].startLeft = x[next];
+    layer[1].startTop = y[next];
+    layer[1].endLeft = x[oppo];
+    layer[1].endTop = y[oppo];
     if (sUno->getPlayers() == 3) {
         layer[2].elem = sUno->getBackImage();
-        layer[2].x1 = x[oppo]; layer[2].y1 = y[oppo];
-        layer[2].x2 = x[curr]; layer[2].y2 = y[curr];
+        layer[2].startLeft = x[oppo];
+        layer[2].startTop = y[oppo];
+        layer[2].endLeft = x[curr];
+        layer[2].endTop = y[curr];
         animate(3, layer);
     } // if (sUno->getPlayers() == 3)
     else {
         layer[2].elem = sUno->getBackImage();
-        layer[2].x1 = x[oppo]; layer[2].y1 = y[oppo];
-        layer[2].x2 = x[prev]; layer[2].y2 = y[prev];
+        layer[2].startLeft = x[oppo];
+        layer[2].startTop = y[oppo];
+        layer[2].endLeft = x[prev];
+        layer[2].endTop = y[prev];
         layer[3].elem = sUno->getBackImage();
-        layer[3].x1 = x[prev]; layer[3].y1 = y[prev];
-        layer[3].x2 = x[curr]; layer[3].y2 = y[curr];
+        layer[3].startLeft = x[prev];
+        layer[3].startTop = y[prev];
+        layer[3].endLeft = x[curr];
+        layer[3].endTop = y[curr];
         animate(4, layer);
     } // else
 
@@ -914,10 +908,14 @@ void Main::swapWith(int whom) {
     sHideFlag = (1 << curr) | (1 << whom);
     refreshScreen(i18n->info_7_swap(curr, whom));
     layer[0].elem = layer[1].elem = sUno->getBackImage();
-    layer[0].x1 = x[curr]; layer[0].x2 = x[whom];
-    layer[0].y1 = y[curr]; layer[0].y2 = y[whom];
-    layer[1].x1 = x[whom]; layer[1].x2 = x[curr];
-    layer[1].y1 = y[whom]; layer[1].y2 = y[curr];
+    layer[0].startLeft = x[curr];
+    layer[0].startTop = y[curr];
+    layer[0].endLeft = x[whom];
+    layer[0].endTop = y[whom];
+    layer[1].startLeft = x[whom];
+    layer[1].startTop = y[whom];
+    layer[1].endLeft = x[curr];
+    layer[1].endTop = y[curr];
     animate(2, layer);
     sHideFlag = 0x00;
     sUno->swap(curr, whom);
@@ -949,29 +947,29 @@ void Main::play(int index, Color color) {
         layer[0].elem = card->image;
         switch (now) {
         case Player::COM1:
-            layer[0].x1 = 160;
-            layer[0].y1 = 290 - 20 * size + 40 * index;
+            layer[0].startLeft = 160;
+            layer[0].startTop = 290 - 20 * size + 40 * index;
             break; // case Player::COM1
 
         case Player::COM2:
-            layer[0].x1 = (1205 - 45 * size + 90 * index) / 2;
-            layer[0].y1 = 50;
+            layer[0].startLeft = (1205 - 45 * size + 90 * index) / 2;
+            layer[0].startTop = 50;
             break; // case Player::COM2
 
         case Player::COM3:
-            layer[0].x1 = 1000;
-            layer[0].y1 = 290 - 20 * size + 40 * index;
+            layer[0].startLeft = 1000;
+            layer[0].startTop = 290 - 20 * size + 40 * index;
             break; // case Player::COM3
 
         default:
-            layer[0].x1 = (1205 - 45 * size + 90 * index) / 2;
-            layer[0].y1 = 490;
+            layer[0].startLeft = (1205 - 45 * size + 90 * index) / 2;
+            layer[0].startTop = 500;
             break; // default
         } // switch (now)
 
         recentSize = int(sUno->getRecent().size());
-        layer[0].x2 = (45 * recentSize + 1419) / 2;
-        layer[0].y2 = 270;
+        layer[0].endLeft = (45 * recentSize + 1419) / 2;
+        layer[0].endTop = 270;
         animate(1, layer);
         if (size == 1) {
             // The player in action becomes winner when it played the
@@ -1101,34 +1099,34 @@ void Main::draw(int count, bool force) {
         if (index >= 0) {
             drawn = sUno->getCurrPlayer()->getHandCards().at(index);
             size = sUno->getCurrPlayer()->getHandSize();
-            layer[0].x1 = 338;
-            layer[0].y1 = 270;
+            layer[0].startLeft = 338;
+            layer[0].startTop = 270;
             switch (now) {
             case Player::COM1:
                 layer[0].elem = sUno->getBackImage();
-                layer[0].x2 = 20;
-                layer[0].y2 = 290 - 20 * size + 40 * index;
+                layer[0].endLeft = 20;
+                layer[0].endTop = 290 - 20 * size + 40 * index;
                 message = i18n->act_drawCardCount(now, count);
                 break; // case Player::COM1
 
             case Player::COM2:
                 layer[0].elem = sUno->getBackImage();
-                layer[0].x2 = (1205 - 45 * size + 90 * index) / 2;
-                layer[0].y2 = 20;
+                layer[0].endLeft = (1205 - 45 * size + 90 * index) / 2;
+                layer[0].endTop = 20;
                 message = i18n->act_drawCardCount(now, count);
                 break; // case Player::COM2
 
             case Player::COM3:
                 layer[0].elem = sUno->getBackImage();
-                layer[0].x2 = 1140;
-                layer[0].y2 = 290 - 20 * size + 40 * index;
+                layer[0].endLeft = 1140;
+                layer[0].endTop = 290 - 20 * size + 40 * index;
                 message = i18n->act_drawCardCount(now, count);
                 break; // case Player::COM3
 
             default:
                 layer[0].elem = drawn->image;
-                layer[0].x2 = (1205 - 45 * size + 90 * index) / 2;
-                layer[0].y2 = 520;
+                layer[0].endLeft = (1205 - 45 * size + 90 * index) / 2;
+                layer[0].endTop = 520;
                 message = i18n->act_drawCard(now, drawn->name);
                 break; // default
             } // switch (now)
@@ -1181,11 +1179,11 @@ void Main::draw(int count, bool force) {
  * @param layer      Describe your movements by AnimateLayer objects.
  *                   Specifying parameters in AnimateLayer object to
  *                   describe your expected movements, such as:
- *                   [elem] Move which object.
- *                   [x1] The object's start X coordinate.
- *                   [y1] The object's start Y coordinate.
- *                   [x2] The object's end X coordinate.
- *                   [y2] The object's end Y coordinate.
+ *                   [elem]      Move which object.
+ *                   [startLeft] The object's start X coordinate.
+ *                   [startTop]  The object's start Y coordinate.
+ *                   [endLeft]   The object's end X coordinate.
+ *                   [endTop]    The object's end Y coordinate.
  */
 void Main::animate(int layerCount, AnimateLayer layer[]) {
     int i, j;
@@ -1194,8 +1192,8 @@ void Main::animate(int layerCount, AnimateLayer layer[]) {
     for (i = 0; i < 5; ++i) {
         for (j = 0; j < layerCount; ++j) {
             AnimateLayer& l = layer[j];
-            roi.setX(l.x1 + (l.x2 - l.x1) * i / 5);
-            roi.setY(l.y1 + (l.y2 - l.y1) * i / 5);
+            roi.setX(l.startLeft + (l.endLeft - l.startLeft) * i / 5);
+            roi.setY(l.startTop + (l.endTop - l.startTop) * i / 5);
             roi.setWidth(l.elem.width());
             roi.setHeight(l.elem.height());
             sBkPainter[j]->drawImage(roi, sScreen, roi);
@@ -1204,8 +1202,8 @@ void Main::animate(int layerCount, AnimateLayer layer[]) {
         for (j = 0; j < layerCount; ++j) {
             AnimateLayer& l = layer[j];
             sPainter->drawImage(
-                /* x     */ l.x1 + (l.x2 - l.x1) * i / 5,
-                /* y     */ l.y1 + (l.y2 - l.y1) * i / 5,
+                /* x     */ l.startLeft + (l.endLeft - l.startLeft) * i / 5,
+                /* y     */ l.startTop + (l.endTop - l.startTop) * i / 5,
                 /* image */ l.elem
             ); // drawImage(int, int, QImage&)
         } // for (j = 0; j < layerCount; ++j)
@@ -1214,8 +1212,8 @@ void Main::animate(int layerCount, AnimateLayer layer[]) {
         threadWait(30);
         for (j = 0; j < layerCount; ++j) {
             AnimateLayer& l = layer[j];
-            roi.setX(l.x1 + (l.x2 - l.x1) * i / 5);
-            roi.setY(l.y1 + (l.y2 - l.y1) * i / 5);
+            roi.setX(l.startLeft + (l.endLeft - l.startLeft) * i / 5);
+            roi.setY(l.startTop + (l.endTop - l.startTop) * i / 5);
             roi.setWidth(l.elem.width());
             roi.setHeight(l.elem.height());
             sPainter->drawImage(roi, sBackup[j], roi);

@@ -9,8 +9,10 @@
 
 package com.github.hikari_toyama.unocard.core;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.ListIterator;
 
 /**
  * Store an Uno player's real-time information,
@@ -133,6 +135,22 @@ class PlayerImpl extends Player {
                 ? open == (~(0xffffffff << handCards.size()))
                 : 0x01 == (0x01 & (open >> index));
     } // isOpen(int)
+
+    /**
+     * Call this method to rearrange this player's hand cards.
+     * The cards with same color will be arranged together.
+     */
+    @Override
+    public void sort() {
+        Card[] arr = handCards.toArray(new Card[0]);
+        ListIterator<Card> i = handCards.listIterator();
+
+        Arrays.sort(arr);
+        for (Card card : arr) {
+            i.next();
+            i.set(card);
+        } // for (Card card : arr)
+    } // sort()
 } // PlayerImpl Class
 
 // E.O.F

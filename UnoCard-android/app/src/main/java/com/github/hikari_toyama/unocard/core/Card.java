@@ -14,7 +14,7 @@ import org.opencv.core.Mat;
 /**
  * Uno Card Class.
  */
-public abstract class Card {
+public abstract class Card implements Comparable<Card> {
     /**
      * Color part of name string.
      */
@@ -92,6 +92,16 @@ public abstract class Card {
                 ? 39 + content.ordinal()
                 : 13 * (color.ordinal() - 1) + content.ordinal();
     } // Card(Mat, Mat, Color, Content) (Class Constructor)
+
+    /**
+     * Compare the id number of two cards.
+     *
+     * @param that Provide another Card instance.
+     * @return 0 if this.id == that.id, or a positive number if
+     * this.id > that.id, or a negative number if this.id < that.id.
+     */
+    @Override
+    public abstract int compareTo(Card that);
 
     /**
      * @return Whether the card is a [wild] or [wild +4].

@@ -313,6 +313,30 @@ class UnoImpl extends Uno {
     } // UnoImpl(Context) (Class Constructor)
 
     /**
+     * Fake C++ Macro
+     * #define MASK_I_TO_END(i) (0xffffffffU << (i))
+     */
+    private static int MASK_I_TO_END(int i) {
+        return 0xffffffff << i;
+    } // MASK_I_TO_END(int)
+
+    /**
+     * Fake C++ Macro
+     * #define MASK_BEGIN_TO_I(i) (~(0xffffffffU << (i)))
+     */
+    private static int MASK_BEGIN_TO_I(int i) {
+        return ~(0xffffffff << i);
+    } // MASK_BEGIN_TO_I(int)
+
+    /**
+     * Fake C++ Macro
+     * #define MASK_ALL(u, p) MASK_BEGIN_TO_I((u)->getPlayer(p)->getHandSize())
+     */
+    private static int MASK_ALL(Uno u, int p) {
+        return MASK_BEGIN_TO_I(u.getPlayer(p).getHandSize());
+    } // MASK_ALL(Uno, int)
+
+    /**
      * @return Card back image resource.
      */
     @Override
@@ -411,10 +435,10 @@ class UnoImpl extends Uno {
      */
     @Override
     public void putText(Mat m, String text, int x, int y, Color color) {
-        Mat font, cimg;
         int r, c, width;
         Rect roi1, roi2;
         Integer position;
+        Mat font, cimg, mask;
 
         y -= 36;
         font = color == Color.RED ? fontR
@@ -428,8 +452,9 @@ class UnoImpl extends Uno {
             width = r < 6 ? 17 : 33;
             roi1 = new Rect(width * c, 48 * r, width, 48);
             cimg = new Mat(font, roi1);
+            mask = new Mat(fontW, roi1);
             roi2 = new Rect(x, y, width, 48);
-            cimg.copyTo(new Mat(m, roi2), cimg);
+            cimg.copyTo(new Mat(m, roi2), mask);
             x += width;
         } // for (char ch : text.toCharArray())
     } // putText(Mat, String, int, int, Color)
@@ -871,21 +896,18 @@ class UnoImpl extends Uno {
                 // Draw a card from card deck, and put it to an appropriate position
                 card = deck.get(deck.size() - 1);
                 deck.remove(deck.size() - 1);
-                for (i = 0; i < hand.size(); ++i) {
-                    if (hand.get(i).id > card.id) {
-                        // Found an appropriate position to insert the new card,
-                        // which keeps the player's hand cards sequenced
-                        break;
-                    } // if (hand.get(i).id > card.id)
-                } // for (i = 0; i < hand.size(); ++i)
+                if (who == Player.YOU) {
+                    i = Collections.binarySearch(hand, card);
+                    if (i < 0) i = ~i;
+                    hand.add(i, card);
+                    player[who].open = (player[who].open << 1) | 0x01;
+                } // if (who == Player.YOU)
+                else {
+                    i = hand.size();
+                    hand.add(card);
+                } // else
 
-                hand.add(i, card);
                 player[who].recent = null;
-                player[who].open = who == Player.YOU
-                        ? MASK_ALL(this, Player.YOU)
-                        : (player[who].open & MASK_BEGIN_TO_I(i))
-                        | (player[who].open & MASK_I_TO_END(i)) << 1;
-
                 if (deck.isEmpty()) {
                     // Re-use the used cards when there are no more cards in deck
                     size = used.size();
@@ -1011,7 +1033,7 @@ class UnoImpl extends Uno {
                 } // if (card.content == DRAW2 && draw2StackRule)
 
                 player[who].open = who == Player.YOU
-                        ? MASK_ALL(this, Player.YOU)
+                        ? (player[who].open >> 1)
                         : (player[who].open & MASK_BEGIN_TO_I(index))
                         | (player[who].open & MASK_I_TO_END(index + 1)) >> 1;
                 player[who].recent = card;
@@ -1033,8 +1055,12 @@ class UnoImpl extends Uno {
                         | (0x1fffL << 13 * (lastColor().ordinal() - 1))
                         | (0x8004002001L << card.content.ordinal());
                 if (hand.size() == 0) {
-                    // Game over, change background image
+                    // Game over, change background & show everyone's hand cards
                     direction = 0;
+                    for (int i = Player.COM1; i <= Player.COM3; ++i) {
+                        player[i].sort();
+                        player[i].open = MASK_ALL(this, i);
+                    } // for (int i = Player.COM1; i <= Player.COM3; ++i)
                 } // if (hand.size() == 0)
             } // if (index < size)
         } // if (who >= Player.YOU && who <= Player.COM3)
@@ -1057,7 +1083,11 @@ class UnoImpl extends Uno {
         boolean result = false;
 
         if (whom >= Player.YOU && whom <= Player.COM3) {
-            player[whom].open = MASK_ALL(this, whom);
+            if (whom != Player.YOU) {
+                player[whom].sort();
+                player[whom].open = MASK_ALL(this, whom);
+            } // if (whom != Player.YOU)
+
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
                 for (Card card : player[whom].handCards) {
                     if (card.color == next2lastColor()) {
@@ -1090,7 +1120,10 @@ class UnoImpl extends Uno {
         Player store = player[a];
         player[a] = player[b];
         player[b] = store;
-        player[Player.YOU].open = MASK_ALL(this, Player.YOU);
+        if (a == Player.YOU || b == Player.YOU) {
+            player[Player.YOU].sort();
+            player[Player.YOU].open = MASK_ALL(this, Player.YOU);
+        } // if (a == Player.YOU || b == Player.YOU)
     } // swap(int, int)
 
     /**
@@ -1105,6 +1138,7 @@ class UnoImpl extends Uno {
         player[prev] = player[oppo];
         player[oppo] = player[next];
         player[next] = store;
+        player[Player.YOU].sort();
         player[Player.YOU].open = MASK_ALL(this, Player.YOU);
     } // cycle()
 } // UnoImpl Class

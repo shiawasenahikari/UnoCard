@@ -19,6 +19,10 @@
 #include "include/Player.h"
 #include "include/Content.h"
 
+#define MASK_I_TO_END(i) (0xffffffffU << (i))
+#define MASK_BEGIN_TO_I(i) (~(0xffffffffU << (i)))
+#define MASK_ALL(u, p) MASK_BEGIN_TO_I((u)->getPlayer(p)->getHandSize())
+
 static const QString A[] = {
     "k", "r", "b", "g", "y"
 }; // A[]
@@ -591,7 +595,6 @@ int Uno::draw(int who, bool force) {
     Card* card;
     int i, index, size;
     std::vector<Card*>* hand;
-    std::vector<Card*>::iterator it;
 
     i = -1;
     if (who >= Player::YOU && who <= Player::COM3) {
@@ -612,21 +615,18 @@ int Uno::draw(int who, bool force) {
             // Draw a card from card deck, and put it to an appropriate position
             card = deck.back();
             deck.pop_back();
-            for (i = 0, it = hand->begin(); it != hand->end(); ++i, ++it) {
-                if ((*it)->id > card->id) {
-                    // Found an appropriate position to insert the new card,
-                    // which keeps the player's hand cards sequenced
-                    break;
-                } // if ((*it)->id > card->id)
-            } // for (i = 0, it = hand->begin(); it != hand->end(); ++i, ++it)
+            if (who == Player::YOU) {
+                auto it = std::upper_bound(hand->begin(), hand->end(), card);
+                i = int(it - hand->begin());
+                hand->insert(it, card);
+                player[who].open = (player[who].open << 1) | 0x01;
+            } // if (who == Player::YOU)
+            else {
+                i = int(hand->size());
+                hand->push_back(card);
+            } // else
 
-            hand->insert(it, card);
             player[who].recent = nullptr;
-            player[who].open = who == Player::YOU
-                ? MASK_ALL(this, Player::YOU)
-                : (player[who].open & MASK_BEGIN_TO_I(i))
-                | (player[who].open & MASK_I_TO_END(i)) << 1;
-
             if (deck.empty()) {
                 // Re-use the used cards when there are no more cards in deck
                 size = int(used.size());
@@ -743,7 +743,7 @@ Card* Uno::play(int who, int index, Color color) {
             } // if (card->content == DRAW2 && draw2StackRule)
 
             player[who].open = who == Player::YOU
-                ? MASK_ALL(this, Player::YOU)
+                ? (player[who].open >> 1)
                 : (player[who].open & MASK_BEGIN_TO_I(index))
                 | (player[who].open & MASK_I_TO_END(index + 1)) >> 1;
             player[who].recent = card;
@@ -765,8 +765,12 @@ Card* Uno::play(int who, int index, Color color) {
                 | (0x1fffLL << 13 * (lastColor() - 1))
                 | (0x8004002001LL << card->content);
             if (hand->size() == 0) {
-                // Game over, change background image
+                // Game over, change background & show everyone's hand cards
                 direction = 0;
+                for (int i = Player::COM1; i <= Player::COM3; ++i) {
+                    player[i].sort();
+                    player[i].open = MASK_ALL(this, i);
+                } // for (int i = Player::COM1; i <= Player::COM3; ++i)
             } // if (hand->size() == 0)
         } // if (index < size)
     } // if (who >= Player::YOU && who <= Player::COM3)
@@ -788,7 +792,11 @@ bool Uno::challenge(int whom) {
     bool result = false;
 
     if (whom >= Player::YOU && whom <= Player::COM3) {
-        player[whom].open = MASK_ALL(this, whom);
+        if (whom != Player::YOU) {
+            player[whom].sort();
+            player[whom].open = MASK_ALL(this, whom);
+        } // if (whom != Player::YOU)
+
         for (Card* card : player[whom].handCards) {
             if (card->color == next2lastColor()) {
                 result = true;
@@ -814,7 +822,10 @@ void Uno::swap(int a, int b) {
     Player store = player[a];
     player[a] = player[b];
     player[b] = store;
-    player[Player::YOU].open = MASK_ALL(this, Player::YOU);
+    if (a == Player::YOU || b == Player::YOU) {
+        player[Player::YOU].sort();
+        player[Player::YOU].open = MASK_ALL(this, Player::YOU);
+    } // if (a == Player::YOU || b == Player::YOU)
 } // swap(int, int)
 
 /**
@@ -828,6 +839,7 @@ void Uno::cycle() {
     player[prev] = player[oppo];
     player[oppo] = player[next];
     player[next] = store;
+    player[Player::YOU].sort();
     player[Player::YOU].open = MASK_ALL(this, Player::YOU);
 } // cycle()
 

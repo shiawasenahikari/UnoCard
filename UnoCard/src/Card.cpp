@@ -41,6 +41,66 @@ Card::Card(QImage image, QImage darkImg, Color color, Content content) :
 } // Card(QImage, QImage, Color, Content) (Class Constructor)
 
 /**
+ * Override relation operator "<".
+ *
+ * @param that Provide another Card instance.
+ * @return true if this->id < that.id.
+ */
+bool Card::operator<(const Card& that) {
+    return this->id < that.id;
+} // operator<(const Card&)
+
+/**
+ * Override relation operator "<=".
+ *
+ * @param that Provide another Card instance.
+ * @return true if this->id <= that.id.
+ */
+bool Card::operator<=(const Card& that) {
+    return this->id <= that.id;
+} // operator<=(const Card&)
+
+/**
+ * Override relation operator "==".
+ *
+ * @param that Provide another Card instance.
+ * @return true if this->id == that.id.
+ */
+bool Card::operator==(const Card& that) {
+    return this->id == that.id;
+} // operator==(const Card&)
+
+/**
+ * Override relation operator ">=".
+ *
+ * @param that Provide another Card instance.
+ * @return true if this->id >= that.id.
+ */
+bool Card::operator>=(const Card& that) {
+    return this->id >= that.id;
+} // operator>=(const Card&)
+
+/**
+ * Override relation operator ">".
+ *
+ * @param that Provide another Card instance.
+ * @return true if this->id > that.id.
+ */
+bool Card::operator>(const Card& that) {
+    return this->id > that.id;
+} // operator>(const Card&)
+
+/**
+ * Override relation operator "!=".
+ *
+ * @param that Provide another Card instance.
+ * @return true if this->id != that.id.
+ */
+bool Card::operator!=(const Card& that) {
+    return this->id != that.id;
+} // operator!=(const Card&)
+
+/**
  * @return Whether the card is a [wild] or [wild +4].
  */
 bool Card::isWild() {

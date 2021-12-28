@@ -14,13 +14,25 @@ import org.opencv.core.Mat;
 /**
  * Uno Card Class.
  */
-class CardImpl extends Card {
+class CardImpl extends Card implements Comparable<Card> {
     /**
      * Constructor. Provide parameters for an Uno card and create its instance.
      */
     CardImpl(Mat image, Mat darkImg, Color color, Content content) {
         super(image, darkImg, color, content);
     } // CardImpl(Mat, Mat, Color, Content) (Class Constructor)
+
+    /**
+     * Compare the id number of two cards.
+     *
+     * @param that Provide another Card instance.
+     * @return 0 if this.id == that.id, or a positive number if
+     * this.id > that.id, or a negative number if this.id < that.id.
+     */
+    @Override
+    public int compareTo(Card that) {
+        return this.id - that.id;
+    } // compareTo(Card)
 
     /**
      * @return Whether the card is a [wild] or [wild +4].

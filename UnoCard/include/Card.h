@@ -46,6 +46,54 @@ public:
     const QString name;
 
     /**
+     * Override relation operator "<".
+     *
+     * @param that Provide another Card instance.
+     * @return true if this->id < that.id.
+     */
+    bool operator<(const Card& that);
+
+    /**
+     * Override relation operator "<=".
+     *
+     * @param that Provide another Card instance.
+     * @return true if this->id <= that.id.
+     */
+    bool operator<=(const Card& that);
+
+    /**
+     * Override relation operator "==".
+     *
+     * @param that Provide another Card instance.
+     * @return true if this->id == that.id.
+     */
+    bool operator==(const Card& that);
+
+    /**
+     * Override relation operator ">=".
+     *
+     * @param that Provide another Card instance.
+     * @return true if this->id >= that.id.
+     */
+    bool operator>=(const Card& that);
+
+    /**
+     * Override relation operator ">".
+     *
+     * @param that Provide another Card instance.
+     * @return true if this->id > that.id.
+     */
+    bool operator>(const Card& that);
+
+    /**
+     * Override relation operator "!=".
+     *
+     * @param that Provide another Card instance.
+     * @return true if this->id != that.id.
+     */
+    bool operator!=(const Card& that);
+
+    /**
      * @return Whether the card is a [wild] or [wild +4].
      */
     bool isWild();

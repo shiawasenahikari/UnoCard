@@ -39,7 +39,7 @@ namespace Ui {
 class AnimateLayer {
 public:
     QImage elem;
-    int x1, y1, x2, y2;
+    int startLeft, startTop, endLeft, endTop;
 }; // AnimateLayer Class
 
 /**
