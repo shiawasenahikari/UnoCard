@@ -16,7 +16,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/releases) page and download the
-   latest version in zip file `(UnoCard-v3.0.zip)`.
+   latest version in zip file `(UnoCard-v3.1.zip)`.
 2. Unzip the downloaded zip file, then execute `UnoCard.exe` and have fun!
 
 Download the source code and compile manually
@@ -100,7 +100,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/release) page and download the
-   latest version in apk file `(UnoCard-v3.0.apk)`.
+   latest version in apk file `(UnoCard-v3.1.apk)`.
 2. On your Android phone, open [Settings] app, go to [Security] page, then check the [Unknown
    sources] toggle.
 3. Push the downloaded file to your Android phone, then install and launch it to have fun!
@@ -116,11 +116,7 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 2. Open your Android Studio IDE (version 4.3 or higher), click [Open an existing Android Studio
    project], then select the `<proj_root>\UnoCard-android` directory. Click [OK].
 3. You may need to install missing components during the project building procedure, such as Android
-   SDK 30, and Android Build Tools 30.0.3. If you want to use your existed Android SDK which is not
-   in version 30, do the following things: a) expand `Gradle scripts` directory in left-side drawer,
-   open `build.gradle (Module: app)` file; b) Change the values of `compileSdkVersion` and
-   `buildToolsVersion` properties to your existed components' version; c) Do the same things to
-   `build.gradle (Module: opencv410)` file; d) Sync project.
+   SDK 31, and Android Build Tools 31.0.0.
 4. Enable USB debugging function on your Android phone, connect your phone to computer, then execute
    [Run]->[Run 'app'] menu command to run this application on your phone. (NOTE: You cannot run this
    app via x86 simulators, since this app does not support devices based on x86 architecture.)
@@ -221,7 +217,7 @@ Stack
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/releases) 页面下载最新版本的 zip 包
-   `(UnoCard-v3.0.zip)`.
+   `(UnoCard-v3.1.zip)`.
 2. 解压并执行 `UnoCard.exe` 开始游戏。
 
 下载源码并手动编译
@@ -300,7 +296,7 @@ qmake && make && ./UnoCard
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/release) 页面下载最新版本的 apk 包
-   `(UnoCard-v3.0.apk)`.
+   `(UnoCard-v3.1.apk)`.
 2. 打开您的 Android 设备中的 [设置] 应用，进入 [安全] 页面，勾选 [未知来源] 复选框。
 3. 将已下载的安装包传到手机中，安装并运行即可开始游戏。
 
@@ -314,11 +310,7 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
 2. 打开您的 Android Studio IDE (版本 4.3 或更高), 单击 [Open an existing Android Studio project]，
    并选择 `<proj_root>\UnoCard-android` 目录。然后单击 [OK] 按钮。
-3. 在项目生成过程中，您可能需要安装缺失的组件，诸如 Android SDK 30 以及 Android Build Tools 30.0.3。
-   如果您想使用已有的非 30 版本的 Android SDK，请执行下列操作：a) 展开左侧抽屉里的 `Gradle scripts`
-   目录并打开 `build.gradle (Module: app)` 文件；b) 更改 `compileSdkVersion` 和 `buildToolsVersion`
-   属性的值，使它们和您已有组件的版本一致；c) 在 `build.gradle (Module: opencv410)` 文件中做同样的
-   修改；d) 同步整个项目 (点击 IDE 右上角的 Sync project)。
+3. 在项目生成过程中，您可能需要安装缺失的组件，诸如 Android SDK 31 以及 Android Build Tools 31.0.0。
 4. 打开您 Android 设备中的 USB 调试功能，然后将您的 Android 设备连接到电脑，执行 [Run]->[Run 'app']
    菜单命令以便在您的 Android 设备上运行此应用。
    注意：您不能在 x86 模拟器上运行此应用。我们的应用不支持基于 x86 架构的设备。
