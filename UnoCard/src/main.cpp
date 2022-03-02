@@ -16,7 +16,6 @@
 #include <QColor>
 #include <QImage>
 #include <QTimer>
-#include <vector>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -272,7 +271,7 @@ void Main::setStatus(int status) {
             refreshScreen(i18n->info_ruleSettings());
         } // if (sAdjustOptions)
         else {
-            refreshScreen(i18n->info_welcome(), /* dirtyOnly */ false);
+            refreshScreen(i18n->info_welcome());
         } // else
         break; // case STAT_WELCOME
 
@@ -280,7 +279,7 @@ void Main::setStatus(int status) {
         // New game
         sUno->start();
         sSelectedIdx = -1;
-        refreshScreen(i18n->info_ready(), /* dirtyOnly */ false);
+        refreshScreen(i18n->info_ready());
         threadWait(2000);
         switch (sUno->getRecent().at(0)->content) {
         case DRAW2:
@@ -299,7 +298,7 @@ void Main::setStatus(int status) {
             // If starting with a [reverse], change the action
             // sequence to COUNTER CLOCKWISE.
             sUno->switchDirection();
-            refreshScreen(i18n->info_dirChanged(), /* dirtyOnly */ false);
+            refreshScreen(i18n->info_dirChanged());
             threadWait(1500);
             setStatus(sUno->getNow());
             break; // case REV
@@ -404,7 +403,7 @@ void Main::setStatus(int status) {
             refreshScreen(i18n->info_ruleSettings());
         } // if (sAdjustOptions)
         else {
-            refreshScreen(i18n->info_gameOver(sScore), /* dirtyOnly */ false);
+            refreshScreen(i18n->info_gameOver(sScore));
             if (sAuto && !sAdjustOptions) {
                 threadWait(5000);
                 if (sAuto && !sAdjustOptions && sStatus == STAT_GAME_OVER) {
@@ -423,40 +422,24 @@ void Main::setStatus(int status) {
  * Refresh the screen display. The content of global variable [sScreen]
  * will be changed after calling this function.
  *
- * @param message   Extra message to show.
- * @param dirtyOnly When background image (sUno->getBackground()) changed,
- *                  pass false to redraw all 1280x720 pixels. Otherwise,
- *                  pass true (default) to redraw only dirty regions.
+ * @param message Extra message to show.
  */
-void Main::refreshScreen(const QString& message, bool dirtyOnly) {
+void Main::refreshScreen(const QString& message) {
     QImage image;
     QString info;
-    static std::vector<QRect> dirty;
     int i, remain, status, used, width;
 
     // Lock the value of global variable [sStatus]
     status = sStatus;
 
     // Clear
-    image = sUno->getBackground();
-    if (dirtyOnly) {
-        while (!dirty.empty()) {
-            sPainter->drawImage(dirty.back(), image, dirty.back());
-            dirty.pop_back();
-        } // while (!dirty.empty())
-    } // if (dirtyOnly)
-    else {
-        dirty.clear();
-        sPainter->drawImage(0, 0, image);
-    } // else
+    sPainter->drawImage(0, 0, sUno->getBackground());
 
     // Message area
-    dirty.push_back(QRect(141, 451, 999, 48));
     width = sPainter->fontMetrics().width(message);
     sPainter->drawText(640 - width / 2, 487, message);
 
     // Right-bottom corner: <AUTO> button
-    dirty.push_back(QRect(960, 664, 300, 48));
     if (sAuto) sPainter->setPen(PEN_YELLOW);
     width = sPainter->fontMetrics().width(i18n->btn_auto());
     sPainter->drawText(1260 - width, 700, i18n->btn_auto());
@@ -465,7 +448,6 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
     // Left-bottom corner: <OPTIONS> button
     // Shows only when game is not in process
     if (status == STAT_WELCOME || status == STAT_GAME_OVER) {
-        dirty.push_back(QRect(20, 664, 300, 48));
         if (sAdjustOptions) sPainter->setPen(PEN_YELLOW);
         sPainter->drawText(20, 700, i18n->btn_settings());
         if (sAdjustOptions) sPainter->setPen(PEN_WHITE);
@@ -474,7 +456,6 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
     if (sAdjustOptions) {
         // Show special screen when configuring game options
         // BGM switch
-        dirty.push_back(QRect(60, 60, 391, 181));
         sPainter->drawText(60, 160, i18n->label_bgm());
         image = sMediaPlay->volume() > 0 ?
             sUno->findCard(RED, SKIP)->darkImg :
@@ -486,7 +467,6 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
         sPainter->drawImage(330, 60, image);
 
         // Sound effect switch
-        dirty.push_back(QRect(60, 250, 391, 181));
         sPainter->drawText(60, 350, i18n->label_snd());
         image = sSoundPool->isEnabled() ?
             sUno->findCard(RED, SKIP)->darkImg :
@@ -498,7 +478,6 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
         sPainter->drawImage(330, 250, image);
 
         // [Level] option: easy / hard
-        dirty.push_back(QRect(790, 60, 391, 181));
         sPainter->drawText(640, 160, i18n->label_level());
         if (sUno->isSevenZeroRule()) {
             image = sUno->getLevelImage(
@@ -529,7 +508,6 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
         sPainter->drawImage(970, 60, image);
 
         // [Players] option: 3 / 4
-        dirty.push_back(QRect(790, 250, 391, 181));
         sPainter->drawText(640, 350, i18n->label_players());
         image = sUno->getPlayers() == 3 ?
             sUno->findCard(GREEN, NUM3)->image :
@@ -542,7 +520,6 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
 
         // Rule settings
         // Force play switch
-        dirty.push_back(QRect(60, 504, 1220, 48));
         sPainter->drawText(60, 540, i18n->label_forcePlay());
         sPainter->setPen(sUno->isForcePlay() ? PEN_WHITE : PEN_RED);
         sPainter->drawText(790, 540, i18n->btn_keep());
@@ -551,7 +528,6 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
         sPainter->setPen(PEN_WHITE);
 
         // 7-0
-        dirty.push_back(QRect(60, 554, 1220, 48));
         sPainter->drawText(60, 590, i18n->label_7_0());
         sPainter->setPen(sUno->isSevenZeroRule() ? PEN_WHITE : PEN_RED);
         sPainter->drawText(790, 590, i18n->btn_off());
@@ -560,7 +536,6 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
         sPainter->setPen(PEN_WHITE);
 
         // +2 stack
-        dirty.push_back(QRect(60, 604, 1220, 48));
         sPainter->drawText(60, 640, i18n->label_draw2Stack());
         sPainter->setPen(sUno->isDraw2StackRule() ? PEN_WHITE : PEN_RED);
         sPainter->drawText(790, 640, i18n->btn_off());
@@ -570,13 +545,10 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
     } // if (sAdjustOptions)
     else if (status == STAT_WELCOME) {
         // For welcome screen, show the start button and your score
-        dirty.push_back(QRect(580, 270, 121, 181));
         image = sUno->getBackImage();
         sPainter->drawImage(580, 270, image);
-        dirty.push_back(QRect(140, 584, 200, 48));
         width = sPainter->fontMetrics().width(i18n->label_score());
         sPainter->drawText(340 - width, 620, i18n->label_score());
-        dirty.push_back(QRect(360, 520, 541, 181));
         if (sScore < 0) {
             image = sUno->getColoredWildImage(NONE);
         } // if (sScore < 0)
@@ -602,10 +574,8 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
         auto recent = sUno->getRecent();
         int size = int(recent.size());
         width = 45 * size + 75;
-        dirty.push_back(QRect(338, 270, 121, 181));
         image = sUno->getBackImage();
         sPainter->drawImage(338, 270, image);
-        dirty.push_back(QRect(642, 270, 301, 181));
         for (i = 0; i < size; ++i) {
             if (recent.at(i)->content == WILD) {
                 image = sUno->getColoredWildImage(recentColors.at(i));
@@ -621,14 +591,12 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
         } // for (i = 0; i < size; ++i)
 
         // Left-top corner: remain / used
-        dirty.push_back(QRect(20, 6, 600, 48));
         remain = sUno->getDeckCount();
         used = sUno->getUsedCount();
         info = i18n->label_remain_used(remain, used);
         sPainter->drawText(20, 42, info);
 
         // Left-center: Hand cards of Player West (COM1)
-        dirty.push_back(QRect(20, 0, 121, 720));
         if (status == STAT_GAME_OVER && sWinner == Player::COM1) {
             // Played all hand cards, it's winner
             sPainter->setPen(PEN_YELLOW);
@@ -655,7 +623,6 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
         } // else if (((sHideFlag >> 1) & 0x01) == 0x00)
 
         // Top-center: Hand cards of Player North (COM2)
-        dirty.push_back(QRect(141, 20, 999, 181));
         if (status == STAT_GAME_OVER && sWinner == Player::COM2) {
             // Played all hand cards, it's winner
             sPainter->setPen(PEN_YELLOW);
@@ -682,7 +649,6 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
         } // else if (((sHideFlag >> 2) & 0x01) == 0x00)
 
         // Right-center: Hand cards of Player East (COM3)
-        dirty.push_back(QRect(1140, 0, 121, 720));
         if (status == STAT_GAME_OVER && sWinner == Player::COM3) {
             // Played all hand cards, it's winner
             sPainter->setPen(PEN_YELLOW);
@@ -709,7 +675,6 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
         } // else if (((sHideFlag >> 3) & 0x01) == 0x00)
 
         // Bottom: Your hand cards
-        dirty.push_back(QRect(141, 500, 999, 201));
         if (status == STAT_GAME_OVER && sWinner == Player::YOU) {
             // Played all hand cards, it's winner
             sPainter->setPen(PEN_YELLOW);
@@ -746,8 +711,6 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
         case STAT_WILD_COLOR:
             // Need to specify the following legal color after played a
             // wild card. Draw color sectors in the center of screen
-            dirty.push_back(QRect(270, 180, 271, 271));
-
             // Draw blue sector
             sPainter->setPen(Qt::NoPen);
             sPainter->setBrush(BRUSH_BLUE);
@@ -769,8 +732,6 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
 
         case STAT_DOUBT_WILD4:
             // Ask whether you want to challenge your previous player
-            dirty.push_back(QRect(270, 180, 271, 271));
-
             // Draw YES button
             sPainter->setPen(Qt::NoPen);
             sPainter->setBrush(BRUSH_GREEN);
@@ -790,8 +751,6 @@ void Main::refreshScreen(const QString& message, bool dirtyOnly) {
 
         case STAT_SEVEN_TARGET:
             // Ask the target you want to swap hand cards with
-            dirty.push_back(QRect(270, 180, 271, 271));
-
             // Draw west sector (red)
             sPainter->setPen(Qt::NoPen);
             sPainter->setBrush(BRUSH_RED);
@@ -1022,7 +981,7 @@ void Main::play(int index, Color color) {
 
             case REV:
                 sUno->switchDirection();
-                refreshScreen(i18n->act_playRev(now), /* dirtyOnly */ false);
+                refreshScreen(i18n->act_playRev(now));
                 threadWait(1500);
                 setStatus(sUno->switchNow());
                 break; // case REV
@@ -1507,6 +1466,7 @@ void Main::mousePressEvent(QMouseEvent* event) {
 
 void Main::closeEvent(QCloseEvent*) {
     CLOSED_FLAG = 0x80000000;
+    sMediaPlay->stop();
 } // closeEvent(QCloseEvent*)
 
 /**

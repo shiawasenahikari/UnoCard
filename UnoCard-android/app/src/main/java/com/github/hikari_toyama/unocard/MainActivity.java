@@ -49,7 +49,6 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -85,7 +84,6 @@ public class MainActivity extends AppCompatActivity
     private SoundPool mSoundPool;
     private ImageView mImgScreen;
     private boolean mAIRunning;
-    private List<Rect> mDirty;
     private Handler mHandler;
     private int mSelectedIdx;
     private boolean mAuto;
@@ -147,7 +145,6 @@ public class MainActivity extends AppCompatActivity
             mMediaPlayer.setVolume(mBgmVol, mBgmVol);
             mMediaPlayer.setLooping(true);
             mAI = AI.getInstance(mUno);
-            mDirty = new ArrayList<>();
             mAdjustOptions = false;
             mWinner = Player.YOU;
             mAIRunning = false;
@@ -315,7 +312,7 @@ public class MainActivity extends AppCompatActivity
                     refreshScreen(i18n.info_ruleSettings());
                 } // if (mAdjustOptions)
                 else {
-                    refreshScreen(i18n.info_welcome(), /* dirtyOnly */ false);
+                    refreshScreen(i18n.info_welcome());
                 } // else
                 break; // case STAT_WELCOME
 
@@ -323,7 +320,7 @@ public class MainActivity extends AppCompatActivity
                 // New game
                 mUno.start();
                 mSelectedIdx = -1;
-                refreshScreen(i18n.info_ready(), /* dirtyOnly */ false);
+                refreshScreen(i18n.info_ready());
                 threadSleep(2000);
                 switch (mUno.getRecent().get(0).content) {
                     case DRAW2:
@@ -342,10 +339,7 @@ public class MainActivity extends AppCompatActivity
                         // If starting with a [reverse], change the action
                         // sequence to COUNTER CLOCKWISE.
                         mUno.switchDirection();
-                        refreshScreen(
-                                /* message   */ i18n.info_dirChanged(),
-                                /* dirtyOnly */ false
-                        ); // refreshScreen(String, boolean)
+                        refreshScreen(i18n.info_dirChanged());
                         threadSleep(1500);
                         setStatus(mUno.getNow());
                         break; // case REV
@@ -451,10 +445,7 @@ public class MainActivity extends AppCompatActivity
                     refreshScreen(i18n.info_ruleSettings());
                 } // if (mAdjustOptions)
                 else {
-                    refreshScreen(
-                            /* message   */ i18n.info_gameOver(mScore),
-                            /* dirtyOnly */ false
-                    ); // refreshScreen(String, boolean)
+                    refreshScreen(i18n.info_gameOver(mScore));
                     if (mAuto && !mAdjustOptions) {
                         threadSleep(5000);
                         if (mAuto && !mAdjustOptions
@@ -471,23 +462,12 @@ public class MainActivity extends AppCompatActivity
     } // setStatus(int)
 
     /**
-     * @see MainActivity#refreshScreen(String, boolean)
+     * Refresh the screen display.
+     *
+     * @param message Extra message to show.
      */
     @WorkerThread
     private void refreshScreen(String message) {
-        refreshScreen(message, /* dirtyOnly */ true);
-    } // refreshScreen(String)
-
-    /**
-     * Refresh the screen display.
-     *
-     * @param message   Extra message to show.
-     * @param dirtyOnly When background image (mUno.getBackground()) changed,
-     *                  pass false to redraw all 1280x720 pixels. Otherwise,
-     *                  pass true (default) to redraw only dirty regions.
-     */
-    @WorkerThread
-    private void refreshScreen(String message, boolean dirtyOnly) {
         Rect roi;
         Mat image;
         Size axes;
@@ -502,27 +482,13 @@ public class MainActivity extends AppCompatActivity
         status = mStatus;
 
         // Clear
-        image = mUno.getBackground();
-        if (dirtyOnly) {
-            size = mDirty.size();
-            while (--size >= 0) {
-                roi = mDirty.get(size);
-                new Mat(image, roi).copyTo(new Mat(mScr, roi));
-                mDirty.remove(size);
-            } // while (--size >= 0)
-        } // if (dirtyOnly)
-        else {
-            mDirty.clear();
-            image.copyTo(mScr);
-        } // else
+        mUno.getBackground().copyTo(mScr);
 
         // Message area
-        mDirty.add(new Rect(141, 451, 999, 48));
         width = mUno.getTextWidth(message);
         mUno.putText(mScr, message, 640 - width / 2, 487, null);
 
         // Right-bottom corner: <AUTO> button
-        mDirty.add(new Rect(960, 664, 300, 48));
         fontColor = mAuto ? Color.YELLOW : null;
         width = mUno.getTextWidth(i18n.btn_auto());
         mUno.putText(mScr, i18n.btn_auto(), 1260 - width, 700, fontColor);
@@ -530,7 +496,6 @@ public class MainActivity extends AppCompatActivity
         // Left-bottom corner: <OPTIONS> button
         // Shows only when game is not in process
         if (status == STAT_WELCOME || status == STAT_GAME_OVER) {
-            mDirty.add(new Rect(20, 664, 300, 48));
             fontColor = mAdjustOptions ? Color.YELLOW : null;
             mUno.putText(mScr, i18n.btn_settings(), 20, 700, fontColor);
         } // if (status == STAT_WELCOME || status == STAT_GAME_OVER)
@@ -538,7 +503,6 @@ public class MainActivity extends AppCompatActivity
         if (mAdjustOptions) {
             // Show special screen when configuring game options
             // BGM switch
-            mDirty.add(new Rect(60, 60, 391, 181));
             mUno.putText(mScr, i18n.label_bgm(), 60, 160, null);
             image = mBgmVol > 0.0f ?
                     mUno.findCard(Color.RED, Content.SKIP).darkImg :
@@ -552,7 +516,6 @@ public class MainActivity extends AppCompatActivity
             image.copyTo(new Mat(mScr, roi), image);
 
             // Sound effect switch
-            mDirty.add(new Rect(60, 250, 391, 181));
             mUno.putText(mScr, i18n.label_snd(), 60, 350, null);
             image = mSndVol > 0.0f ?
                     mUno.findCard(Color.RED, Content.SKIP).darkImg :
@@ -567,7 +530,6 @@ public class MainActivity extends AppCompatActivity
             image.copyTo(new Mat(mScr, roi), image);
 
             // [Level] option: easy / hard
-            mDirty.add(new Rect(790, 60, 391, 181));
             mUno.putText(mScr, i18n.label_level(), 640, 160, null);
             if (mUno.isSevenZeroRule()) {
                 image = mUno.getLevelImage(
@@ -601,7 +563,6 @@ public class MainActivity extends AppCompatActivity
             image.copyTo(new Mat(mScr, roi), image);
 
             // [Players] option: 3 / 4
-            mDirty.add(new Rect(790, 250, 391, 181));
             mUno.putText(mScr, i18n.label_players(), 640, 350, null);
             image = mUno.getPlayers() == 3 ?
                     mUno.findCard(Color.GREEN, Content.NUM3).image :
@@ -617,7 +578,6 @@ public class MainActivity extends AppCompatActivity
 
             // Rule settings
             // Force play switch
-            mDirty.add(new Rect(60, 504, 1220, 48));
             mUno.putText(mScr, i18n.label_forcePlay(), 60, 540, null);
             fontColor = mUno.isForcePlay() ? null : Color.RED;
             mUno.putText(mScr, i18n.btn_keep(), 790, 540, fontColor);
@@ -625,7 +585,6 @@ public class MainActivity extends AppCompatActivity
             mUno.putText(mScr, i18n.btn_play(), 970, 540, fontColor);
 
             // 7-0
-            mDirty.add(new Rect(60, 554, 1220, 48));
             mUno.putText(mScr, i18n.label_7_0(), 60, 590, null);
             fontColor = mUno.isSevenZeroRule() ? null : Color.RED;
             mUno.putText(mScr, i18n.btn_off(), 790, 590, fontColor);
@@ -633,7 +592,6 @@ public class MainActivity extends AppCompatActivity
             mUno.putText(mScr, i18n.btn_on(), 970, 590, fontColor);
 
             // +2 stack
-            mDirty.add(new Rect(60, 604, 1220, 48));
             mUno.putText(mScr, i18n.label_draw2Stack(), 60, 640, null);
             fontColor = mUno.isDraw2StackRule() ? null : Color.RED;
             mUno.putText(mScr, i18n.btn_off(), 790, 640, fontColor);
@@ -648,14 +606,11 @@ public class MainActivity extends AppCompatActivity
 
         if (status == STAT_WELCOME) {
             // For welcome screen, show the start button and your score
-            mDirty.add(new Rect(580, 270, 121, 181));
             image = mUno.getBackImage();
             roi = new Rect(580, 270, 121, 181);
             image.copyTo(new Mat(mScr, roi), image);
-            mDirty.add(new Rect(140, 584, 200, 48));
             width = mUno.getTextWidth(i18n.label_score());
             mUno.putText(mScr, i18n.label_score(), 340 - width, 620, null);
-            mDirty.add(new Rect(360, 520, 541, 181));
             if (mScore < 0) {
                 image = mUno.getColoredWildImage(Color.NONE);
             } // if (mScore < 0)
@@ -687,11 +642,9 @@ public class MainActivity extends AppCompatActivity
         } // if (status == STAT_WELCOME)
 
         // Center: card deck & recent played card
-        mDirty.add(new Rect(338, 270, 121, 181));
         image = mUno.getBackImage();
         roi = new Rect(338, 270, 121, 181);
         image.copyTo(new Mat(mScr, roi), image);
-        mDirty.add(new Rect(642, 270, 301, 181));
         recentColors = mUno.getRecentColors();
         recent = mUno.getRecent();
         size = recent.size();
@@ -714,14 +667,12 @@ public class MainActivity extends AppCompatActivity
         } // for (i = 0; i < size; ++i)
 
         // Left-top corner: remain / used
-        mDirty.add(new Rect(20, 6, 600, 48));
         remain = mUno.getDeckCount();
         used = mUno.getUsedCount();
         info = i18n.label_remain_used(remain, used);
         mUno.putText(mScr, info, 20, 42, null);
 
         // Left-center: Hand cards of Player West (COM1)
-        mDirty.add(new Rect(20, 0, 121, 720));
         if (status == STAT_GAME_OVER && mWinner == Player.COM1) {
             // Played all hand cards, it's winner
             width = mUno.getTextWidth("WIN");
@@ -747,7 +698,6 @@ public class MainActivity extends AppCompatActivity
         } // else if (((mHideFlag >> 1) & 0x01) == 0x00)
 
         // Top-center: Hand cards of Player North (COM2)
-        mDirty.add(new Rect(141, 20, 999, 181));
         if (status == STAT_GAME_OVER && mWinner == Player.COM2) {
             // Played all hand cards, it's winner
             width = mUno.getTextWidth("WIN");
@@ -773,7 +723,6 @@ public class MainActivity extends AppCompatActivity
         } // else if (((mHideFlag >> 2) & 0x01) == 0x00)
 
         // Right-center: Hand cards of Player East (COM3)
-        mDirty.add(new Rect(1140, 0, 121, 720));
         if (status == STAT_GAME_OVER && mWinner == Player.COM3) {
             // Played all hand cards, it's winner
             width = mUno.getTextWidth("WIN");
@@ -799,7 +748,6 @@ public class MainActivity extends AppCompatActivity
         } // else if (((mHideFlag >> 3) & 0x01) == 0x00)
 
         // Bottom: Your hand cards
-        mDirty.add(new Rect(141, 500, 999, 201));
         if (status == STAT_GAME_OVER && mWinner == Player.YOU) {
             // Played all hand cards, it's winner
             width = mUno.getTextWidth("WIN");
@@ -830,7 +778,6 @@ public class MainActivity extends AppCompatActivity
             case STAT_WILD_COLOR:
                 // Need to specify the following legal color after played a
                 // wild card. Draw color sectors in the center of screen
-                mDirty.add(new Rect(270, 180, 271, 271));
                 center = new Point(405, 315);
                 axes = new Size(135, 135);
 
@@ -889,7 +836,6 @@ public class MainActivity extends AppCompatActivity
 
             case STAT_DOUBT_WILD4:
                 // Ask whether you want to challenge your previous player
-                mDirty.add(new Rect(270, 180, 271, 271));
                 center = new Point(405, 315);
                 axes = new Size(135, 135);
 
@@ -938,7 +884,6 @@ public class MainActivity extends AppCompatActivity
 
             case STAT_SEVEN_TARGET:
                 // Ask the target you want to swap hand cards with
-                mDirty.add(new Rect(270, 180, 271, 271));
                 center = new Point(405, 315);
                 axes = new Size(135, 135);
 
@@ -995,7 +940,7 @@ public class MainActivity extends AppCompatActivity
         // Show screen
         Utils.matToBitmap(mScr, mBmp);
         mHandler.post(this); // -> run()
-    } // refreshScreen(String, boolean)
+    } // refreshScreen(String)
 
     /**
      * Draw [mBmp] on the screen. Called by system.
@@ -1208,10 +1153,7 @@ public class MainActivity extends AppCompatActivity
 
                     case REV:
                         mUno.switchDirection();
-                        refreshScreen(
-                                /* message   */ i18n.act_playRev(now),
-                                /* dirtyOnly */ false
-                        ); // refreshScreen(String, boolean)
+                        refreshScreen(i18n.act_playRev(now));
                         threadSleep(1500);
                         setStatus(mUno.switchNow());
                         break; // case REV
