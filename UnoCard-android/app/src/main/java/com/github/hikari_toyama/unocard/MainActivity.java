@@ -78,7 +78,6 @@ public class MainActivity extends AppCompatActivity
     private static final int STAT_NEW_GAME = 0x3333;
     private static final int STAT_WELCOME = 0x2222;
     private static final int STAT_IDLE = 0x1111;
-    private int CLOSED_FLAG = 0x00000000;
     private MediaPlayer mMediaPlayer;
     private boolean mAdjustOptions;
     private SoundPool mSoundPool;
@@ -306,7 +305,7 @@ public class MainActivity extends AppCompatActivity
      */
     @WorkerThread
     private void setStatus(int status) {
-        switch ((mStatus = (status & 0x7fffffff) | CLOSED_FLAG)) {
+        switch (mStatus = status) {
             case STAT_WELCOME:
                 if (mAdjustOptions) {
                     refreshScreen(i18n.info_ruleSettings());
@@ -458,7 +457,7 @@ public class MainActivity extends AppCompatActivity
 
             default:
                 break; // default
-        } // switch ((mStatus = (status & 0x7fffffff) | CLOSED_FLAG))
+        } // switch (mStatus = status)
     } // setStatus(int)
 
     /**
@@ -947,9 +946,7 @@ public class MainActivity extends AppCompatActivity
      */
     @Override
     public void run() {
-        if (CLOSED_FLAG == 0x00000000) {
-            mImgScreen.setImageBitmap(mBmp);
-        } // if (CLOSED_FLAG == 0x00000000)
+        mImgScreen.setImageBitmap(mBmp);
     } // run()
 
     /**
@@ -1720,7 +1717,6 @@ public class MainActivity extends AppCompatActivity
     @Override
     @UiThread
     protected void onDestroy() {
-        CLOSED_FLAG = 0x80000000;
         if (OPENCV_INIT_SUCCESS) {
             mSoundPool.release();
         } // if (OPENCV_INIT_SUCCESS)

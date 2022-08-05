@@ -92,9 +92,8 @@ protected:
     void mousePressEvent(QMouseEvent* event);
 
 public:
-    // Constructor & Destructor
+    // Constructor
     Main(int argc, char* argv[], QWidget* parent = nullptr);
-    ~Main();
 }; // Main Class
 
 #endif // __MAIN_H_494649FDFA62B3C015120BCB9BE17613__

@@ -67,9 +67,6 @@ static const char FILE_HEADER[] = {
     (char)('m' + 'a'), 0x00
 }; // FILE_HEADER[]
 
-// Set this flag to 0x80000000 when window closed
-static int CLOSED_FLAG = 0x00000000;
-
 /**
  * Triggered when application starts.
  */
@@ -265,7 +262,7 @@ void Main::threadWait(int millis) {
  * @param status New status value. Only 31 low bits are available.
  */
 void Main::setStatus(int status) {
-    switch ((sStatus = (status & 0x7fffffff) | CLOSED_FLAG)) {
+    switch (sStatus = status) {
     case STAT_WELCOME:
         if (sAdjustOptions) {
             refreshScreen(i18n->info_ruleSettings());
@@ -415,7 +412,7 @@ void Main::setStatus(int status) {
 
     default:
         break; // default
-    } // switch ((sStatus = (status & 0x7fffffff) | CLOSED_FLAG))
+    } // switch (sStatus = status)
 } // setStatus(int)
 
 /**
@@ -789,9 +786,7 @@ void Main::refreshScreen(const QString& message) {
  * Draw [sScreen] on the window. Called by system.
  */
 void Main::paintEvent(QPaintEvent*) {
-    if (CLOSED_FLAG == 0x00000000) {
-        QPainter(this).drawImage(0, 0, sScreen);
-    } // if (CLOSED_FLAG == 0x00000000)
+    QPainter(this).drawImage(0, 0, sScreen);
 } // paintEvent(QPaintEvent*)
 
 /**
@@ -1464,23 +1459,11 @@ void Main::mousePressEvent(QMouseEvent* event) {
     } // if (event->button() == Qt::LeftButton)
 } // mousePressEvent(QMouseEvent*)
 
-void Main::closeEvent(QCloseEvent*) {
-    CLOSED_FLAG = 0x80000000;
-    sMediaPlay->stop();
-} // closeEvent(QCloseEvent*)
-
 /**
  * Triggered when application finishes.
  */
-Main::~Main() {
-    int i;
+void Main::closeEvent(QCloseEvent*) {
     std::ofstream writer;
-
-    delete ui;
-    delete sPainter;
-    for (i = 3; i >= 0; --i) {
-        delete sBkPainter[i];
-    } // for (i = 3; i >= 0; --i)
 
     writer.open("UnoCard.stat", std::ios::out | std::ios::binary);
     if (!writer.fail()) {
@@ -1495,19 +1478,18 @@ Main::~Main() {
         dw[5] = sUno->isDraw2StackRule() ? 1 : 0;
         dw[6] = sSoundPool->isEnabled() ? 1 : 0;
         dw[7] = sMediaPlay->volume();
-        for (dw[8] = 0, i = 0; i < 8; ++i) {
+        dw[8] = dw[0];
+        for (int i = 1; i < 8; ++i) {
             dw[8] = 31 * dw[8] + dw[i];
-        } // for (dw[8] = 0, i = 0; i < 8; ++i)
+        } // for (int i = 1; i < 8; ++i)
 
         writer.write(FILE_HEADER, 8);
         writer.write((char*)dw, 9 * sizeof(int));
         writer.close();
     } // if (!writer.fail())
 
-    delete sMediaList;
-    delete sMediaPlay;
-    delete sSoundPool;
-} // ~Main() (Class Destructor)
+    exit(0);
+} // closeEvent(QCloseEvent*)
 
 /**
  * Defines the entry point for the console application.
