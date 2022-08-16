@@ -122,6 +122,12 @@ private:
     Player player[4];
 
     /**
+     * Access colorAnalysis[A] to get how many cards in color A are used.
+     * Access contentAnalysis[B] to get how many cards in content B are used.
+     */
+    int colorAnalysis[5], contentAnalysis[15];
+
+    /**
      * Card deck (ready to use).
      */
     std::vector<Card*> deck;
@@ -487,6 +493,12 @@ public:
      * cards to the next player.
      */
     void cycle();
+
+    /**
+     * Print the content of the colorAnalysis array and the contentAnalysis
+     * array.
+     */
+    void printAnalysisData();
 }; // Uno Class
 
 #endif // __UNO_H_494649FDFA62B3C015120BCB9BE17613__

@@ -167,6 +167,12 @@ public abstract class Uno {
     Player[] player;
 
     /**
+     * Access colorAnalysis[A] to get how many cards in color A are used.
+     * Access contentAnalysis[B] to get how many cards in content B are used.
+     */
+    int[] colorAnalysis, contentAnalysis;
+
+    /**
      * Card deck (ready to use).
      */
     List<Card> deck = new ArrayList<>();
@@ -535,6 +541,12 @@ public abstract class Uno {
      * cards to the next player.
      */
     public abstract void cycle();
+
+    /**
+     * Print the content of the colorAnalysis array and the contentAnalysis
+     * array.
+     */
+    public abstract void printAnalysisData();
 } // Uno Class
 
 // E.O.F

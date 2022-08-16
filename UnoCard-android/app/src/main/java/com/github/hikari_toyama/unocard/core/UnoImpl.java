@@ -26,6 +26,7 @@ import org.opencv.core.Rect;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +47,7 @@ class UnoImpl extends Uno {
     private static final Map<Character, Integer> CHAR_MAP = new HashMap<>();
 
     static {
-        char[] chars = new char[]{
+        char[] hanZi = new char[]{
                 '一', '上', '下', '东', '为', '乐', '人', '仍',
                 '从', '令', '以', '传', '余', '你', '保', '再',
                 '准', '出', '击', '分', '则', '到', '剩', '功',
@@ -67,10 +68,10 @@ class UnoImpl extends Uno {
             CHAR_MAP.put((char) i, (r << 4) | c);
         } // for (int i = 0x20; i <= 0x7f; ++i)
 
-        for (int i = 0; i < chars.length; ++i) {
+        for (int i = 0; i < hanZi.length; ++i) {
             int r = (i >>> 3) + 6, c = i & 0x07;
-            CHAR_MAP.put(chars[i], (r << 4) | c);
-        } // for (int i = 0; i < chars.length; ++i)
+            CHAR_MAP.put(hanZi[i], (r << 4) | c);
+        } // for (int i = 0; i < hanZi.length; ++i)
     } // static
 
     /**
@@ -304,6 +305,8 @@ class UnoImpl extends Uno {
         difficulty = LV_EASY;
         direction = draw2StackCount = 0;
         sevenZeroRule = draw2StackRule = false;
+        colorAnalysis = new int[Color.values().length];
+        contentAnalysis = new int[Content.values().length];
         player = new Player[]{
                 new PlayerImpl(), // YOU
                 new PlayerImpl(), // COM1
@@ -769,6 +772,10 @@ class UnoImpl extends Uno {
         // In +2 stack rule, reset the stack counter
         draw2StackCount = 0;
 
+        // Clear the analysis data
+        Arrays.fill(colorAnalysis, 0);
+        Arrays.fill(contentAnalysis, 0);
+
         // Clear card deck, used card deck, recent played cards,
         // everyone's hand cards, and everyone's strong/weak colors
         deck.clear();
@@ -823,6 +830,8 @@ class UnoImpl extends Uno {
                 // Any non-wild card can be start card
                 // Start card determined
                 recent.add(card);
+                ++colorAnalysis[card.color.ordinal()];
+                ++contentAnalysis[card.content.ordinal()];
                 recentColors.add(card.color);
             } // else
         } while (recent.isEmpty());
@@ -854,6 +863,9 @@ class UnoImpl extends Uno {
         if (players == 3 && now == Player.COM2) {
             now = (3 + Uno.RNG.nextInt(3)) % 4;
         } // if (players == 3 && now == Player.COM2)
+
+        // Write log
+        Log.i(TAG, "Game starts with " + card.name);
     } // start()
 
     /**
@@ -894,6 +906,7 @@ class UnoImpl extends Uno {
             hand = player[who].handCards;
             if (hand.size() < MAX_HOLD_CARDS) {
                 // Draw a card from card deck, and put it to an appropriate position
+                Log.i(TAG, "Player " + who + " draw a card");
                 card = deck.get(deck.size() - 1);
                 deck.remove(deck.size() - 1);
                 if (who == Player.YOU) {
@@ -910,9 +923,12 @@ class UnoImpl extends Uno {
                 player[who].recent = null;
                 if (deck.isEmpty()) {
                     // Re-use the used cards when there are no more cards in deck
+                    Log.i(TAG, "Re-use the used cards");
                     size = used.size();
                     while (size > 0) {
                         index = Uno.RNG.nextInt(size--);
+                        --contentAnalysis[used.get(index).content.ordinal()];
+                        --colorAnalysis[used.get(index).color.ordinal()];
                         deck.add(used.get(index));
                         used.remove(index);
                     } // while (size > 0)
@@ -1004,6 +1020,7 @@ class UnoImpl extends Uno {
             size = hand.size();
             if (index < size) {
                 card = hand.get(index);
+                Log.i(TAG, "Player " + who + " played " + card.name);
                 hand.remove(index);
                 if (card.isWild()) {
                     // When a wild card is played, register the specified
@@ -1023,10 +1040,10 @@ class UnoImpl extends Uno {
                         player[who].strongColor = NONE;
                     } // if (player[who].strongCount == 0)
                 } // else if (card.color == player[who].strongColor)
-                else if (player[who].strongCount > size - 1) {
+                else if (player[who].strongCount >= size) {
                     // Correct the value of strong counter when necessary
                     player[who].strongCount = size - 1;
-                } // else if (player[who].strongCount > size - 1)
+                } // else if (player[who].strongCount >= size)
 
                 if (card.content == DRAW2 && draw2StackRule) {
                     draw2StackCount += 2;
@@ -1038,6 +1055,9 @@ class UnoImpl extends Uno {
                         | (player[who].open & MASK_I_TO_END(index + 1)) >> 1;
                 player[who].recent = card;
                 recent.add(card);
+                ++colorAnalysis[card.color.ordinal()];
+                ++contentAnalysis[card.content.ordinal()];
+                printAnalysisData();
                 recentColors.add(card.isWild() ? color : card.color);
                 if (recent.size() > 5) {
                     used.add(recent.get(0));
@@ -1061,6 +1081,8 @@ class UnoImpl extends Uno {
                         player[i].sort();
                         player[i].open = MASK_ALL(this, i);
                     } // for (int i = Player.COM1; i <= Player.COM3; ++i)
+
+                    Log.i(TAG, "======= WINNER IS PLAYER " + who + " =======");
                 } // if (hand.size() == 0)
             } // if (index < size)
         } // if (who >= Player.YOU && who <= Player.COM3)
@@ -1102,6 +1124,7 @@ class UnoImpl extends Uno {
             } // else
         } // if (whom >= Player.YOU && whom <= Player.COM3)
 
+        Log.i(TAG, "Player " + whom + " is challenged. Result = " + result);
         return result;
     } // challenge(int)
 
@@ -1124,6 +1147,8 @@ class UnoImpl extends Uno {
             player[Player.YOU].sort();
             player[Player.YOU].open = MASK_ALL(this, Player.YOU);
         } // if (a == Player.YOU || b == Player.YOU)
+
+        Log.i(TAG, "Player " + a + " swapped hand cards with Player " + b);
     } // swap(int, int)
 
     /**
@@ -1140,7 +1165,18 @@ class UnoImpl extends Uno {
         player[next] = store;
         player[Player.YOU].sort();
         player[Player.YOU].open = MASK_ALL(this, Player.YOU);
+        Log.i(TAG, "Everyone passed hand cards to the next player");
     } // cycle()
+
+    /**
+     * Print the content of the colorAnalysis array and the contentAnalysis
+     * array.
+     */
+    @Override
+    public void printAnalysisData() {
+        Log.i(TAG, "colorAnalysis = " + Arrays.toString(colorAnalysis));
+        Log.i(TAG, "contentAnalysis = " + Arrays.toString(contentAnalysis));
+    } // printAnalysisData()
 } // UnoImpl Class
 
 // E.O.F

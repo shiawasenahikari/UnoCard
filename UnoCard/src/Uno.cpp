@@ -8,11 +8,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <ctime>
+#include <QDebug>
 #include <QImage>
 #include <vector>
 #include <cstdlib>
 #include <QString>
-#include <iostream>
 #include "include/Uno.h"
 #include "include/Card.h"
 #include "include/Color.h"
@@ -46,7 +46,7 @@ Uno::Uno(unsigned seed) {
     // Preparations
     done = 0;
     total = 124;
-    std::cout << "Loading... (0%)" << std::endl;
+    qDebug("Loading... (0%)");
 
     // Load background image resources
     if (bgWelcome.load("resource/bg_welcome.png") &&
@@ -56,10 +56,10 @@ Uno::Uno(unsigned seed) {
         bgClockwise.load("resource/bg_clockwise.png") &&
         bgClockwise.width() == 1280 && bgClockwise.height() == 720) {
         done += 3;
-        std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
+        qDebug("Loading... (%d%%)", 100 * done / total);
     } // if (bgWelcome.load("resource/bg_welcome.png") && ...)
     else {
-        std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
+        qDebug(BROKEN_IMAGE_RESOURCES_EXCEPTION);
         exit(1);
     } // else
 
@@ -67,10 +67,10 @@ Uno::Uno(unsigned seed) {
     if (backImage.load("resource/back.png") &&
         backImage.width() == 121 && backImage.height() == 181) {
         ++done;
-        std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
+        qDebug("Loading... (%d%%)", 100 * done / total);
     } // if (backImage.load("resource/back.png") && ...)
     else {
-        std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
+        qDebug(BROKEN_IMAGE_RESOURCES_EXCEPTION);
         exit(1);
     } // else
 
@@ -84,10 +84,10 @@ Uno::Uno(unsigned seed) {
         hardImage_d.load("resource/lv_hard_dark.png") &&
         hardImage_d.width() == 121 && hardImage_d.height() == 181) {
         done += 4;
-        std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
+        qDebug("Loading... (%d%%)", 100 * done / total);
     } // if (easyImage.load("resource/lv_easy.png") && ...)
     else {
-        std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
+        qDebug(BROKEN_IMAGE_RESOURCES_EXCEPTION);
         exit(1);
     } // else
 
@@ -101,10 +101,10 @@ Uno::Uno(unsigned seed) {
             dk.width() == 121 && dk.height() == 181) {
             done += 2;
             table.push_back(Card(br, dk, a, b));
-            std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
+            qDebug("Loading... (%d%%)", 100 * done / total);
         } // if (br.load("resource/front_" + A[a] + B[b] + ".png") && ...)
         else {
-            std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
+            qDebug(BROKEN_IMAGE_RESOURCES_EXCEPTION);
             exit(1);
         } // else
     } // for (i = 0; i < 54; ++i)
@@ -120,10 +120,10 @@ Uno::Uno(unsigned seed) {
             done += 2;
             wildImage[i] = br;
             wildDraw4Image[i] = dk;
-            std::cout << "Loading... (" << 100 * done / total << "%)" << std::endl;
+            qDebug("Loading... (%d%%)", 100 * done / total);
         } // if (br.load("resource/front_" + A[i] + B[WILD] + ".png" && ...)
         else {
-            std::cout << BROKEN_IMAGE_RESOURCES_EXCEPTION << std::endl;
+            qDebug(BROKEN_IMAGE_RESOURCES_EXCEPTION);
             exit(1);
         } // else
     } // for (i = 1; i < 5; ++i)
@@ -133,7 +133,7 @@ Uno::Uno(unsigned seed) {
         seed = unsigned(time(nullptr));
     } // if (seed == 0U)
 
-    std::cout << "Random seed is " << seed << std::endl;
+    qDebug("Random seed is %d", seed);
     srand(seed);
 
     // Initialize other members
@@ -491,6 +491,10 @@ void Uno::start() {
     // In +2 stack rule, reset the stack counter
     draw2StackCount = 0;
 
+    // Clear the analysis data
+    memset(colorAnalysis, 0, 5 * sizeof(int));
+    memset(contentAnalysis, 0, 15 * sizeof(int));
+
     // Clear card deck, used card deck, recent played cards,
     // everyone's hand cards, and everyone's strong/weak colors
     deck.clear();
@@ -543,6 +547,8 @@ void Uno::start() {
             // Any non-wild card can be start card
             // Start card determined
             recent.push_back(card);
+            ++colorAnalysis[card->color];
+            ++contentAnalysis[card->content];
             recentColors.push_back(card->color);
         } // else
     } while (recent.empty());
@@ -574,6 +580,9 @@ void Uno::start() {
     if (players == 3 && now == Player::COM2) {
         now = (3 + rand() % 3) % 4;
     } // if (players == 3 && now == Player::COM2)
+
+    // Write log
+    qDebug("Game starts with %s", qPrintable(card->name));
 } // start()
 
 /**
@@ -613,6 +622,7 @@ int Uno::draw(int who, bool force) {
         hand = &(player[who].handCards);
         if (hand->size() < MAX_HOLD_CARDS) {
             // Draw a card from card deck, and put it to an appropriate position
+            qDebug("Player %d draw a card", who);
             card = deck.back();
             deck.pop_back();
             if (who == Player::YOU) {
@@ -629,10 +639,13 @@ int Uno::draw(int who, bool force) {
             player[who].recent = nullptr;
             if (deck.empty()) {
                 // Re-use the used cards when there are no more cards in deck
+                qDebug("Re-use the used cards");
                 size = int(used.size());
                 while (size > 0) {
                     index = rand() % size--;
                     deck.push_back(used.at(index));
+                    --colorAnalysis[used.at(index)->color];
+                    --contentAnalysis[used.at(index)->content];
                     used.erase(used.begin() + index);
                 } // while (size > 0)
             } // if (deck.empty())
@@ -714,6 +727,7 @@ Card* Uno::play(int who, int index, Color color) {
         size = int(hand->size());
         if (index < size) {
             card = hand->at(index);
+            qDebug("Player %d played %s", who, qPrintable(card->name));
             hand->erase(hand->begin() + index);
             if (card->isWild()) {
                 // When a wild card is played, register the specified
@@ -733,10 +747,10 @@ Card* Uno::play(int who, int index, Color color) {
                     player[who].strongColor = NONE;
                 } // if (player[who].strongCount == 0)
             } // else if (card->color == player[who].strongColor)
-            else if (player[who].strongCount > size - 1) {
+            else if (player[who].strongCount >= size) {
                 // Correct the value of strong counter when necessary
                 player[who].strongCount = size - 1;
-            } // else if (player[who].strongCount > size - 1)
+            } // else if (player[who].strongCount >= size)
 
             if (card->content == DRAW2 && draw2StackRule) {
                 draw2StackCount += 2;
@@ -748,6 +762,9 @@ Card* Uno::play(int who, int index, Color color) {
                 | (player[who].open & MASK_I_TO_END(index + 1)) >> 1;
             player[who].recent = card;
             recent.push_back(card);
+            ++colorAnalysis[card->color];
+            ++contentAnalysis[card->content];
+            printAnalysisData();
             recentColors.push_back(card->isWild() ? color : card->color);
             if (recent.size() > 5) {
                 used.push_back(recent.front());
@@ -771,6 +788,8 @@ Card* Uno::play(int who, int index, Color color) {
                     player[i].sort();
                     player[i].open = MASK_ALL(this, i);
                 } // for (int i = Player::COM1; i <= Player::COM3; ++i)
+
+                qDebug("======= WINNER IS PLAYER %d =======", who);
             } // if (hand->size() == 0)
         } // if (index < size)
     } // if (who >= Player::YOU && who <= Player::COM3)
@@ -805,6 +824,7 @@ bool Uno::challenge(int whom) {
         } // for (Card* card : player[whom].handCards)
     } // if (whom >= Player::YOU && whom <= Player::COM3)
 
+    qDebug("Player %d is challenged. Result = %d", whom, result);
     return result;
 } // challenge(int)
 
@@ -826,6 +846,8 @@ void Uno::swap(int a, int b) {
         player[Player::YOU].sort();
         player[Player::YOU].open = MASK_ALL(this, Player::YOU);
     } // if (a == Player::YOU || b == Player::YOU)
+
+    qDebug("Player %d swapped hand cards with Player %d", a, b);
 } // swap(int, int)
 
 /**
@@ -841,6 +863,28 @@ void Uno::cycle() {
     player[next] = store;
     player[Player::YOU].sort();
     player[Player::YOU].open = MASK_ALL(this, Player::YOU);
+    qDebug("Everyone passed hand cards to the next player");
 } // cycle()
+
+/**
+ * Print the content of the colorAnalysis array and the contentAnalysis
+ * array.
+ */
+void Uno::printAnalysisData() {
+    int i;
+    QString s(QString::number(colorAnalysis[0]));
+    QString t(QString::number(contentAnalysis[0]));
+
+    for (i = 1; i < 5; ++i) {
+        s = s + ", " + QString::number(colorAnalysis[i]);
+    } // for (i = 1; i < 5; ++i)
+
+    for (i = 1; i < 15; ++i) {
+        t = t + ", " + QString::number(contentAnalysis[i]);
+    } // for (i = 1; i < 15; ++i)
+
+    qDebug("colorAnalysis = [%s]", qPrintable(s));
+    qDebug("contentAnalysis = [%s]", qPrintable(t));
+} // printAnalysisData()
 
 // E.O.F
