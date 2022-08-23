@@ -478,6 +478,26 @@ Color Uno::next2lastColor() {
 } // next2lastColor()
 
 /**
+ * Access colorAnalysis[A] to get how many cards in color A are used.
+ *
+ * @param A Provide the parameter A.
+ * @return Value of colorAnalysis[A].
+ */
+int Uno::getColorAnalysis(Color A) {
+    return colorAnalysis[A];
+} // getColorAnalysis(Color)
+
+/**
+ * Access contentAnalysis[B] to get how many cards in content B are used.
+ *
+ * @param B Provide the parameter B.
+ * @return Value of contentAnalysis[B].
+ */
+int Uno::getContentAnalysis(Content B) {
+    return contentAnalysis[B];
+} // getContentAnalysis(Content)
+
+/**
  * Start a new Uno game. Shuffle cards, let everyone draw 7 cards,
  * then determine our start card.
  */

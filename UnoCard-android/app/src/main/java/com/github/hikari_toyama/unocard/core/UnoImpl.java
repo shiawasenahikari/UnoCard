@@ -28,9 +28,9 @@ import org.opencv.imgproc.Imgproc;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Uno Runtime Class (Singleton).
@@ -44,7 +44,7 @@ class UnoImpl extends Uno {
     /**
      * Our custom font's character-to-position map.
      */
-    private static final Map<Character, Integer> CHAR_MAP = new HashMap<>();
+    private static final Map<Character, Integer> CHAR_MAP = new TreeMap<>();
 
     static {
         char[] hanZi = new char[]{
@@ -756,6 +756,28 @@ class UnoImpl extends Uno {
     public Color next2lastColor() {
         return recentColors.get(recentColors.size() - 2);
     } // next2lastColor()
+
+    /**
+     * Access colorAnalysis[A] to get how many cards in color A are used.
+     *
+     * @param A Provide the parameter A.
+     * @return Value of colorAnalysis[A].
+     */
+    @Override
+    public int getColorAnalysis(Color A) {
+        return colorAnalysis[A.ordinal()];
+    } // getColorAnalysis(Color)
+
+    /**
+     * Access contentAnalysis[B] to get how many cards in content B are used.
+     *
+     * @param B Provide the parameter B.
+     * @return Value of contentAnalysis[B].
+     */
+    @Override
+    public int getContentAnalysis(Content B) {
+        return contentAnalysis[B.ordinal()];
+    } // getContentAnalysis(Content)
 
     /**
      * Start a new Uno game. Shuffle cards, let everyone draw 7 cards,

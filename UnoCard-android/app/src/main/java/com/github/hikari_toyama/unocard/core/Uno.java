@@ -456,6 +456,22 @@ public abstract class Uno {
     public abstract Color next2lastColor();
 
     /**
+     * Access colorAnalysis[A] to get how many cards in color A are used.
+     *
+     * @param A Provide the parameter A.
+     * @return Value of colorAnalysis[A].
+     */
+    public abstract int getColorAnalysis(Color A);
+
+    /**
+     * Access contentAnalysis[B] to get how many cards in content B are used.
+     *
+     * @param B Provide the parameter B.
+     * @return Value of contentAnalysis[B].
+     */
+    public abstract int getContentAnalysis(Content B);
+
+    /**
      * Start a new Uno game. Shuffle cards, let everyone draw 7 cards,
      * then determine our start card.
      */
