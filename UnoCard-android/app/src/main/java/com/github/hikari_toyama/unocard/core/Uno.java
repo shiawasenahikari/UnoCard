@@ -53,11 +53,6 @@ public abstract class Uno {
     public static final Random RNG = new Random();
 
     /**
-     * Singleton.
-     */
-    private static volatile Uno INSTANCE;
-
-    /**
      * Card map. table[i] stores the card instance of id number i.
      */
     Card[] table;
@@ -199,20 +194,13 @@ public abstract class Uno {
      *                resources stored in this application.
      * @return Reference of our singleton.
      */
-    public static synchronized Uno getInstance(Context context) {
-        if (INSTANCE == null) {
-            try {
-                INSTANCE = new UnoImpl(context);
-            } // try
-            catch (IOException e) {
-                // Thrown if failed to load image resources, but won't happen
-                // here, because our image resources are not in the external
-                // storage, but packed in the application package
-                throw new AssertionError(e);
-            } // catch (IOException e)
-        } // if (INSTANCE == null)
-
-        return INSTANCE;
+    public static Uno getInstance(Context context) {
+        try {
+            return new UnoImpl(context);
+        } // try
+        catch (IOException e) {
+            throw new AssertionError(e);
+        } // catch (IOException e)
     } // getInstance(Context)
 
     /**
@@ -557,12 +545,6 @@ public abstract class Uno {
      * cards to the next player.
      */
     public abstract void cycle();
-
-    /**
-     * Print the content of the colorAnalysis array and the contentAnalysis
-     * array.
-     */
-    public abstract void printAnalysisData();
 } // Uno Class
 
 // E.O.F

@@ -509,12 +509,6 @@ public:
      * cards to the next player.
      */
     void cycle();
-
-    /**
-     * Print the content of the colorAnalysis array and the contentAnalysis
-     * array.
-     */
-    void printAnalysisData();
 }; // Uno Class
 
 #endif // __UNO_H_494649FDFA62B3C015120BCB9BE17613__

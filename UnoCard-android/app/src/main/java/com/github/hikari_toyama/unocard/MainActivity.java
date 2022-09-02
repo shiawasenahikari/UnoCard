@@ -267,7 +267,7 @@ public class MainActivity extends AppCompatActivity
     } // hardAI()
 
     /**
-     * AI Strategies (Difficulty: EASY).
+     * Special AI strategies in 7-0 rule.
      */
     @WorkerThread
     private void sevenZeroAI() {
@@ -301,7 +301,7 @@ public class MainActivity extends AppCompatActivity
      * Change the value of global variable [mStatus]
      * and do the following operations when necessary.
      *
-     * @param status New status value. Only 31 low bits are available.
+     * @param status New status value.
      */
     @WorkerThread
     private void setStatus(int status) {
@@ -757,14 +757,16 @@ public class MainActivity extends AppCompatActivity
             List<Card> hand = mUno.getPlayer(Player.YOU).getHandCards();
             size = hand.size();
             roi.x = 610 - 30 * size;
-            for (Card card : hand) {
+            for (i = 0; i < size; ++i) {
+                Card card = hand.get(i);
                 image = status == STAT_GAME_OVER
-                        || (status == Player.YOU && mUno.isLegalToPlay(card))
+                        || (status == Player.YOU
+                        && mUno.isLegalToPlay(card))
                         ? card.image : card.darkImg;
                 roi.y = i == mSelectedIdx ? 500 : 520;
                 image.copyTo(new Mat(mScr, roi), image);
                 roi.x += 60;
-            } // for (Card card : hand)
+            } // for (i = 0; i < size; ++i)
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
@@ -1659,7 +1661,7 @@ public class MainActivity extends AppCompatActivity
         }).start();
 
         return true;
-    } // onTouch()
+    } // onTouch(View, MotionEvent)
 
     /**
      * Triggered when user pressed a system key.
@@ -1681,7 +1683,7 @@ public class MainActivity extends AppCompatActivity
             // Follow the super method's steps if another key is pressed
             return super.onKeyDown(keyCode, event);
         } // else
-    } // onKeyDown()
+    } // onKeyDown(int, KeyEvent)
 
     /**
      * Triggered when activity loses focus.
@@ -1745,7 +1747,7 @@ public class MainActivity extends AppCompatActivity
                     .setIcon(android.R.drawable.ic_dialog_info)
                     .setPositiveButton(android.R.string.ok, this)
                     .create();
-        } // onCreateDialog()
+        } // onCreateDialog(Bundle)
 
         /**
          * Implementation method of interface DialogInterface.OnClickListener.
@@ -1759,7 +1761,7 @@ public class MainActivity extends AppCompatActivity
         public void onClick(DialogInterface dialog, int which) {
             dismiss();
             requireActivity().finish();
-        } // onClick()
+        } // onClick(DialogInterface, int)
     } // UnsupportedDeviceDialog Inner Class
 
     /**
@@ -1782,7 +1784,7 @@ public class MainActivity extends AppCompatActivity
                     .setPositiveButton(android.R.string.ok, this)
                     .setNegativeButton(android.R.string.cancel, this)
                     .create();
-        } // onCreateDialog()
+        } // onCreateDialog(Bundle)
 
         /**
          * Implementation method of interface DialogInterface.OnClickListener.
@@ -1799,7 +1801,7 @@ public class MainActivity extends AppCompatActivity
                 // [OK] Button
                 requireActivity().finish();
             } // if (which == DialogInterface.BUTTON_POSITIVE)
-        } // onClick()
+        } // onClick(DialogInterface, int)
     } // ExitDialog Inner Class
 } // MainActivity Class
 

@@ -259,7 +259,7 @@ void Main::threadWait(int millis) {
  * Change the value of global variable [sStatus]
  * and do the following operations when necessary.
  *
- * @param status New status value. Only 31 low bits are available.
+ * @param status New status value.
  */
 void Main::setStatus(int status) {
     switch (sStatus = status) {
@@ -686,7 +686,8 @@ void Main::refreshScreen(const QString& message) {
             for (i = 0; i < size; ++i) {
                 Card* card = hand.at(i);
                 image = status == STAT_GAME_OVER
-                    || (status == Player::YOU && sUno->isLegalToPlay(card))
+                    || (status == Player::YOU
+                        && sUno->isLegalToPlay(card))
                     ? card->image : card->darkImg;
                 sPainter->drawImage(
                     /* x     */ (1205 - 45 * size + 90 * i) / 2,
@@ -1468,20 +1469,21 @@ void Main::closeEvent(QCloseEvent*) {
     writer.open("UnoCard.stat", std::ios::out | std::ios::binary);
     if (!writer.fail()) {
         // Store statistics data to file
-        int dw[9];
+        int dw[] = {
+            /* dw[0] = your score         */ sScore,
+            /* dw[1] = players (3/4)      */ sUno->getPlayers(),
+            /* dw[2] = difficulty (ez/hd) */ sUno->getDifficulty(),
+            /* dw[3] = force play switch  */ sUno->isForcePlay() ? 1 : 0,
+            /* dw[4] = seven zero switch  */ sUno->isSevenZeroRule() ? 1 : 0,
+            /* dw[5] = +2 stack switch    */ sUno->isDraw2StackRule() ? 1 : 0,
+            /* dw[6] = snd switch         */ sSoundPool->isEnabled() ? 1 : 0,
+            /* dw[7] = bgm switch         */ sMediaPlay->volume(),
+            /* dw[8] = hash check         */ 0
+        }; // dw[]
 
-        dw[0] = sScore;
-        dw[1] = sUno->getPlayers();
-        dw[2] = sUno->getDifficulty();
-        dw[3] = sUno->isForcePlay() ? 1 : 0;
-        dw[4] = sUno->isSevenZeroRule() ? 1 : 0;
-        dw[5] = sUno->isDraw2StackRule() ? 1 : 0;
-        dw[6] = sSoundPool->isEnabled() ? 1 : 0;
-        dw[7] = sMediaPlay->volume();
-        dw[8] = dw[0];
-        for (int i = 1; i < 8; ++i) {
+        for (int i = 0; i < 8; ++i) {
             dw[8] = 31 * dw[8] + dw[i];
-        } // for (int i = 1; i < 8; ++i)
+        } // for (int i = 0; i < 8; ++i)
 
         writer.write(FILE_HEADER, 8);
         writer.write((char*)dw, 9 * sizeof(int));

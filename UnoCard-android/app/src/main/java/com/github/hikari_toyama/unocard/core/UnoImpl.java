@@ -859,26 +859,12 @@ class UnoImpl extends Uno {
         } while (recent.isEmpty());
 
         // Let everyone draw 7 cards
-        if (players == 3) {
-            for (i = 0; i < 7; ++i) {
-                draw(Player.YOU,  /* force */ true);
-                draw(Player.COM1, /* force */ true);
-                draw(Player.COM3, /* force */ true);
-            } // for (i = 0; i < 7; ++i)
-        } // if (players == 3)
-        else {
-            for (i = 0; i < 7; ++i) {
-                draw(Player.YOU,  /* force */ true);
-                draw(Player.COM1, /* force */ true);
-                draw(Player.COM2, /* force */ true);
-                draw(Player.COM3, /* force */ true);
-            } // for (i = 0; i < 7; ++i)
-        } // else
-
-        // Update the legality binary
-        legality = 0x30000000000000L
-                | (0x1fffL << 13 * (card.color.ordinal() - 1))
-                | (0x8004002001L << card.content.ordinal());
+        for (i = 0; i < 7; ++i) {
+            draw(Player.YOU,  /* force */ true);
+            draw(Player.COM1, /* force */ true);
+            if (players == 4) draw(Player.COM2, /* force */ true);
+            draw(Player.COM3, /* force */ true);
+        } // for (i = 0; i < 7; ++i)
 
         // In the case of (last winner = NORTH) & (game mode = 3 player mode)
         // Re-specify the dealer randomly
@@ -1079,8 +1065,10 @@ class UnoImpl extends Uno {
                 recent.add(card);
                 ++colorAnalysis[card.color.ordinal()];
                 ++contentAnalysis[card.content.ordinal()];
-                printAnalysisData();
                 recentColors.add(card.isWild() ? color : card.color);
+                Log.i(TAG, "colorAnalysis & contentAnalysis:");
+                Log.i(TAG, Arrays.toString(colorAnalysis));
+                Log.i(TAG, Arrays.toString(contentAnalysis));
                 if (recent.size() > 5) {
                     used.add(recent.get(0));
                     recent.remove(0);
@@ -1189,16 +1177,6 @@ class UnoImpl extends Uno {
         player[Player.YOU].open = MASK_ALL(this, Player.YOU);
         Log.i(TAG, "Everyone passed hand cards to the next player");
     } // cycle()
-
-    /**
-     * Print the content of the colorAnalysis array and the contentAnalysis
-     * array.
-     */
-    @Override
-    public void printAnalysisData() {
-        Log.i(TAG, "colorAnalysis = " + Arrays.toString(colorAnalysis));
-        Log.i(TAG, "contentAnalysis = " + Arrays.toString(contentAnalysis));
-    } // printAnalysisData()
 } // UnoImpl Class
 
 // E.O.F

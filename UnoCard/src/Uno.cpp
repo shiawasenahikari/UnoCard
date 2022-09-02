@@ -19,10 +19,6 @@
 #include "include/Player.h"
 #include "include/Content.h"
 
-#define MASK_I_TO_END(i) (0xffffffffU << (i))
-#define MASK_BEGIN_TO_I(i) (~(0xffffffffU << (i)))
-#define MASK_ALL(u, p) MASK_BEGIN_TO_I((u)->getPlayer(p)->getHandSize())
-
 static const QString A[] = {
     "k", "r", "b", "g", "y"
 }; // A[]
@@ -35,6 +31,43 @@ static const QString B[] = {
 
 static const char* BROKEN_IMAGE_RESOURCES_EXCEPTION =
 "One or more image resources are broken. Re-install this application.";
+
+/**
+ * Fake C++ Macro
+ * #define MASK_I_TO_END(i) (0xffffffffU << (i))
+ */
+inline static unsigned MASK_I_TO_END(int i) {
+    return 0xffffffffU << i;
+} // MASK_I_TO_END(int)
+
+/**
+ * Fake C++ Macro
+ * #define MASK_BEGIN_TO_I(i) (~(0xffffffffU << (i)))
+ */
+inline static unsigned MASK_BEGIN_TO_I(int i) {
+    return ~(0xffffffffU << i);
+} // MASK_BEGIN_TO_I(int)
+
+/**
+ * Fake C++ Macro
+ * #define MASK_ALL(u, p) MASK_BEGIN_TO_I((u)->getPlayer(p)->getHandSize())
+ */
+inline static unsigned MASK_ALL(Uno* u, int p) {
+    return MASK_BEGIN_TO_I(u->getPlayer(p)->getHandSize());
+} // MASK_ALL(Uno*, int)
+
+/**
+ * Convert int[] array to string.
+ */
+inline static QString array2string(int arr[], int size) {
+    QString s(size > 0 ? QString::number(arr[0]) : "");
+
+    for (int i = 1; i < size; ++i) {
+        s = s + ", " + QString::number(arr[i]);
+    } // for (int i = 1; i < size; ++i)
+
+    return "[" + s + "]";
+} // array2string(int[], int)
 
 /**
  * Singleton, hide default constructor.
@@ -574,26 +607,12 @@ void Uno::start() {
     } while (recent.empty());
 
     // Let everyone draw 7 cards
-    if (players == 3) {
-        for (i = 0; i < 7; ++i) {
-            draw(Player::YOU,  /* force */ true);
-            draw(Player::COM1, /* force */ true);
-            draw(Player::COM3, /* force */ true);
-        } // for (i = 0; i < 7; ++i)
-    } // if (players == 3)
-    else {
-        for (i = 0; i < 7; ++i) {
-            draw(Player::YOU,  /* force */ true);
-            draw(Player::COM1, /* force */ true);
-            draw(Player::COM2, /* force */ true);
-            draw(Player::COM3, /* force */ true);
-        } // for (i = 0; i < 7; ++i)
-    } // else
-
-    // Update the legality binary
-    legality = 0x30000000000000LL
-        | (0x1fffLL << 13 * (card->color - 1))
-        | (0x8004002001LL << card->content);
+    for (i = 0; i < 7; ++i) {
+        draw(Player::YOU,  /* force */ true);
+        draw(Player::COM1, /* force */ true);
+        if (players == 4) draw(Player::COM2, /* force */ true);
+        draw(Player::COM3, /* force */ true);
+    } // for (i = 0; i < 7; ++i)
 
     // In the case of (last winner = NORTH) & (game mode = 3 player mode)
     // Re-specify the dealer randomly
@@ -784,8 +803,10 @@ Card* Uno::play(int who, int index, Color color) {
             recent.push_back(card);
             ++colorAnalysis[card->color];
             ++contentAnalysis[card->content];
-            printAnalysisData();
             recentColors.push_back(card->isWild() ? color : card->color);
+            qDebug("colorAnalysis & contentAnalysis:");
+            qDebug(qPrintable(array2string(colorAnalysis, 5)));
+            qDebug(qPrintable(array2string(contentAnalysis, 15)));
             if (recent.size() > 5) {
                 used.push_back(recent.front());
                 recent.erase(recent.begin());
@@ -885,26 +906,5 @@ void Uno::cycle() {
     player[Player::YOU].open = MASK_ALL(this, Player::YOU);
     qDebug("Everyone passed hand cards to the next player");
 } // cycle()
-
-/**
- * Print the content of the colorAnalysis array and the contentAnalysis
- * array.
- */
-void Uno::printAnalysisData() {
-    int i;
-    QString s(QString::number(colorAnalysis[0]));
-    QString t(QString::number(contentAnalysis[0]));
-
-    for (i = 1; i < 5; ++i) {
-        s = s + ", " + QString::number(colorAnalysis[i]);
-    } // for (i = 1; i < 5; ++i)
-
-    for (i = 1; i < 15; ++i) {
-        t = t + ", " + QString::number(contentAnalysis[i]);
-    } // for (i = 1; i < 15; ++i)
-
-    qDebug("colorAnalysis = [%s]", qPrintable(s));
-    qDebug("contentAnalysis = [%s]", qPrintable(t));
-} // printAnalysisData()
 
 // E.O.F
