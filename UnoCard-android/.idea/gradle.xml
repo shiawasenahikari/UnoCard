@@ -14,7 +14,6 @@
             <option value="$PROJECT_DIR$/opencv410" />
           </set>
         </option>
-        <option name="resolveModulePerSourceSet" value="false" />
       </GradleProjectSettings>
     </option>
   </component>
