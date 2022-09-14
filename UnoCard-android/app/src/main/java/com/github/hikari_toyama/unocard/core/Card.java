@@ -14,18 +14,16 @@ import org.opencv.core.Mat;
 /**
  * Uno Card Class.
  */
-public abstract class Card implements Comparable<Card> {
+public class Card implements Comparable<Card> {
     /**
      * Color part of name string.
      */
-    private static final String[] A = {
-            "", "Red ", "Blue ", "Green ", "Yellow "
-    }; // A[]
+    static final String[] A = {"", "Red ", "Blue ", "Green ", "Yellow "};
 
     /**
      * Content part of name string.
      */
-    private static final String[] B = {
+    static final String[] B = {
             "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
             "Reverse", "Skip", "+2", "Wild", "Wild +4"
     }; // B[]
@@ -101,12 +99,16 @@ public abstract class Card implements Comparable<Card> {
      * this.id > that.id, or a negative number if this.id < that.id.
      */
     @Override
-    public abstract int compareTo(Card that);
+    public int compareTo(Card that) {
+        return this.id - that.id;
+    } // compareTo(Card)
 
     /**
      * @return Whether the card is a [wild] or [wild +4].
      */
-    public abstract boolean isWild();
-} // Card Abstract Class
+    public boolean isWild() {
+        return color == Color.NONE;
+    } // isWild()
+} // Card Class
 
 // E.O.F

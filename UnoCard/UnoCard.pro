@@ -24,18 +24,13 @@ HEADERS += \
     include/SoundPool.h \
     include/Uno.h \
     include/i18n.h \
-    include/main.h
+    main.h
 
 SOURCES += \
-    src/AI.cpp \
-    src/Card.cpp \
-    src/Player.cpp \
-    src/SoundPool.cpp \
-    src/Uno.cpp \
-    src/main.cpp
+    main.cpp
 
 FORMS += \
-    src/main.ui
+    main.ui
 
 msvc {
     QMAKE_CFLAGS += /utf-8

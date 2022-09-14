@@ -90,7 +90,9 @@ public:
     /**
      * @return This player's all hand cards.
      */
-    const std::vector<Card*>& getHandCards();
+    inline const std::vector<Card*>& getHandCards() {
+        return handCards;
+    } // getHandCards()
 
     /**
      * Calculate the total score of this player's hand cards. According to the
@@ -99,12 +101,36 @@ public:
      *
      * @return Score of this player's hand cards.
      */
-    int getHandScore();
+    inline int getHandScore() {
+        int score = 0;
+        for (Card* card : handCards) {
+            switch (card->content) {
+            case WILD:
+            case WILD_DRAW4:
+                score += 50;
+                break; // case WILD, WILD_DRAW4
+
+            case REV:
+            case SKIP:
+            case DRAW2:
+                score += 20;
+                break; // case REV, SKIP, DRAW2
+
+            default: // Number Cards
+                score += int(card->content);
+                break; // default
+            } // switch (card->content)
+        } // for (Card* card : handCards)
+
+        return score;
+    } // getHandScore()
 
     /**
      * @return How many cards in this player's hand.
      */
-    int getHandSize();
+    inline int getHandSize() {
+        return int(handCards.size());
+    } // getHandSize()
 
     /**
      * When this player played a wild card, record the color specified, as this
@@ -115,7 +141,9 @@ public:
      * @return This player's strong color, or Color::NONE if no available
      *         strong color.
      */
-    Color getStrongColor();
+    inline Color getStrongColor() {
+        return strongColor;
+    } // getStrongColor()
 
     /**
      * When this player draw a card in action, record the previous played card's
@@ -126,13 +154,17 @@ public:
      * @return This player's weak color, or Color::NONE if no available weak
      *         color.
      */
-    Color getWeakColor();
+    inline Color getWeakColor() {
+        return weakColor;
+    } // getWeakColor()
 
     /**
      * @return This player's recent played card, or nullptr if this player drew
      *         one or more cards in its previous action.
      */
-    Card* getRecent();
+    inline Card* getRecent() {
+        return recent;
+    } // getRecent()
 
     /**
      * Check whether this player's hand cards are known by you, i.e. the unique
@@ -146,13 +178,19 @@ public:
      *         -1, this function will return true only when ALL OF THIS PLAYER'S
      *         HAND CARDS are known by you.
      */
-    bool isOpen(int index = -1);
+    inline bool isOpen(int index) {
+        return index < 0
+            ? open == (~(0xffffffffU << handCards.size()))
+            : 0x01 == (0x01 & (open >> index));
+    } // isOpen(int)
 
     /**
      * Call this function to rearrange this player's hand cards.
      * The cards with same color will be arranged together.
      */
-    void sort();
+    inline void sort() {
+        std::sort(handCards.begin(), handCards.end());
+    } // sort()
 }; // Player Class
 
 #endif // __PLAYER_H_494649FDFA62B3C015120BCB9BE17613__

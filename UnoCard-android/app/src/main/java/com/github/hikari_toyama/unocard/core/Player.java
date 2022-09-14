@@ -10,13 +10,14 @@
 package com.github.hikari_toyama.unocard.core;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * Store an Uno player's real-time information,
  * such as hand cards, and recent played card.
  */
-public abstract class Player {
+public class Player {
     /**
      * Your player ID.
      */
@@ -40,7 +41,12 @@ public abstract class Player {
     /**
      * Hand cards.
      */
-    List<Card> handCards = new ArrayList<>();
+    final List<Card> handCards = new ArrayList<>();
+
+    /**
+     * Hand cards (read only version, provide for external accesses).
+     */
+    final List<Card> constHandCards = Collections.unmodifiableList(handCards);
 
     /**
      * Strong color.
@@ -82,7 +88,9 @@ public abstract class Player {
     /**
      * @return This player's all hand cards.
      */
-    public abstract List<Card> getHandCards();
+    public List<Card> getHandCards() {
+        return constHandCards;
+    } // getHandCards()
 
     /**
      * Calculate the total score of this player's hand cards. According to the
@@ -91,12 +99,36 @@ public abstract class Player {
      *
      * @return Score of this player's hand cards.
      */
-    public abstract int getHandScore();
+    public int getHandScore() {
+        int score = 0;
+        for (Card card : handCards) {
+            switch (card.content) {
+                case WILD:
+                case WILD_DRAW4:
+                    score += 50;
+                    break; // case WILD, WILD_DRAW4
+
+                case REV:
+                case SKIP:
+                case DRAW2:
+                    score += 20;
+                    break; // case REV, SKIP, DRAW2
+
+                default: // Number Cards
+                    score += card.content.ordinal();
+                    break; // default
+            } // switch (card.content)
+        } // for (Card card : handCards)
+
+        return score;
+    } // getHandScore()
 
     /**
      * @return How many cards in this player's hand.
      */
-    public abstract int getHandSize();
+    public int getHandSize() {
+        return handCards.size();
+    } // getHandSize()
 
     /**
      * When this player played a wild card, record the color specified, as this
@@ -107,7 +139,9 @@ public abstract class Player {
      * @return This player's strong color, or Color.NONE if no available
      * strong color.
      */
-    public abstract Color getStrongColor();
+    public Color getStrongColor() {
+        return strongColor;
+    } // getStrongColor()
 
     /**
      * When this player draw a card in action, record the previous played card's
@@ -118,21 +152,17 @@ public abstract class Player {
      * @return This player's weak color, or Color.NONE if no available weak
      * color.
      */
-    public abstract Color getWeakColor();
+    public Color getWeakColor() {
+        return weakColor;
+    } // getWeakColor()
 
     /**
      * @return This player's recent played card, or null if this player drew
      * one or more cards in its previous action.
      */
-    public abstract Card getRecent();
-
-    /**
-     * @deprecated Call this.isOpen(-1).
-     */
-    @Deprecated
-    public boolean isOpen() {
-        return isOpen(-1);
-    } // isOpen()
+    public Card getRecent() {
+        return recent;
+    } // getRecent()
 
     /**
      * Check whether this player's hand cards are known by you, i.e. the unique
@@ -146,13 +176,19 @@ public abstract class Player {
      * -1, this method will return true only when ALL OF THIS PLAYER'S
      * HAND CARDS are known by you.
      */
-    public abstract boolean isOpen(int index);
+    public boolean isOpen(int index) {
+        return index < 0
+                ? open == (~(0xffffffff << handCards.size()))
+                : 0x01 == (0x01 & (open >> index));
+    } // isOpen(int)
 
     /**
      * Call this method to rearrange this player's hand cards.
      * The cards with same color will be arranged together.
      */
-    public abstract void sort();
-} // Player Abstract Class
+    public void sort() {
+        Collections.sort(handCards);
+    } // sort()
+} // Player Class
 
 // E.O.F

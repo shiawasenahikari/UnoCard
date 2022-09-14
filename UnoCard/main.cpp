@@ -33,12 +33,12 @@
 #include "include/Content.h"
 #include "include/Player.h"
 #include "include/Color.h"
-#include "include/main.h"
 #include "include/i18n.h"
 #include "include/Card.h"
 #include "include/Uno.h"
 #include "include/AI.h"
 #include "ui_main.h"
+#include "main.h"
 
 // Constants
 static const int STAT_IDLE = 0x1111;
@@ -79,10 +79,10 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
 
     // Preparations
     if (strstr(argv[0], "zh") != nullptr) {
-        i18n = I18N_zh_CN::getInstance();
+        i18n = new I18N_zh_CN;
     } // if (strstr(argv[0], "zh") != nullptr)
     else {
-        i18n = I18N_en_US::getInstance();
+        i18n = new I18N_en_US;
     } // else
 
     if (argc > 1) {
@@ -787,7 +787,11 @@ void Main::refreshScreen(const QString& message) {
  * Draw [sScreen] on the window. Called by system.
  */
 void Main::paintEvent(QPaintEvent*) {
-    QPainter(this).drawImage(0, 0, sScreen);
+    static QRect roi(0, 0, 0, 0);
+
+    roi.setWidth(this->width());
+    roi.setHeight(this->height());
+    QPainter(this).drawImage(roi, sScreen);
 } // paintEvent(QPaintEvent*)
 
 /**
@@ -1216,8 +1220,8 @@ void Main::onChallenge() {
 void Main::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
         // Only response to left-click events, and ignore the others
-        int x = event->x();
-        int y = event->y();
+        int x = 1280 * event->x() / this->width();
+        int y = 720 * event->y() / this->height();
         if (sAdjustOptions) {
             // Do special behaviors when configuring game options
             if (60 <= y && y <= 240) {

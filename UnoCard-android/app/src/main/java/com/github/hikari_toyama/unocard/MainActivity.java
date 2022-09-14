@@ -143,7 +143,7 @@ public class MainActivity extends AppCompatActivity
             mMediaPlayer = MediaPlayer.create(this, R.raw.bgm);
             mMediaPlayer.setVolume(mBgmVol, mBgmVol);
             mMediaPlayer.setLooping(true);
-            mAI = AI.getInstance(mUno);
+            mAI = new AI(mUno);
             mAdjustOptions = false;
             mWinner = Player.YOU;
             mAIRunning = false;

@@ -13,10 +13,6 @@
 #include <QString>
 
 class I18N {
-protected:
-    virtual const QString& c(int) = 0;
-    virtual const QString& p(int) = 0;
-
 public:
     virtual QString act_drawCard(int, const QString&) = 0;
     virtual QString act_drawCardCount(int, int) = 0;
@@ -66,14 +62,14 @@ public:
 }; // I18N class
 
 class I18N_en_US : public I18N {
-protected:
-    inline const QString& c(int i) {
+private:
+    inline static const QString& c(int i) {
         static const QString UNKNOWN = "????";
         static const QString S[] = { "NONE", "RED", "BLUE", "GREEN", "YELLOW" };
         return 0 <= i && i <= 4 ? S[i] : UNKNOWN;
     } // c(int)
 
-    inline const QString& p(int i) {
+    inline static const QString& p(int i) {
         static const QString UNKNOWN = "????";
         static const QString S[] = { "YOU", "WEST", "NORTH", "EAST" };
         return 0 <= i && i <= 3 ? S[i] : UNKNOWN;
@@ -282,14 +278,14 @@ public:
 }; // I18N_en_US class
 
 class I18N_zh_CN : public I18N {
-protected:
-    inline const QString& c(int i) {
+private:
+    inline static const QString& c(int i) {
         static const QString UNKNOWN = "????";
         static const QString S[] = { "无色", "红色", "蓝色", "绿色", "黄色" };
         return 0 <= i && i <= 4 ? S[i] : UNKNOWN;
     } // c(int)
 
-    inline const QString& p(int i) {
+    inline static const QString& p(int i) {
         static const QString UNKNOWN = "????";
         static const QString S[] = { "你", "西家", "北家", "东家" };
         return 0 <= i && i <= 3 ? S[i] : UNKNOWN;

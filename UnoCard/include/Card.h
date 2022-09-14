@@ -51,7 +51,9 @@ public:
      * @param that Provide another Card instance.
      * @return true if this->id < that.id.
      */
-    bool operator<(const Card& that);
+    inline bool operator<(const Card& that) {
+        return this->id < that.id;
+    } // operator<(const Card&)
 
     /**
      * Override relation operator "<=".
@@ -59,7 +61,9 @@ public:
      * @param that Provide another Card instance.
      * @return true if this->id <= that.id.
      */
-    bool operator<=(const Card& that);
+    inline bool operator<=(const Card& that) {
+        return this->id <= that.id;
+    } // operator<=(const Card&)
 
     /**
      * Override relation operator "==".
@@ -67,7 +71,9 @@ public:
      * @param that Provide another Card instance.
      * @return true if this->id == that.id.
      */
-    bool operator==(const Card& that);
+    inline bool operator==(const Card& that) {
+        return this->id == that.id;
+    } // operator==(const Card&)
 
     /**
      * Override relation operator ">=".
@@ -75,7 +81,9 @@ public:
      * @param that Provide another Card instance.
      * @return true if this->id >= that.id.
      */
-    bool operator>=(const Card& that);
+    inline bool operator>=(const Card& that) {
+        return this->id >= that.id;
+    } // operator>=(const Card&)
 
     /**
      * Override relation operator ">".
@@ -83,7 +91,9 @@ public:
      * @param that Provide another Card instance.
      * @return true if this->id > that.id.
      */
-    bool operator>(const Card& that);
+    inline bool operator>(const Card& that) {
+        return this->id > that.id;
+    } // operator>(const Card&)
 
     /**
      * Override relation operator "!=".
@@ -91,12 +101,16 @@ public:
      * @param that Provide another Card instance.
      * @return true if this->id != that.id.
      */
-    bool operator!=(const Card& that);
+    inline bool operator!=(const Card& that) {
+        return this->id != that.id;
+    } // operator!=(const Card&)
 
     /**
      * @return Whether the card is a [wild] or [wild +4].
      */
-    bool isWild();
+    inline bool isWild() {
+        return color == NONE;
+    } // isWild()
 
 private:
     /**
@@ -106,9 +120,35 @@ private:
     const int id;
 
     /**
+     * Color part of name string.
+     */
+    inline static const QString& A(Color color) {
+        static QString a[] = { "", "Red ", "Blue ", "Green ", "Yellow " };
+        return a[color];
+    } // A(Color)
+
+    /**
+     * Content part of name string.
+     */
+    inline static const QString& B(Content content) {
+        static QString b[] = {
+            "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+            "+2", "Skip", "Reverse", "Wild", "Wild +4"
+        }; // b[]
+        return b[content];
+    } // B(Content)
+
+    /**
      * Constructor. Provide parameters for an Uno card and create its instance.
      */
-    Card(QImage, QImage, Color, Content);
+    inline Card(QImage image, QImage darkImg, Color color, Content content) :
+        color(color),
+        image(image),
+        darkImg(darkImg),
+        content(content),
+        name(A(color) + B(content)),
+        id(isWild() ? 39 + content : 13 * (color - 1) + content) {
+    } // Card(QImage, QImage, Color, Content) (Class Constructor)
 
     /**
      * Grant Uno class to access our constructors (to create Card instances) and
