@@ -21,7 +21,6 @@ import com.github.hikari_toyama.unocard.R;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
-import org.opencv.core.Rect;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
@@ -607,8 +606,7 @@ public class Uno {
      *              Color.RED, Color.GREEN, Color.YELLOW, null (as white).
      */
     public void putText(Mat m, String text, int x, int y, Color color) {
-        int r, c, width;
-        Rect roi1, roi2;
+        int r, c, w;
         Integer position;
         Mat font, cimg, mask;
 
@@ -621,13 +619,11 @@ public class Uno {
             if (position == null) position = 0x1f;
             r = position >>> 4;
             c = position & 0x0f;
-            width = r < 6 ? 17 : 33;
-            roi1 = new Rect(width * c, 48 * r, width, 48);
-            cimg = new Mat(font, roi1);
-            mask = new Mat(fontW, roi1);
-            roi2 = new Rect(x, y, width, 48);
-            cimg.copyTo(new Mat(m, roi2), mask);
-            x += width;
+            w = r < 6 ? 17 : 33;
+            cimg = font.submat(48 * r, 48 + 48 * r, w * c, w + w * c);
+            mask = fontW.submat(48 * r, 48 + 48 * r, w * c, w + w * c);
+            cimg.copyTo(m.submat(y, y + 48, x, x + w), mask);
+            x += w;
         } // for (char ch : text.toCharArray())
     } // putText(Mat, String, int, int, Color)
 
@@ -1027,12 +1023,10 @@ public class Uno {
      * didn't draw a card because of the limitation.
      */
     public int draw(int who, boolean force) {
-        Card card;
-        List<Card> hand;
-        int i, index, size;
+        int i = -1;
 
-        i = -1;
         if (who >= Player.YOU && who <= Player.COM3) {
+            List<Card> hand = player[who].handCards;
             if (draw2StackCount > 0) {
                 --draw2StackCount;
             } // if (draw2StackCount > 0)
@@ -1045,11 +1039,10 @@ public class Uno {
                 } // if (player[who].weakColor == player[who].strongColor)
             } // else if (!force)
 
-            hand = player[who].handCards;
             if (hand.size() < MAX_HOLD_CARDS) {
                 // Draw a card from card deck, and put it to an appropriate position
+                Card card = deck.get(deck.size() - 1);
                 Log.i(TAG, "Player " + who + " draw a card");
-                card = deck.get(deck.size() - 1);
                 deck.remove(deck.size() - 1);
                 if (who == Player.YOU) {
                     i = Collections.binarySearch(hand, card);
@@ -1065,14 +1058,14 @@ public class Uno {
                 player[who].recent = null;
                 if (deck.isEmpty()) {
                     // Re-use the used cards when there are no more cards in deck
+                    int size = used.size();
                     Log.i(TAG, "Re-use the used cards");
-                    size = used.size();
                     while (size > 0) {
-                        index = Uno.RNG.nextInt(size--);
-                        --contentAnalysis[used.get(index).content.ordinal()];
-                        --colorAnalysis[used.get(index).color.ordinal()];
-                        deck.add(used.get(index));
-                        used.remove(index);
+                        int j = Uno.RNG.nextInt(size--);
+                        --contentAnalysis[used.get(j).content.ordinal()];
+                        --colorAnalysis[used.get(j).color.ordinal()];
+                        deck.add(used.get(j));
+                        used.remove(j);
                     } // while (size > 0)
                 } // if (deck.isEmpty())
             } // if (hand.size() < MAX_HOLD_CARDS)
@@ -1085,7 +1078,7 @@ public class Uno {
 
             if (draw2StackCount == 0) {
                 // Update the legality binary when necessary
-                card = recent.get(recent.size() - 1);
+                Card card = recent.get(recent.size() - 1);
                 legality = card.isWild()
                         ? 0x30000000000000L
                         | (0x1fffL << 13 * (lastColor().ordinal() - 1))
@@ -1143,14 +1136,11 @@ public class Uno {
      * @return Reference of the played card.
      */
     public Card play(int who, int index, Color color) {
-        int size;
-        Card card;
-        List<Card> hand;
+        Card card = null;
 
-        card = null;
         if (who >= Player.YOU && who <= Player.COM3) {
-            hand = player[who].handCards;
-            size = hand.size();
+            List<Card> hand = player[who].handCards;
+            int size = hand.size();
             if (index < size) {
                 card = hand.get(index);
                 Log.i(TAG, "Player " + who + " played " + card.name);
@@ -1209,7 +1199,7 @@ public class Uno {
                         : 0x30000000000000L
                         | (0x1fffL << 13 * (lastColor().ordinal() - 1))
                         | (0x8004002001L << card.content.ordinal());
-                if (hand.size() == 0) {
+                if (size == 1) {
                     // Game over, change background & show everyone's hand cards
                     direction = 0;
                     for (int i = Player.COM1; i <= Player.COM3; ++i) {
@@ -1218,7 +1208,7 @@ public class Uno {
                     } // for (int i = Player.COM1; i <= Player.COM3; ++i)
 
                     Log.i(TAG, "======= WINNER IS PLAYER " + who + " =======");
-                } // if (hand.size() == 0)
+                } // if (size == 1)
             } // if (index < size)
         } // if (who >= Player.YOU && who <= Player.COM3)
 

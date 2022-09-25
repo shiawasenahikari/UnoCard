@@ -306,13 +306,17 @@ private:
      * Convert int[] array to string.
      */
     inline static QString array2string(int arr[], int size) {
-        QString s(size > 0 ? QString::number(arr[0]) : "");
+        QString s('[');
 
-        for (int i = 1; i < size; ++i) {
-            s = s + ", " + QString::number(arr[i]);
-        } // for (int i = 1; i < size; ++i)
+        if (size > 0) {
+            s += QString::number(arr[0]);
+            for (int i = 1; i < size; ++i) {
+                s += ", ";
+                s += QString::number(arr[i]);
+            } // for (int i = 1; i < size; ++i)
+        } // if (size > 0)
 
-        return "[" + s + "]";
+        return s += ']';
     } // array2string(int[], int)
 
 public:
@@ -797,12 +801,10 @@ public:
      *         didn't draw a card because of the limitation.
      */
     inline int draw(int who, bool force) {
-        Card* card;
-        int i, index, size;
-        std::vector<Card*>* hand;
+        int i = -1;
 
-        i = -1;
         if (who >= Player::YOU && who <= Player::COM3) {
+            auto& hand = player[who].handCards;
             if (draw2StackCount > 0) {
                 --draw2StackCount;
             } // if (draw2StackCount > 0)
@@ -815,37 +817,36 @@ public:
                 } // if (player[who].weakColor == player[who].strongColor)
             } // else if (!force)
 
-            hand = &(player[who].handCards);
-            if (hand->size() < MAX_HOLD_CARDS) {
+            if (hand.size() < MAX_HOLD_CARDS) {
                 // Draw a card from card deck, and put it to an appropriate position
+                Card* card = deck.back();
                 qDebug("Player %d draw a card", who);
-                card = deck.back();
                 deck.pop_back();
                 if (who == Player::YOU) {
-                    auto j = std::upper_bound(hand->begin(), hand->end(), card);
-                    i = int(j - hand->begin());
-                    hand->insert(j, card);
+                    auto j = std::upper_bound(hand.begin(), hand.end(), card);
+                    i = int(j - hand.begin());
+                    hand.insert(j, card);
                     player[who].open = (player[who].open << 1) | 0x01;
                 } // if (who == Player::YOU)
                 else {
-                    i = int(hand->size());
-                    hand->push_back(card);
+                    i = int(hand.size());
+                    hand.push_back(card);
                 } // else
 
                 player[who].recent = nullptr;
                 if (deck.empty()) {
                     // Re-use the used cards when there are no more cards in deck
+                    int size = int(used.size());
                     qDebug("Re-use the used cards");
-                    size = int(used.size());
                     while (size > 0) {
-                        index = rand() % size--;
-                        deck.push_back(used.at(index));
-                        --colorAnalysis[used.at(index)->color];
-                        --contentAnalysis[used.at(index)->content];
-                        used.erase(used.begin() + index);
+                        int j = rand() % size--;
+                        deck.push_back(used.at(j));
+                        --colorAnalysis[used.at(j)->color];
+                        --contentAnalysis[used.at(j)->content];
+                        used.erase(used.begin() + j);
                     } // while (size > 0)
                 } // if (deck.empty())
-            } // if (hand->size() < MAX_HOLD_CARDS)
+            } // if (hand.size() < MAX_HOLD_CARDS)
             else {
                 // In +2 stack rule, if someone cannot draw all of the required
                 // cards because of the max-hold-card limitation, force reset
@@ -855,7 +856,7 @@ public:
 
             if (draw2StackCount == 0) {
                 // Update the legality binary when necessary
-                card = recent.back();
+                Card* card = recent.back();
                 legality = card->isWild()
                     ? 0x30000000000000LL
                     | (0x1fffLL << 13 * (lastColor() - 1))
@@ -913,18 +914,15 @@ public:
      * @return Reference of the played card.
      */
     inline Card* play(int who, int index, Color color) {
-        int size;
-        Card* card;
-        std::vector<Card*>* hand;
+        Card* card = nullptr;
 
-        card = nullptr;
         if (who >= Player::YOU && who <= Player::COM3) {
-            hand = &(player[who].handCards);
-            size = int(hand->size());
+            auto& hand = player[who].handCards;
+            int size = int(hand.size());
             if (index < size) {
-                card = hand->at(index);
+                card = hand.at(index);
                 qDebug("Player %d played %s", who, qPrintable(card->name));
-                hand->erase(hand->begin() + index);
+                hand.erase(hand.begin() + index);
                 if (card->isWild()) {
                     // When a wild card is played, register the specified
                     // following legal color as the player's strong color
@@ -979,7 +977,7 @@ public:
                     : 0x30000000000000LL
                     | (0x1fffLL << 13 * (lastColor() - 1))
                     | (0x8004002001LL << card->content);
-                if (hand->size() == 0) {
+                if (size == 1) {
                     // Game over, change background & show everyone's hand cards
                     direction = 0;
                     for (int i = Player::COM1; i <= Player::COM3; ++i) {
@@ -988,7 +986,7 @@ public:
                     } // for (int i = Player::COM1; i <= Player::COM3; ++i)
 
                     qDebug("======= WINNER IS PLAYER %d =======", who);
-                } // if (hand->size() == 0)
+                } // if (size == 1)
             } // if (index < size)
         } // if (who >= Player::YOU && who <= Player::COM3)
 

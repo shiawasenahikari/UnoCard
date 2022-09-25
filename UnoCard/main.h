@@ -67,6 +67,7 @@ private:
     QPainter* sPainter;
     bool sAdjustOptions;
     SoundPool* sSoundPool;
+    AnimateLayer sLayer[4];
     QPainter* sBkPainter[4];
     QMediaPlayer* sMediaPlay;
     QMediaPlaylist* sMediaList;

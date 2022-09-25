@@ -30,6 +30,11 @@ private:
     Uno* uno = Uno::getInstance();
 
     /**
+     * Record the priorities of your candidates. Used by hard AI.
+     */
+    std::map<int, Card*> candidates;
+
+    /**
      * Default constructor.
      */
     AI() = default;
@@ -355,7 +360,6 @@ public:
         Card* card;
         bool allWild;
         std::vector<Card*> hand;
-        std::map<int, Card*> map;
         Player *next, *oppo, *prev;
         Color bestColor, lastColor;
         int i, iBest, matches, score;
@@ -379,6 +383,7 @@ public:
 
         iBest = -1;
         allWild = true;
+        candidates.clear();
         lastColor = uno->lastColor();
         bestColor = calcBestColor4NowPlayer();
         iRev = iSkip = iDraw2 = iWild = iWD4 = -1;
@@ -436,7 +441,7 @@ public:
                         - 10000 * uno->getContentAnalysis(card->content)
                         - 100 * uno->getColorAnalysis(card->color)
                         - i;
-                    map.insert({ score, card });
+                    candidates.insert({ score, card });
                     break; // default
                 } // switch (card->content)
             } // if (uno->isLegalToPlay(card))
@@ -466,12 +471,12 @@ public:
                 // 3: Wild +4 cards, switch to your best color
                 // 4: Reverse cards, in any color
                 // 5: Draw one, and pray to get one of the above...
-                for (auto& pair : map) {
-                    if (pair.second->color != nextStrong) {
-                        iBest = -pair.first % 100;
+                for (auto& can : candidates) {
+                    if (can.second->color != nextStrong) {
+                        iBest = -can.first % 100;
                         break;
-                    } // if (pair.second->color != nextStrong)
-                } // for (auto& pair : map)
+                    } // if (can.second->color != nextStrong)
+                } // for (auto& can : candidates)
                 if (iBest < 0 && hasSkip)
                     iBest = iSkip;
                 if (iBest < 0 && hasWild)
@@ -488,12 +493,12 @@ public:
                 // 1: Reverse cards, NOT in color of nextStrong
                 // 2: Skip cards, NOT in color of nextStrong
                 // 3: Draw one because it's not necessary to use wild cards
-                for (auto& pair : map) {
-                    if (pair.second->color != nextStrong) {
-                        iBest = -pair.first % 100;
+                for (auto& can : candidates) {
+                    if (can.second->color != nextStrong) {
+                        iBest = -can.first % 100;
                         break;
-                    } // if (pair.second->color != nextStrong)
-                } // for (auto& pair : map)
+                    } // if (can.second->color != nextStrong)
+                } // for (auto& can : candidates)
                 if (iBest < 0 && hasRev && prevSize >= 4
                     && hand.at(iRev)->color != nextStrong)
                     iBest = iRev;
@@ -516,15 +521,15 @@ public:
                     iBest = iRev;
                 if (iBest < 0 && hasWD4 && matches == 0)
                     iBest = iWD4;
-                if (iBest < 0 && !map.empty()
-                    && map.begin()->second->color == bestColor)
-                    iBest = -map.begin()->first % 100;
+                if (iBest < 0 && !candidates.empty() &&
+                    candidates.begin()->second->color == bestColor)
+                    iBest = -candidates.begin()->first % 100;
                 if (iBest < 0 && hasWild)
                     iBest = iWild;
                 if (iBest < 0 && hasWD4)
                     iBest = iWD4;
-                if (iBest < 0 && !map.empty())
-                    iBest = -map.begin()->first % 100;
+                if (iBest < 0 && !candidates.empty())
+                    iBest = -candidates.begin()->first % 100;
             } // else
         } // if (nextSize == 1)
         else if (prevSize == 1) {
@@ -545,8 +550,8 @@ public:
                     iBest = iWild;
                 if (iBest < 0 && hasWD4)
                     iBest = iWD4;
-                if (iBest < 0 && !map.empty())
-                    iBest = -map.begin()->first % 100;
+                if (iBest < 0 && !candidates.empty())
+                    iBest = -candidates.begin()->first % 100;
             } // if (lastColor == prevStrong)
             else if (prevStrong != NONE) {
                 // Priority when prev called Uno & lastColor != prevStrong:
@@ -556,12 +561,12 @@ public:
                 // 2: Draw one because it's not necessary to use other cards
                 if (hasRev && hand.at(iRev)->color != prevStrong)
                     iBest = iRev;
-                if (iBest < 0) for (auto& pair : map) {
-                    if (pair.second->color != prevStrong) {
-                        iBest = -pair.first % 100;
+                if (iBest < 0) for (auto& can : candidates) {
+                    if (can.second->color != prevStrong) {
+                        iBest = -can.first % 100;
                         break;
-                    } // if (pair.second->color != prevStrong)
-                } // if (iBest < 0) for (auto& pair : map)
+                    } // if (can.second->color != prevStrong)
+                } // if (iBest < 0) for (auto& can : candidates)
             } // else if (prevStrong != NONE)
             else {
                 // Priority when prev called Uno & prevStrong is unknown:
@@ -570,14 +575,15 @@ public:
                 // 2: Wild +4 cards, switch to your best color
                 // 3: Number cards, in any color
                 // 4: Draw one. DO NOT PLAY REVERSE CARDS!
-                if (!map.empty() && map.begin()->second->color == bestColor)
-                    iBest = -map.begin()->first % 100;
+                if (!candidates.empty() &&
+                    candidates.begin()->second->color == bestColor)
+                    iBest = -candidates.begin()->first % 100;
                 if (iBest < 0 && hasWild && lastColor != bestColor)
                     iBest = iWild;
                 if (iBest < 0 && hasWD4 && lastColor != bestColor)
                     iBest = iWD4;
-                if (iBest < 0 && !map.empty())
-                    iBest = -map.begin()->first % 100;
+                if (iBest < 0 && !candidates.empty())
+                    iBest = -candidates.begin()->first % 100;
             } // else
         } // else if (prevSize == 1)
         else if (oppoSize == 1) {
@@ -597,12 +603,12 @@ public:
                 //    (pray that prev can limit oppo!)
                 // 7: Number cards, in color of oppoStrong
                 //    (pray that next can limit oppo!)
-                for (auto& pair : map) {
-                    if (pair.second->color != oppoStrong) {
-                        iBest = -pair.first % 100;
+                for (auto& can : candidates) {
+                    if (can.second->color != oppoStrong) {
+                        iBest = -can.first % 100;
                         break;
-                    } // if (pair.second->color != oppoStrong)
-                } // for (auto& pair : map)
+                    } // if (can.second->color != oppoStrong)
+                } // for (auto& can : candidates)
                 if (iBest < 0 && hasRev
                     && hand.at(iRev)->color != oppoStrong)
                     iBest = iRev;
@@ -618,8 +624,8 @@ public:
                     iBest = iWD4;
                 if (iBest < 0 && hasRev && prevSize > nextSize)
                     iBest = iRev;
-                if (iBest < 0 && !map.empty())
-                    iBest = -map.begin()->first % 100;
+                if (iBest < 0 && !candidates.empty())
+                    iBest = -candidates.begin()->first % 100;
             } // if (lastColor == oppoStrong)
             else if (oppoStrong != NONE) {
                 // Priority when oppo called Uno & lastColor != oppoStrong:
@@ -629,12 +635,12 @@ public:
                 // 2: Skip cards, NOT in color of oppoStrong
                 // 3: +2 cards, NOT in color of oppoStrong
                 // 4: Draw one because it's not necessary to use other cards
-                for (auto& pair : map) {
-                    if (pair.second->color != oppoStrong) {
-                        iBest = -pair.first % 100;
+                for (auto& can : candidates) {
+                    if (can.second->color != oppoStrong) {
+                        iBest = -can.first % 100;
                         break;
-                    } // if (pair.second->color != oppoStrong)
-                } // for (auto& pair : map)
+                    } // if (can.second->color != oppoStrong)
+                } // for (auto& can : candidates)
                 if (iBest < 0 && hasRev
                     && hand.at(iRev)->color != oppoStrong)
                     iBest = iRev;
@@ -655,8 +661,8 @@ public:
                 // 4: Draw one because it's not necessary to use other cards
                 if (hasRev && prevSize > nextSize)
                     iBest = iRev;
-                if (iBest < 0 && !map.empty())
-                    iBest = -map.begin()->first % 100;
+                if (iBest < 0 && !candidates.empty())
+                    iBest = -candidates.begin()->first % 100;
                 if (iBest < 0 && hasWild && lastColor != bestColor)
                     iBest = iWild;
                 if (iBest < 0 && hasWD4 && lastColor != bestColor
@@ -686,14 +692,14 @@ public:
             // 4: +2 cards, in your best color
             if (hasRev && prevSize > nextSize)
                 iBest = iRev;
-            if (iBest < 0) for (auto& pair : map) {
-                if (pair.second->color == nextWeak) {
-                    iBest = -pair.first % 100;
+            if (iBest < 0) for (auto& can : candidates) {
+                if (can.second->color == nextWeak) {
+                    iBest = -can.first % 100;
                     break;
-                } // if (pair.second->color == nextWeak)
-            } // if (iBest < 0) for (auto& pair : map)
-            if (iBest < 0 && !map.empty())
-                iBest = -map.begin()->first % 100;
+                } // if (can.second->color == nextWeak)
+            } // if (iBest < 0) for (auto& can : candidates)
+            if (iBest < 0 && !candidates.empty())
+                iBest = -candidates.begin()->first % 100;
             if (iBest < 0 && hasRev
                 && (prevSize >= 4 || prev->getRecent() == nullptr))
                 iBest = iRev;
@@ -724,8 +730,8 @@ public:
             if (iBest < 0 && hasRev &&
                 (prevSize > nextSize || prev->getRecent() == nullptr))
                 iBest = iRev;
-            if (iBest < 0 && !map.empty())
-                iBest = -map.begin()->first % 100;
+            if (iBest < 0 && !candidates.empty())
+                iBest = -candidates.begin()->first % 100;
             if (iBest < 0 && hasRev && prevSize >= 4)
                 iBest = iRev;
             if (iBest < 0 && hasSkip && oppoSize >= 3

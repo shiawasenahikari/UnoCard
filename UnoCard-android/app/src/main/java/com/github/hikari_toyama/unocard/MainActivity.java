@@ -44,7 +44,6 @@ import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
-import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
@@ -80,8 +79,10 @@ public class MainActivity extends AppCompatActivity
     private static final int STAT_IDLE = 0x1111;
     private MediaPlayer mMediaPlayer;
     private boolean mAdjustOptions;
+    private AnimateLayer[] mLayer;
     private SoundPool mSoundPool;
     private ImageView mImgScreen;
+    private Color[] mBestColor;
     private boolean mAIRunning;
     private Handler mHandler;
     private int mSelectedIdx;
@@ -144,6 +145,7 @@ public class MainActivity extends AppCompatActivity
             mMediaPlayer.setVolume(mBgmVol, mBgmVol);
             mMediaPlayer.setLooping(true);
             mAI = new AI(mUno);
+            mBestColor = new Color[1];
             mAdjustOptions = false;
             mWinner = Player.YOU;
             mAIRunning = false;
@@ -151,6 +153,12 @@ public class MainActivity extends AppCompatActivity
             mHideFlag = 0x00;
             mAuto = false;
             mScr = Mat.zeros(720, 1280, CvType.CV_8UC3);
+            mLayer = new AnimateLayer[]{
+                    new AnimateLayer(),
+                    new AnimateLayer(),
+                    new AnimateLayer(),
+                    new AnimateLayer()
+            }; // new AnimateLayer[4]
             mBackup = new Mat[]{
                     Mat.zeros(720, 1280, CvType.CV_8UC3),
                     Mat.zeros(720, 1280, CvType.CV_8UC3),
@@ -210,7 +218,6 @@ public class MainActivity extends AppCompatActivity
     @WorkerThread
     private void easyAI() {
         int idxBest;
-        Color[] bestColor;
 
         if (!mAIRunning) {
             mAIRunning = true;
@@ -219,11 +226,10 @@ public class MainActivity extends AppCompatActivity
                     || mStatus == Player.COM3
                     || (mStatus == Player.YOU && mAuto)) {
                 setStatus(STAT_IDLE); // block tap down events when idle
-                bestColor = new Color[1];
-                idxBest = mAI.easyAI_bestCardIndex4NowPlayer(bestColor);
+                idxBest = mAI.easyAI_bestCardIndex4NowPlayer(mBestColor);
                 if (idxBest >= 0) {
                     // Found an appropriate card to play
-                    play(idxBest, bestColor[0]);
+                    play(idxBest, mBestColor[0]);
                 } // if (idxBest >= 0)
                 else {
                     // No appropriate cards to play, or no card to play
@@ -241,7 +247,6 @@ public class MainActivity extends AppCompatActivity
     @WorkerThread
     private void hardAI() {
         int idxBest;
-        Color[] bestColor;
 
         if (!mAIRunning) {
             mAIRunning = true;
@@ -250,11 +255,10 @@ public class MainActivity extends AppCompatActivity
                     || mStatus == Player.COM3
                     || (mStatus == Player.YOU && mAuto)) {
                 setStatus(STAT_IDLE); // block tap down events when idle
-                bestColor = new Color[1];
-                idxBest = mAI.hardAI_bestCardIndex4NowPlayer(bestColor);
+                idxBest = mAI.hardAI_bestCardIndex4NowPlayer(mBestColor);
                 if (idxBest >= 0) {
                     // Found an appropriate card to play
-                    play(idxBest, bestColor[0]);
+                    play(idxBest, mBestColor[0]);
                 } // if (idxBest >= 0)
                 else {
                     // No appropriate cards to play, or no card to play
@@ -272,7 +276,6 @@ public class MainActivity extends AppCompatActivity
     @WorkerThread
     private void sevenZeroAI() {
         int idxBest;
-        Color[] bestColor;
 
         if (!mAIRunning) {
             mAIRunning = true;
@@ -281,11 +284,10 @@ public class MainActivity extends AppCompatActivity
                     || mStatus == Player.COM3
                     || (mStatus == Player.YOU && mAuto)) {
                 setStatus(STAT_IDLE); // block tap down events when idle
-                bestColor = new Color[1];
-                idxBest = mAI.sevenZeroAI_bestCardIndex4NowPlayer(bestColor);
+                idxBest = mAI.sevenZeroAI_bestCardIndex4NowPlayer(mBestColor);
                 if (idxBest >= 0) {
                     // Found an appropriate card to play
-                    play(idxBest, bestColor[0]);
+                    play(idxBest, mBestColor[0]);
                 } // if (idxBest >= 0)
                 else {
                     // No appropriate cards to play, or no card to play
@@ -467,15 +469,13 @@ public class MainActivity extends AppCompatActivity
      */
     @WorkerThread
     private void refreshScreen(String message) {
-        Rect roi;
         Mat image;
         Size axes;
-        String info;
         Point center;
         Color fontColor;
         List<Card> recent;
         List<Color> recentColors;
-        int i, remain, size, status, used, width;
+        int i, x, y, remain, size, status, used, width;
 
         // Lock the value of member [mStatus]
         status = mStatus;
@@ -506,74 +506,48 @@ public class MainActivity extends AppCompatActivity
             image = mBgmVol > 0.0f ?
                     mUno.findCard(Color.RED, Content.SKIP).darkImg :
                     mUno.findCard(Color.RED, Content.SKIP).image;
-            roi = new Rect(150, 60, 121, 181);
-            image.copyTo(new Mat(mScr, roi), image);
+            image.copyTo(mScr.submat(60, 241, 150, 271), image);
             image = mBgmVol > 0.0f ?
                     mUno.findCard(Color.GREEN, Content.REV).image :
                     mUno.findCard(Color.GREEN, Content.REV).darkImg;
-            roi.x = 330;
-            image.copyTo(new Mat(mScr, roi), image);
+            image.copyTo(mScr.submat(60, 241, 330, 451), image);
 
             // Sound effect switch
             mUno.putText(mScr, i18n.label_snd(), 60, 350, null);
             image = mSndVol > 0.0f ?
                     mUno.findCard(Color.RED, Content.SKIP).darkImg :
                     mUno.findCard(Color.RED, Content.SKIP).image;
-            roi.x = 150;
-            roi.y = 250;
-            image.copyTo(new Mat(mScr, roi), image);
+            image.copyTo(mScr.submat(250, 431, 150, 271), image);
             image = mSndVol > 0.0f ?
                     mUno.findCard(Color.GREEN, Content.REV).image :
                     mUno.findCard(Color.GREEN, Content.REV).darkImg;
-            roi.x = 330;
-            image.copyTo(new Mat(mScr, roi), image);
+            image.copyTo(mScr.submat(250, 431, 330, 451), image);
 
             // [Level] option: easy / hard
             mUno.putText(mScr, i18n.label_level(), 640, 160, null);
-            if (mUno.isSevenZeroRule()) {
-                image = mUno.getLevelImage(
-                        /* level   */ Uno.LV_EASY,
-                        /* hiLight */ false
-                ); // image = mUno.getLevelImage()
-            } // if (mUno.isSevenZeroRule())
-            else {
-                image = mUno.getLevelImage(
-                        /* level   */ Uno.LV_EASY,
-                        /* hiLight */ mUno.getDifficulty() == Uno.LV_EASY
-                ); // image = mUno.getLevelImage()
-            } // else
-
-            roi.x = 790;
-            roi.y = 60;
-            image.copyTo(new Mat(mScr, roi), image);
-            if (mUno.isSevenZeroRule()) {
-                image = mUno.getLevelImage(
-                        /* level   */ Uno.LV_HARD,
-                        /* hiLight */ false
-                ); // image = mUno.getLevelImage()
-            } // if (mUno.isSevenZeroRule())
-            else {
-                image = mUno.getLevelImage(
-                        /* level   */ Uno.LV_HARD,
-                        /* hiLight */ mUno.getDifficulty() == Uno.LV_HARD
-                ); // image = mUno.getLevelImage()
-            } // else
-            roi.x = 970;
-            image.copyTo(new Mat(mScr, roi), image);
+            image = mUno.getLevelImage(
+                    /* level   */ Uno.LV_EASY,
+                    /* hiLight */ !mUno.isSevenZeroRule()
+                            && mUno.getDifficulty() == Uno.LV_EASY
+            ); // image = mUno.getLevelImage()
+            image.copyTo(mScr.submat(60, 241, 790, 911), image);
+            image = mUno.getLevelImage(
+                    /* level   */ Uno.LV_HARD,
+                    /* hiLight */ !mUno.isSevenZeroRule()
+                            && mUno.getDifficulty() == Uno.LV_HARD
+            ); // image = mUno.getLevelImage()
+            image.copyTo(mScr.submat(60, 241, 970, 1091), image);
 
             // [Players] option: 3 / 4
             mUno.putText(mScr, i18n.label_players(), 640, 350, null);
             image = mUno.getPlayers() == 3 ?
                     mUno.findCard(Color.GREEN, Content.NUM3).image :
                     mUno.findCard(Color.GREEN, Content.NUM3).darkImg;
-            roi.x = 790;
-            roi.y = 250;
-            image.copyTo(new Mat(mScr, roi), image);
+            image.copyTo(mScr.submat(250, 431, 790, 911), image);
             image = mUno.getPlayers() == 4 ?
                     mUno.findCard(Color.YELLOW, Content.NUM4).image :
                     mUno.findCard(Color.YELLOW, Content.NUM4).darkImg;
-            roi.x = 970;
-            image.copyTo(new Mat(mScr, roi), image);
+            image.copyTo(mScr.submat(250, 431, 970, 1091), image);
 
             // Rule settings
             // Force play switch
@@ -606,8 +580,7 @@ public class MainActivity extends AppCompatActivity
         if (status == STAT_WELCOME) {
             // For welcome screen, show the start button and your score
             image = mUno.getBackImage();
-            roi = new Rect(580, 270, 121, 181);
-            image.copyTo(new Mat(mScr, roi), image);
+            image.copyTo(mScr.submat(270, 451, 580, 701), image);
             width = mUno.getTextWidth(i18n.label_score());
             mUno.putText(mScr, i18n.label_score(), 340 - width, 620, null);
             if (mScore < 0) {
@@ -618,21 +591,16 @@ public class MainActivity extends AppCompatActivity
                 image = mUno.findCard(Color.RED, Content.values()[i]).image;
             } // else
 
-            roi.x = 360;
-            roi.y = 520;
-            image.copyTo(new Mat(mScr, roi), image);
+            image.copyTo(mScr.submat(520, 701, 360, 481), image);
             i = Math.abs(mScore / 100 % 10);
             image = mUno.findCard(Color.BLUE, Content.values()[i]).image;
-            roi.x += 140;
-            image.copyTo(new Mat(mScr, roi), image);
+            image.copyTo(mScr.submat(520, 701, 500, 621), image);
             i = Math.abs(mScore / 10 % 10);
             image = mUno.findCard(Color.GREEN, Content.values()[i]).image;
-            roi.x += 140;
-            image.copyTo(new Mat(mScr, roi), image);
+            image.copyTo(mScr.submat(520, 701, 640, 761), image);
             i = Math.abs(mScore % 10);
             image = mUno.findCard(Color.YELLOW, Content.values()[i]).image;
-            roi.x += 140;
-            image.copyTo(new Mat(mScr, roi), image);
+            image.copyTo(mScr.submat(520, 701, 780, 901), image);
 
             // Show image
             Utils.matToBitmap(mScr, mBmp);
@@ -642,15 +610,12 @@ public class MainActivity extends AppCompatActivity
 
         // Center: card deck & recent played card
         image = mUno.getBackImage();
-        roi = new Rect(338, 270, 121, 181);
-        image.copyTo(new Mat(mScr, roi), image);
+        image.copyTo(mScr.submat(270, 451, 338, 459), image);
         recentColors = mUno.getRecentColors();
         recent = mUno.getRecent();
         size = recent.size();
         width = 45 * size + 75;
-        roi.x = 792 - width / 2;
-        roi.y = 270;
-        for (i = 0; i < size; ++i) {
+        for (i = 0, x = 792 - width / 2; i < size; ++i, x += 45) {
             if (recent.get(i).content == Content.WILD) {
                 image = mUno.getColoredWildImage(recentColors.get(i));
             } // if (recent.get(i).content == Content.WILD)
@@ -661,15 +626,13 @@ public class MainActivity extends AppCompatActivity
                 image = recent.get(i).image;
             } // else
 
-            image.copyTo(new Mat(mScr, roi), image);
-            roi.x += 45;
-        } // for (i = 0; i < size; ++i)
+            image.copyTo(mScr.submat(270, 451, x, x + 121), image);
+        } // for (i = 0, x = 792 - width / 2; i < size; ++i, x += 45)
 
         // Left-top corner: remain / used
         remain = mUno.getDeckCount();
         used = mUno.getUsedCount();
-        info = i18n.label_remain_used(remain, used);
-        mUno.putText(mScr, info, 20, 42, null);
+        mUno.putText(mScr, i18n.label_remain_used(remain, used), 20, 42, null);
 
         // Left-center: Hand cards of Player West (COM1)
         if (status == STAT_GAME_OVER && mWinner == Player.COM1) {
@@ -681,13 +644,10 @@ public class MainActivity extends AppCompatActivity
             Player p = mUno.getPlayer(Player.COM1);
             List<Card> hand = p.getHandCards();
             size = hand.size();
-            roi.x = 20;
-            roi.y = 290 - 20 * size;
-            for (i = 0; i < size; ++i) {
+            for (i = 0, y = 290 - 20 * size; i < size; ++i, y += 40) {
                 image = p.isOpen(i) ? hand.get(i).image : mUno.getBackImage();
-                image.copyTo(new Mat(mScr, roi), image);
-                roi.y += 40;
-            } // for (i = 0; i < size; ++i)
+                image.copyTo(mScr.submat(y, y + 181, 20, 141), image);
+            } // for (i = 0, y = 290 - 20 * size; i < size; ++i)
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
@@ -706,13 +666,10 @@ public class MainActivity extends AppCompatActivity
             Player p = mUno.getPlayer(Player.COM2);
             List<Card> hand = p.getHandCards();
             size = hand.size();
-            roi.x = (1205 - 45 * size) / 2;
-            roi.y = 20;
-            for (i = 0; i < size; ++i) {
+            for (i = 0, x = (1205 - 45 * size) / 2; i < size; ++i, x += 45) {
                 image = p.isOpen(i) ? hand.get(i).image : mUno.getBackImage();
-                image.copyTo(new Mat(mScr, roi), image);
-                roi.x += 45;
-            } // for (i = 0; i < size; ++i)
+                image.copyTo(mScr.submat(20, 201, x, x + 121), image);
+            } // for (i = 0, x = (1205 - 45 * size) / 2; i < size; ++i, x += 45)
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
@@ -731,13 +688,10 @@ public class MainActivity extends AppCompatActivity
             Player p = mUno.getPlayer(Player.COM3);
             List<Card> hand = p.getHandCards();
             size = hand.size();
-            roi.x = 1140;
-            roi.y = 290 - 20 * size;
-            for (i = 0; i < size; ++i) {
+            for (i = 0, y = 290 - 20 * size; i < size; ++i, y += 40) {
                 image = p.isOpen(i) ? hand.get(i).image : mUno.getBackImage();
-                image.copyTo(new Mat(mScr, roi), image);
-                roi.y += 40;
-            } // for (i = 0; i < size; ++i)
+                image.copyTo(mScr.submat(y, y + 181, 1140, 1261), image);
+            } // for (i = 0, y = 290 - 20 * size; i < size; ++i, y += 40)
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
@@ -756,17 +710,15 @@ public class MainActivity extends AppCompatActivity
             // Show your all hand cards
             List<Card> hand = mUno.getPlayer(Player.YOU).getHandCards();
             size = hand.size();
-            roi.x = 610 - 30 * size;
-            for (i = 0; i < size; ++i) {
+            for (i = 0, x = 610 - 30 * size; i < size; ++i, x += 60) {
                 Card card = hand.get(i);
                 image = status == STAT_GAME_OVER
                         || (status == Player.YOU
                         && mUno.isLegalToPlay(card))
                         ? card.image : card.darkImg;
-                roi.y = i == mSelectedIdx ? 500 : 520;
-                image.copyTo(new Mat(mScr, roi), image);
-                roi.x += 60;
-            } // for (i = 0; i < size; ++i)
+                y = i == mSelectedIdx ? 500 : 520;
+                image.copyTo(mScr.submat(y, y + 181, x, x + 121), image);
+            } // for (i = 0, x = 610 - 30 * size; i < size; ++i, x += 60)
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
@@ -960,7 +912,6 @@ public class MainActivity extends AppCompatActivity
         final int[] x = {580, 160, 580, 1000};
         final int[] y = {490, 270, 50, 270};
         int curr, next, oppo, prev;
-        AnimateLayer[] layer;
 
         setStatus(STAT_IDLE);
         mHideFlag = 0x0f;
@@ -969,42 +920,36 @@ public class MainActivity extends AppCompatActivity
         next = mUno.getNext();
         oppo = mUno.getOppo();
         prev = mUno.getPrev();
-        layer = new AnimateLayer[]{
-                new AnimateLayer(),
-                new AnimateLayer(),
-                new AnimateLayer(),
-                new AnimateLayer()
-        }; // new AnimateLayer[]{}
-        layer[0].elem = mUno.getBackImage();
-        layer[0].startLeft = x[curr];
-        layer[0].startTop = y[curr];
-        layer[0].endLeft = x[next];
-        layer[0].endTop = y[next];
-        layer[1].elem = mUno.getBackImage();
-        layer[1].startLeft = x[next];
-        layer[1].startTop = y[next];
-        layer[1].endLeft = x[oppo];
-        layer[1].endTop = y[oppo];
+        mLayer[0].elem = mUno.getBackImage();
+        mLayer[0].startLeft = x[curr];
+        mLayer[0].startTop = y[curr];
+        mLayer[0].endLeft = x[next];
+        mLayer[0].endTop = y[next];
+        mLayer[1].elem = mUno.getBackImage();
+        mLayer[1].startLeft = x[next];
+        mLayer[1].startTop = y[next];
+        mLayer[1].endLeft = x[oppo];
+        mLayer[1].endTop = y[oppo];
         if (mUno.getPlayers() == 3) {
-            layer[2].elem = mUno.getBackImage();
-            layer[2].startLeft = x[oppo];
-            layer[2].startTop = y[oppo];
-            layer[2].endLeft = x[curr];
-            layer[2].endTop = y[curr];
-            animate(3, layer);
+            mLayer[2].elem = mUno.getBackImage();
+            mLayer[2].startLeft = x[oppo];
+            mLayer[2].startTop = y[oppo];
+            mLayer[2].endLeft = x[curr];
+            mLayer[2].endTop = y[curr];
+            animate(3, mLayer);
         } // if (mUno.getPlayers() == 3)
         else {
-            layer[2].elem = mUno.getBackImage();
-            layer[2].startLeft = x[oppo];
-            layer[2].startTop = y[oppo];
-            layer[2].endLeft = x[prev];
-            layer[2].endTop = y[prev];
-            layer[3].elem = mUno.getBackImage();
-            layer[3].startLeft = x[prev];
-            layer[3].startTop = y[prev];
-            layer[3].endLeft = x[curr];
-            layer[3].endTop = y[curr];
-            animate(4, layer);
+            mLayer[2].elem = mUno.getBackImage();
+            mLayer[2].startLeft = x[oppo];
+            mLayer[2].startTop = y[oppo];
+            mLayer[2].endLeft = x[prev];
+            mLayer[2].endTop = y[prev];
+            mLayer[3].elem = mUno.getBackImage();
+            mLayer[3].startLeft = x[prev];
+            mLayer[3].startTop = y[prev];
+            mLayer[3].endLeft = x[curr];
+            mLayer[3].endTop = y[curr];
+            animate(4, mLayer);
         } // else
 
         mHideFlag = 0x00;
@@ -1024,27 +969,22 @@ public class MainActivity extends AppCompatActivity
     void swapWith(int whom) {
         final int[] x = {580, 160, 580, 1000};
         final int[] y = {490, 270, 50, 270};
-        AnimateLayer[] layer;
         int curr;
 
         setStatus(STAT_IDLE);
         curr = mUno.getNow();
         mHideFlag = (1 << curr) | (1 << whom);
         refreshScreen(i18n.info_7_swap(curr, whom));
-        layer = new AnimateLayer[]{
-                new AnimateLayer(),
-                new AnimateLayer()
-        }; // new AnimateLayer[]{}
-        layer[0].elem = layer[1].elem = mUno.getBackImage();
-        layer[0].startLeft = x[curr];
-        layer[0].startTop = y[curr];
-        layer[0].endLeft = x[whom];
-        layer[0].endTop = y[whom];
-        layer[1].startLeft = x[whom];
-        layer[1].startTop = y[whom];
-        layer[1].endLeft = x[curr];
-        layer[1].endTop = y[curr];
-        animate(2, layer);
+        mLayer[0].elem = mLayer[1].elem = mUno.getBackImage();
+        mLayer[0].startLeft = x[curr];
+        mLayer[0].startTop = y[curr];
+        mLayer[0].endLeft = x[whom];
+        mLayer[0].endTop = y[whom];
+        mLayer[1].startLeft = x[whom];
+        mLayer[1].startTop = y[whom];
+        mLayer[1].endLeft = x[curr];
+        mLayer[1].endTop = y[curr];
+        animate(2, mLayer);
         mHideFlag = 0x00;
         mUno.swap(curr, whom);
         refreshScreen(i18n.info_7_swap(curr, whom));
@@ -1063,7 +1003,6 @@ public class MainActivity extends AppCompatActivity
     @WorkerThread
     private void play(int index, Color color) {
         Card card;
-        AnimateLayer[] layer;
         int c, now, size, recentSize, next;
 
         setStatus(STAT_IDLE); // block tap down events when idle
@@ -1073,34 +1012,33 @@ public class MainActivity extends AppCompatActivity
         mSelectedIdx = -1;
         mSoundPool.play(sndPlay, mSndVol, mSndVol, 1, 0, 1.0f);
         if (card != null) {
-            layer = new AnimateLayer[]{new AnimateLayer()};
-            layer[0].elem = card.image;
+            mLayer[0].elem = card.image;
             switch (now) {
                 case Player.COM1:
-                    layer[0].startLeft = 160;
-                    layer[0].startTop = 290 - 20 * size + 40 * index;
+                    mLayer[0].startLeft = 160;
+                    mLayer[0].startTop = 290 - 20 * size + 40 * index;
                     break; // case Player.COM1
 
                 case Player.COM2:
-                    layer[0].startLeft = (1205 - 45 * size + 90 * index) / 2;
-                    layer[0].startTop = 50;
+                    mLayer[0].startLeft = (1205 - 45 * size + 90 * index) / 2;
+                    mLayer[0].startTop = 50;
                     break; // case Player.COM2
 
                 case Player.COM3:
-                    layer[0].startLeft = 1000;
-                    layer[0].startTop = 290 - 20 * size + 40 * index;
+                    mLayer[0].startLeft = 1000;
+                    mLayer[0].startTop = 290 - 20 * size + 40 * index;
                     break; // case Player.COM3
 
                 default:
-                    layer[0].startLeft = 610 - 30 * size + 60 * index;
-                    layer[0].startTop = 500;
+                    mLayer[0].startLeft = 610 - 30 * size + 60 * index;
+                    mLayer[0].startTop = 500;
                     break; // default
             } // switch (now)
 
             recentSize = mUno.getRecent().size();
-            layer[0].endLeft = (45 * recentSize + 1419) / 2;
-            layer[0].endTop = 270;
-            animate(1, layer);
+            mLayer[0].endLeft = (45 * recentSize + 1419) / 2;
+            mLayer[0].endTop = 270;
+            animate(1, mLayer);
             if (size == 1) {
                 // The player in action becomes winner when it played the
                 // final card in its hand successfully
@@ -1211,7 +1149,6 @@ public class MainActivity extends AppCompatActivity
     private void draw(int count, boolean force) {
         Card drawn;
         String message;
-        AnimateLayer[] layer;
         int i, index, c, now, size;
 
         setStatus(STAT_IDLE); // block tap down events when idle
@@ -1230,42 +1167,41 @@ public class MainActivity extends AppCompatActivity
             if (index >= 0) {
                 drawn = mUno.getCurrPlayer().getHandCards().get(index);
                 size = mUno.getCurrPlayer().getHandSize();
-                layer = new AnimateLayer[]{new AnimateLayer()};
-                layer[0].startLeft = 338;
-                layer[0].startTop = 270;
+                mLayer[0].startLeft = 338;
+                mLayer[0].startTop = 270;
                 switch (now) {
                     case Player.COM1:
-                        layer[0].elem = mUno.getBackImage();
-                        layer[0].endLeft = 20;
-                        layer[0].endTop = 290 - 20 * size + 40 * index;
+                        mLayer[0].elem = mUno.getBackImage();
+                        mLayer[0].endLeft = 20;
+                        mLayer[0].endTop = 290 - 20 * size + 40 * index;
                         message = i18n.act_drawCardCount(now, count);
                         break; // case Player.COM1
 
                     case Player.COM2:
-                        layer[0].elem = mUno.getBackImage();
-                        layer[0].endLeft = (1205 - 45 * size + 90 * index) / 2;
-                        layer[0].endTop = 20;
+                        mLayer[0].elem = mUno.getBackImage();
+                        mLayer[0].endLeft = (1205 - 45 * size + 90 * index) / 2;
+                        mLayer[0].endTop = 20;
                         message = i18n.act_drawCardCount(now, count);
                         break; // case Player.COM2
 
                     case Player.COM3:
-                        layer[0].elem = mUno.getBackImage();
-                        layer[0].endLeft = 1140;
-                        layer[0].endTop = 290 - 20 * size + 40 * index;
+                        mLayer[0].elem = mUno.getBackImage();
+                        mLayer[0].endLeft = 1140;
+                        mLayer[0].endTop = 290 - 20 * size + 40 * index;
                         message = i18n.act_drawCardCount(now, count);
                         break; // case Player.COM3
 
                     default:
-                        layer[0].elem = drawn.image;
-                        layer[0].endLeft = 610 - 30 * size + 60 * index;
-                        layer[0].endTop = 520;
+                        mLayer[0].elem = drawn.image;
+                        mLayer[0].endLeft = 610 - 30 * size + 60 * index;
+                        mLayer[0].endTop = 520;
                         message = i18n.act_drawCard(now, drawn.name);
                         break; // default
                 } // switch (now)
 
                 // Animation
                 mSoundPool.play(sndDraw, mSndVol, mSndVol, 1, 0, 1.0f);
-                animate(1, layer);
+                animate(1, mLayer);
                 refreshScreen(message);
                 threadSleep(300);
             } // if (index >= 0)
@@ -1320,41 +1256,41 @@ public class MainActivity extends AppCompatActivity
      */
     @WorkerThread
     private void animate(int layerCount, AnimateLayer[] layer) {
-        int i, j;
-        Rect roi;
-
-        roi = new Rect();
-        for (i = 0; i < 5; ++i) {
-            for (j = 0; j < layerCount; ++j) {
+        for (int i = 0; i < 5; ++i) {
+            for (int j = 0; j < layerCount; ++j) {
                 AnimateLayer l = layer[j];
-                roi.x = l.startLeft + (l.endLeft - l.startLeft) * i / 5;
-                roi.y = l.startTop + (l.endTop - l.startTop) * i / 5;
-                roi.width = l.elem.cols();
-                roi.height = l.elem.rows();
-                new Mat(mScr, roi).copyTo(new Mat(mBackup[j], roi));
-            } // for (j = 0; j < layerCount; ++j)
+                int x1 = l.startLeft + (l.endLeft - l.startLeft) * i / 5;
+                int y1 = l.startTop + (l.endTop - l.startTop) * i / 5;
+                int x2 = x1 + l.elem.cols();
+                int y2 = y1 + l.elem.rows();
+                Mat roi1 = mScr.submat(y1, y2, x1, x2);
+                Mat roi2 = mBackup[j].submat(y1, y2, x1, x2);
+                roi1.copyTo(roi2);
+            } // for (int j = 0; j < layerCount; ++j)
 
-            for (j = 0; j < layerCount; ++j) {
+            for (int j = 0; j < layerCount; ++j) {
                 AnimateLayer l = layer[j];
-                roi.x = l.startLeft + (l.endLeft - l.startLeft) * i / 5;
-                roi.y = l.startTop + (l.endTop - l.startTop) * i / 5;
-                roi.width = l.elem.cols();
-                roi.height = l.elem.rows();
-                l.elem.copyTo(new Mat(mScr, roi), l.elem);
-            } // for (j = 0; j < layerCount; ++j)
+                int x1 = l.startLeft + (l.endLeft - l.startLeft) * i / 5;
+                int y1 = l.startTop + (l.endTop - l.startTop) * i / 5;
+                int x2 = x1 + l.elem.cols();
+                int y2 = y1 + l.elem.rows();
+                l.elem.copyTo(mScr.submat(y1, y2, x1, x2), l.elem);
+            } // for (int j = 0; j < layerCount; ++j)
 
             Utils.matToBitmap(mScr, mBmp);
             mHandler.post(this); // -> run()
             threadSleep(30);
-            for (j = 0; j < layerCount; ++j) {
+            for (int j = 0; j < layerCount; ++j) {
                 AnimateLayer l = layer[j];
-                roi.x = l.startLeft + (l.endLeft - l.startLeft) * i / 5;
-                roi.y = l.startTop + (l.endTop - l.startTop) * i / 5;
-                roi.width = l.elem.cols();
-                roi.height = l.elem.rows();
-                new Mat(mBackup[j], roi).copyTo(new Mat(mScr, roi));
-            } // for (j = 0; j < layerCount; ++j)
-        } // for (i = 0; i < 5; ++i)
+                int x1 = l.startLeft + (l.endLeft - l.startLeft) * i / 5;
+                int y1 = l.startTop + (l.endTop - l.startTop) * i / 5;
+                int x2 = x1 + l.elem.cols();
+                int y2 = y1 + l.elem.rows();
+                Mat roi1 = mScr.submat(y1, y2, x1, x2);
+                Mat roi2 = mBackup[j].submat(y1, y2, x1, x2);
+                roi2.copyTo(roi1);
+            } // for (int j = 0; j < layerCount; ++j)
+        } // for (int i = 0; i < 5; ++i)
     } // animate(int, AnimateLayer[])
 
     /**
