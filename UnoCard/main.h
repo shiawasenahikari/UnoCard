@@ -85,6 +85,8 @@ private:
     void draw(int count = 1, bool force = false);
     void refreshScreen(const QString& message = "");
     void animate(int layerCount, AnimateLayer layer[]);
+    int getFormatTextWidth(QPainter* painter, const QString& text);
+    void putFormatText(QPainter* painter, const QString& text, int x, int y);
 
 protected:
     // Implemented Listeners

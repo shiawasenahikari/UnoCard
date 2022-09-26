@@ -18,7 +18,7 @@ public class Card implements Comparable<Card> {
     /**
      * Color part of name string.
      */
-    static final String[] A = {"", "Red ", "Blue ", "Green ", "Yellow "};
+    static final String[] A = {"", "[R]", "[B]", "[G]", "[Y]"};
 
     /**
      * Content part of name string.
@@ -51,7 +51,7 @@ public class Card implements Comparable<Card> {
     public final Content content;
 
     /**
-     * Card's name, e.g. "Blue 3"
+     * Card's name, e.g. "[B]3"
      */
     public final String name;
 

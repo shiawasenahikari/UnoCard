@@ -106,8 +106,10 @@ public interface I18N {
 } // I18N Interface
 
 class I18N_en_US implements I18N {
-    static final String[] C = {"NONE", "RED", "BLUE", "GREEN", "YELLOW"};
     static final String[] P = {"YOU", "WEST", "NORTH", "EAST"};
+    static final String[] C = {
+            "NONE", "[R]RED", "[B]BLUE", "[G]GREEN", "[Y]YELLOW"
+    }; // C[]
 
     String c(int i) {
         return 0 <= i && i <= 4 ? C[i] : "????";
@@ -354,8 +356,10 @@ class I18N_en_US implements I18N {
 } // I18N_en_US Class
 
 class I18N_zh_CN implements I18N {
-    static final String[] C = {"无色", "红色", "蓝色", "绿色", "黄色"};
     static final String[] P = {"你", "西家", "北家", "东家"};
+    static final String[] C = {
+            "无色", "[R]红色", "[B]蓝色", "[G]绿色", "[Y]黄色"
+    }; // C[]
 
     String c(int i) {
         return 0 <= i && i <= 4 ? C[i] : "????";

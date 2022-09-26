@@ -48,10 +48,11 @@ static const int STAT_GAME_OVER = 0x4444;
 static const int STAT_WILD_COLOR = 0x5555;
 static const int STAT_DOUBT_WILD4 = 0x6666;
 static const int STAT_SEVEN_TARGET = 0x7777;
-static const QPen PEN_RED(QColor(0xFF, 0x55, 0x55));
-static const QPen PEN_GREEN(QColor(0x55, 0xAA, 0x55));
+static const QPen PEN_RED(QColor(0xFF, 0x77, 0x77));
+static const QPen PEN_BLUE(QColor(0x77, 0x77, 0xFF));
+static const QPen PEN_GREEN(QColor(0x77, 0xCC, 0x77));
 static const QPen PEN_WHITE(QColor(0xCC, 0xCC, 0xCC));
-static const QPen PEN_YELLOW(QColor(0xFF, 0xAA, 0x11));
+static const QPen PEN_YELLOW(QColor(0xFF, 0xCC, 0x11));
 static const QBrush BRUSH_RED(QColor(0xFF, 0x55, 0x55));
 static const QBrush BRUSH_BLUE(QColor(0x55, 0x55, 0xFF));
 static const QBrush BRUSH_GREEN(QColor(0x55, 0xAA, 0x55));
@@ -416,6 +417,69 @@ void Main::setStatus(int status) {
 } // setStatus(int)
 
 /**
+ * Measure the text width.
+ * <p>
+ * SPECIAL: In the text string, you can use color marks ([R], [B],
+ * [G], [W] and [Y]) to control the color of the remaining text.
+ * COLOR MARKS SHOULD NOT BE TREATED AS PRINTABLE CHARACTERS.
+ *
+ * @param painter Use which painter to draw text.
+ * @param text    Measure which text's width.
+ * @return Width of the provided text (unit: pixels).
+ */
+int Main::getFormatTextWidth(QPainter* painter, const QString& text) {
+    QString s;
+
+    for (int i = 0, n = text.length(); i < n; ++i) {
+        if ('[' == text[i] && i + 2 < n && text[i + 2] == ']') {
+            i += 2;
+        } // if ('[' == text[i] && i + 2 < n && text[i + 2] == ']')
+        else {
+            s += text[i];
+        } // else
+    } // for (int i = 0, n = text.length(); i < n; ++i)
+
+    return painter->fontMetrics().width(s);
+} // getFormatTextWidth(QPainter*, const QString&)
+
+/**
+ * Put text on image.
+ * <p>
+ * SPECIAL: In the text string, you can use color marks ([R], [B],
+ * [G], [W] and [Y]) to control the color of the remaining text.
+ *
+ * @param painter Use which painter to draw text.
+ * @param text    Put which text.
+ * @param x       Put on where (x coordinate).
+ * @param y       Put on where (y coordinate).
+ */
+void Main::putFormatText(QPainter* painter, const QString& text, int x, int y) {
+    QString s;
+
+    painter->setPen(PEN_WHITE);
+    for (int i = 0, n = text.length(); i < n; ++i) {
+        if ('[' == text[i] && i + 2 < n && text[i + 2] == ']') {
+            ++i;
+            painter->drawText(x, y, s);
+            if (text[i] == 'R') painter->setPen(PEN_RED);
+            if (text[i] == 'B') painter->setPen(PEN_BLUE);
+            if (text[i] == 'G') painter->setPen(PEN_GREEN);
+            if (text[i] == 'W') painter->setPen(PEN_WHITE);
+            if (text[i] == 'Y') painter->setPen(PEN_YELLOW);
+            x += painter->fontMetrics().width(s);
+            s.clear();
+            ++i;
+        } // if ('[' == text[i] && i + 2 < n && text[i + 2] == ']')
+        else {
+            s += text[i];
+        } // else
+    } // for (int i = 0; n = text.length(); i < n; ++i)
+
+    painter->drawText(x, y, s);
+    painter->setPen(PEN_WHITE);
+} // putFormatText(QPainter*, const QString*, int, int)
+
+/**
  * Refresh the screen display. The content of global variable [sScreen]
  * will be changed after calling this function.
  *
@@ -432,8 +496,8 @@ void Main::refreshScreen(const QString& message) {
     sPainter->drawImage(0, 0, sUno->getBackground());
 
     // Message area
-    width = sPainter->fontMetrics().width(message);
-    sPainter->drawText(640 - width / 2, 487, message);
+    width = getFormatTextWidth(sPainter, message);
+    putFormatText(sPainter, message, 640 - width / 2, 487);
 
     // Right-bottom corner: <AUTO> button
     if (sAuto) sPainter->setPen(PEN_YELLOW);

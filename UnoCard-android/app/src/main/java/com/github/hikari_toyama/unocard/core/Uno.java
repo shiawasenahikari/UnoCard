@@ -20,7 +20,9 @@ import android.util.Log;
 import com.github.hikari_toyama.unocard.R;
 
 import org.opencv.android.Utils;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
@@ -182,9 +184,14 @@ public class Uno {
     Mat hardImage, hardImage_d;
 
     /**
-     * Font images.
+     * Font image.
      */
-    Mat fontR, fontG, fontY, fontW;
+    Mat font;
+
+    /**
+     * Color blocks. Used for drawing characters.
+     */
+    Mat[] blk_r, blk_b, blk_g, blk_y, blk_w;
 
     /**
      * Player in turn. Must be one of the following:
@@ -261,11 +268,12 @@ public class Uno {
     Uno(Context context) throws IOException {
         Mat[] br, dk;
         int i, loaded, total;
+        Scalar rgb_red, rgb_blue, rgb_green, rgb_white, rgb_yellow;
 
         // Preparations
         context = context.getApplicationContext();
         loaded = 0;
-        total = 128;
+        total = 125;
         Log.i(TAG, "Loading... (0%)");
 
         // Load background image resources
@@ -438,17 +446,38 @@ public class Uno {
             Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
         } // for (i = 1; i < 5; ++i)
 
-        // Load font images
-        fontR = Utils.loadResource(context, R.raw.font_r);
-        fontG = Utils.loadResource(context, R.raw.font_g);
-        fontW = Utils.loadResource(context, R.raw.font_w);
-        fontY = Utils.loadResource(context, R.raw.font_y);
-        Imgproc.cvtColor(fontR, fontR, Imgproc.COLOR_BGR2RGB);
-        Imgproc.cvtColor(fontG, fontG, Imgproc.COLOR_BGR2RGB);
-        Imgproc.cvtColor(fontW, fontW, Imgproc.COLOR_BGR2RGB);
-        Imgproc.cvtColor(fontY, fontY, Imgproc.COLOR_BGR2RGB);
-        loaded += 4;
+        // Load font image
+        font = Utils.loadResource(context, R.raw.font_w);
+        Imgproc.cvtColor(font, font, Imgproc.COLOR_BGR2RGB);
+        ++loaded;
         Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
+
+        // Generate color blocks
+        rgb_red = new Scalar(0xFF, 0x77, 0x77);
+        rgb_blue = new Scalar(0x77, 0x77, 0xFF);
+        rgb_green = new Scalar(0x77, 0xCC, 0x77);
+        rgb_white = new Scalar(0xCC, 0xCC, 0xCC);
+        rgb_yellow = new Scalar(0xFF, 0xCC, 0x11);
+        blk_r = new Mat[]{
+                new Mat(48, 17, CvType.CV_8UC3, rgb_red),    // for ASCII
+                new Mat(48, 33, CvType.CV_8UC3, rgb_red)     // for CJK
+        }; // blk_r = new Mat[]{}
+        blk_b = new Mat[]{
+                new Mat(48, 17, CvType.CV_8UC3, rgb_blue),   // for ASCII
+                new Mat(48, 33, CvType.CV_8UC3, rgb_blue)    // for CJK
+        }; // blk_b = new Mat[]{}
+        blk_g = new Mat[]{
+                new Mat(48, 17, CvType.CV_8UC3, rgb_green),  // for ASCII
+                new Mat(48, 33, CvType.CV_8UC3, rgb_green)   // for CJK
+        }; // blk_g = new Mat[]{}
+        blk_w = new Mat[]{
+                new Mat(48, 17, CvType.CV_8UC3, rgb_white),  // for ASCII
+                new Mat(48, 33, CvType.CV_8UC3, rgb_white)   // for CJK
+        }; // blk_w = new Mat[]{}
+        blk_y = new Mat[]{
+                new Mat(48, 17, CvType.CV_8UC3, rgb_yellow), // for ASCII
+                new Mat(48, 33, CvType.CV_8UC3, rgb_yellow)  // for CJK
+        }; // blk_y = new Mat[]{}
 
         // Generate 54 types of cards
         table = new Card[54];
@@ -595,6 +624,38 @@ public class Uno {
     } // getTextWidth(String)
 
     /**
+     * Measure the text width, using our custom font.
+     * <p>
+     * SPECIAL: In the text string, you can use color marks ([R], [B],
+     * [G], [W] and [Y]) to control the color of the remaining text.
+     * COLOR MARKS SHOULD NOT BE TREATED AS PRINTABLE CHARACTERS.
+     *
+     * @param text Measure which text's width.
+     * @return Width of the provided text (unit: pixels).
+     */
+    public int getFormatTextWidth(String text) {
+        char[] txt;
+        int r, width;
+        Integer position;
+
+        width = 0;
+        txt = text.toCharArray();
+        for (int i = 0, n = txt.length; i < n; ++i) {
+            if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']') {
+                i += 2;
+            } // if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']')
+            else {
+                position = CHAR_MAP.get(txt[i]);
+                if (position == null) position = 0x1f;
+                r = position >>> 4;
+                width += r < 6 ? 17 : 33;
+            } // else
+        } // for (int i = 0, n = txt.length; i < n; ++i)
+
+        return width;
+    } // getFormatTextWidth(String)
+
+    /**
      * Put text on image, using our custom font.
      * Unknown characters will be replaced with the question mark '?'.
      *
@@ -602,30 +663,76 @@ public class Uno {
      * @param text  Put which text.
      * @param x     Put on where (x coordinate).
      * @param y     Put on where (y coordinate).
-     * @param color Text color. Must be one of the following:
-     *              Color.RED, Color.GREEN, Color.YELLOW, null (as white).
+     * @param color Text color. Must be one of the following: Color.RED,
+     *              Color.BLUE, Color.GREEN, Color.YELLOW, null (as white).
      */
     public void putText(Mat m, String text, int x, int y, Color color) {
+        Mat mask;
+        Mat[] blk;
         int r, c, w;
         Integer position;
-        Mat font, cimg, mask;
 
         y -= 36;
-        font = color == Color.RED ? fontR
-                : color == Color.GREEN ? fontG
-                : color == Color.YELLOW ? fontY : fontW;
+        blk = color == Color.RED ? blk_r
+                : color == Color.BLUE ? blk_b
+                : color == Color.GREEN ? blk_g
+                : color == Color.YELLOW ? blk_y : blk_w;
         for (char ch : text.toCharArray()) {
             position = CHAR_MAP.get(ch);
             if (position == null) position = 0x1f;
             r = position >>> 4;
             c = position & 0x0f;
             w = r < 6 ? 17 : 33;
-            cimg = font.submat(48 * r, 48 + 48 * r, w * c, w + w * c);
-            mask = fontW.submat(48 * r, 48 + 48 * r, w * c, w + w * c);
-            cimg.copyTo(m.submat(y, y + 48, x, x + w), mask);
+            mask = font.submat(48 * r, 48 + 48 * r, w * c, w + w * c);
+            blk[r < 6 ? 0 : 1].copyTo(m.submat(y, y + 48, x, x + w), mask);
             x += w;
         } // for (char ch : text.toCharArray())
     } // putText(Mat, String, int, int, Color)
+
+    /**
+     * Put text on image, using our custom font.
+     * Unknown characters will be replaced with the question mark '?'.
+     * <p>
+     * SPECIAL: In the text string, you can use color marks ([R], [B],
+     * [G], [W] and [Y]) to control the color of the remaining text.
+     *
+     * @param m    Put on which image.
+     * @param text Put which text.
+     * @param x    Put on where (x coordinate).
+     * @param y    Put on where (y coordinate).
+     */
+    public void putFormatText(Mat m, String text, int x, int y) {
+        Mat mask;
+        Mat[] blk;
+        char[] txt;
+        int r, c, w;
+        Integer position;
+
+        y -= 36;
+        blk = blk_w;
+        txt = text.toCharArray();
+        for (int i = 0, n = txt.length; i < n; ++i) {
+            if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']') {
+                ++i;
+                if (txt[i] == 'R') blk = blk_r;
+                if (txt[i] == 'B') blk = blk_b;
+                if (txt[i] == 'G') blk = blk_g;
+                if (txt[i] == 'W') blk = blk_w;
+                if (txt[i] == 'Y') blk = blk_y;
+                ++i;
+            } // if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']')
+            else {
+                position = CHAR_MAP.get(txt[i]);
+                if (position == null) position = 0x1f;
+                r = position >>> 4;
+                c = position & 0x0f;
+                w = r < 6 ? 17 : 33;
+                mask = font.submat(48 * r, 48 + 48 * r, w * c, w + w * c);
+                blk[r < 6 ? 0 : 1].copyTo(m.submat(y, y + 48, x, x + w), mask);
+                x += w;
+            } // else
+        } // for (int i = 0, n = txt.length; i < n; ++i)
+    } // putFormatText(Mat, String, int, int)
 
     /**
      * @return Player in turn. Must be one of the following:

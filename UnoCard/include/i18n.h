@@ -65,7 +65,9 @@ class I18N_en_US : public I18N {
 private:
     inline static const QString& c(int i) {
         static const QString UNKNOWN = "????";
-        static const QString S[] = { "NONE", "RED", "BLUE", "GREEN", "YELLOW" };
+        static const QString S[] = {
+            "NONE", "[R]RED", "[B]BLUE", "[G]GREEN", "[Y]YELLOW"
+        }; // S[]
         return 0 <= i && i <= 4 ? S[i] : UNKNOWN;
     } // c(int)
 
@@ -281,7 +283,9 @@ class I18N_zh_CN : public I18N {
 private:
     inline static const QString& c(int i) {
         static const QString UNKNOWN = "????";
-        static const QString S[] = { "无色", "红色", "蓝色", "绿色", "黄色" };
+        static const QString S[] = {
+            "无色", "[R]红色", "[B]蓝色", "[G]绿色", "[Y]黄色"
+        }; // S[]
         return 0 <= i && i <= 4 ? S[i] : UNKNOWN;
     } // c(int)
 

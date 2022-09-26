@@ -41,7 +41,7 @@ public:
     const Content content;
 
     /**
-     * Card's name, e.g. "Blue 3"
+     * Card's name, e.g. "[B]3"
      */
     const QString name;
 
@@ -123,7 +123,7 @@ private:
      * Color part of name string.
      */
     inline static const QString& A(Color color) {
-        static QString a[] = { "", "Red ", "Blue ", "Green ", "Yellow " };
+        static const QString a[] = { "", "[R]", "[B]", "[G]", "[Y]" };
         return a[color];
     } // A(Color)
 
@@ -131,7 +131,7 @@ private:
      * Content part of name string.
      */
     inline static const QString& B(Content content) {
-        static QString b[] = {
+        static const QString b[] = {
             "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
             "+2", "Skip", "Reverse", "Wild", "Wild +4"
         }; // b[]

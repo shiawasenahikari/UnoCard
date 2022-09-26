@@ -484,8 +484,8 @@ public class MainActivity extends AppCompatActivity
         mUno.getBackground().copyTo(mScr);
 
         // Message area
-        width = mUno.getTextWidth(message);
-        mUno.putText(mScr, message, 640 - width / 2, 487, null);
+        width = mUno.getFormatTextWidth(message);
+        mUno.putFormatText(mScr, message, 640 - width / 2, 487);
 
         // Right-bottom corner: <AUTO> button
         fontColor = mAuto ? Color.YELLOW : null;

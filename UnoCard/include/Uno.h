@@ -21,6 +21,9 @@
 #include "include/Player.h"
 #include "include/Content.h"
 
+#define BROKEN_IMAGE_RESOURCES_EXCEPTION \
+"One or more image resources are broken. Re-install this app."
+
 /**
  * Uno Runtime Class (Singleton).
  */
@@ -162,18 +165,11 @@ private:
     inline Uno(unsigned seed) {
         QImage br, dk;
         int i, done, total;
-        static const QString A[] = {
-            "k", "r", "b", "g", "y"
-        }; // A[]
-
-        static const QString B[] = {
-            "0", "1", "2", "3", "4",
-            "5", "6", "7", "8", "9",
-            "+", "@", "$", "w", "w+"
+        QString A[] = { "k", "r", "b", "g", "y" };
+        QString B[] = {
+            "0", "1", "2", "3", "4", "5", "6", "7",
+            "8", "9", "+", "@", "$", "w", "w+"
         }; // B[]
-
-        static const char* BROKEN_IMAGE_RESOURCES_EXCEPTION =
-            "One or more image resources are broken. Re-install this app.";
 
         // Preparations
         done = 0;
