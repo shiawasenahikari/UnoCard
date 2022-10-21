@@ -11,9 +11,9 @@ TEMPLATE = app
 CONFIG += c++11
 CONFIG -= app_bundle
 DESTDIR = $$PWD
-RC_FILE = UnoCard.rc
-RC_ICONS = UnoCard.ico
+RC_ICONS = resource/icon_128x128.ico
 QT += core gui multimedia widgets
+VERSION = 3.4.0.22101
 
 HEADERS += \
     include/AI.h \
@@ -31,10 +31,5 @@ SOURCES += \
 
 FORMS += \
     main.ui
-
-msvc {
-    QMAKE_CFLAGS += /utf-8
-    QMAKE_CXXFLAGS += /utf-8
-} # msvc
 
 # E.O.F

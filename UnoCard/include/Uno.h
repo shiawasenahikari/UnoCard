@@ -174,7 +174,7 @@ private:
         // Preparations
         done = 0;
         total = 124;
-        qDebug("Loading... (0%)");
+        qDebug("Loading... (0%%)");
 
         // Load background image resources
         if (bgWelcome.load("resource/bg_welcome.png") &&
@@ -956,8 +956,8 @@ public:
                 ++contentAnalysis[card->content];
                 recentColors.push_back(card->isWild() ? color : card->color);
                 qDebug("colorAnalysis & contentAnalysis:");
-                qDebug(qPrintable(array2string(colorAnalysis, 5)));
-                qDebug(qPrintable(array2string(contentAnalysis, 15)));
+                qDebug("%s", qPrintable(array2string(colorAnalysis, 5)));
+                qDebug("%s", qPrintable(array2string(contentAnalysis, 15)));
                 if (recent.size() > 5) {
                     used.push_back(recent.front());
                     recent.erase(recent.begin());

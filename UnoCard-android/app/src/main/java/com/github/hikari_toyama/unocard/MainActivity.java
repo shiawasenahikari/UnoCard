@@ -19,6 +19,8 @@ import android.media.MediaPlayer;
 import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -64,7 +66,7 @@ class AnimateLayer {
  */
 @SuppressWarnings("ClickableViewAccessibility")
 public class MainActivity extends AppCompatActivity
-        implements Runnable, View.OnTouchListener {
+        implements Handler.Callback, Runnable, View.OnTouchListener {
     private static final boolean OPENCV_INIT_SUCCESS = OpenCVLoader.initDebug();
     private static final Scalar RGB_YELLOW = new Scalar(0xFF, 0xAA, 0x11);
     private static final Scalar RGB_GREEN = new Scalar(0x55, 0xAA, 0x55);
@@ -82,9 +84,10 @@ public class MainActivity extends AppCompatActivity
     private AnimateLayer[] mLayer;
     private SoundPool mSoundPool;
     private ImageView mImgScreen;
+    private Handler mSubHandler;
+    private Handler mUIHandler;
     private Color[] mBestColor;
     private boolean mAIRunning;
-    private Handler mHandler;
     private int mSelectedIdx;
     private boolean mAuto;
     private float mSndVol;
@@ -117,7 +120,7 @@ public class MainActivity extends AppCompatActivity
         // Preparations
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mHandler = new Handler();
+        mUIHandler = new Handler(Looper.getMainLooper(), this);
         if (OPENCV_INIT_SUCCESS) {
             if (Locale.getDefault().toString().contains("zh")) {
                 i18n = I18N.ZH_CN;
@@ -167,7 +170,7 @@ public class MainActivity extends AppCompatActivity
             }; // new Mat[]{}
             mBmp = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888);
             mImgScreen = findViewById(R.id.imgMainScreen);
-            new Thread(() -> setStatus(STAT_WELCOME)).start();
+            new Thread(this).start(); // -> run()
             mImgScreen.setOnTouchListener(this);
         } // if (OPENCV_INIT_SUCCESS)
         else {
@@ -319,6 +322,8 @@ public class MainActivity extends AppCompatActivity
 
             case STAT_NEW_GAME:
                 // New game
+                // You will lose 200 points if you quit during the game
+                mScore -= 200;
                 mUno.start();
                 mSelectedIdx = -1;
                 refreshScreen(i18n.info_ready());
@@ -573,7 +578,7 @@ public class MainActivity extends AppCompatActivity
 
             // Show image
             Utils.matToBitmap(mScr, mBmp);
-            mHandler.post(this); // -> run()
+            mUIHandler.sendEmptyMessage(0); // -> handleMessage()
             return;
         } // if (mAdjustOptions)
 
@@ -604,7 +609,7 @@ public class MainActivity extends AppCompatActivity
 
             // Show image
             Utils.matToBitmap(mScr, mBmp);
-            mHandler.post(this); // -> run()
+            mUIHandler.sendEmptyMessage(0); // -> handleMessage()
             return;
         } // if (status == STAT_WELCOME)
 
@@ -892,16 +897,18 @@ public class MainActivity extends AppCompatActivity
 
         // Show screen
         Utils.matToBitmap(mScr, mBmp);
-        mHandler.post(this); // -> run()
+        mUIHandler.sendEmptyMessage(0); // -> handleMessage()
     } // refreshScreen(String)
 
     /**
      * Draw [mBmp] on the screen. Called by system.
      */
     @Override
-    public void run() {
+    @UiThread
+    public boolean handleMessage(Message message) {
         mImgScreen.setImageBitmap(mBmp);
-    } // run()
+        return true;
+    } // handleMessage(Message)
 
     /**
      * In 7-0 rule, when a zero card is put down, everyone need to pass
@@ -1043,15 +1050,15 @@ public class MainActivity extends AppCompatActivity
                 // The player in action becomes winner when it played the
                 // final card in its hand successfully
                 if (now == Player.YOU) {
-                    mScore += mUno.getPlayer(Player.COM1).getHandScore()
+                    mScore = Math.min(9999, mScore + 200
+                            + mUno.getPlayer(Player.COM1).getHandScore()
                             + mUno.getPlayer(Player.COM2).getHandScore()
-                            + mUno.getPlayer(Player.COM3).getHandScore();
-                    if (mScore > 9999) mScore = 9999;
+                            + mUno.getPlayer(Player.COM3).getHandScore());
                     mSoundPool.play(sndWin, mSndVol, mSndVol, 1, 0, 1.0f);
                 } // if (now == Player.YOU)
                 else {
-                    mScore -= mUno.getPlayer(Player.YOU).getHandScore();
-                    if (mScore < -999) mScore = -999;
+                    mScore = Math.max(-999, mScore + 200
+                            - mUno.getPlayer(Player.YOU).getHandScore());
                     mSoundPool.play(sndLose, mSndVol, mSndVol, 1, 0, 1.0f);
                 } // else
 
@@ -1278,7 +1285,7 @@ public class MainActivity extends AppCompatActivity
             } // for (int j = 0; j < layerCount; ++j)
 
             Utils.matToBitmap(mScr, mBmp);
-            mHandler.post(this); // -> run()
+            mUIHandler.sendEmptyMessage(0); // -> handleMessage()
             threadSleep(30);
             for (int j = 0; j < layerCount; ++j) {
                 AnimateLayer l = layer[j];
@@ -1334,130 +1341,155 @@ public class MainActivity extends AppCompatActivity
      * @param v     Touch event occurred on which view object.
      * @param event Which event occurred. Call event.getAction() to get the type
      *              of occurred touch event, such as MotionEvent.ACTION_DOWN.
-     * @return True because our listener has consumed the touch events.
+     * @return True because the touch events will be handled by our listener.
      */
     @Override
     @UiThread
     public boolean onTouch(View v, MotionEvent event) {
-        if (event.getAction() != MotionEvent.ACTION_DOWN) {
-            // Only response to tap down events, and ignore the others
-            return false;
-        } // if (event.getAction() != MotionEvent.ACTION_DOWN)
+        boolean handled = event.getAction() == MotionEvent.ACTION_DOWN;
 
-        // Coordinates must be measured in UI thread
-        // Measurement in sub thread will cause measurement error
-        int x = (int) (event.getX() * 1280 / v.getWidth());
-        int y = (int) (event.getY() * 720 / v.getHeight());
-        new Thread(() -> {
-            if (mAdjustOptions) {
-                // Do special behaviors when configuring game options
-                if (60 <= y && y <= 240) {
-                    if (150 <= x && x <= 270) {
-                        // BGM OFF button
-                        mBgmVol = 0.0f;
-                        mMediaPlayer.setVolume(0.0f, 0.0f);
-                        setStatus(mStatus);
-                    } // if (150 <= x && x <= 270)
-                    else if (330 <= x && x <= 450) {
-                        // BGM ON button
-                        mBgmVol = 0.5f;
-                        mMediaPlayer.setVolume(0.5f, 0.5f);
-                        setStatus(mStatus);
-                    } // else if (330 <= x && x <= 450)
-                    else if (790 <= x && x <= 910) {
-                        // Easy AI Level
-                        mUno.setDifficulty(Uno.LV_EASY);
-                        setStatus(mStatus);
-                    } // else if (790 <= x && x <= 910)
-                    else if (970 <= x && x <= 1090) {
-                        // Hard AI Level
-                        mUno.setDifficulty(Uno.LV_HARD);
-                        setStatus(mStatus);
-                    } // else if (970 <= x && x <= 1090)
-                } // if (60 <= y && y <= 240)
-                else if (270 <= y && y <= 450) {
-                    if (150 <= x && x <= 270) {
-                        // SND OFF button
-                        mSndVol = 0.0f;
-                        setStatus(mStatus);
-                    } // if (150 <= x && x <= 270)
-                    else if (330 <= x && x <= 450) {
-                        // SND ON button
-                        mSndVol = 0.5f;
-                        mSoundPool.play(sndPlay, 0.5f, 0.5f, 1, 0, 1.0f);
-                        setStatus(mStatus);
-                    } // else if (330 <= x && x <= 450)
-                    else if (790 <= x && x <= 910) {
-                        // 3 players
-                        mUno.setPlayers(3);
-                        setStatus(mStatus);
-                    } // else if (790 <= x && x <= 910)
-                    else if (970 <= x && x <= 1090) {
-                        // 4 players
-                        mUno.setPlayers(4);
-                        setStatus(mStatus);
-                    } // else if (970 <= x && x <= 1090)
-                } // else if (270 <= y && y <= 450)
-                else if (519 <= y && y <= 540) {
-                    if (800 <= x && x <= 927) {
-                        // Force play, <KEEP> button
-                        mUno.setForcePlay(false);
-                        setStatus(mStatus);
-                    } // if (800 <= x && x <= 927)
-                    else if (980 <= x && x <= 1104) {
-                        // Force play, <PLAY> button
-                        mUno.setForcePlay(true);
-                        setStatus(mStatus);
-                    } // else if (980 <= x && x <= 1104)
-                } // else if (519 <= y && y <= 540)
-                else if (569 <= y && y <= 590) {
-                    if (800 <= x && x <= 906) {
-                        // 7-0, <OFF> button
-                        mUno.setSevenZeroRule(false);
-                        setStatus(mStatus);
-                    } // if (800 <= x && x <= 906)
-                    else if (980 <= x && x <= 1072) {
-                        // 7-0, <ON> button
-                        mUno.setSevenZeroRule(true);
-                        setStatus(mStatus);
-                    } // else if (980 <= x && x <= 1072)
-                } // else if (569 <= y && y <= 590)
-                else if (619 <= y && y <= 640) {
-                    if (800 <= x && x <= 906) {
-                        // +2 stack, <OFF> button
-                        mUno.setDraw2StackRule(false);
-                        setStatus(mStatus);
-                    } // if (800 <= x && x <= 906)
-                    else if (980 <= x && x <= 1072) {
-                        // +2 stack, <ON> button
-                        mUno.setDraw2StackRule(true);
-                        setStatus(mStatus);
-                    } // else if (980 <= x && x <= 1072)
-                } // else if (619 <= y && y <= 640)
-                else if (679 <= y && y <= 700) {
-                    if (20 <= x && x <= 200) {
-                        // <OPTIONS> button
-                        // Leave options page
-                        mAdjustOptions = false;
-                        setStatus(mStatus);
-                    } // if (20 <= x && x <= 200)
-                    else if (1130 <= x && x <= 1260) {
-                        // <AUTO> button
-                        mAuto = !mAuto;
-                        setStatus(mStatus);
-                    } // else if (1130 <= x && x <= 1260)
-                } // else if (679 <= y && y <= 700)
-                return;
-            } // if (mAdjustOptions)
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            int x = (int) (event.getX() * 1280 / v.getWidth());
+            int y = (int) (event.getY() * 720 / v.getHeight());
 
-            if (679 <= y && y <= 700 && 1130 <= x && x <= 1260) {
-                // <AUTO> button
-                // In player's action, automatically play or draw cards by AI
-                mAuto = !mAuto;
-                setStatus(mStatus == STAT_WILD_COLOR ? Player.YOU : mStatus);
-                return;
-            } // if (679 <= y && y <= 700 && 1130 <= x && x <= 1260)
+            mSubHandler.sendEmptyMessage(x << 16 | y);
+        } // if (handled)
 
+        return handled;
+    } // onTouch(View, MotionEvent)
+
+    /**
+     * Entry of the sub thread. Do consuming operations here.
+     */
+    @Override
+    @WorkerThread
+    public void run() {
+        Looper.prepare();
+        mSubHandler = new Handler(Looper.myLooper(), this::handleMessage2);
+        setStatus(STAT_WELCOME);
+        Looper.loop();
+    } // run()
+
+    /**
+     * Triggered when a touch event occurred.
+     * Called by onTouch() method, and handled by sub thread.
+     *
+     * @param message Touched on where.
+     *                Read the value of message.what to get the coordinate.
+     *                High 16 bits for X value, and low 16 bits for Y value.
+     * @return True because the touch events will be handled by us.
+     */
+    @WorkerThread
+    private boolean handleMessage2(Message message) {
+        int x = message.what >>> 16;
+        int y = message.what & 0xffff;
+
+        if (mAdjustOptions) {
+            // Do special behaviors when configuring game options
+            if (60 <= y && y <= 240) {
+                if (150 <= x && x <= 270) {
+                    // BGM OFF button
+                    mBgmVol = 0.0f;
+                    mMediaPlayer.setVolume(0.0f, 0.0f);
+                    setStatus(mStatus);
+                } // if (150 <= x && x <= 270)
+                else if (330 <= x && x <= 450) {
+                    // BGM ON button
+                    mBgmVol = 0.5f;
+                    mMediaPlayer.setVolume(0.5f, 0.5f);
+                    setStatus(mStatus);
+                } // else if (330 <= x && x <= 450)
+                else if (790 <= x && x <= 910) {
+                    // Easy AI Level
+                    mUno.setDifficulty(Uno.LV_EASY);
+                    setStatus(mStatus);
+                } // else if (790 <= x && x <= 910)
+                else if (970 <= x && x <= 1090) {
+                    // Hard AI Level
+                    mUno.setDifficulty(Uno.LV_HARD);
+                    setStatus(mStatus);
+                } // else if (970 <= x && x <= 1090)
+            } // if (60 <= y && y <= 240)
+            else if (270 <= y && y <= 450) {
+                if (150 <= x && x <= 270) {
+                    // SND OFF button
+                    mSndVol = 0.0f;
+                    setStatus(mStatus);
+                } // if (150 <= x && x <= 270)
+                else if (330 <= x && x <= 450) {
+                    // SND ON button
+                    mSndVol = 0.5f;
+                    mSoundPool.play(sndPlay, 0.5f, 0.5f, 1, 0, 1.0f);
+                    setStatus(mStatus);
+                } // else if (330 <= x && x <= 450)
+                else if (790 <= x && x <= 910) {
+                    // 3 players
+                    mUno.setPlayers(3);
+                    setStatus(mStatus);
+                } // else if (790 <= x && x <= 910)
+                else if (970 <= x && x <= 1090) {
+                    // 4 players
+                    mUno.setPlayers(4);
+                    setStatus(mStatus);
+                } // else if (970 <= x && x <= 1090)
+            } // else if (270 <= y && y <= 450)
+            else if (519 <= y && y <= 540) {
+                if (800 <= x && x <= 927) {
+                    // Force play, <KEEP> button
+                    mUno.setForcePlay(false);
+                    setStatus(mStatus);
+                } // if (800 <= x && x <= 927)
+                else if (980 <= x && x <= 1104) {
+                    // Force play, <PLAY> button
+                    mUno.setForcePlay(true);
+                    setStatus(mStatus);
+                } // else if (980 <= x && x <= 1104)
+            } // else if (519 <= y && y <= 540)
+            else if (569 <= y && y <= 590) {
+                if (800 <= x && x <= 906) {
+                    // 7-0, <OFF> button
+                    mUno.setSevenZeroRule(false);
+                    setStatus(mStatus);
+                } // if (800 <= x && x <= 906)
+                else if (980 <= x && x <= 1072) {
+                    // 7-0, <ON> button
+                    mUno.setSevenZeroRule(true);
+                    setStatus(mStatus);
+                } // else if (980 <= x && x <= 1072)
+            } // else if (569 <= y && y <= 590)
+            else if (619 <= y && y <= 640) {
+                if (800 <= x && x <= 906) {
+                    // +2 stack, <OFF> button
+                    mUno.setDraw2StackRule(false);
+                    setStatus(mStatus);
+                } // if (800 <= x && x <= 906)
+                else if (980 <= x && x <= 1072) {
+                    // +2 stack, <ON> button
+                    mUno.setDraw2StackRule(true);
+                    setStatus(mStatus);
+                } // else if (980 <= x && x <= 1072)
+            } // else if (619 <= y && y <= 640)
+            else if (679 <= y && y <= 700) {
+                if (20 <= x && x <= 200) {
+                    // <OPTIONS> button
+                    // Leave options page
+                    mAdjustOptions = false;
+                    setStatus(mStatus);
+                } // if (20 <= x && x <= 200)
+                else if (1130 <= x && x <= 1260) {
+                    // <AUTO> button
+                    mAuto = !mAuto;
+                    setStatus(mStatus);
+                } // else if (1130 <= x && x <= 1260)
+            } // else if (679 <= y && y <= 700)
+        } // if (mAdjustOptions)
+        else if (679 <= y && y <= 700 && 1130 <= x && x <= 1260) {
+            // <AUTO> button
+            // In player's action, automatically play or draw cards by AI
+            mAuto = !mAuto;
+            setStatus(mStatus == STAT_WILD_COLOR ? Player.YOU : mStatus);
+        } // else if (679 <= y && y <= 700 && 1130 <= x && x <= 1260)
+        else {
             switch (mStatus) {
                 case STAT_WELCOME:
                     if (270 <= y && y <= 450) {
@@ -1594,10 +1626,10 @@ public class MainActivity extends AppCompatActivity
                 default:
                     break; // default
             } // switch (mStatus)
-        }).start();
+        } // else
 
         return true;
-    } // onTouch(View, MotionEvent)
+    } // handleMessage2(Message)
 
     /**
      * Triggered when user pressed a system key.
@@ -1633,10 +1665,10 @@ public class MainActivity extends AppCompatActivity
         if (OPENCV_INIT_SUCCESS) {
             sp = getSharedPreferences("UnoStat", Context.MODE_PRIVATE);
             editor = sp.edit();
-            editor.putInt("score", mScore);
             editor.putFloat("sndVol", mSndVol);
             editor.putFloat("bgmVol", mBgmVol);
             editor.putInt("players", mUno.getPlayers());
+            editor.putInt("score", Math.max(-999, mScore));
             editor.putInt("difficulty", mUno.getDifficulty());
             editor.putBoolean("forcePlay", mUno.isForcePlay());
             editor.putBoolean("sevenZero", mUno.isSevenZeroRule());
@@ -1657,9 +1689,11 @@ public class MainActivity extends AppCompatActivity
     protected void onDestroy() {
         if (OPENCV_INIT_SUCCESS) {
             mSoundPool.release();
+            mSubHandler.removeCallbacksAndMessages(null);
+            mSubHandler.getLooper().quit();
         } // if (OPENCV_INIT_SUCCESS)
 
-        mHandler.removeCallbacksAndMessages(null);
+        mUIHandler.removeCallbacksAndMessages(null);
         super.onDestroy();
     } // onDestroy()
 

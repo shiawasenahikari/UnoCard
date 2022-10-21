@@ -275,6 +275,8 @@ void Main::setStatus(int status) {
 
     case STAT_NEW_GAME:
         // New game
+        // You will lose 200 points if you quit during the game
+        sScore -= 200;
         sUno->start();
         sSelectedIdx = -1;
         refreshScreen(i18n->info_ready());
@@ -981,15 +983,15 @@ void Main::play(int index, Color color) {
             // The player in action becomes winner when it played the
             // final card in its hand successfully
             if (now == Player::YOU) {
-                sScore += sUno->getPlayer(Player::COM1)->getHandScore()
+                sScore = qMin(9999, sScore + 200
+                    + sUno->getPlayer(Player::COM1)->getHandScore()
                     + sUno->getPlayer(Player::COM2)->getHandScore()
-                    + sUno->getPlayer(Player::COM3)->getHandScore();
-                if (sScore > 9999) sScore = 9999;
+                    + sUno->getPlayer(Player::COM3)->getHandScore());
                 sSoundPool->play(SoundPool::SND_WIN);
             } // if (now == Player::YOU)
             else {
-                sScore -= sUno->getPlayer(Player::YOU)->getHandScore();
-                if (sScore < -999) sScore = -999;
+                sScore = qMax(-999, sScore + 200
+                    - sUno->getPlayer(Player::YOU)->getHandScore());
                 sSoundPool->play(SoundPool::SND_LOSE);
             } // else
 
@@ -1520,7 +1522,7 @@ void Main::closeEvent(QCloseEvent*) {
     if (!writer.fail()) {
         // Store statistics data to file
         int dw[] = {
-            /* dw[0] = your score         */ sScore,
+            /* dw[0] = your score         */ qMax(-999, sScore),
             /* dw[1] = players (3/4)      */ sUno->getPlayers(),
             /* dw[2] = difficulty (ez/hd) */ sUno->getDifficulty(),
             /* dw[3] = force play switch  */ sUno->isForcePlay() ? 1 : 0,

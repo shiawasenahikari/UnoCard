@@ -16,14 +16,14 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/releases) page and download the
-   latest version in zip file `(UnoCard-v3.3.zip)`.
+   latest version in zip file `(UnoCard-v3.4.zip)`.
 2. Unzip the downloaded zip file, then execute `UnoCard.exe` and have fun!
 
 Download the source code and compile manually
 ---------------------------------------------
 
-1. Before continuing, make sure that you have `Visual Studio 2015`, `Qt 5.12.12 MSVC2015 64bit` and
-   `Qt Creator 5.0.2` installed on your computer. You can download the Qt 5.12 offline installer
+1. Before continuing, make sure that you have `Qt 5.12.12 MinGW 64-bit` and `Qt Creator 5.0.2`
+   installed on your computer. You can download the Qt 5.12 offline installer
    from: [Download Offline Installers](https://www.qt.io/offline-installers)
 2. Clone this repository by executing the following command in Windows Terminal or Git Bash (replace
    `<proj_root>` with a directory path where you want to store this repository):
@@ -31,10 +31,11 @@ Download the source code and compile manually
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
 3. Open `<proj_root>\UnoCard\UnoCard.pro` project file in your Qt Creator IDE.
-4. In `Configure Project` page, check `Select all kits`, click `Details` on the right side of
-   `Desktop Qt 5.12.12 MSVC2015 64bit`, then uncheck `Debug` and `Profile`, just keep `Release`
-   checked. Finally, set Release path to `<proj_root>/UnoCard/build` and click `Configure Project`.
-5. Execute [Build]->[Build All] menu command (or press Ctrl+Shift+B) to build this project.
+4. In `Configure Project` page, check `Desktop Qt 5.12.12 MinGW 64-bit`, click `Details` on the
+   right side of `Desktop Qt 5.12.12 MinGW 64-bit`, then uncheck `Debug` and `Profile`, just keep
+   `Release` checked. Finally, set Release path to `<proj_root>/UnoCard/build` and click
+   `Configure Project`.
+5. Execute [Build]->[Build All Projects] menu command (or press Ctrl+Shift+B) to build this project.
 6. Execute [Build]->[Run] menu command (or press Ctrl+R) to run this program.
 
 💻For MAC OS X PC Devices
@@ -100,7 +101,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/release) page and download the
-   latest version in apk file `(UnoCard-v3.3.apk)`.
+   latest version in apk file `(UnoCard-v3.4.apk)`.
 2. On your Android phone, open [Settings] app, go to [Security] page, then check the [Unknown
    sources] toggle.
 3. Push the downloaded file to your Android phone, then install and launch it to have fun!
@@ -217,14 +218,14 @@ Stack
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/releases) 页面下载最新版本的 zip 包
-   `(UnoCard-v3.3.zip)`.
+   `(UnoCard-v3.4.zip)`.
 2. 解压并执行 `UnoCard.exe` 开始游戏。
 
 下载源码并手动编译
 ------------------
 
-1. 在您开始编译前，请确认您的电脑上已安装 `Visual Studio 2015`, `Qt 5.12.12 MSVC2015 64bit` 和
-   `Qt Creator 5.0.2`。您可以访问以下页面下载 Qt 5.12 离线安装包：
+1. 在您开始编译前，请确认您的电脑上已安装 `Qt 5.12.12 MinGW 64bit` 和 `Qt Creator 5.0.2`。
+   您可以访问以下页面下载 Qt 5.12 离线安装包：
    [Download Offline Installers](https://www.qt.io/offline-installers)
 2. 在 Windows 命令提示符或 Git Bash 中执行如下命令以克隆本仓库
    (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
@@ -232,10 +233,11 @@ Stack
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
 3. 用 Qt Creator 打开 `<proj_root>\UnoCard\UnoCard.pro` 项目文件。
-4. 在 `Configure Project` 页面，选中 `Select all kits`，点击 `Desktop Qt 5.12.12 MSVC2015 64bit`
-   右侧的 `Details`，然后取消选中 `Debug` 和 `Profile`，仅保持 `Release` 为选中状态即可。
-   最后，将 Release 目录置为 `<proj_root>/UnoCard/build` 并点击 `Configure Project`。
-5. 执行 [Build]->[Build All] 菜单命令 (或按 Ctrl+Shift+B) 生成项目的可执行文件。
+4. 在 `Configure Project` 页面，选中 `Desktop Qt 5.12.12 MinGW 64-bit`，点击
+   `Desktop Qt 5.12.12 MinGW 64-bit` 右侧的 `Details`，然后取消选中 `Debug` 和 `Profile`，仅保持
+   `Release` 为选中状态即可。最后，将 Release 目录置为 `<proj_root>/UnoCard/build` 并点击
+   `Configure Project`。
+5. 执行 [Build]->[Build All Projects] 菜单命令 (或按 Ctrl+Shift+B) 生成项目的可执行文件。
 6. 执行 [Build]->[Run] 菜单命令 (或按 Ctrl+R) 开始运行。
 
 💻在 MAC OS X PC 设备上运行
@@ -296,7 +298,7 @@ qmake && make && ./UnoCard
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/release) 页面下载最新版本的 apk 包
-   `(UnoCard-v3.3.apk)`.
+   `(UnoCard-v3.4.apk)`.
 2. 打开您的 Android 设备中的 [设置] 应用，进入 [安全] 页面，勾选 [未知来源] 复选框。
 3. 将已下载的安装包传到手机中，安装并运行即可开始游戏。
 
