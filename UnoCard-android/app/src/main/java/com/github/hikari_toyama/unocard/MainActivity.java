@@ -66,7 +66,7 @@ class AnimateLayer {
  */
 @SuppressWarnings("ClickableViewAccessibility")
 public class MainActivity extends AppCompatActivity
-        implements Handler.Callback, Runnable, View.OnTouchListener {
+        implements Handler.Callback, View.OnTouchListener {
     private static final boolean OPENCV_INIT_SUCCESS = OpenCVLoader.initDebug();
     private static final Scalar RGB_YELLOW = new Scalar(0xFF, 0xAA, 0x11);
     private static final Scalar RGB_GREEN = new Scalar(0x55, 0xAA, 0x55);
@@ -84,7 +84,6 @@ public class MainActivity extends AppCompatActivity
     private AnimateLayer[] mLayer;
     private SoundPool mSoundPool;
     private ImageView mImgScreen;
-    private Handler mSubHandler;
     private Handler mUIHandler;
     private Color[] mBestColor;
     private boolean mAIRunning;
@@ -170,7 +169,7 @@ public class MainActivity extends AppCompatActivity
             }; // new Mat[]{}
             mBmp = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888);
             mImgScreen = findViewById(R.id.imgMainScreen);
-            new Thread(this).start(); // -> run()
+            new Thread(() -> setStatus(STAT_WELCOME)).start();
             mImgScreen.setOnTouchListener(this);
         } // if (OPENCV_INIT_SUCCESS)
         else {
@@ -322,6 +321,8 @@ public class MainActivity extends AppCompatActivity
 
             case STAT_NEW_GAME:
                 // New game
+                mStatus = STAT_IDLE; // block tap down events when idle
+
                 // You will lose 200 points if you quit during the game
                 mScore -= 200;
                 mUno.start();
@@ -1352,38 +1353,21 @@ public class MainActivity extends AppCompatActivity
             int x = (int) (event.getX() * 1280 / v.getWidth());
             int y = (int) (event.getY() * 720 / v.getHeight());
 
-            mSubHandler.sendEmptyMessage(x << 16 | y);
+            new Thread(() -> onTouch(x, y)).start();
         } // if (handled)
 
         return handled;
     } // onTouch(View, MotionEvent)
 
     /**
-     * Entry of the sub thread. Do consuming operations here.
-     */
-    @Override
-    @WorkerThread
-    public void run() {
-        Looper.prepare();
-        mSubHandler = new Handler(Looper.myLooper(), this::handleMessage2);
-        setStatus(STAT_WELCOME);
-        Looper.loop();
-    } // run()
-
-    /**
      * Triggered when a touch event occurred.
-     * Called by onTouch() method, and handled by sub thread.
+     * Called by onTouch(View, MotionEvent) method, and handled by this method.
      *
-     * @param message Touched on where.
-     *                Read the value of message.what to get the coordinate.
-     *                High 16 bits for X value, and low 16 bits for Y value.
-     * @return True because the touch events will be handled by us.
+     * @param x Touch on where (X coordinate).
+     * @param y Touch on where (Y coordinate).
      */
     @WorkerThread
-    private boolean handleMessage2(Message message) {
-        int x = message.what >>> 16;
-        int y = message.what & 0xffff;
-
+    private void onTouch(int x, int y) {
         if (mAdjustOptions) {
             // Do special behaviors when configuring game options
             if (60 <= y && y <= 240) {
@@ -1627,9 +1611,7 @@ public class MainActivity extends AppCompatActivity
                     break; // default
             } // switch (mStatus)
         } // else
-
-        return true;
-    } // handleMessage2(Message)
+    } // onTouch(int, int)
 
     /**
      * Triggered when user pressed a system key.
@@ -1689,8 +1671,6 @@ public class MainActivity extends AppCompatActivity
     protected void onDestroy() {
         if (OPENCV_INIT_SUCCESS) {
             mSoundPool.release();
-            mSubHandler.removeCallbacksAndMessages(null);
-            mSubHandler.getLooper().quit();
         } // if (OPENCV_INIT_SUCCESS)
 
         mUIHandler.removeCallbacksAndMessages(null);

@@ -275,6 +275,8 @@ void Main::setStatus(int status) {
 
     case STAT_NEW_GAME:
         // New game
+        sStatus = STAT_IDLE; // block mouse click events when idle
+
         // You will lose 200 points if you quit during the game
         sScore -= 200;
         sUno->start();
