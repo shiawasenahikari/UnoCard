@@ -164,32 +164,40 @@ public:
      */
     inline int calcBestSwapTarget4NowPlayer() {
         int target;
-        Player *next, *oppo, *prev;
+        std::vector<Card*> hand;
+        Player *curr, *next, *oppo, *prev;
 
         next = uno->getNextPlayer();
         oppo = uno->getOppoPlayer();
         prev = uno->getPrevPlayer();
-        if (prev->getHandSize() == 1) {
+        if (next->getHandSize() == 1) {
+            target = uno->getNext();
+        } // if (next->getHandSize() == 1)
+        else if (prev->getHandSize() == 1) {
             target = uno->getPrev();
-        } // if (prev->getHandSize() == 1)
+        } // else if (prev->getHandSize() == 1)
         else if (oppo->getHandSize() == 1) {
             target = uno->getOppo();
         } // else if (oppo->getHandSize() == 1)
-        else if (next->getHandSize() == 1) {
-            target = uno->getNext();
-        } // else if (next->getHandSize() == 1)
         else if (prev->getStrongColor() == uno->lastColor()) {
             target = uno->getPrev();
         } // else if (prev->getStrongColor() == uno->lastColor())
         else if (oppo->getStrongColor() == uno->lastColor()) {
             target = uno->getOppo();
         } // else if (oppo->getStrongColor() == uno->lastColor())
-        else if (next->getStrongColor() == uno->lastColor()) {
-            target = uno->getNext();
-        } // else if (next->getStrongColor() == uno->lastColor())
         else {
-            target = uno->getPrev();
+            target = uno->getNext();
         } // else
+
+        curr = uno->getCurrPlayer();
+        hand = curr->getHandCards();
+        if (hand.size() == 1 &&
+            target == uno->getNext() &&
+            uno->isLegalToPlay(hand.at(0))) {
+            // Do not swap with your next player when your final card is a legal
+            // card. This will make your next player win the game.
+            target = uno->getPrev();
+        } // if (hand.size() == 1 && ...)
 
         return target;
     } // calcBestSwapTarget4NowPlayer()
