@@ -232,9 +232,9 @@ public class AI {
     public int easyAI_bestCardIndex4NowPlayer(Color[] outColor) {
         Card card;
         Player prev;
-        int i, iBest;
         String errMsg;
         List<Card> hand;
+        int i, iBest, matches;
         Color bestColor, lastColor;
         int yourSize, nextSize, prevSize;
         int iNum, iRev, iSkip, iDraw2, iWild, iWD4;
@@ -259,9 +259,13 @@ public class AI {
         bestColor = calcBestColor4NowPlayer();
         iNum = iRev = iSkip = iDraw2 = iWild = iWD4 = -1;
         hasNum = hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
-        for (i = 0; i < yourSize; ++i) {
+        for (i = matches = 0; i < yourSize; ++i) {
             // Index of any kind
             card = hand.get(i);
+            if (card.color == lastColor) {
+                ++matches;
+            } // if (card.color == lastColor)
+
             if (uno.isLegalToPlay(card)) {
                 switch (card.content) {
                     case DRAW2:
@@ -303,7 +307,7 @@ public class AI {
                         break; // default
                 } // switch (card.content)
             } // if (uno.isLegalToPlay(card))
-        } // for (i = 0; i < yourSize; ++i)
+        } // for (i = matches = 0; i < yourSize; ++i)
 
         // Decision tree
         nextSize = uno.getNextPlayer().getHandSize();
@@ -316,10 +320,12 @@ public class AI {
                 iBest = iSkip;
             else if (hasRev)
                 iBest = iRev;
-            else if (hasWD4 && lastColor != bestColor)
+            else if (hasWD4 && matches == 0)
                 iBest = iWD4;
             else if (hasWild && lastColor != bestColor)
                 iBest = iWild;
+            else if (hasWD4 && lastColor != bestColor)
+                iBest = iWD4;
             else if (hasNum)
                 iBest = iNum;
         } // if (nextSize == 1)
@@ -396,7 +402,7 @@ public class AI {
         bestColor = calcBestColor4NowPlayer();
         iRev = iSkip = iDraw2 = iWild = iWD4 = -1;
         hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
-        for (i = 0, matches = 0; i < yourSize; ++i) {
+        for (i = matches = 0; i < yourSize; ++i) {
             // Index of any kind
             card = hand.get(i);
             allWild = allWild && card.isWild();
@@ -453,7 +459,7 @@ public class AI {
                         break; // default
                 } // switch (card.content)
             } // if (uno.isLegalToPlay(card))
-        } // for (i = 0, matches = 0; i < yourSize; ++i)
+        } // for (i = matches = 0; i < yourSize; ++i)
 
         // Decision tree
         next = uno.getNextPlayer();
@@ -799,9 +805,9 @@ public class AI {
      */
     public int sevenZeroAI_bestCardIndex4NowPlayer(Color[] outColor) {
         Card card;
-        int i, iBest;
         String errMsg;
         List<Card> hand;
+        int i, iBest, matches;
         Player next, oppo, prev;
         Color bestColor, lastColor;
         Color nextStrong, oppoStrong, prevStrong;
@@ -830,9 +836,13 @@ public class AI {
         i7 = iRev = iSkip = iDraw2 = -1;
         has0 = hasNum = hasWild = hasWD4 = false;
         has7 = hasRev = hasSkip = hasDraw2 = false;
-        for (i = 0; i < yourSize; ++i) {
+        for (i = matches = 0; i < yourSize; ++i) {
             // Index of any kind
             card = hand.get(i);
+            if (card.color == lastColor) {
+                ++matches;
+            } // if (card.color == lastColor)
+
             if (uno.isLegalToPlay(card)) {
                 switch (card.content) {
                     case DRAW2:
@@ -888,7 +898,7 @@ public class AI {
                         break; // default
                 } // switch (card.content)
             } // if (uno.isLegalToPlay(card))
-        } // for (i = 0; i < yourSize; ++i)
+        } // for (i = matches = 0; i < yourSize; ++i)
 
         // Decision tree
         next = uno.getNextPlayer();
@@ -922,10 +932,12 @@ public class AI {
                 iBest = iSkip;
             else if (hasRev)
                 iBest = iRev;
-            else if (hasWD4 && lastColor != bestColor)
+            else if (hasWD4 && matches == 0)
                 iBest = iWD4;
             else if (hasWild && lastColor != bestColor)
                 iBest = iWild;
+            else if (hasWD4 && lastColor != bestColor)
+                iBest = iWD4;
             else if (hasNum && hand.get(iNum).color != nextStrong)
                 iBest = iNum;
             else if (hasWild && (has7 || has0))

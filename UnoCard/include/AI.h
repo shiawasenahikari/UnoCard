@@ -236,7 +236,7 @@ public:
     inline int easyAI_bestCardIndex4NowPlayer(Color outColor[]) {
         Card* card;
         Player* prev;
-        int i, iBest;
+        int i, iBest, matches;
         std::vector<Card*> hand;
         Color bestColor, lastColor;
         int yourSize, nextSize, prevSize;
@@ -261,9 +261,13 @@ public:
         bestColor = calcBestColor4NowPlayer();
         iNum = iRev = iSkip = iDraw2 = iWild = iWD4 = -1;
         hasNum = hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
-        for (i = 0; i < yourSize; ++i) {
+        for (i = matches = 0; i < yourSize; ++i) {
             // Index of any kind
             card = hand.at(i);
+            if (card->color == lastColor) {
+                ++matches;
+            } // if (card->color == lastColor)
+
             if (uno->isLegalToPlay(card)) {
                 switch (card->content) {
                 case DRAW2:
@@ -305,7 +309,7 @@ public:
                     break; // default
                 } // switch (card->content)
             } // if (uno->isLegalToPlay(card))
-        } // for (i = 0; i < yourSize; ++i)
+        } // for (i = matches = 0; i < yourSize; ++i)
 
         // Decision tree
         nextSize = uno->getNextPlayer()->getHandSize();
@@ -318,10 +322,12 @@ public:
                 iBest = iSkip;
             else if (hasRev)
                 iBest = iRev;
-            else if (hasWD4 && lastColor != bestColor)
+            else if (hasWD4 && matches == 0)
                 iBest = iWD4;
             else if (hasWild && lastColor != bestColor)
                 iBest = iWild;
+            else if (hasWD4 && lastColor != bestColor)
+                iBest = iWD4;
             else if (hasNum)
                 iBest = iNum;
         } // if (nextSize == 1)
@@ -396,7 +402,7 @@ public:
         bestColor = calcBestColor4NowPlayer();
         iRev = iSkip = iDraw2 = iWild = iWD4 = -1;
         hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
-        for (i = 0, matches = 0; i < yourSize; ++i) {
+        for (i = matches = 0; i < yourSize; ++i) {
             // Index of any kind
             card = hand.at(i);
             allWild = allWild && card->isWild();
@@ -453,7 +459,7 @@ public:
                     break; // default
                 } // switch (card->content)
             } // if (uno->isLegalToPlay(card))
-        } // for (i = 0, matches = 0; i < yourSize; ++i)
+        } // for (i = matches = 0; i < yourSize; ++i)
 
         // Decision tree
         next = uno->getNextPlayer();
@@ -793,7 +799,7 @@ public:
      */
     inline int sevenZeroAI_bestCardIndex4NowPlayer(Color outColor[]) {
         Card* card;
-        int i, iBest;
+        int i, iBest, matches;
         std::vector<Card*> hand;
         Player *next, *oppo, *prev;
         Color bestColor, lastColor;
@@ -822,9 +828,13 @@ public:
         i7 = iRev = iSkip = iDraw2 = -1;
         has0 = hasNum = hasWild = hasWD4 = false;
         has7 = hasRev = hasSkip = hasDraw2 = false;
-        for (i = 0; i < yourSize; ++i) {
+        for (i = matches = 0; i < yourSize; ++i) {
             // Index of any kind
             card = hand.at(i);
+            if (card->color == lastColor) {
+                ++matches;
+            } // if (card->color == lastColor)
+
             if (uno->isLegalToPlay(card)) {
                 switch (card->content) {
                 case DRAW2:
@@ -880,7 +890,7 @@ public:
                     break; // default
                 } // switch (card->content)
             } // if (uno->isLegalToPlay(card))
-        } // for (i = 0; i < yourSize; ++i)
+        } // for (i = matches = 0; i < yourSize; ++i)
 
         // Decision tree
         next = uno->getNextPlayer();
@@ -914,10 +924,12 @@ public:
                 iBest = iSkip;
             else if (hasRev)
                 iBest = iRev;
-            else if (hasWD4 && lastColor != bestColor)
+            else if (hasWD4 && matches == 0)
                 iBest = iWD4;
             else if (hasWild && lastColor != bestColor)
                 iBest = iWild;
+            else if (hasWD4 && lastColor != bestColor)
+                iBest = iWD4;
             else if (hasNum && hand.at(iNum)->color != nextStrong)
                 iBest = iNum;
             else if (hasWild && (has7 || has0))
