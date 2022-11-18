@@ -443,7 +443,7 @@ int Main::getFormatTextWidth(QPainter* painter, const QString& text) {
         } // else
     } // for (int i = 0, n = text.length(); i < n; ++i)
 
-    return painter->fontMetrics().width(s);
+    return painter->fontMetrics().horizontalAdvance(s);
 } // getFormatTextWidth(QPainter*, const QString&)
 
 /**
@@ -470,7 +470,7 @@ void Main::putFormatText(QPainter* painter, const QString& text, int x, int y) {
             if (text[i] == 'G') painter->setPen(PEN_GREEN);
             if (text[i] == 'W') painter->setPen(PEN_WHITE);
             if (text[i] == 'Y') painter->setPen(PEN_YELLOW);
-            x += painter->fontMetrics().width(s);
+            x += painter->fontMetrics().horizontalAdvance(s);
             s.clear();
             ++i;
         } // if ('[' == text[i] && i + 2 < n && text[i + 2] == ']')
@@ -505,7 +505,7 @@ void Main::refreshScreen(const QString& message) {
 
     // Right-bottom corner: <AUTO> button
     if (sAuto) sPainter->setPen(PEN_YELLOW);
-    width = sPainter->fontMetrics().width(i18n->btn_auto());
+    width = sPainter->fontMetrics().horizontalAdvance(i18n->btn_auto());
     sPainter->drawText(1260 - width, 700, i18n->btn_auto());
     if (sAuto) sPainter->setPen(PEN_WHITE);
 
@@ -596,7 +596,7 @@ void Main::refreshScreen(const QString& message) {
         // For welcome screen, show the start button and your score
         image = sUno->getBackImage();
         sPainter->drawImage(580, 270, image);
-        width = sPainter->fontMetrics().width(i18n->label_score());
+        width = sPainter->fontMetrics().horizontalAdvance(i18n->label_score());
         sPainter->drawText(340 - width, 620, i18n->label_score());
         if (sScore < 0) {
             image = sUno->getColoredWildImage(NONE);
@@ -648,7 +648,7 @@ void Main::refreshScreen(const QString& message) {
         if (status == STAT_GAME_OVER && sWinner == Player::COM1) {
             // Played all hand cards, it's winner
             sPainter->setPen(PEN_YELLOW);
-            width = sPainter->fontMetrics().width("WIN");
+            width = sPainter->fontMetrics().horizontalAdvance("WIN");
             sPainter->drawText(80 - width / 2, 461, "WIN");
             sPainter->setPen(PEN_WHITE);
         } // if (status == STAT_GAME_OVER && sWinner == Player::COM1)
@@ -664,7 +664,7 @@ void Main::refreshScreen(const QString& message) {
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
                 sPainter->setPen(PEN_YELLOW);
-                width = sPainter->fontMetrics().width("UNO");
+                width = sPainter->fontMetrics().horizontalAdvance("UNO");
                 sPainter->drawText(80 - width / 2, 494, "UNO");
                 sPainter->setPen(PEN_WHITE);
             } // if (size == 1)
@@ -674,7 +674,7 @@ void Main::refreshScreen(const QString& message) {
         if (status == STAT_GAME_OVER && sWinner == Player::COM2) {
             // Played all hand cards, it's winner
             sPainter->setPen(PEN_YELLOW);
-            width = sPainter->fontMetrics().width("WIN");
+            width = sPainter->fontMetrics().horizontalAdvance("WIN");
             sPainter->drawText(640 - width / 2, 121, "WIN");
             sPainter->setPen(PEN_WHITE);
         } // if (status == STAT_GAME_OVER && sWinner == Player::COM2)
@@ -690,7 +690,7 @@ void Main::refreshScreen(const QString& message) {
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
                 sPainter->setPen(PEN_YELLOW);
-                width = sPainter->fontMetrics().width("UNO");
+                width = sPainter->fontMetrics().horizontalAdvance("UNO");
                 sPainter->drawText(560 - width, 121, "UNO");
                 sPainter->setPen(PEN_WHITE);
             } // if (size == 1)
@@ -700,7 +700,7 @@ void Main::refreshScreen(const QString& message) {
         if (status == STAT_GAME_OVER && sWinner == Player::COM3) {
             // Played all hand cards, it's winner
             sPainter->setPen(PEN_YELLOW);
-            width = sPainter->fontMetrics().width("WIN");
+            width = sPainter->fontMetrics().horizontalAdvance("WIN");
             sPainter->drawText(1200 - width / 2, 461, "WIN");
             sPainter->setPen(PEN_WHITE);
         } // if (status == STAT_GAME_OVER && sWinner == Player::COM3)
@@ -716,7 +716,7 @@ void Main::refreshScreen(const QString& message) {
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
                 sPainter->setPen(PEN_YELLOW);
-                width = sPainter->fontMetrics().width("UNO");
+                width = sPainter->fontMetrics().horizontalAdvance("UNO");
                 sPainter->drawText(1200 - width / 2, 494, "UNO");
                 sPainter->setPen(PEN_WHITE);
             } // if (size == 1)
@@ -726,7 +726,7 @@ void Main::refreshScreen(const QString& message) {
         if (status == STAT_GAME_OVER && sWinner == Player::YOU) {
             // Played all hand cards, it's winner
             sPainter->setPen(PEN_YELLOW);
-            width = sPainter->fontMetrics().width("WIN");
+            width = sPainter->fontMetrics().horizontalAdvance("WIN");
             sPainter->drawText(640 - width / 2, 621, "WIN");
             sPainter->setPen(PEN_WHITE);
         } // if (status == STAT_GAME_OVER && sWinner == Player::YOU)
@@ -786,7 +786,7 @@ void Main::refreshScreen(const QString& message) {
             sPainter->setBrush(BRUSH_GREEN);
             sPainter->drawPie(270, 180, 271, 271, 0, 180 * 16);
             sPainter->setPen(PEN_WHITE);
-            width = sPainter->fontMetrics().width(i18n->label_yes());
+            width = sPainter->fontMetrics().horizontalAdvance(i18n->label_yes());
             sPainter->drawText(405 - width / 2, 268, i18n->label_yes());
 
             // Draw NO button
@@ -794,7 +794,7 @@ void Main::refreshScreen(const QString& message) {
             sPainter->setBrush(BRUSH_RED);
             sPainter->drawPie(270, 180, 271, 271, 0, -180 * 16);
             sPainter->setPen(PEN_WHITE);
-            width = sPainter->fontMetrics().width(i18n->label_no());
+            width = sPainter->fontMetrics().horizontalAdvance(i18n->label_no());
             sPainter->drawText(405 - width / 2, 382, i18n->label_no());
             break; // case STAT_DOUBT_WILD4
 
@@ -805,7 +805,7 @@ void Main::refreshScreen(const QString& message) {
             sPainter->setBrush(BRUSH_RED);
             sPainter->drawPie(270, 180, 271, 271, -90 * 16, -120 * 16);
             sPainter->setPen(PEN_WHITE);
-            width = sPainter->fontMetrics().width("W");
+            width = sPainter->fontMetrics().horizontalAdvance("W");
             sPainter->drawText(338 - width / 2, 350, "W");
 
             // Draw east sector (green)
@@ -813,7 +813,7 @@ void Main::refreshScreen(const QString& message) {
             sPainter->setBrush(BRUSH_GREEN);
             sPainter->drawPie(270, 180, 271, 271, -90 * 16, 120 * 16);
             sPainter->setPen(PEN_WHITE);
-            width = sPainter->fontMetrics().width("E");
+            width = sPainter->fontMetrics().horizontalAdvance("E");
             sPainter->drawText(472 - width / 2, 350, "E");
 
             // Draw north sector (yellow)
@@ -821,7 +821,7 @@ void Main::refreshScreen(const QString& message) {
             sPainter->setBrush(BRUSH_YELLOW);
             sPainter->drawPie(270, 180, 271, 271, 150 * 16, -120 * 16);
             sPainter->setPen(PEN_WHITE);
-            width = sPainter->fontMetrics().width("N");
+            width = sPainter->fontMetrics().horizontalAdvance("N");
             sPainter->drawText(405 - width / 2, 270, "N");
             break; // case STAT_SEVEN_TARGET
 

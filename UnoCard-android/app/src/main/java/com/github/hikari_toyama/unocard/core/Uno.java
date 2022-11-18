@@ -1249,7 +1249,8 @@ public class Uno {
             int size = hand.size();
             if (index < size) {
                 card = hand.get(index);
-                Log.i(TAG, "Player " + who + " played " + card.name);
+                String prefix = card.isWild() ? Card.A[color.ordinal()] : "";
+                Log.i(TAG, "Player " + who + " played " + prefix + card.name);
                 hand.remove(index);
                 if (card.isWild()) {
                     // When a wild card is played, register the specified

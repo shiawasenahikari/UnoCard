@@ -917,7 +917,9 @@ public:
             int size = int(hand.size());
             if (index < size) {
                 card = hand.at(index);
-                qDebug("Player %d played %s", who, qPrintable(card->name));
+                QString name = card->name;
+                if (card->isWild()) name = Card::A(color) + name;
+                qDebug("Player %d played %s", who, qPrintable(name));
                 hand.erase(hand.begin() + index);
                 if (card->isWild()) {
                     // When a wild card is played, register the specified
