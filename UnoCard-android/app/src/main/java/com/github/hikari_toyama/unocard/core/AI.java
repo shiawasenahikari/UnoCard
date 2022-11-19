@@ -513,11 +513,11 @@ public class AI {
                         break;
                     } // if (can.getValue().color != nextStrong)
                 } // for (Map.Entry<Integer, Card> can : candidates.entrySet())
-                if (iBest < 0 && hasRev && prevSize >= 4
-                        && hand.get(iRev).color != nextStrong)
+                if (iBest < 0 && hasRev && prevSize >= 4 &&
+                        hand.get(iRev).color != nextStrong)
                     iBest = iRev;
-                if (iBest < 0 && hasSkip
-                        && hand.get(iSkip).color != nextStrong)
+                if (iBest < 0 && hasSkip &&
+                        hand.get(iSkip).color != nextStrong)
                     iBest = iSkip;
             } // else if (nextStrong != NONE)
             else {
@@ -627,14 +627,14 @@ public class AI {
                         break;
                     } // if (can.getValue().color != oppoStrong)
                 } // for (Map.Entry<Integer, Card> can : candidates.entrySet())
-                if (iBest < 0 && hasRev
-                        && hand.get(iRev).color != oppoStrong)
+                if (iBest < 0 && hasRev &&
+                        hand.get(iRev).color != oppoStrong)
                     iBest = iRev;
-                if (iBest < 0 && hasSkip
-                        && hand.get(iSkip).color != oppoStrong)
+                if (iBest < 0 && hasSkip &&
+                        hand.get(iSkip).color != oppoStrong)
                     iBest = iSkip;
-                if (iBest < 0 && hasDraw2
-                        && hand.get(iDraw2).color != oppoStrong)
+                if (iBest < 0 && hasDraw2 &&
+                        hand.get(iDraw2).color != oppoStrong)
                     iBest = iDraw2;
                 if (iBest < 0 && hasWild)
                     iBest = iWild;
@@ -659,14 +659,14 @@ public class AI {
                         break;
                     } // if (can.getValue().color != oppoStrong)
                 } // for (Map.Entry<Integer, Card> can : candidates.entrySet())
-                if (iBest < 0 && hasRev
-                        && hand.get(iRev).color != oppoStrong)
+                if (iBest < 0 && hasRev &&
+                        hand.get(iRev).color != oppoStrong)
                     iBest = iRev;
-                if (iBest < 0 && hasSkip
-                        && hand.get(iSkip).color != oppoStrong)
+                if (iBest < 0 && hasSkip &&
+                        hand.get(iSkip).color != oppoStrong)
                     iBest = iSkip;
-                if (iBest < 0 && hasDraw2
-                        && hand.get(iDraw2).color != oppoStrong)
+                if (iBest < 0 && hasDraw2 &&
+                        hand.get(iDraw2).color != oppoStrong)
                     iBest = iDraw2;
             } // else if (oppoStrong != NONE)
             else {
@@ -683,8 +683,8 @@ public class AI {
                     iBest = -candidates.firstKey() % 100;
                 if (iBest < 0 && hasWild && lastColor != bestColor)
                     iBest = iWild;
-                if (iBest < 0 && hasWD4 && lastColor != bestColor
-                        && nextSize <= 4)
+                if (iBest < 0 && hasWD4 && lastColor != bestColor &&
+                        nextSize <= 4)
                     iBest = iWD4;
             } // else
         } // else if (oppoSize == 1)
@@ -720,14 +720,14 @@ public class AI {
             } // if (iBest < 0)
             if (iBest < 0 && !candidates.isEmpty())
                 iBest = -candidates.firstKey() % 100;
-            if (iBest < 0 && hasRev
-                    && (prevSize >= 4 || prev.getRecent() == null))
+            if (iBest < 0 && hasRev &&
+                    (prevSize >= 4 || prev.getRecent() == null))
                 iBest = iRev;
-            if (iBest < 0 && hasSkip && oppoSize >= 3
-                    && hand.get(iSkip).color == bestColor)
+            if (iBest < 0 && hasSkip && oppoSize >= 3 &&
+                    hand.get(iSkip).color == bestColor)
                 iBest = iSkip;
-            if (iBest < 0 && hasDraw2 && oppoSize >= 3
-                    && hand.get(iDraw2).color == bestColor)
+            if (iBest < 0 && hasDraw2 && oppoSize >= 3 &&
+                    hand.get(iDraw2).color == bestColor)
                 iBest = iDraw2;
         } // else if (lastColor == nextWeak && yourSize > 2)
         else {
@@ -744,8 +744,8 @@ public class AI {
             // 7: Wild +4 cards, switch to your best color, when nextSize <= 4
             // 8: Wild +4 cards, when yourSize == 2 && prevSize <= 3 (UNO dash!)
             // 9: Wild cards, when yourSize == 2 && prevSize <= 3 (UNO dash!)
-            if ((hasDraw2 || hasSkip)
-                    && nextSize <= 4 && nextSize - oppoSize <= 1)
+            if ((hasDraw2 || hasSkip) &&
+                    nextSize <= 4 && nextSize - oppoSize <= 1)
                 iBest = Math.max(iDraw2, iSkip);
             if (iBest < 0 && hasRev &&
                     (prevSize > nextSize || prev.getRecent() == null))
@@ -754,11 +754,11 @@ public class AI {
                 iBest = -candidates.firstKey() % 100;
             if (iBest < 0 && hasRev && prevSize >= 4)
                 iBest = iRev;
-            if (iBest < 0 && hasSkip && oppoSize >= 3
-                    && hand.get(iSkip).color == bestColor)
+            if (iBest < 0 && hasSkip && oppoSize >= 3 &&
+                    hand.get(iSkip).color == bestColor)
                 iBest = iSkip;
-            if (iBest < 0 && hasDraw2 && oppoSize >= 3
-                    && hand.get(iDraw2).color == bestColor)
+            if (iBest < 0 && hasDraw2 && oppoSize >= 3 &&
+                    hand.get(iDraw2).color == bestColor)
                 iBest = iDraw2;
             if (iBest < 0 && hasWild && nextSize <= 4)
                 iBest = iWild;

@@ -406,12 +406,6 @@ void Main::setStatus(int status) {
         } // if (sAdjustOptions)
         else {
             refreshScreen(i18n->info_gameOver(sScore));
-            if (sAuto && !sAdjustOptions) {
-                threadWait(5000);
-                if (sAuto && !sAdjustOptions && sStatus == STAT_GAME_OVER) {
-                    setStatus(STAT_NEW_GAME);
-                } // if (sAuto && !sAdjustOptions && sStatus == STAT_GAME_OVER)
-            } // if (sAuto && !sAdjustOptions)
         } // else
         break; // case STAT_GAME_OVER
 
@@ -503,12 +497,6 @@ void Main::refreshScreen(const QString& message) {
     width = getFormatTextWidth(sPainter, message);
     putFormatText(sPainter, message, 640 - width / 2, 487);
 
-    // Right-bottom corner: <AUTO> button
-    if (sAuto) sPainter->setPen(PEN_YELLOW);
-    width = sPainter->fontMetrics().horizontalAdvance(i18n->btn_auto());
-    sPainter->drawText(1260 - width, 700, i18n->btn_auto());
-    if (sAuto) sPainter->setPen(PEN_WHITE);
-
     // Left-bottom corner: <OPTIONS> button
     // Shows only when game is not in process
     if (status == STAT_WELCOME || status == STAT_GAME_OVER) {
@@ -516,6 +504,12 @@ void Main::refreshScreen(const QString& message) {
         sPainter->drawText(20, 700, i18n->btn_settings());
         if (sAdjustOptions) sPainter->setPen(PEN_WHITE);
     } // if (status == STAT_WELCOME || status == STAT_GAME_OVER)
+
+    // Right-bottom corner: <AUTO> button
+    if (status == Player::YOU && !sAuto) {
+        width = sPainter->fontMetrics().horizontalAdvance(i18n->btn_auto());
+        sPainter->drawText(1260 - width, 700, i18n->btn_auto());
+    } // if (status == Player::YOU && !sAuto)
 
     if (sAdjustOptions) {
         // Show special screen when configuring game options
@@ -545,14 +539,14 @@ void Main::refreshScreen(const QString& message) {
         sPainter->drawText(640, 160, i18n->label_level());
         image = sUno->getLevelImage(
             /* level   */ Uno::LV_EASY,
-            /* hiLight */ !sUno->isSevenZeroRule()
-            && sUno->getDifficulty() == Uno::LV_EASY
+            /* hiLight */ !sUno->isSevenZeroRule() &&
+            sUno->getDifficulty() == Uno::LV_EASY
         ); // image = sUno->getLevelImage()
         sPainter->drawImage(790, 60, image);
         image = sUno->getLevelImage(
             /* level   */ Uno::LV_HARD,
-            /* hiLight */ !sUno->isSevenZeroRule()
-            && sUno->getDifficulty() == Uno::LV_HARD
+            /* hiLight */ !sUno->isSevenZeroRule() &&
+            sUno->getDifficulty() == Uno::LV_HARD
         ); // image = sUno->getLevelImage()
         sPainter->drawImage(970, 60, image);
 
@@ -997,6 +991,7 @@ void Main::play(int index, Color color) {
                 sSoundPool->play(SoundPool::SND_LOSE);
             } // else
 
+            sAuto = false; // Force disable the AUTO switch
             sWinner = now;
             setStatus(STAT_GAME_OVER);
         } // if (size == 1)
@@ -1362,18 +1357,15 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     sAdjustOptions = false;
                     setStatus(sStatus);
                 } // if (20 <= x && x <= 200)
-                else if (1130 <= x && x <= 1260) {
-                    // <AUTO> button
-                    sAuto = !sAuto;
-                    setStatus(sStatus);
-                } // else if (1130 <= x && x <= 1260)
             } // else if (679 <= y && y <= 700)
         } // if (sAdjustOptions)
         else if (679 <= y && y <= 700 && 1130 <= x && x <= 1260) {
             // <AUTO> button
             // In player's action, automatically play or draw cards by AI
-            sAuto = !sAuto;
-            setStatus(sStatus == STAT_WILD_COLOR ? Player::YOU : sStatus);
+            if (sStatus == Player::YOU) {
+                sAuto = true;
+                setStatus(sStatus);
+            } // if (sStatus == Player::YOU)
         } // else if (679 <= y && y <= 700 && 1130 <= x && x <= 1260)
         else switch (sStatus) {
         case STAT_WELCOME:

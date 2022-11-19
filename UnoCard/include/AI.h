@@ -513,11 +513,11 @@ public:
                         break;
                     } // if (can.second->color != nextStrong)
                 } // for (auto& can : candidates)
-                if (iBest < 0 && hasRev && prevSize >= 4
-                    && hand.at(iRev)->color != nextStrong)
+                if (iBest < 0 && hasRev && prevSize >= 4 &&
+                    hand.at(iRev)->color != nextStrong)
                     iBest = iRev;
-                if (iBest < 0 && hasSkip
-                    && hand.at(iSkip)->color != nextStrong)
+                if (iBest < 0 && hasSkip &&
+                    hand.at(iSkip)->color != nextStrong)
                     iBest = iSkip;
             } // else if (nextStrong != NONE)
             else {
@@ -623,14 +623,14 @@ public:
                         break;
                     } // if (can.second->color != oppoStrong)
                 } // for (auto& can : candidates)
-                if (iBest < 0 && hasRev
-                    && hand.at(iRev)->color != oppoStrong)
+                if (iBest < 0 && hasRev &&
+                    hand.at(iRev)->color != oppoStrong)
                     iBest = iRev;
-                if (iBest < 0 && hasSkip
-                    && hand.at(iSkip)->color != oppoStrong)
+                if (iBest < 0 && hasSkip &&
+                    hand.at(iSkip)->color != oppoStrong)
                     iBest = iSkip;
-                if (iBest < 0 && hasDraw2
-                    && hand.at(iDraw2)->color != oppoStrong)
+                if (iBest < 0 && hasDraw2 &&
+                    hand.at(iDraw2)->color != oppoStrong)
                     iBest = iDraw2;
                 if (iBest < 0 && hasWild)
                     iBest = iWild;
@@ -655,14 +655,14 @@ public:
                         break;
                     } // if (can.second->color != oppoStrong)
                 } // for (auto& can : candidates)
-                if (iBest < 0 && hasRev
-                    && hand.at(iRev)->color != oppoStrong)
+                if (iBest < 0 && hasRev &&
+                    hand.at(iRev)->color != oppoStrong)
                     iBest = iRev;
-                if (iBest < 0 && hasSkip
-                    && hand.at(iSkip)->color != oppoStrong)
+                if (iBest < 0 && hasSkip &&
+                    hand.at(iSkip)->color != oppoStrong)
                     iBest = iSkip;
-                if (iBest < 0 && hasDraw2
-                    && hand.at(iDraw2)->color != oppoStrong)
+                if (iBest < 0 && hasDraw2 &&
+                    hand.at(iDraw2)->color != oppoStrong)
                     iBest = iDraw2;
             } // else if (oppoStrong != NONE)
             else {
@@ -679,8 +679,8 @@ public:
                     iBest = -candidates.begin()->first % 100;
                 if (iBest < 0 && hasWild && lastColor != bestColor)
                     iBest = iWild;
-                if (iBest < 0 && hasWD4 && lastColor != bestColor
-                    && nextSize <= 4)
+                if (iBest < 0 && hasWD4 && lastColor != bestColor &&
+                    nextSize <= 4)
                     iBest = iWD4;
             } // else
         } // else if (oppoSize == 1)
@@ -714,14 +714,14 @@ public:
             } // if (iBest < 0) for (auto& can : candidates)
             if (iBest < 0 && !candidates.empty())
                 iBest = -candidates.begin()->first % 100;
-            if (iBest < 0 && hasRev
-                && (prevSize >= 4 || prev->getRecent() == nullptr))
+            if (iBest < 0 && hasRev &&
+                (prevSize >= 4 || prev->getRecent() == nullptr))
                 iBest = iRev;
-            if (iBest < 0 && hasSkip && oppoSize >= 3
-                && hand.at(iSkip)->color == bestColor)
+            if (iBest < 0 && hasSkip && oppoSize >= 3 &&
+                hand.at(iSkip)->color == bestColor)
                 iBest = iSkip;
-            if (iBest < 0 && hasDraw2 && oppoSize >= 3
-                && hand.at(iDraw2)->color == bestColor)
+            if (iBest < 0 && hasDraw2 && oppoSize >= 3 &&
+                hand.at(iDraw2)->color == bestColor)
                 iBest = iDraw2;
         } // else if (lastColor == nextWeak && yourSize > 2)
         else {
@@ -738,8 +738,8 @@ public:
             // 7: Wild +4 cards, switch to your best color, when nextSize <= 4
             // 8: Wild +4 cards, when yourSize == 2 && prevSize <= 3 (UNO dash!)
             // 9: Wild cards, when yourSize == 2 && prevSize <= 3 (UNO dash!)
-            if ((hasDraw2 || hasSkip)
-                && nextSize <= 4 && nextSize - oppoSize <= 1)
+            if ((hasDraw2 || hasSkip) &&
+                nextSize <= 4 && nextSize - oppoSize <= 1)
                 iBest = std::max(iDraw2, iSkip);
             if (iBest < 0 && hasRev &&
                 (prevSize > nextSize || prev->getRecent() == nullptr))
@@ -748,11 +748,11 @@ public:
                 iBest = -candidates.begin()->first % 100;
             if (iBest < 0 && hasRev && prevSize >= 4)
                 iBest = iRev;
-            if (iBest < 0 && hasSkip && oppoSize >= 3
-                && hand.at(iSkip)->color == bestColor)
+            if (iBest < 0 && hasSkip && oppoSize >= 3 &&
+                hand.at(iSkip)->color == bestColor)
                 iBest = iSkip;
-            if (iBest < 0 && hasDraw2 && oppoSize >= 3
-                && hand.at(iDraw2)->color == bestColor)
+            if (iBest < 0 && hasDraw2 && oppoSize >= 3 &&
+                hand.at(iDraw2)->color == bestColor)
                 iBest = iDraw2;
             if (iBest < 0 && hasWild && nextSize <= 4)
                 iBest = iWild;

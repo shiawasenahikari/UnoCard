@@ -916,10 +916,14 @@ public:
             auto& hand = player[who].handCards;
             int size = int(hand.size());
             if (index < size) {
+                const char* p = "";
+
                 card = hand.at(index);
-                QString name = card->name;
-                if (card->isWild()) name = Card::A(color) + name;
-                qDebug("Player %d played %s", who, qPrintable(name));
+                if (card->isWild()) {
+                    p = qPrintable(Card::A(color));
+                } // if (card->isWild())
+
+                qDebug("Player %d played %s%s", who, p, qPrintable(card->name));
                 hand.erase(hand.begin() + index);
                 if (card->isWild()) {
                     // When a wild card is played, register the specified

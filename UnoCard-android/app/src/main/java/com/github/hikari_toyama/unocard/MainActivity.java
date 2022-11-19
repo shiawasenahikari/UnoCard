@@ -66,7 +66,7 @@ class AnimateLayer {
  */
 @SuppressWarnings("ClickableViewAccessibility")
 public class MainActivity extends AppCompatActivity
-        implements Handler.Callback, View.OnTouchListener {
+        implements Handler.Callback, Runnable, View.OnTouchListener {
     private static final boolean OPENCV_INIT_SUCCESS = OpenCVLoader.initDebug();
     private static final Scalar RGB_YELLOW = new Scalar(0xFF, 0xAA, 0x11);
     private static final Scalar RGB_GREEN = new Scalar(0x55, 0xAA, 0x55);
@@ -84,6 +84,7 @@ public class MainActivity extends AppCompatActivity
     private AnimateLayer[] mLayer;
     private SoundPool mSoundPool;
     private ImageView mImgScreen;
+    private Handler mSubHandler;
     private Handler mUIHandler;
     private Color[] mBestColor;
     private boolean mAIRunning;
@@ -169,7 +170,7 @@ public class MainActivity extends AppCompatActivity
             }; // new Mat[]{}
             mBmp = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888);
             mImgScreen = findViewById(R.id.imgMainScreen);
-            new Thread(() -> setStatus(STAT_WELCOME)).start();
+            new Thread(this).start(); // -> run()
             mImgScreen.setOnTouchListener(this);
         } // if (OPENCV_INIT_SUCCESS)
         else {
@@ -195,24 +196,30 @@ public class MainActivity extends AppCompatActivity
     } // onResume()
 
     /**
-     * Call this method to avoid from writing the complex code
-     * <code>
-     * try { Thread.sleep(milliSeconds); }
-     * catch (InterruptedException e) { e.printStackTrace(); }
-     * </code>
-     * again and again.
+     * Entry of the sub thread. Do consuming operations here.
+     */
+    @Override
+    @WorkerThread
+    public void run() {
+        Looper.prepare();
+        mSubHandler = new Handler(Looper.myLooper(), this::handleMessage2);
+        setStatus(STAT_WELCOME);
+        Looper.loop();
+    } // run()
+
+    /**
+     * Let our UI wait the number of specified milli seconds.
      *
-     * @param millis How many milli seconds to sleep.
+     * @param millis How many milli seconds to wait.
      */
     @WorkerThread
-    private void threadSleep(int millis) {
-        try {
-            Thread.sleep(millis);
-        } // try
-        catch (InterruptedException e) {
-            e.printStackTrace();
-        } // catch (InterruptedException e)
-    } // threadSleep(int)
+    private void threadWait(long millis) {
+        long start = System.currentTimeMillis();
+
+        while (System.currentTimeMillis() - start < millis) {
+            mSubHandler.removeMessages(0);
+        } // while (System.currentTimeMillis() - st < millis)
+    } // threadWait(long)
 
     /**
      * AI Strategies (Difficulty: EASY).
@@ -328,7 +335,7 @@ public class MainActivity extends AppCompatActivity
                 mUno.start();
                 mSelectedIdx = -1;
                 refreshScreen(i18n.info_ready());
-                threadSleep(2000);
+                threadWait(2000);
                 switch (mUno.getRecent().get(0).content) {
                     case DRAW2:
                         // If starting with a [+2], let dealer draw 2 cards.
@@ -338,7 +345,7 @@ public class MainActivity extends AppCompatActivity
                     case SKIP:
                         // If starting with a [skip], skip dealer's turn.
                         refreshScreen(i18n.info_skipped(mUno.getNow()));
-                        threadSleep(1500);
+                        threadWait(1500);
                         setStatus(mUno.switchNow());
                         break; // case SKIP
 
@@ -347,7 +354,7 @@ public class MainActivity extends AppCompatActivity
                         // sequence to COUNTER CLOCKWISE.
                         mUno.switchDirection();
                         refreshScreen(i18n.info_dirChanged());
-                        threadSleep(1500);
+                        threadWait(1500);
                         setStatus(mUno.getNow());
                         break; // case REV
 
@@ -453,13 +460,6 @@ public class MainActivity extends AppCompatActivity
                 } // if (mAdjustOptions)
                 else {
                     refreshScreen(i18n.info_gameOver(mScore));
-                    if (mAuto && !mAdjustOptions) {
-                        threadSleep(5000);
-                        if (mAuto && !mAdjustOptions
-                                && mStatus == STAT_GAME_OVER) {
-                            setStatus(STAT_NEW_GAME);
-                        } // if (mAuto && ...)
-                    } // if (mAuto && !mAdjustOptions)
                 } // else
                 break; // case STAT_GAME_OVER
 
@@ -493,17 +493,18 @@ public class MainActivity extends AppCompatActivity
         width = mUno.getFormatTextWidth(message);
         mUno.putFormatText(mScr, message, 640 - width / 2, 487);
 
-        // Right-bottom corner: <AUTO> button
-        fontColor = mAuto ? Color.YELLOW : null;
-        width = mUno.getTextWidth(i18n.btn_auto());
-        mUno.putText(mScr, i18n.btn_auto(), 1260 - width, 700, fontColor);
-
         // Left-bottom corner: <OPTIONS> button
         // Shows only when game is not in process
         if (status == STAT_WELCOME || status == STAT_GAME_OVER) {
             fontColor = mAdjustOptions ? Color.YELLOW : null;
             mUno.putText(mScr, i18n.btn_settings(), 20, 700, fontColor);
         } // if (status == STAT_WELCOME || status == STAT_GAME_OVER)
+
+        // Right-bottom corner: <AUTO> button
+        if (status == Player.YOU && !mAuto) {
+            width = mUno.getTextWidth(i18n.btn_auto());
+            mUno.putText(mScr, i18n.btn_auto(), 1260 - width, 700, null);
+        } // if (status == Player.YOU && !mAuto)
 
         if (mAdjustOptions) {
             // Show special screen when configuring game options
@@ -533,14 +534,14 @@ public class MainActivity extends AppCompatActivity
             mUno.putText(mScr, i18n.label_level(), 640, 160, null);
             image = mUno.getLevelImage(
                     /* level   */ Uno.LV_EASY,
-                    /* hiLight */ !mUno.isSevenZeroRule()
-                            && mUno.getDifficulty() == Uno.LV_EASY
+                    /* hiLight */ !mUno.isSevenZeroRule() &&
+                            mUno.getDifficulty() == Uno.LV_EASY
             ); // image = mUno.getLevelImage()
             image.copyTo(mScr.submat(60, 241, 790, 911), image);
             image = mUno.getLevelImage(
                     /* level   */ Uno.LV_HARD,
-                    /* hiLight */ !mUno.isSevenZeroRule()
-                            && mUno.getDifficulty() == Uno.LV_HARD
+                    /* hiLight */ !mUno.isSevenZeroRule() &&
+                            mUno.getDifficulty() == Uno.LV_HARD
             ); // image = mUno.getLevelImage()
             image.copyTo(mScr.submat(60, 241, 970, 1091), image);
 
@@ -963,7 +964,7 @@ public class MainActivity extends AppCompatActivity
         mHideFlag = 0x00;
         mUno.cycle();
         refreshScreen(i18n.info_0_rotate());
-        threadSleep(1500);
+        threadWait(1500);
         setStatus(mUno.switchNow());
     } // cycle()
 
@@ -996,7 +997,7 @@ public class MainActivity extends AppCompatActivity
         mHideFlag = 0x00;
         mUno.swap(curr, whom);
         refreshScreen(i18n.info_7_swap(curr, whom));
-        threadSleep(1500);
+        threadWait(1500);
         setStatus(mUno.switchNow());
     } // swapWith(int)
 
@@ -1063,6 +1064,7 @@ public class MainActivity extends AppCompatActivity
                     mSoundPool.play(sndLose, mSndVol, mSndVol, 1, 0, 1.0f);
                 } // else
 
+                mAuto = false; // Force disable the AUTO switch
                 mWinner = now;
                 setStatus(STAT_GAME_OVER);
             } // if (size == 1)
@@ -1079,12 +1081,12 @@ public class MainActivity extends AppCompatActivity
                         if (mUno.isDraw2StackRule()) {
                             c = mUno.getDraw2StackCount();
                             refreshScreen(i18n.act_playDraw2(now, next, c));
-                            threadSleep(1500);
+                            threadWait(1500);
                             setStatus(next);
                         } // if (mUno.isDraw2StackRule())
                         else {
                             refreshScreen(i18n.act_playDraw2(now, next, 2));
-                            threadSleep(1500);
+                            threadWait(1500);
                             draw(2, /* force */ true);
                         } // else
                         break; // case DRAW2
@@ -1092,34 +1094,34 @@ public class MainActivity extends AppCompatActivity
                     case SKIP:
                         next = mUno.switchNow();
                         refreshScreen(i18n.act_playSkip(now, next));
-                        threadSleep(1500);
+                        threadWait(1500);
                         setStatus(mUno.switchNow());
                         break; // case SKIP
 
                     case REV:
                         mUno.switchDirection();
                         refreshScreen(i18n.act_playRev(now));
-                        threadSleep(1500);
+                        threadWait(1500);
                         setStatus(mUno.switchNow());
                         break; // case REV
 
                     case WILD:
                         refreshScreen(i18n.act_playWild(now, color.ordinal()));
-                        threadSleep(1500);
+                        threadWait(1500);
                         setStatus(mUno.switchNow());
                         break; // case WILD
 
                     case WILD_DRAW4:
                         next = mUno.getNext();
                         refreshScreen(i18n.act_playWildDraw4(now, next));
-                        threadSleep(1500);
+                        threadWait(1500);
                         setStatus(STAT_DOUBT_WILD4);
                         break; // case WILD_DRAW4
 
                     case NUM7:
                         if (mUno.isSevenZeroRule()) {
                             refreshScreen(i18n.act_playCard(now, card.name));
-                            threadSleep(750);
+                            threadWait(750);
                             setStatus(STAT_SEVEN_TARGET);
                             break; // case NUM7
                         } // if (mUno.isSevenZeroRule())
@@ -1128,7 +1130,7 @@ public class MainActivity extends AppCompatActivity
                     case NUM0:
                         if (mUno.isSevenZeroRule()) {
                             refreshScreen(i18n.act_playCard(now, card.name));
-                            threadSleep(750);
+                            threadWait(750);
                             cycle();
                             break; // case NUM0
                         } // if (mUno.isSevenZeroRule())
@@ -1136,7 +1138,7 @@ public class MainActivity extends AppCompatActivity
 
                     default:
                         refreshScreen(i18n.act_playCard(now, card.name));
-                        threadSleep(1500);
+                        threadWait(1500);
                         setStatus(mUno.switchNow());
                         break; // default
                 } // switch (card.content)
@@ -1211,7 +1213,7 @@ public class MainActivity extends AppCompatActivity
                 mSoundPool.play(sndDraw, mSndVol, mSndVol, 1, 0, 1.0f);
                 animate(1, mLayer);
                 refreshScreen(message);
-                threadSleep(300);
+                threadWait(300);
             } // if (index >= 0)
             else {
                 message = i18n.info_cannotDraw(now, Uno.MAX_HOLD_CARDS);
@@ -1220,7 +1222,7 @@ public class MainActivity extends AppCompatActivity
             } // else
         } // for (i = 0; i < count; ++i)
 
-        threadSleep(750);
+        threadWait(750);
         if (count == 1 &&
                 drawn != null &&
                 mUno.isForcePlay() &&
@@ -1242,7 +1244,7 @@ public class MainActivity extends AppCompatActivity
         } // if (count == 1 && ...)
         else {
             refreshScreen(i18n.act_pass(now));
-            threadSleep(750);
+            threadWait(750);
             setStatus(mUno.switchNow());
         } // else
     } // draw(int, boolean)
@@ -1287,7 +1289,7 @@ public class MainActivity extends AppCompatActivity
 
             Utils.matToBitmap(mScr, mBmp);
             mUIHandler.sendEmptyMessage(0); // -> handleMessage()
-            threadSleep(30);
+            threadWait(30);
             for (int j = 0; j < layerCount; ++j) {
                 AnimateLayer l = layer[j];
                 int x1 = l.startLeft + (l.endLeft - l.startLeft) * i / 5;
@@ -1320,17 +1322,17 @@ public class MainActivity extends AppCompatActivity
         challengeSuccess = mUno.challenge(now);
         refreshScreen(i18n.info_challenge(
                 challenger, now, mUno.next2lastColor().ordinal()));
-        threadSleep(1500);
+        threadWait(1500);
         if (challengeSuccess) {
             // Challenge success, who played [wild +4] draws 4 cards
             refreshScreen(i18n.info_challengeSuccess(now));
-            threadSleep(1500);
+            threadWait(1500);
             draw(4, /* force */ true);
         } // if (challengeSuccess)
         else {
             // Challenge failure, challenger draws 6 cards
             refreshScreen(i18n.info_challengeFailure(challenger));
-            threadSleep(1500);
+            threadWait(1500);
             mUno.switchNow();
             draw(6, /* force */ true);
         } // else
@@ -1349,11 +1351,12 @@ public class MainActivity extends AppCompatActivity
     public boolean onTouch(View v, MotionEvent event) {
         boolean handled = event.getAction() == MotionEvent.ACTION_DOWN;
 
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+        if (handled) {
             int x = (int) (event.getX() * 1280 / v.getWidth());
             int y = (int) (event.getY() * 720 / v.getHeight());
+            Message message = mSubHandler.obtainMessage(0, x, y);
 
-            new Thread(() -> onTouch(x, y)).start();
+            mSubHandler.sendMessage(message);
         } // if (handled)
 
         return handled;
@@ -1363,11 +1366,15 @@ public class MainActivity extends AppCompatActivity
      * Triggered when a touch event occurred.
      * Called by onTouch(View, MotionEvent) method, and handled by this method.
      *
-     * @param x Touch on where (X coordinate).
-     * @param y Touch on where (Y coordinate).
+     * @param message Touch on where.
+     *                Read message.arg1 to get the X coordinate.
+     *                Read message.arg2 to get the Y coordinate.
+     * @return True because the touch events will be handled by us.
      */
     @WorkerThread
-    private void onTouch(int x, int y) {
+    private boolean handleMessage2(Message message) {
+        int x = message.arg1, y = message.arg2;
+
         if (mAdjustOptions) {
             // Do special behaviors when configuring game options
             if (60 <= y && y <= 240) {
@@ -1470,8 +1477,10 @@ public class MainActivity extends AppCompatActivity
         else if (679 <= y && y <= 700 && 1130 <= x && x <= 1260) {
             // <AUTO> button
             // In player's action, automatically play or draw cards by AI
-            mAuto = !mAuto;
-            setStatus(mStatus == STAT_WILD_COLOR ? Player.YOU : mStatus);
+            if (mStatus == Player.YOU) {
+                mAuto = true;
+                setStatus(mStatus);
+            } // if (mStatus == Player.YOU)
         } // else if (679 <= y && y <= 700 && 1130 <= x && x <= 1260)
         else {
             switch (mStatus) {
@@ -1611,7 +1620,9 @@ public class MainActivity extends AppCompatActivity
                     break; // default
             } // switch (mStatus)
         } // else
-    } // onTouch(int, int)
+
+        return true;
+    } // handleMessage2(Message)
 
     /**
      * Triggered when user pressed a system key.
@@ -1672,6 +1683,11 @@ public class MainActivity extends AppCompatActivity
         if (OPENCV_INIT_SUCCESS) {
             mSoundPool.release();
         } // if (OPENCV_INIT_SUCCESS)
+
+        if (mSubHandler != null) {
+            mSubHandler.removeCallbacksAndMessages(null);
+            mSubHandler.getLooper().quit();
+        } // if (mSubHandler != null)
 
         mUIHandler.removeCallbacksAndMessages(null);
         super.onDestroy();
