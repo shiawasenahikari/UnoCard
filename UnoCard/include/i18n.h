@@ -41,7 +41,7 @@ public:
     virtual QString info_challengeSuccess(int) = 0;
     virtual QString info_clickAgainToPlay(const QString&) = 0;
     virtual QString info_dirChanged() = 0;
-    virtual QString info_gameOver(int) = 0;
+    virtual QString info_gameOver(int, int) = 0;
     virtual QString info_ready() = 0;
     virtual QString info_ruleSettings() = 0;
     virtual QString info_skipped(int) = 0;
@@ -203,10 +203,13 @@ public:
         return "Direction changed";
     } // info_dirChanged()
 
-    inline QString info_gameOver(int i) {
-        return "Your score is " + QString::number(i)
-            + ". Click the card deck to restart";
-    } // info_gameOver(int)
+    inline QString info_gameOver(int i1, int i2) {
+        QString s = i2 < 0
+                ? "[R](" + QString::number(i2) + ")[W]"
+                : "[G](+" + QString::number(i2) + ")[W]";
+
+        return "Score: " + QString::number(i1) + s + ". Click UNO to restart";
+    } // info_gameOver(int, int)
 
     inline QString info_ready() {
         return "GET READY";
@@ -409,9 +412,13 @@ public:
         return "方向已改变";
     } // info_dirChanged()
 
-    inline QString info_gameOver(int i) {
-        return "你的分数为 " + QString::number(i) + ", 点击发牌堆重新开始游戏";
-    } // info_gameOver(int)
+    inline QString info_gameOver(int i1, int i2) {
+        QString s = i2 < 0
+                ? "[G](" + QString::number(i2) + ")[W]"
+                : "[R](+" + QString::number(i2) + ")[W]";
+
+        return "你的分数为 " + QString::number(i1) + s + ", 点击 UNO 重新开始游戏";
+    } // info_gameOver(int, int)
 
     inline QString info_ready() {
         return "准备";

@@ -68,7 +68,7 @@ public interface I18N {
 
     String info_dirChanged();
 
-    String info_gameOver(int i);
+    String info_gameOver(int i1, int i2);
 
     String info_ready();
 
@@ -265,9 +265,11 @@ class I18N_en_US implements I18N {
     } // info_dirChanged()
 
     @Override
-    public String info_gameOver(int i) {
-        return "Your score is " + i + ". Click the card deck to restart";
-    } // info_gameOver(int)
+    public String info_gameOver(int i1, int i2) {
+        String s = i2 < 0 ? "[R](" + i2 + ")[W]" : "[G](+" + i2 + ")[W]";
+
+        return "Score: " + i1 + s + ". Click UNO to restart";
+    } // info_gameOver(int, int)
 
     @Override
     public String info_ready() {
@@ -505,9 +507,11 @@ class I18N_zh_CN implements I18N {
     } // info_dirChanged()
 
     @Override
-    public String info_gameOver(int i) {
-        return "你的分数为 " + i + ", 点击发牌堆重新开始游戏";
-    } // info_gameOver(int)
+    public String info_gameOver(int i1, int i2) {
+        String s = i2 < 0 ? "[G](" + i2 + ")[W]" : "[R](+" + i2 + ")[W]";
+
+        return "你的分数为 " + i1 + s + ", 点击 UNO 重新开始游戏";
+    } // info_gameOver(int, int)
 
     @Override
     public String info_ready() {

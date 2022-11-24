@@ -54,7 +54,6 @@ private:
     Uno* sUno;
     I18N* i18n;
     bool sAuto;
-    int sScore;
     int sStatus;
     int sWinner;
     QFont sFont;
@@ -63,6 +62,7 @@ private:
     QImage sScreen;
     bool sAIRunning;
     int sSelectedIdx;
+    int sScore, sDiff;
     QImage sBackup[4];
     QPainter* sPainter;
     bool sAdjustOptions;

@@ -88,6 +88,7 @@ public class MainActivity extends AppCompatActivity
     private Handler mUIHandler;
     private Color[] mBestColor;
     private boolean mAIRunning;
+    private int mScore, mDiff;
     private int mSelectedIdx;
     private boolean mAuto;
     private float mSndVol;
@@ -102,7 +103,6 @@ public class MainActivity extends AppCompatActivity
     private int sndLose;
     private int sndWin;
     private int sndUno;
-    private int mScore;
     private I18N i18n;
     private Mat mScr;
     private Uno mUno;
@@ -381,6 +381,9 @@ public class MainActivity extends AppCompatActivity
                 else if (mUno.legalCardsCount4NowPlayer() == 0) {
                     draw(1, /* force */ false);
                 } // else if (mUno.legalCardsCount4NowPlayer() == 0)
+                else if (mAdjustOptions) {
+                    refreshScreen("");
+                } // else if (mAdjustOptions)
                 else {
                     List<Card> hand = mUno.getPlayer(Player.YOU).getHandCards();
                     if (hand.size() == 1) {
@@ -459,7 +462,7 @@ public class MainActivity extends AppCompatActivity
                     refreshScreen(i18n.info_ruleSettings());
                 } // if (mAdjustOptions)
                 else {
-                    refreshScreen(i18n.info_gameOver(mScore));
+                    refreshScreen(i18n.info_gameOver(mScore, mDiff));
                 } // else
                 break; // case STAT_GAME_OVER
 
@@ -495,10 +498,12 @@ public class MainActivity extends AppCompatActivity
 
         // Left-bottom corner: <OPTIONS> button
         // Shows only when game is not in process
-        if (status == STAT_WELCOME || status == STAT_GAME_OVER) {
+        if (status == Player.YOU ||
+                status == STAT_WELCOME ||
+                status == STAT_GAME_OVER) {
             fontColor = mAdjustOptions ? Color.YELLOW : null;
             mUno.putText(mScr, i18n.btn_settings(), 20, 700, fontColor);
-        } // if (status == STAT_WELCOME || status == STAT_GAME_OVER)
+        } // if (status == Player.YOU || ...)
 
         // Right-bottom corner: <AUTO> button
         if (status == Player.YOU && !mAuto) {
@@ -530,53 +535,55 @@ public class MainActivity extends AppCompatActivity
                     mUno.findCard(Color.GREEN, Content.REV).darkImg;
             image.copyTo(mScr.submat(250, 431, 330, 451), image);
 
-            // [Level] option: easy / hard
-            mUno.putText(mScr, i18n.label_level(), 640, 160, null);
-            image = mUno.getLevelImage(
-                    /* level   */ Uno.LV_EASY,
-                    /* hiLight */ !mUno.isSevenZeroRule() &&
-                            mUno.getDifficulty() == Uno.LV_EASY
-            ); // image = mUno.getLevelImage()
-            image.copyTo(mScr.submat(60, 241, 790, 911), image);
-            image = mUno.getLevelImage(
-                    /* level   */ Uno.LV_HARD,
-                    /* hiLight */ !mUno.isSevenZeroRule() &&
-                            mUno.getDifficulty() == Uno.LV_HARD
-            ); // image = mUno.getLevelImage()
-            image.copyTo(mScr.submat(60, 241, 970, 1091), image);
+            if (status == STAT_WELCOME || status == STAT_GAME_OVER) {
+                // [Level] option: easy / hard
+                mUno.putText(mScr, i18n.label_level(), 640, 160, null);
+                image = mUno.getLevelImage(
+                        /* level   */ Uno.LV_EASY,
+                        /* hiLight */ !mUno.isSevenZeroRule() &&
+                                mUno.getDifficulty() == Uno.LV_EASY
+                ); // image = mUno.getLevelImage()
+                image.copyTo(mScr.submat(60, 241, 790, 911), image);
+                image = mUno.getLevelImage(
+                        /* level   */ Uno.LV_HARD,
+                        /* hiLight */ !mUno.isSevenZeroRule() &&
+                                mUno.getDifficulty() == Uno.LV_HARD
+                ); // image = mUno.getLevelImage()
+                image.copyTo(mScr.submat(60, 241, 970, 1091), image);
 
-            // [Players] option: 3 / 4
-            mUno.putText(mScr, i18n.label_players(), 640, 350, null);
-            image = mUno.getPlayers() == 3 ?
-                    mUno.findCard(Color.GREEN, Content.NUM3).image :
-                    mUno.findCard(Color.GREEN, Content.NUM3).darkImg;
-            image.copyTo(mScr.submat(250, 431, 790, 911), image);
-            image = mUno.getPlayers() == 4 ?
-                    mUno.findCard(Color.YELLOW, Content.NUM4).image :
-                    mUno.findCard(Color.YELLOW, Content.NUM4).darkImg;
-            image.copyTo(mScr.submat(250, 431, 970, 1091), image);
+                // [Players] option: 3 / 4
+                mUno.putText(mScr, i18n.label_players(), 640, 350, null);
+                image = mUno.getPlayers() == 3 ?
+                        mUno.findCard(Color.GREEN, Content.NUM3).image :
+                        mUno.findCard(Color.GREEN, Content.NUM3).darkImg;
+                image.copyTo(mScr.submat(250, 431, 790, 911), image);
+                image = mUno.getPlayers() == 4 ?
+                        mUno.findCard(Color.YELLOW, Content.NUM4).image :
+                        mUno.findCard(Color.YELLOW, Content.NUM4).darkImg;
+                image.copyTo(mScr.submat(250, 431, 970, 1091), image);
 
-            // Rule settings
-            // Force play switch
-            mUno.putText(mScr, i18n.label_forcePlay(), 60, 540, null);
-            fontColor = mUno.isForcePlay() ? null : Color.RED;
-            mUno.putText(mScr, i18n.btn_keep(), 790, 540, fontColor);
-            fontColor = mUno.isForcePlay() ? Color.GREEN : null;
-            mUno.putText(mScr, i18n.btn_play(), 970, 540, fontColor);
+                // Rule settings
+                // Force play switch
+                mUno.putText(mScr, i18n.label_forcePlay(), 60, 540, null);
+                fontColor = mUno.isForcePlay() ? null : Color.RED;
+                mUno.putText(mScr, i18n.btn_keep(), 790, 540, fontColor);
+                fontColor = mUno.isForcePlay() ? Color.GREEN : null;
+                mUno.putText(mScr, i18n.btn_play(), 970, 540, fontColor);
 
-            // 7-0
-            mUno.putText(mScr, i18n.label_7_0(), 60, 590, null);
-            fontColor = mUno.isSevenZeroRule() ? null : Color.RED;
-            mUno.putText(mScr, i18n.btn_off(), 790, 590, fontColor);
-            fontColor = mUno.isSevenZeroRule() ? Color.GREEN : null;
-            mUno.putText(mScr, i18n.btn_on(), 970, 590, fontColor);
+                // 7-0
+                mUno.putText(mScr, i18n.label_7_0(), 60, 590, null);
+                fontColor = mUno.isSevenZeroRule() ? null : Color.RED;
+                mUno.putText(mScr, i18n.btn_off(), 790, 590, fontColor);
+                fontColor = mUno.isSevenZeroRule() ? Color.GREEN : null;
+                mUno.putText(mScr, i18n.btn_on(), 970, 590, fontColor);
 
-            // +2 stack
-            mUno.putText(mScr, i18n.label_draw2Stack(), 60, 640, null);
-            fontColor = mUno.isDraw2StackRule() ? null : Color.RED;
-            mUno.putText(mScr, i18n.btn_off(), 790, 640, fontColor);
-            fontColor = mUno.isDraw2StackRule() ? Color.GREEN : null;
-            mUno.putText(mScr, i18n.btn_on(), 970, 640, fontColor);
+                // +2 stack
+                mUno.putText(mScr, i18n.label_draw2Stack(), 60, 640, null);
+                fontColor = mUno.isDraw2StackRule() ? null : Color.RED;
+                mUno.putText(mScr, i18n.btn_off(), 790, 640, fontColor);
+                fontColor = mUno.isDraw2StackRule() ? Color.GREEN : null;
+                mUno.putText(mScr, i18n.btn_on(), 970, 640, fontColor);
+            } // if (status == STAT_WELCOME || status == STAT_GAME_OVER)
 
             // Show image
             Utils.matToBitmap(mScr, mBmp);
@@ -1052,15 +1059,15 @@ public class MainActivity extends AppCompatActivity
                 // The player in action becomes winner when it played the
                 // final card in its hand successfully
                 if (now == Player.YOU) {
-                    mScore = Math.min(9999, mScore + 200
-                            + mUno.getPlayer(Player.COM1).getHandScore()
-                            + mUno.getPlayer(Player.COM2).getHandScore()
-                            + mUno.getPlayer(Player.COM3).getHandScore());
+                    mDiff = mUno.getPlayer(Player.COM1).getHandScore() +
+                            mUno.getPlayer(Player.COM2).getHandScore() +
+                            mUno.getPlayer(Player.COM3).getHandScore();
+                    mScore = Math.min(9999, 200 + mScore + mDiff);
                     mSoundPool.play(sndWin, mSndVol, mSndVol, 1, 0, 1.0f);
                 } // if (now == Player.YOU)
                 else {
-                    mScore = Math.max(-999, mScore + 200
-                            - mUno.getPlayer(Player.YOU).getHandScore());
+                    mDiff = -mUno.getPlayer(Player.YOU).getHandScore();
+                    mScore = Math.max(-999, 200 + mScore + mDiff);
                     mSoundPool.play(sndLose, mSndVol, mSndVol, 1, 0, 1.0f);
                 } // else
 
@@ -1531,6 +1538,11 @@ public class MainActivity extends AppCompatActivity
                                 } // else
                             } // else if (mUno.isLegalToPlay(card))
                         } // if (startX <= x && x <= startX + width)
+                        else if (y >= 679 && 20 <= x && x <= 200) {
+                            // <OPTIONS> button
+                            mAdjustOptions = true;
+                            setStatus(mStatus);
+                        } // else if (y >= 679 && 20 <= x && x <= 200)
                         else {
                             // Blank area, cancel your selection
                             mSelectedIdx = -1;

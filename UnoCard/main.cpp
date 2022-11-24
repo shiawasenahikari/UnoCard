@@ -328,6 +328,9 @@ void Main::setStatus(int status) {
         else if (sUno->legalCardsCount4NowPlayer() == 0) {
             draw();
         } // else if (sUno->legalCardsCount4NowPlayer() == 0)
+        else if (sAdjustOptions) {
+            refreshScreen();
+        } // else if (sAdjustOptions)
         else {
             auto hand = sUno->getPlayer(Player::YOU)->getHandCards();
             if (hand.size() == 1) {
@@ -405,7 +408,7 @@ void Main::setStatus(int status) {
             refreshScreen(i18n->info_ruleSettings());
         } // if (sAdjustOptions)
         else {
-            refreshScreen(i18n->info_gameOver(sScore));
+            refreshScreen(i18n->info_gameOver(sScore, sDiff));
         } // else
         break; // case STAT_GAME_OVER
 
@@ -499,11 +502,13 @@ void Main::refreshScreen(const QString& message) {
 
     // Left-bottom corner: <OPTIONS> button
     // Shows only when game is not in process
-    if (status == STAT_WELCOME || status == STAT_GAME_OVER) {
+    if (status == Player::YOU ||
+        status == STAT_WELCOME ||
+        status == STAT_GAME_OVER) {
         if (sAdjustOptions) sPainter->setPen(PEN_YELLOW);
         sPainter->drawText(20, 700, i18n->btn_settings());
         if (sAdjustOptions) sPainter->setPen(PEN_WHITE);
-    } // if (status == STAT_WELCOME || status == STAT_GAME_OVER)
+    } // if (status == Player::YOU || ...)
 
     // Right-bottom corner: <AUTO> button
     if (status == Player::YOU && !sAuto) {
@@ -535,56 +540,58 @@ void Main::refreshScreen(const QString& message) {
             sUno->findCard(GREEN, REV)->darkImg;
         sPainter->drawImage(330, 250, image);
 
-        // [Level] option: easy / hard
-        sPainter->drawText(640, 160, i18n->label_level());
-        image = sUno->getLevelImage(
-            /* level   */ Uno::LV_EASY,
-            /* hiLight */ !sUno->isSevenZeroRule() &&
-            sUno->getDifficulty() == Uno::LV_EASY
-        ); // image = sUno->getLevelImage()
-        sPainter->drawImage(790, 60, image);
-        image = sUno->getLevelImage(
-            /* level   */ Uno::LV_HARD,
-            /* hiLight */ !sUno->isSevenZeroRule() &&
-            sUno->getDifficulty() == Uno::LV_HARD
-        ); // image = sUno->getLevelImage()
-        sPainter->drawImage(970, 60, image);
+        if (status == STAT_WELCOME || status == STAT_GAME_OVER) {
+            // [Level] option: easy / hard
+            sPainter->drawText(640, 160, i18n->label_level());
+            image = sUno->getLevelImage(
+                /* level   */ Uno::LV_EASY,
+                /* hiLight */ !sUno->isSevenZeroRule() &&
+                sUno->getDifficulty() == Uno::LV_EASY
+            ); // image = sUno->getLevelImage()
+            sPainter->drawImage(790, 60, image);
+            image = sUno->getLevelImage(
+                /* level   */ Uno::LV_HARD,
+                /* hiLight */ !sUno->isSevenZeroRule() &&
+                sUno->getDifficulty() == Uno::LV_HARD
+            ); // image = sUno->getLevelImage()
+            sPainter->drawImage(970, 60, image);
 
-        // [Players] option: 3 / 4
-        sPainter->drawText(640, 350, i18n->label_players());
-        image = sUno->getPlayers() == 3 ?
-            sUno->findCard(GREEN, NUM3)->image :
-            sUno->findCard(GREEN, NUM3)->darkImg;
-        sPainter->drawImage(790, 250, image);
-        image = sUno->getPlayers() == 4 ?
-            sUno->findCard(YELLOW, NUM4)->image :
-            sUno->findCard(YELLOW, NUM4)->darkImg;
-        sPainter->drawImage(970, 250, image);
+            // [Players] option: 3 / 4
+            sPainter->drawText(640, 350, i18n->label_players());
+            image = sUno->getPlayers() == 3 ?
+                sUno->findCard(GREEN, NUM3)->image :
+                sUno->findCard(GREEN, NUM3)->darkImg;
+            sPainter->drawImage(790, 250, image);
+            image = sUno->getPlayers() == 4 ?
+                sUno->findCard(YELLOW, NUM4)->image :
+                sUno->findCard(YELLOW, NUM4)->darkImg;
+            sPainter->drawImage(970, 250, image);
 
-        // Rule settings
-        // Force play switch
-        sPainter->drawText(60, 540, i18n->label_forcePlay());
-        sPainter->setPen(sUno->isForcePlay() ? PEN_WHITE : PEN_RED);
-        sPainter->drawText(790, 540, i18n->btn_keep());
-        sPainter->setPen(sUno->isForcePlay() ? PEN_GREEN : PEN_WHITE);
-        sPainter->drawText(970, 540, i18n->btn_play());
-        sPainter->setPen(PEN_WHITE);
+            // Rule settings
+            // Force play switch
+            sPainter->drawText(60, 540, i18n->label_forcePlay());
+            sPainter->setPen(sUno->isForcePlay() ? PEN_WHITE : PEN_RED);
+            sPainter->drawText(790, 540, i18n->btn_keep());
+            sPainter->setPen(sUno->isForcePlay() ? PEN_GREEN : PEN_WHITE);
+            sPainter->drawText(970, 540, i18n->btn_play());
+            sPainter->setPen(PEN_WHITE);
 
-        // 7-0
-        sPainter->drawText(60, 590, i18n->label_7_0());
-        sPainter->setPen(sUno->isSevenZeroRule() ? PEN_WHITE : PEN_RED);
-        sPainter->drawText(790, 590, i18n->btn_off());
-        sPainter->setPen(sUno->isSevenZeroRule() ? PEN_GREEN : PEN_WHITE);
-        sPainter->drawText(970, 590, i18n->btn_on());
-        sPainter->setPen(PEN_WHITE);
+            // 7-0
+            sPainter->drawText(60, 590, i18n->label_7_0());
+            sPainter->setPen(sUno->isSevenZeroRule() ? PEN_WHITE : PEN_RED);
+            sPainter->drawText(790, 590, i18n->btn_off());
+            sPainter->setPen(sUno->isSevenZeroRule() ? PEN_GREEN : PEN_WHITE);
+            sPainter->drawText(970, 590, i18n->btn_on());
+            sPainter->setPen(PEN_WHITE);
 
-        // +2 stack
-        sPainter->drawText(60, 640, i18n->label_draw2Stack());
-        sPainter->setPen(sUno->isDraw2StackRule() ? PEN_WHITE : PEN_RED);
-        sPainter->drawText(790, 640, i18n->btn_off());
-        sPainter->setPen(sUno->isDraw2StackRule() ? PEN_GREEN : PEN_WHITE);
-        sPainter->drawText(970, 640, i18n->btn_on());
-        sPainter->setPen(PEN_WHITE);
+            // +2 stack
+            sPainter->drawText(60, 640, i18n->label_draw2Stack());
+            sPainter->setPen(sUno->isDraw2StackRule() ? PEN_WHITE : PEN_RED);
+            sPainter->drawText(790, 640, i18n->btn_off());
+            sPainter->setPen(sUno->isDraw2StackRule() ? PEN_GREEN : PEN_WHITE);
+            sPainter->drawText(970, 640, i18n->btn_on());
+            sPainter->setPen(PEN_WHITE);
+        } // if (status == STAT_WELCOME || status == STAT_GAME_OVER)
     } // if (sAdjustOptions)
     else if (status == STAT_WELCOME) {
         // For welcome screen, show the start button and your score
@@ -979,15 +986,15 @@ void Main::play(int index, Color color) {
             // The player in action becomes winner when it played the
             // final card in its hand successfully
             if (now == Player::YOU) {
-                sScore = qMin(9999, sScore + 200
-                    + sUno->getPlayer(Player::COM1)->getHandScore()
+                sDiff = sUno->getPlayer(Player::COM1)->getHandScore()
                     + sUno->getPlayer(Player::COM2)->getHandScore()
-                    + sUno->getPlayer(Player::COM3)->getHandScore());
+                    + sUno->getPlayer(Player::COM3)->getHandScore();
+                sScore = qMin(9999, 200 + sScore + sDiff);
                 sSoundPool->play(SoundPool::SND_WIN);
             } // if (now == Player::YOU)
             else {
-                sScore = qMax(-999, sScore + 200
-                    - sUno->getPlayer(Player::YOU)->getHandScore());
+                sDiff = -sUno->getPlayer(Player::YOU)->getHandScore();
+                sScore = qMax(-999, 200 + sScore + sDiff);
                 sSoundPool->play(SoundPool::SND_LOSE);
             } // else
 
@@ -1415,6 +1422,11 @@ void Main::mousePressEvent(QMouseEvent* event) {
                         } // else
                     } // else if (sUno->isLegalToPlay(card))
                 } // if (startX <= x && x <= startX + width)
+                else if (y >= 679 && 20 <= x && x <= 200) {
+                    // <OPTIONS> button
+                    sAdjustOptions = true;
+                    setStatus(sStatus);
+                } // else if (y >= 679 && 20 <= x && x <= 200)
                 else {
                     // Blank area, cancel your selection
                     sSelectedIdx = -1;
