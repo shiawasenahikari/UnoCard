@@ -511,10 +511,10 @@ void Main::refreshScreen(const QString& message) {
     } // if (status == Player::YOU || ...)
 
     // Right-bottom corner: <AUTO> button
-    if (status == Player::YOU && !sAuto) {
+    if (status == Player::YOU && !sAuto && !sAdjustOptions) {
         width = sPainter->fontMetrics().horizontalAdvance(i18n->btn_auto());
         sPainter->drawText(1260 - width, 700, i18n->btn_auto());
-    } // if (status == Player::YOU && !sAuto)
+    } // if (status == Player::YOU && !sAuto && !sAdjustOptions)
 
     if (sAdjustOptions) {
         // Show special screen when configuring game options
@@ -540,7 +540,7 @@ void Main::refreshScreen(const QString& message) {
             sUno->findCard(GREEN, REV)->darkImg;
         sPainter->drawImage(330, 250, image);
 
-        if (status == STAT_WELCOME || status == STAT_GAME_OVER) {
+        if (status != Player::YOU) {
             // [Level] option: easy / hard
             sPainter->drawText(640, 160, i18n->label_level());
             image = sUno->getLevelImage(
@@ -591,7 +591,7 @@ void Main::refreshScreen(const QString& message) {
             sPainter->setPen(sUno->isDraw2StackRule() ? PEN_GREEN : PEN_WHITE);
             sPainter->drawText(970, 640, i18n->btn_on());
             sPainter->setPen(PEN_WHITE);
-        } // if (status == STAT_WELCOME || status == STAT_GAME_OVER)
+        } // if (status != Player::YOU)
     } // if (sAdjustOptions)
     else if (status == STAT_WELCOME) {
         // For welcome screen, show the start button and your score
@@ -1287,16 +1287,16 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     sMediaPlay->setVolume(50);
                     setStatus(sStatus);
                 } // else if (330 <= x && x <= 450)
-                else if (790 <= x && x <= 910) {
+                else if (790 <= x && x <= 910 && sStatus != Player::YOU) {
                     // Easy AI Level
                     sUno->setDifficulty(Uno::LV_EASY);
                     setStatus(sStatus);
-                } // else if (790 <= x && x <= 910)
-                else if (970 <= x && x <= 1090) {
+                } // else if (790 <= x && x <= 910 && sStatus != Player::YOU)
+                else if (970 <= x && x <= 1090 && sStatus != Player::YOU) {
                     // Hard AI Level
                     sUno->setDifficulty(Uno::LV_HARD);
                     setStatus(sStatus);
-                } // else if (970 <= x && x <= 1090)
+                } // else if (970 <= x && x <= 1090 && sStatus != Player::YOU)
             } // if (60 <= y && y <= 240)
             else if (270 <= y && y <= 450) {
                 if (150 <= x && x <= 270) {
@@ -1310,18 +1310,18 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     sSoundPool->play(SoundPool::SND_PLAY);
                     setStatus(sStatus);
                 } // else if (330 <= x && x <= 450)
-                else if (790 <= x && x <= 910) {
+                else if (790 <= x && x <= 910 && sStatus != Player::YOU) {
                     // 3 players
                     sUno->setPlayers(3);
                     setStatus(sStatus);
-                } // else if (790 <= x && x <= 910)
-                else if (970 <= x && x <= 1090) {
+                } // else if (790 <= x && x <= 910 && sStatus != Player::YOU)
+                else if (970 <= x && x <= 1090 && sStatus != Player::YOU) {
                     // 4 players
                     sUno->setPlayers(4);
                     setStatus(sStatus);
-                } // else if (970 <= x && x <= 1090)
+                } // else if (970 <= x && x <= 1090 && sStatus != Player::YOU)
             } // else if (270 <= y && y <= 450)
-            else if (519 <= y && y <= 540) {
+            else if (519 <= y && y <= 540 && sStatus != Player::YOU) {
                 if (800 <= x && x <= 927) {
                     // Force play, <KEEP> button
                     sUno->setForcePlay(false);
@@ -1332,8 +1332,8 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     sUno->setForcePlay(true);
                     setStatus(sStatus);
                 } // else if (980 <= x && x <= 1104)
-            } // else if (519 <= y && y <= 540)
-            else if (569 <= y && y <= 590) {
+            } // else if (519 <= y && y <= 540 && sStatus != Player::YOU)
+            else if (569 <= y && y <= 590 && sStatus != Player::YOU) {
                 if (800 <= x && x <= 906) {
                     // 7-0, <OFF> button
                     sUno->setSevenZeroRule(false);
@@ -1344,8 +1344,8 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     sUno->setSevenZeroRule(true);
                     setStatus(sStatus);
                 } // else if (980 <= x && x <= 1072)
-            } // else if (569 <= y && y <= 590)
-            else if (619 <= y && y <= 640) {
+            } // else if (569 <= y && y <= 590 && sStatus != Player::YOU)
+            else if (619 <= y && y <= 640 && sStatus != Player::YOU) {
                 if (800 <= x && x <= 906) {
                     // +2 stack, <OFF> button
                     sUno->setDraw2StackRule(false);
@@ -1356,7 +1356,7 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     sUno->setDraw2StackRule(true);
                     setStatus(sStatus);
                 } // else if (980 <= x && x <= 1072)
-            } // else if (619 <= y && y <= 640)
+            } // else if (619 <= y && y <= 640 && sStatus != Player::YOU)
             else if (679 <= y && y <= 700) {
                 if (20 <= x && x <= 200) {
                     // <OPTIONS> button

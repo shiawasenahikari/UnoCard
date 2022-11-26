@@ -506,10 +506,10 @@ public class MainActivity extends AppCompatActivity
         } // if (status == Player.YOU || ...)
 
         // Right-bottom corner: <AUTO> button
-        if (status == Player.YOU && !mAuto) {
+        if (status == Player.YOU && !mAuto && !mAdjustOptions) {
             width = mUno.getTextWidth(i18n.btn_auto());
             mUno.putText(mScr, i18n.btn_auto(), 1260 - width, 700, null);
-        } // if (status == Player.YOU && !mAuto)
+        } // if (status == Player.YOU && !mAuto && !mAdjustOptions)
 
         if (mAdjustOptions) {
             // Show special screen when configuring game options
@@ -535,7 +535,7 @@ public class MainActivity extends AppCompatActivity
                     mUno.findCard(Color.GREEN, Content.REV).darkImg;
             image.copyTo(mScr.submat(250, 431, 330, 451), image);
 
-            if (status == STAT_WELCOME || status == STAT_GAME_OVER) {
+            if (status != Player.YOU) {
                 // [Level] option: easy / hard
                 mUno.putText(mScr, i18n.label_level(), 640, 160, null);
                 image = mUno.getLevelImage(
@@ -583,7 +583,7 @@ public class MainActivity extends AppCompatActivity
                 mUno.putText(mScr, i18n.btn_off(), 790, 640, fontColor);
                 fontColor = mUno.isDraw2StackRule() ? Color.GREEN : null;
                 mUno.putText(mScr, i18n.btn_on(), 970, 640, fontColor);
-            } // if (status == STAT_WELCOME || status == STAT_GAME_OVER)
+            } // if (status != Player.YOU)
 
             // Show image
             Utils.matToBitmap(mScr, mBmp);
@@ -1397,16 +1397,16 @@ public class MainActivity extends AppCompatActivity
                     mMediaPlayer.setVolume(0.5f, 0.5f);
                     setStatus(mStatus);
                 } // else if (330 <= x && x <= 450)
-                else if (790 <= x && x <= 910) {
+                else if (790 <= x && x <= 910 && mStatus != Player.YOU) {
                     // Easy AI Level
                     mUno.setDifficulty(Uno.LV_EASY);
                     setStatus(mStatus);
-                } // else if (790 <= x && x <= 910)
-                else if (970 <= x && x <= 1090) {
+                } // else if (790 <= x && x <= 910 && mStatus != Player.YOU)
+                else if (970 <= x && x <= 1090 && mStatus != Player.YOU) {
                     // Hard AI Level
                     mUno.setDifficulty(Uno.LV_HARD);
                     setStatus(mStatus);
-                } // else if (970 <= x && x <= 1090)
+                } // else if (970 <= x && x <= 1090 && mStatus != Player.YOU)
             } // if (60 <= y && y <= 240)
             else if (270 <= y && y <= 450) {
                 if (150 <= x && x <= 270) {
@@ -1420,18 +1420,18 @@ public class MainActivity extends AppCompatActivity
                     mSoundPool.play(sndPlay, 0.5f, 0.5f, 1, 0, 1.0f);
                     setStatus(mStatus);
                 } // else if (330 <= x && x <= 450)
-                else if (790 <= x && x <= 910) {
+                else if (790 <= x && x <= 910 && mStatus != Player.YOU) {
                     // 3 players
                     mUno.setPlayers(3);
                     setStatus(mStatus);
-                } // else if (790 <= x && x <= 910)
-                else if (970 <= x && x <= 1090) {
+                } // else if (790 <= x && x <= 910 && mStatus != Player.YOU)
+                else if (970 <= x && x <= 1090 && mStatus != Player.YOU) {
                     // 4 players
                     mUno.setPlayers(4);
                     setStatus(mStatus);
-                } // else if (970 <= x && x <= 1090)
+                } // else if (970 <= x && x <= 1090 && mStatus != Player.YOU)
             } // else if (270 <= y && y <= 450)
-            else if (519 <= y && y <= 540) {
+            else if (519 <= y && y <= 540 && mStatus != Player.YOU) {
                 if (800 <= x && x <= 927) {
                     // Force play, <KEEP> button
                     mUno.setForcePlay(false);
@@ -1442,8 +1442,8 @@ public class MainActivity extends AppCompatActivity
                     mUno.setForcePlay(true);
                     setStatus(mStatus);
                 } // else if (980 <= x && x <= 1104)
-            } // else if (519 <= y && y <= 540)
-            else if (569 <= y && y <= 590) {
+            } // else if (519 <= y && y <= 540 && mStatus != Player.YOU)
+            else if (569 <= y && y <= 590 && mStatus != Player.YOU) {
                 if (800 <= x && x <= 906) {
                     // 7-0, <OFF> button
                     mUno.setSevenZeroRule(false);
@@ -1454,8 +1454,8 @@ public class MainActivity extends AppCompatActivity
                     mUno.setSevenZeroRule(true);
                     setStatus(mStatus);
                 } // else if (980 <= x && x <= 1072)
-            } // else if (569 <= y && y <= 590)
-            else if (619 <= y && y <= 640) {
+            } // else if (569 <= y && y <= 590 && mStatus != Player.YOU)
+            else if (619 <= y && y <= 640 && mStatus != Player.YOU) {
                 if (800 <= x && x <= 906) {
                     // +2 stack, <OFF> button
                     mUno.setDraw2StackRule(false);
@@ -1466,7 +1466,7 @@ public class MainActivity extends AppCompatActivity
                     mUno.setDraw2StackRule(true);
                     setStatus(mStatus);
                 } // else if (980 <= x && x <= 1072)
-            } // else if (619 <= y && y <= 640)
+            } // else if (619 <= y && y <= 640 && mStatus != Player.YOU)
             else if (679 <= y && y <= 700) {
                 if (20 <= x && x <= 200) {
                     // <OPTIONS> button
@@ -1474,11 +1474,6 @@ public class MainActivity extends AppCompatActivity
                     mAdjustOptions = false;
                     setStatus(mStatus);
                 } // if (20 <= x && x <= 200)
-                else if (1130 <= x && x <= 1260) {
-                    // <AUTO> button
-                    mAuto = !mAuto;
-                    setStatus(mStatus);
-                } // else if (1130 <= x && x <= 1260)
             } // else if (679 <= y && y <= 700)
         } // if (mAdjustOptions)
         else if (679 <= y && y <= 700 && 1130 <= x && x <= 1260) {
@@ -1694,12 +1689,11 @@ public class MainActivity extends AppCompatActivity
     protected void onDestroy() {
         if (OPENCV_INIT_SUCCESS) {
             mSoundPool.release();
+            if (mSubHandler != null) {
+                mSubHandler.removeCallbacksAndMessages(null);
+                mSubHandler.getLooper().quit();
+            } // if (mSubHandler != null)
         } // if (OPENCV_INIT_SUCCESS)
-
-        if (mSubHandler != null) {
-            mSubHandler.removeCallbacksAndMessages(null);
-            mSubHandler.getLooper().quit();
-        } // if (mSubHandler != null)
 
         mUIHandler.removeCallbacksAndMessages(null);
         super.onDestroy();
