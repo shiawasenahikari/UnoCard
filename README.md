@@ -16,7 +16,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/releases) page and download the
-   latest version in zip file `(UnoCard-v3.4.zip)`.
+   latest version in zip file `(UnoCard-v3.4.1.zip)`.
 2. Unzip the downloaded zip file, then execute `UnoCard.exe` and have fun!
 
 Download the source code and compile manually
@@ -45,6 +45,7 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
    following command in your bash terminal:
 ```Bash
 brew install qt5
+brew link --force qt5
 ```
 2. Clone this repository by executing the following command in your bash terminal (replace
    `<proj_root>` with a directory path where you want to store this repository):
@@ -100,8 +101,8 @@ qmake && make && ./UnoCard
 Download the binary release
 ---------------------------
 
-1. Go to [release](https://github.com/shiawasenahikari/UnoCard/release) page and download the
-   latest version in apk file `(UnoCard-v3.4.apk)`.
+1. Go to [release](https://github.com/shiawasenahikari/UnoCard/releases) page and download the
+   latest version in apk file `(UnoCard-v3.4.1.apk)`.
 2. On your Android phone, open [Settings] app, go to [Security] page, then check the [Unknown
    sources] toggle.
 3. Push the downloaded file to your Android phone, then install and launch it to have fun!
@@ -218,7 +219,7 @@ Stack
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/releases) 页面下载最新版本的 zip 包
-   `(UnoCard-v3.4.zip)`.
+   `(UnoCard-v3.4.1.zip)`.
 2. 解压并执行 `UnoCard.exe` 开始游戏。
 
 下载源码并手动编译
@@ -246,6 +247,7 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 1. 请确认您的电脑上已安装 Qt 工具包。若您尚未安装，则在 Bash 终端中执行如下命令安装：
 ```Bash
 brew install qt5
+brew link --force qt5
 ```
 2. 在 Bash 中执行如下命令以克隆本仓库 (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
 ```Bash
@@ -297,8 +299,8 @@ qmake && make && ./UnoCard
 下载编译好的 binary release
 ---------------------------
 
-1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/release) 页面下载最新版本的 apk 包
-   `(UnoCard-v3.4.apk)`.
+1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/releases) 页面下载最新版本的 apk 包
+   `(UnoCard-v3.4.1.apk)`.
 2. 打开您的 Android 设备中的 [设置] 应用，进入 [安全] 页面，勾选 [未知来源] 复选框。
 3. 将已下载的安装包传到手机中，安装并运行即可开始游戏。
 

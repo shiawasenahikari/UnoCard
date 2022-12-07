@@ -16,8 +16,8 @@ android {
         applicationId "com.github.hikari_toyama.unocard"
         minSdkVersion 19
         targetSdkVersion 30
-        versionCode 20221021
-        versionName "3.4"
+        versionCode 20221207
+        versionName "3.4.1"
     } // defaultConfig
     buildTypes {
         release {
