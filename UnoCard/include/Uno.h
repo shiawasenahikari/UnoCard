@@ -70,6 +70,11 @@ private:
     QImage hardImage, hardImage_d;
 
     /**
+     * 2vs2 button image resources.
+     */
+    QImage light2vs2, dark2vs2;
+
+    /**
      * Player in turn. Must be one of the following:
      * Player::YOU, Player::COM1, Player::COM2, Player::COM3.
      */
@@ -89,6 +94,11 @@ private:
      * Current difficulty (LV_EASY / LV_HARD).
      */
     int difficulty;
+
+    /**
+     * Whether the 2vs2 rule is enabled.
+     */
+    bool _2vs2;
 
     /**
      * Whether the force play rule is enabled.
@@ -173,87 +183,57 @@ private:
 
         // Preparations
         done = 0;
-        total = 124;
+        total = 126;
         qDebug("Loading... (0%%)");
 
         // Load background image resources
-        if (bgWelcome.load("resource/bg_welcome.png") &&
-            bgWelcome.width() == 1280 && bgWelcome.height() == 720 &&
-            bgCounter.load("resource/bg_counter.png") &&
-            bgCounter.width() == 1280 && bgCounter.height() == 720 &&
-            bgClockwise.load("resource/bg_clockwise.png") &&
-            bgClockwise.width() == 1280 && bgClockwise.height() == 720) {
-            done += 3;
-            qDebug("Loading... (%d%%)", 100 * done / total);
-        } // if (bgWelcome.load("resource/bg_welcome.png") && ...)
-        else {
-            qDebug(BROKEN_IMAGE_RESOURCES_EXCEPTION);
-            exit(1);
-        } // else
+        bgWelcome = load("resource/bg_welcome.png", 1600, 900);
+        bgCounter = load("resource/bg_counter.png", 1600, 900);
+        bgClockwise = load("resource/bg_clockwise.png", 1600, 900);
+        done += 3;
+        qDebug("Loading... (%d%%)", 100 * done / total);
 
         // Load card back image resource
-        if (backImage.load("resource/back.png") &&
-            backImage.width() == 121 && backImage.height() == 181) {
-            ++done;
-            qDebug("Loading... (%d%%)", 100 * done / total);
-        } // if (backImage.load("resource/back.png") && ...)
-        else {
-            qDebug(BROKEN_IMAGE_RESOURCES_EXCEPTION);
-            exit(1);
-        } // else
+        backImage = load("resource/back.png", 121, 181);
+        ++done;
+        qDebug("Loading... (%d%%)", 100 * done / total);
 
         // Load difficulty image resources
-        if (easyImage.load("resource/lv_easy.png") &&
-            easyImage.width() == 121 && easyImage.height() == 181 &&
-            hardImage.load("resource/lv_hard.png") &&
-            hardImage.width() == 121 && hardImage.height() == 181 &&
-            easyImage_d.load("resource/lv_easy_dark.png") &&
-            easyImage_d.width() == 121 && easyImage_d.height() == 181 &&
-            hardImage_d.load("resource/lv_hard_dark.png") &&
-            hardImage_d.width() == 121 && hardImage_d.height() == 181) {
-            done += 4;
-            qDebug("Loading... (%d%%)", 100 * done / total);
-        } // if (easyImage.load("resource/lv_easy.png") && ...)
-        else {
-            qDebug(BROKEN_IMAGE_RESOURCES_EXCEPTION);
-            exit(1);
-        } // else
+        easyImage = load("resource/lv_easy.png", 121, 181);
+        hardImage = load("resource/lv_hard.png", 121, 181);
+        easyImage_d = load("resource/lv_easy_dark.png", 121, 181);
+        hardImage_d = load("resource/lv_hard_dark.png", 121, 181);
+        done += 4;
+        qDebug("Loading... (%d%%)", 100 * done / total);
+
+        // Load 2vs2 image resources
+        dark2vs2 = load("resource/dark_2vs2.png", 121, 181);
+        light2vs2 = load("resource/front_2vs2.png", 121, 181);
 
         // Generate 54 types of cards
         for (i = 0; i < 54; ++i) {
             Color a = i < 52 ? Color(i / 13 + 1) : Color(0);
             Content b = i < 52 ? Content(i % 13) : Content(i - 39);
-            if (br.load("resource/front_" + A[a] + B[b] + ".png") &&
-                br.width() == 121 && br.height() == 181 &&
-                dk.load("resource/dark_" + A[a] + B[b] + ".png") &&
-                dk.width() == 121 && dk.height() == 181) {
-                done += 2;
-                table.push_back(Card(br, dk, a, b));
-                qDebug("Loading... (%d%%)", 100 * done / total);
-            } // if (br.load("resource/front_" + A[a] + B[b] + ".png") && ...)
-            else {
-                qDebug(BROKEN_IMAGE_RESOURCES_EXCEPTION);
-                exit(1);
-            } // else
+
+            br = load("resource/front_" + A[a] + B[b] + ".png", 121, 181);
+            dk = load("resource/dark_" + A[a] + B[b] + ".png", 121, 181);
+            done += 2;
+            table.push_back(Card(br, dk, a, b));
+            qDebug("Loading... (%d%%)", 100 * done / total);
         } // for (i = 0; i < 54; ++i)
 
         // Load colored wild & wild +4 image resources
         wildImage[0] = table.at(39 + WILD).image;
         wildDraw4Image[0] = table.at(39 + WILD_DRAW4).image;
         for (i = 1; i < 5; ++i) {
-            if (br.load("resource/front_" + A[i] + B[WILD] + ".png") &&
-                br.width() == 121 && br.height() == 181 &&
-                dk.load("resource/front_" + A[i] + B[WILD_DRAW4] + ".png") &&
-                dk.width() == 121 && dk.height() == 181) {
-                done += 2;
-                wildImage[i] = br;
-                wildDraw4Image[i] = dk;
-                qDebug("Loading... (%d%%)", 100 * done / total);
-            } // if (br.load("resource/front_" + A[i] + B[WILD] + ".png" && ...)
-            else {
-                qDebug(BROKEN_IMAGE_RESOURCES_EXCEPTION);
-                exit(1);
-            } // else
+            wildImage[i] = load(
+                "resource/front_" + A[i] + B[WILD] + ".png", 121, 181
+            ); // wildImage[i] = load(QString&, int, int)
+            wildDraw4Image[i] = load(
+                "resource/front_" + A[i] + B[WILD_DRAW4] + ".png", 121, 181
+            ); // wildDraw4Image[i] = load(QString&, int, int)
+            done += 2;
+            qDebug("Loading... (%d%%)", 100 * done / total);
         } // for (i = 1; i < 5; ++i)
 
         // Generate a random seed based on the current time stamp
@@ -271,7 +251,7 @@ private:
         forcePlay = true;
         difficulty = LV_EASY;
         draw2StackCount = direction = 0;
-        draw2StackRule = sevenZeroRule = false;
+        _2vs2 = draw2StackRule = sevenZeroRule = false;
     } // Uno(unsigned) (Class Constructor)
 
     /**
@@ -315,6 +295,28 @@ private:
         return s += ']';
     } // array2string(int[], int)
 
+    /**
+     * Load a image file, and resize to the specified size.
+     *
+     * @param fileName Load which image file.
+     * @param width    Resize to how many pixels of width.
+     * @param height   Resize to how many pixels of height.
+     * @return Instance of the loaded image.
+     */
+    inline static QImage load(const QString& fileName, int width, int height) {
+        QImage img;
+
+        if (!img.load(fileName)) {
+            qDebug(BROKEN_IMAGE_RESOURCES_EXCEPTION);
+            exit(1);
+        } // if (!img.load(fileName))
+        else if (img.width() != width || img.height() != height) {
+            img = img.scaled(width, height);
+        } // else if (img.width() != width || img.height() != height)
+
+        return img;
+    } // load(const QString&, int, int)
+
 public:
     /**
      * Easy level ID.
@@ -337,9 +339,9 @@ public:
     static const int DIR_RIGHT = 3;
 
     /**
-     * In this application, everyone can hold 14 cards at most.
+     * In this application, everyone can hold 26 cards at most.
      */
-    static const int MAX_HOLD_CARDS = 14;
+    static const int MAX_HOLD_CARDS = 26;
 
     /**
      * @return Reference of our singleton.
@@ -367,6 +369,13 @@ public:
             /* level == LV_EASY */ (hiLight ? easyImage : easyImage_d) :
             /* level == LV_HARD */ (hiLight ? hardImage : hardImage_d);
     } // getLevelImage(int, bool)
+
+    /**
+     * @return 2vs2 image resource.
+     */
+    inline const QImage& get2vs2Image() {
+        return _2vs2 ? light2vs2 : dark2vs2;
+    } // get2vs2Image()
 
     /**
      * @return Background image resource in current direction.
@@ -542,6 +551,25 @@ public:
             this->difficulty = difficulty;
         } // if (difficulty == LV_EASY || difficulty == LV_HARD)
     } // setDifficulty(int)
+
+    /**
+     * @return Whether the 2vs2 rule is enabled. In 2vs2 mode, you win the
+     *         game either you or the player sitting on your opposite
+     *         position played all of the hand cards.
+     */
+    inline bool is2vs2() {
+        return _2vs2;
+    } // is2vs2()
+
+    /**
+     * @param enabled Enable/Disable the 2vs2 rule.
+     */
+    inline void set2vs2(bool enabled) {
+        _2vs2 = enabled;
+        if (enabled) {
+            players = 4;
+        } // if (enabled)
+    } // set2vs2(bool)
 
     /**
      * @return This value tells that what's the next step
@@ -784,7 +812,7 @@ public:
     /**
      * Call this function when someone needs to draw a card.
      * <p>
-     * NOTE: Everyone can hold 14 cards at most in this program, so even if this
+     * NOTE: Everyone can hold 26 cards at most in this program, so even if this
      * function is called, the specified player may not draw a card as a result.
      *
      * @param who   Who draws a card. Must be one of the following values:
@@ -964,11 +992,11 @@ public:
                 qDebug("colorAnalysis & contentAnalysis:");
                 qDebug("%s", qPrintable(array2string(colorAnalysis, 5)));
                 qDebug("%s", qPrintable(array2string(contentAnalysis, 15)));
-                if (recent.size() > 5) {
+                if (recent.size() > 4) {
                     used.push_back(recent.front());
                     recent.erase(recent.begin());
                     recentColors.erase(recentColors.begin());
-                } // if (recent.size() > 5)
+                } // if (recent.size() > 4)
 
                 // Update the legality binary
                 legality = draw2StackCount > 0

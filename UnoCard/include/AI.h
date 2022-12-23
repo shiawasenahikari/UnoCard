@@ -209,14 +209,14 @@ public:
      * @return True if it's necessary to make a challenge.
      */
     inline bool needToChallenge() {
+        Color lastColor = uno->lastColor();
+        Color next2lastColor = uno->next2lastColor();
         int size = uno->getNextPlayer()->getHandSize();
 
         // Challenge when defending my UNO dash
         // Challenge when I have 10 or more cards already
         // Challenge when legal color has not been changed
-        return size == 1
-            || size >= Uno::MAX_HOLD_CARDS - 4
-            || uno->lastColor() == uno->next2lastColor();
+        return size == 1 || size >= 10 || lastColor == next2lastColor;
     } // needToChallenge()
 
     /**
@@ -763,7 +763,7 @@ public:
             if (iBest < 0 && hasWild && yourSize == 2 && prevSize <= 3)
                 iBest = iWild;
             if (iBest < 0 && yourSize == Uno::MAX_HOLD_CARDS) {
-                // When you are holding 14 cards, which means you cannot hold
+                // When you are holding 26 cards, which means you cannot hold
                 // more cards, you need to play your action/wild cards to keep
                 // game running, even if it's not worth enough to use them.
                 if (hasSkip)

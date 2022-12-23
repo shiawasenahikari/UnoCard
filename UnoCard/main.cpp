@@ -143,11 +143,11 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
     sFont.setPointSize(20);
     sAdjustOptions = false;
     for (i = 0; i <= 3; ++i) {
-        sBackup[i] = QImage(1280, 720, QImage::Format_RGB888);
+        sBackup[i] = QImage(1600, 900, QImage::Format_RGB888);
         sBkPainter[i] = new QPainter(&sBackup[i]);
     } // for (i = 0; i <= 3; ++i)
 
-    sScreen = QImage(1280, 720, QImage::Format_RGB888);
+    sScreen = QImage(1600, 900, QImage::Format_RGB888);
     sPainter = new QPainter(&sScreen);
     sPainter->setPen(PEN_WHITE);
     sPainter->setFont(sFont);
@@ -498,7 +498,7 @@ void Main::refreshScreen(const QString& message) {
 
     // Message area
     width = getFormatTextWidth(sPainter, message);
-    putFormatText(sPainter, message, 640 - width / 2, 487);
+    putFormatText(sPainter, message, 800 - width / 2, 670);
 
     // Left-bottom corner: <OPTIONS> button
     // Shows only when game is not in process
@@ -506,14 +506,14 @@ void Main::refreshScreen(const QString& message) {
         status == STAT_WELCOME ||
         status == STAT_GAME_OVER) {
         if (sAdjustOptions) sPainter->setPen(PEN_YELLOW);
-        sPainter->drawText(20, 700, i18n->btn_settings());
+        sPainter->drawText(20, 880, i18n->btn_settings());
         if (sAdjustOptions) sPainter->setPen(PEN_WHITE);
     } // if (status == Player::YOU || ...)
 
     // Right-bottom corner: <AUTO> button
     if (status == Player::YOU && !sAuto && !sAdjustOptions) {
         width = sPainter->fontMetrics().horizontalAdvance(i18n->btn_auto());
-        sPainter->drawText(1260 - width, 700, i18n->btn_auto());
+        sPainter->drawText(1580 - width, 880, i18n->btn_auto());
     } // if (status == Player::YOU && !sAuto && !sAdjustOptions)
 
     if (sAdjustOptions) {
@@ -542,63 +542,65 @@ void Main::refreshScreen(const QString& message) {
 
         if (status != Player::YOU) {
             // [Level] option: easy / hard
-            sPainter->drawText(640, 160, i18n->label_level());
+            sPainter->drawText(780, 160, i18n->label_level());
             image = sUno->getLevelImage(
                 /* level   */ Uno::LV_EASY,
                 /* hiLight */ !sUno->isSevenZeroRule() &&
                 sUno->getDifficulty() == Uno::LV_EASY
             ); // image = sUno->getLevelImage()
-            sPainter->drawImage(790, 60, image);
+            sPainter->drawImage(930, 60, image);
             image = sUno->getLevelImage(
                 /* level   */ Uno::LV_HARD,
                 /* hiLight */ !sUno->isSevenZeroRule() &&
                 sUno->getDifficulty() == Uno::LV_HARD
             ); // image = sUno->getLevelImage()
-            sPainter->drawImage(970, 60, image);
+            sPainter->drawImage(1110, 60, image);
 
-            // [Players] option: 3 / 4
-            sPainter->drawText(640, 350, i18n->label_players());
+            // [Players] option: 3 / 4 / 2vs2
+            sPainter->drawText(780, 350, i18n->label_players());
             image = sUno->getPlayers() == 3 ?
                 sUno->findCard(GREEN, NUM3)->image :
                 sUno->findCard(GREEN, NUM3)->darkImg;
-            sPainter->drawImage(790, 250, image);
-            image = sUno->getPlayers() == 4 ?
+            sPainter->drawImage(930, 250, image);
+            image = sUno->getPlayers() == 4 && !sUno->is2vs2() ?
                 sUno->findCard(YELLOW, NUM4)->image :
                 sUno->findCard(YELLOW, NUM4)->darkImg;
-            sPainter->drawImage(970, 250, image);
+            sPainter->drawImage(1110, 250, image);
+            image = sUno->get2vs2Image();
+            sPainter->drawImage(1290, 250, image);
 
             // Rule settings
             // Force play switch
-            sPainter->drawText(60, 540, i18n->label_forcePlay());
+            sPainter->drawText(60, 720, i18n->label_forcePlay());
             sPainter->setPen(sUno->isForcePlay() ? PEN_WHITE : PEN_RED);
-            sPainter->drawText(790, 540, i18n->btn_keep());
+            sPainter->drawText(1110, 720, i18n->btn_keep());
             sPainter->setPen(sUno->isForcePlay() ? PEN_GREEN : PEN_WHITE);
-            sPainter->drawText(970, 540, i18n->btn_play());
+            sPainter->drawText(1290, 720, i18n->btn_play());
             sPainter->setPen(PEN_WHITE);
 
             // 7-0
-            sPainter->drawText(60, 590, i18n->label_7_0());
+            sPainter->drawText(60, 770, i18n->label_7_0());
             sPainter->setPen(sUno->isSevenZeroRule() ? PEN_WHITE : PEN_RED);
-            sPainter->drawText(790, 590, i18n->btn_off());
+            sPainter->drawText(1110, 770, i18n->btn_off());
             sPainter->setPen(sUno->isSevenZeroRule() ? PEN_GREEN : PEN_WHITE);
-            sPainter->drawText(970, 590, i18n->btn_on());
+            sPainter->drawText(1290, 770, i18n->btn_on());
             sPainter->setPen(PEN_WHITE);
 
             // +2 stack
-            sPainter->drawText(60, 640, i18n->label_draw2Stack());
+            sPainter->drawText(60, 820, i18n->label_draw2Stack());
             sPainter->setPen(sUno->isDraw2StackRule() ? PEN_WHITE : PEN_RED);
-            sPainter->drawText(790, 640, i18n->btn_off());
+            sPainter->drawText(1110, 820, i18n->btn_off());
             sPainter->setPen(sUno->isDraw2StackRule() ? PEN_GREEN : PEN_WHITE);
-            sPainter->drawText(970, 640, i18n->btn_on());
+            sPainter->drawText(1290, 820, i18n->btn_on());
             sPainter->setPen(PEN_WHITE);
         } // if (status != Player::YOU)
     } // if (sAdjustOptions)
     else if (status == STAT_WELCOME) {
         // For welcome screen, show the start button and your score
         image = sUno->getBackImage();
-        sPainter->drawImage(580, 270, image);
+        sPainter->drawImage(740, 360, image);
         width = sPainter->fontMetrics().horizontalAdvance(i18n->label_score());
-        sPainter->drawText(340 - width, 620, i18n->label_score());
+        sPainter->drawText(500 - width, 800, i18n->label_score());
         if (sScore < 0) {
             image = sUno->getColoredWildImage(NONE);
         } // if (sScore < 0)
@@ -607,25 +609,25 @@ void Main::refreshScreen(const QString& message) {
             image = sUno->findCard(RED, Content(i))->image;
         } // else
 
-        sPainter->drawImage(360, 520, image);
+        sPainter->drawImage(520, 700, image);
         i = abs(sScore / 100 % 10);
         image = sUno->findCard(BLUE, Content(i))->image;
-        sPainter->drawImage(500, 520, image);
+        sPainter->drawImage(660, 700, image);
         i = abs(sScore / 10 % 10);
         image = sUno->findCard(GREEN, Content(i))->image;
-        sPainter->drawImage(640, 520, image);
+        sPainter->drawImage(800, 700, image);
         i = abs(sScore % 10);
         image = sUno->findCard(YELLOW, Content(i))->image;
-        sPainter->drawImage(780, 520, image);
+        sPainter->drawImage(940, 700, image);
     } // else if (status == STAT_WELCOME)
     else {
         // Center: card deck & recent played card
         auto recentColors = sUno->getRecentColors();
         auto recent = sUno->getRecent();
         int size = int(recent.size());
-        width = 45 * size + 75;
+        width = 44 * size + 76;
         image = sUno->getBackImage();
-        sPainter->drawImage(338, 270, image);
+        sPainter->drawImage(338, 360, image);
         for (i = 0; i < size; ++i) {
             if (recent.at(i)->content == WILD) {
                 image = sUno->getColoredWildImage(recentColors.at(i));
@@ -637,7 +639,7 @@ void Main::refreshScreen(const QString& message) {
                 image = recent.at(i)->image;
             } // else
 
-            sPainter->drawImage(792 - width / 2 + 45 * i, 270, image);
+            sPainter->drawImage(1112 - width / 2 + 44 * i, 360, image);
         } // for (i = 0; i < size; ++i)
 
         // Left-top corner: remain / used
@@ -657,16 +659,21 @@ void Main::refreshScreen(const QString& message) {
             Player* p = sUno->getPlayer(Player::COM1);
             auto hand = p->getHandCards();
             size = int(hand.size());
+            width = 44 * qMin(size, 13) + 136;
             for (i = 0; i < size; ++i) {
                 image = p->isOpen(i) ? hand.at(i)->image : sUno->getBackImage();
-                sPainter->drawImage(20, 290 - 20 * size + 40 * i, image);
+                sPainter->drawImage(
+                    /* x     */ 20 + i / 13 * 44,
+                    /* y     */ 450 - width / 2 + i % 13 * 44,
+                    /* image */ image
+                ); // drawImage(int, int, QImage&)
             } // for (i = 0; i < size; ++i)
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
                 sPainter->setPen(PEN_YELLOW);
                 width = sPainter->fontMetrics().horizontalAdvance("UNO");
-                sPainter->drawText(80 - width / 2, 494, "UNO");
+                sPainter->drawText(80 - width / 2, 584, "UNO");
                 sPainter->setPen(PEN_WHITE);
             } // if (size == 1)
         } // else if (((sHideFlag >> 1) & 0x01) == 0x00)
@@ -676,23 +683,24 @@ void Main::refreshScreen(const QString& message) {
             // Played all hand cards, it's winner
             sPainter->setPen(PEN_YELLOW);
             width = sPainter->fontMetrics().horizontalAdvance("WIN");
-            sPainter->drawText(640 - width / 2, 121, "WIN");
+            sPainter->drawText(800 - width / 2, 121, "WIN");
             sPainter->setPen(PEN_WHITE);
         } // if (status == STAT_GAME_OVER && sWinner == Player::COM2)
         else if (((sHideFlag >> 2) & 0x01) == 0x00) {
             Player* p = sUno->getPlayer(Player::COM2);
             auto hand = p->getHandCards();
             size = int(hand.size());
+            width = 44 * size + 76;
             for (i = 0; i < size; ++i) {
                 image = p->isOpen(i) ? hand.at(i)->image : sUno->getBackImage();
-                sPainter->drawImage((1205 - 45 * size + 90 * i) / 2, 20, image);
+                sPainter->drawImage(800 - width / 2 + 44 * i, 20, image);
             } // for (i = 0; i < size; ++i)
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
                 sPainter->setPen(PEN_YELLOW);
                 width = sPainter->fontMetrics().horizontalAdvance("UNO");
-                sPainter->drawText(560 - width, 121, "UNO");
+                sPainter->drawText(720 - width, 121, "UNO");
                 sPainter->setPen(PEN_WHITE);
             } // if (size == 1)
         } // else if (((sHideFlag >> 2) & 0x01) == 0x00)
@@ -702,23 +710,28 @@ void Main::refreshScreen(const QString& message) {
             // Played all hand cards, it's winner
             sPainter->setPen(PEN_YELLOW);
             width = sPainter->fontMetrics().horizontalAdvance("WIN");
-            sPainter->drawText(1200 - width / 2, 461, "WIN");
+            sPainter->drawText(1520 - width / 2, 461, "WIN");
             sPainter->setPen(PEN_WHITE);
         } // if (status == STAT_GAME_OVER && sWinner == Player::COM3)
         else if (((sHideFlag >> 3) & 0x01) == 0x00) {
             Player* p = sUno->getPlayer(Player::COM3);
             auto hand = p->getHandCards();
             size = int(hand.size());
+            width = 44 * qMin(size, 13) + 136;
             for (i = 0; i < size; ++i) {
                 image = p->isOpen(i) ? hand.at(i)->image : sUno->getBackImage();
-                sPainter->drawImage(1140, 290 - 20 * size + 40 * i, image);
+                sPainter->drawImage(
+                    /* x     */ 1460 - i / 13 * 44,
+                    /* y     */ 450 - width / 2 + i % 13 * 44,
+                    /* image */ image
+                ); // drawImage(int, int, QImage&)
             } // for (i = 0; i < size; ++i)
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
                 sPainter->setPen(PEN_YELLOW);
                 width = sPainter->fontMetrics().horizontalAdvance("UNO");
-                sPainter->drawText(1200 - width / 2, 494, "UNO");
+                sPainter->drawText(1520 - width / 2, 584, "UNO");
                 sPainter->setPen(PEN_WHITE);
             } // if (size == 1)
         } // else if (((sHideFlag >> 3) & 0x01) == 0x00)
@@ -728,13 +741,14 @@ void Main::refreshScreen(const QString& message) {
             // Played all hand cards, it's winner
             sPainter->setPen(PEN_YELLOW);
             width = sPainter->fontMetrics().horizontalAdvance("WIN");
-            sPainter->drawText(640 - width / 2, 621, "WIN");
+            sPainter->drawText(800 - width / 2, 801, "WIN");
             sPainter->setPen(PEN_WHITE);
         } // if (status == STAT_GAME_OVER && sWinner == Player::YOU)
         else if ((sHideFlag & 0x01) == 0x00) {
             // Show your all hand cards
             auto hand = sUno->getPlayer(Player::YOU)->getHandCards();
             size = int(hand.size());
+            width = 44 * size + 76;
             for (i = 0; i < size; ++i) {
                 Card* card = hand.at(i);
                 image = status == STAT_GAME_OVER
@@ -742,8 +756,8 @@ void Main::refreshScreen(const QString& message) {
                         && sUno->isLegalToPlay(card))
                     ? card->image : card->darkImg;
                 sPainter->drawImage(
-                    /* x     */ (1205 - 45 * size + 90 * i) / 2,
-                    /* y     */ i == sSelectedIdx ? 500 : 520,
+                    /* x     */ 800 - width / 2 + 44 * i,
+                    /* y     */ i == sSelectedIdx ? 680 : 700,
                     /* image */ image
                 ); // drawImage(int, int, QImage&)
             } // for (i = 0; i < size; ++i)
@@ -751,7 +765,7 @@ void Main::refreshScreen(const QString& message) {
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
                 sPainter->setPen(PEN_YELLOW);
-                sPainter->drawText(720, 621, "UNO");
+                sPainter->drawText(880, 801, "UNO");
                 sPainter->setPen(PEN_WHITE);
             } // if (size == 1)
         } // else if ((sHideFlag & 0x01) == 0x00)
@@ -764,19 +778,19 @@ void Main::refreshScreen(const QString& message) {
             // Draw blue sector
             sPainter->setPen(Qt::NoPen);
             sPainter->setBrush(BRUSH_BLUE);
-            sPainter->drawPie(270, 180, 271, 271, 0, 90 * 16);
+            sPainter->drawPie(270, 270, 271, 271, 0, 90 * 16);
 
             // Draw green sector
             sPainter->setBrush(BRUSH_GREEN);
-            sPainter->drawPie(270, 180, 271, 271, 0, -90 * 16);
+            sPainter->drawPie(270, 270, 271, 271, 0, -90 * 16);
 
             // Draw red sector
             sPainter->setBrush(BRUSH_RED);
-            sPainter->drawPie(270, 180, 271, 271, 180 * 16, -90 * 16);
+            sPainter->drawPie(270, 270, 271, 271, 180 * 16, -90 * 16);
 
             // Draw yellow sector
             sPainter->setBrush(BRUSH_YELLOW);
-            sPainter->drawPie(270, 180, 271, 271, 180 * 16, 90 * 16);
+            sPainter->drawPie(270, 270, 271, 271, 180 * 16, 90 * 16);
             sPainter->setPen(PEN_WHITE);
             break; // case STAT_WILD_COLOR
 
@@ -785,18 +799,18 @@ void Main::refreshScreen(const QString& message) {
             // Draw YES button
             sPainter->setPen(Qt::NoPen);
             sPainter->setBrush(BRUSH_GREEN);
-            sPainter->drawPie(270, 180, 271, 271, 0, 180 * 16);
+            sPainter->drawPie(270, 270, 271, 271, 0, 180 * 16);
             sPainter->setPen(PEN_WHITE);
             width = sPainter->fontMetrics().horizontalAdvance(i18n->label_yes());
-            sPainter->drawText(405 - width / 2, 268, i18n->label_yes());
+            sPainter->drawText(405 - width / 2, 358, i18n->label_yes());
 
             // Draw NO button
             sPainter->setPen(Qt::NoPen);
             sPainter->setBrush(BRUSH_RED);
-            sPainter->drawPie(270, 180, 271, 271, 0, -180 * 16);
+            sPainter->drawPie(270, 270, 271, 271, 0, -180 * 16);
             sPainter->setPen(PEN_WHITE);
             width = sPainter->fontMetrics().horizontalAdvance(i18n->label_no());
-            sPainter->drawText(405 - width / 2, 382, i18n->label_no());
+            sPainter->drawText(405 - width / 2, 472, i18n->label_no());
             break; // case STAT_DOUBT_WILD4
 
         case STAT_SEVEN_TARGET:
@@ -804,26 +818,26 @@ void Main::refreshScreen(const QString& message) {
             // Draw west sector (red)
             sPainter->setPen(Qt::NoPen);
             sPainter->setBrush(BRUSH_RED);
-            sPainter->drawPie(270, 180, 271, 271, -90 * 16, -120 * 16);
+            sPainter->drawPie(270, 270, 271, 271, -90 * 16, -120 * 16);
             sPainter->setPen(PEN_WHITE);
             width = sPainter->fontMetrics().horizontalAdvance("W");
-            sPainter->drawText(338 - width / 2, 350, "W");
+            sPainter->drawText(338 - width / 2, 440, "W");
 
             // Draw east sector (green)
             sPainter->setPen(Qt::NoPen);
             sPainter->setBrush(BRUSH_GREEN);
-            sPainter->drawPie(270, 180, 271, 271, -90 * 16, 120 * 16);
+            sPainter->drawPie(270, 270, 271, 271, -90 * 16, 120 * 16);
             sPainter->setPen(PEN_WHITE);
             width = sPainter->fontMetrics().horizontalAdvance("E");
-            sPainter->drawText(472 - width / 2, 350, "E");
+            sPainter->drawText(472 - width / 2, 440, "E");
 
             // Draw north sector (yellow)
             sPainter->setPen(Qt::NoPen);
             sPainter->setBrush(BRUSH_YELLOW);
-            sPainter->drawPie(270, 180, 271, 271, 150 * 16, -120 * 16);
+            sPainter->drawPie(270, 270, 271, 271, 150 * 16, -120 * 16);
             sPainter->setPen(PEN_WHITE);
             width = sPainter->fontMetrics().horizontalAdvance("N");
-            sPainter->drawText(405 - width / 2, 270, "N");
+            sPainter->drawText(405 - width / 2, 360, "N");
             break; // case STAT_SEVEN_TARGET
 
         default:
@@ -854,8 +868,8 @@ void Main::paintEvent(QPaintEvent*) {
  * the hand cards to the next player.
  */
 void Main::cycle() {
-    static int x[] = { 580, 160, 580, 1000 };
-    static int y[] = { 490, 270, 50, 270 };
+    static int x[] = { 740, 160, 740, 1320 };
+    static int y[] = { 670, 360, 50, 360 };
     int curr, next, oppo, prev;
 
     setStatus(STAT_IDLE);
@@ -911,8 +925,8 @@ void Main::cycle() {
  *             Player::YOU, Player::COM1, Player::COM2, Player::COM3
  */
 void Main::swapWith(int whom) {
-    static int x[] = { 580, 160, 580, 1000 };
-    static int y[] = { 490, 270, 50, 270 };
+    static int x[] = { 740, 160, 740, 1320 };
+    static int y[] = { 670, 360, 50, 360 };
     int curr;
 
     setStatus(STAT_IDLE);
@@ -946,7 +960,7 @@ void Main::swapWith(int whom) {
  */
 void Main::play(int index, Color color) {
     Card* card;
-    int c, now, size, recentSize, next;
+    int c, now, size, width, recentSize, next;
 
     setStatus(STAT_IDLE); // block mouse click events when idle
     now = sUno->getNow();
@@ -958,29 +972,33 @@ void Main::play(int index, Color color) {
         sLayer[0].elem = card->image;
         switch (now) {
         case Player::COM1:
-            sLayer[0].startLeft = 160;
-            sLayer[0].startTop = 290 - 20 * size + 40 * index;
+            width = 44 * qMin(size, 13) + 136;
+            sLayer[0].startLeft = 160 + index / 13 * 44;
+            sLayer[0].startTop = 450 - width / 2 + index % 13 * 44;
             break; // case Player::COM1
 
         case Player::COM2:
-            sLayer[0].startLeft = (1205 - 45 * size + 90 * index) / 2;
+            width = 44 * size + 76;
+            sLayer[0].startLeft = 800 - width / 2 + 44 * index;
             sLayer[0].startTop = 50;
             break; // case Player::COM2
 
         case Player::COM3:
-            sLayer[0].startLeft = 1000;
-            sLayer[0].startTop = 290 - 20 * size + 40 * index;
+            width = 44 * qMin(size, 13) + 136;
+            sLayer[0].startLeft = 1320 - index / 13 * 44;
+            sLayer[0].startTop = 450 - width / 2 + index % 13 * 44;
             break; // case Player::COM3
 
         default:
-            sLayer[0].startLeft = (1205 - 45 * size + 90 * index) / 2;
-            sLayer[0].startTop = 500;
+            width = 44 * size + 76;
+            sLayer[0].startLeft = 800 - width / 2 + 44 * index;
+            sLayer[0].startTop = 680;
             break; // default
         } // switch (now)
 
         recentSize = int(sUno->getRecent().size());
-        sLayer[0].endLeft = (45 * recentSize + 1419) / 2;
-        sLayer[0].endTop = 270;
+        sLayer[0].endLeft = 22 * recentSize + 1030;
+        sLayer[0].endTop = 360;
         animate(1, sLayer);
         if (size == 1) {
             // The player in action becomes winner when it played the
@@ -1092,7 +1110,7 @@ void Main::play(int index, Color color) {
 void Main::draw(int count, bool force) {
     Card* drawn;
     QString message;
-    int i, index, c, now, size;
+    int i, index, c, now, size, width;
 
     setStatus(STAT_IDLE); // block mouse click events when idle
     c = sUno->getDraw2StackCount();
@@ -1111,33 +1129,37 @@ void Main::draw(int count, bool force) {
             drawn = sUno->getCurrPlayer()->getHandCards().at(index);
             size = sUno->getCurrPlayer()->getHandSize();
             sLayer[0].startLeft = 338;
-            sLayer[0].startTop = 270;
+            sLayer[0].startTop = 360;
             switch (now) {
             case Player::COM1:
+                width = 44 * qMin(size, 13) + 136;
                 sLayer[0].elem = sUno->getBackImage();
-                sLayer[0].endLeft = 20;
-                sLayer[0].endTop = 290 - 20 * size + 40 * index;
+                sLayer[0].endLeft = 20 + index / 13 * 44;
+                sLayer[0].endTop = 450 - width / 2 + index % 13 * 44;
                 message = i18n->act_drawCardCount(now, count);
                 break; // case Player::COM1
 
             case Player::COM2:
+                width = 44 * size + 76;
                 sLayer[0].elem = sUno->getBackImage();
-                sLayer[0].endLeft = (1205 - 45 * size + 90 * index) / 2;
+                sLayer[0].endLeft = 800 - width / 2 + 44 * index;
                 sLayer[0].endTop = 20;
                 message = i18n->act_drawCardCount(now, count);
                 break; // case Player::COM2
 
             case Player::COM3:
+                width = 44 * qMin(size, 13) + 136;
                 sLayer[0].elem = sUno->getBackImage();
-                sLayer[0].endLeft = 1140;
-                sLayer[0].endTop = 290 - 20 * size + 40 * index;
+                sLayer[0].endLeft = 1460 - index / 13 * 44;
+                sLayer[0].endTop = 450 - width / 2 + index % 13 * 44;
                 message = i18n->act_drawCardCount(now, count);
                 break; // case Player::COM3
 
             default:
+                width = 44 * size + 76;
                 sLayer[0].elem = drawn->image;
-                sLayer[0].endLeft = (1205 - 45 * size + 90 * index) / 2;
-                sLayer[0].endTop = 520;
+                sLayer[0].endLeft = 800 - width / 2 + 44 * index;
+                sLayer[0].endTop = 700;
                 message = i18n->act_drawCard(now, drawn->name);
                 break; // default
             } // switch (now)
@@ -1200,11 +1222,11 @@ void Main::animate(int layerCount, AnimateLayer layer[]) {
     int i, j;
     static QRect roi;
 
-    for (i = 0; i < 5; ++i) {
+    for (i = 0; i < 10; ++i) {
         for (j = 0; j < layerCount; ++j) {
             AnimateLayer& l = layer[j];
-            roi.setX(l.startLeft + (l.endLeft - l.startLeft) * i / 5);
-            roi.setY(l.startTop + (l.endTop - l.startTop) * i / 5);
+            roi.setX(l.startLeft + (l.endLeft - l.startLeft) * i / 10);
+            roi.setY(l.startTop + (l.endTop - l.startTop) * i / 10);
             roi.setWidth(l.elem.width());
             roi.setHeight(l.elem.height());
             sBkPainter[j]->drawImage(roi, sScreen, roi);
@@ -1213,23 +1235,23 @@ void Main::animate(int layerCount, AnimateLayer layer[]) {
         for (j = 0; j < layerCount; ++j) {
             AnimateLayer& l = layer[j];
             sPainter->drawImage(
-                /* x     */ l.startLeft + (l.endLeft - l.startLeft) * i / 5,
-                /* y     */ l.startTop + (l.endTop - l.startTop) * i / 5,
+                /* x     */ l.startLeft + (l.endLeft - l.startLeft) * i / 10,
+                /* y     */ l.startTop + (l.endTop - l.startTop) * i / 10,
                 /* image */ l.elem
             ); // drawImage(int, int, QImage&)
         } // for (j = 0; j < layerCount; ++j)
 
         update();
-        threadWait(30);
+        threadWait(15);
         for (j = 0; j < layerCount; ++j) {
             AnimateLayer& l = layer[j];
-            roi.setX(l.startLeft + (l.endLeft - l.startLeft) * i / 5);
-            roi.setY(l.startTop + (l.endTop - l.startTop) * i / 5);
+            roi.setX(l.startLeft + (l.endLeft - l.startLeft) * i / 10);
+            roi.setY(l.startTop + (l.endTop - l.startTop) * i / 10);
             roi.setWidth(l.elem.width());
             roi.setHeight(l.elem.height());
             sPainter->drawImage(roi, sBackup[j], roi);
         } // for (j = 0; j < layerCount; ++j)
-    } // for (i = 0; i < 5; ++i)
+    } // for (i = 0; i < 10; ++i)
 } // animate(int, AnimateLayer[])
 
 /**
@@ -1272,8 +1294,8 @@ void Main::onChallenge() {
 void Main::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
         // Only response to left-click events, and ignore the others
-        int x = 1280 * event->x() / this->width();
-        int y = 720 * event->y() / this->height();
+        int x = 1600 * event->x() / this->width();
+        int y = 900 * event->y() / this->height();
         if (sAdjustOptions) {
             // Do special behaviors when configuring game options
             if (60 <= y && y <= 240) {
@@ -1287,16 +1309,16 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     sMediaPlay->setVolume(50);
                     setStatus(sStatus);
                 } // else if (330 <= x && x <= 450)
-                else if (790 <= x && x <= 910 && sStatus != Player::YOU) {
+                else if (930 <= x && x <= 1050 && sStatus != Player::YOU) {
                     // Easy AI Level
                     sUno->setDifficulty(Uno::LV_EASY);
                     setStatus(sStatus);
-                } // else if (790 <= x && x <= 910 && sStatus != Player::YOU)
-                else if (970 <= x && x <= 1090 && sStatus != Player::YOU) {
+                } // else if (930 <= x && x <= 1050 && sStatus != Player::YOU)
+                else if (1110 <= x && x <= 1230 && sStatus != Player::YOU) {
                     // Hard AI Level
                     sUno->setDifficulty(Uno::LV_HARD);
                     setStatus(sStatus);
-                } // else if (970 <= x && x <= 1090 && sStatus != Player::YOU)
+                } // else if (1110 <= x && x <= 1230 && sStatus != Player::YOU)
             } // if (60 <= y && y <= 240)
             else if (270 <= y && y <= 450) {
                 if (150 <= x && x <= 270) {
@@ -1310,85 +1332,79 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     sSoundPool->play(SoundPool::SND_PLAY);
                     setStatus(sStatus);
                 } // else if (330 <= x && x <= 450)
-                else if (790 <= x && x <= 910 && sStatus != Player::YOU) {
+                else if (930 <= x && x <= 1050 && sStatus != Player::YOU) {
                     // 3 players
                     sUno->setPlayers(3);
                     setStatus(sStatus);
-                } // else if (790 <= x && x <= 910 && sStatus != Player::YOU)
-                else if (970 <= x && x <= 1090 && sStatus != Player::YOU) {
+                } // else if (930 <= x && x <= 1050 && sStatus != Player::YOU)
+                else if (1110 <= x && x <= 1230 && sStatus != Player::YOU) {
                     // 4 players
                     sUno->setPlayers(4);
                     setStatus(sStatus);
-                } // else if (970 <= x && x <= 1090 && sStatus != Player::YOU)
+                } // else if (1110 <= x && x <= 1230 && sStatus != Player::YOU)
             } // else if (270 <= y && y <= 450)
-            else if (519 <= y && y <= 540 && sStatus != Player::YOU) {
-                if (800 <= x && x <= 927) {
+            else if (699 <= y && y <= 720 && sStatus != Player::YOU) {
+                if (1110 <= x && x <= 1237) {
                     // Force play, <KEEP> button
                     sUno->setForcePlay(false);
                     setStatus(sStatus);
-                } // if (800 <= x && x <= 927)
-                else if (980 <= x && x <= 1104) {
+                } // if (1110 <= x && x <= 1237)
+                else if (1290 <= x && x <= 1414) {
                     // Force play, <PLAY> button
                     sUno->setForcePlay(true);
                     setStatus(sStatus);
-                } // else if (980 <= x && x <= 1104)
-            } // else if (519 <= y && y <= 540 && sStatus != Player::YOU)
-            else if (569 <= y && y <= 590 && sStatus != Player::YOU) {
-                if (800 <= x && x <= 906) {
+                } // else if (1290 <= x && x <= 1414)
+            } // else if (699 <= y && y <= 720 && sStatus != Player::YOU)
+            else if (749 <= y && y <= 770 && sStatus != Player::YOU) {
+                if (1110 <= x && x <= 1216) {
                     // 7-0, <OFF> button
                     sUno->setSevenZeroRule(false);
                     setStatus(sStatus);
-                } // if (800 <= x && x <= 906)
-                else if (980 <= x && x <= 1072) {
+                } // if (1110 <= x && x <= 1216)
+                else if (1290 <= x && x <= 1382) {
                     // 7-0, <ON> button
                     sUno->setSevenZeroRule(true);
                     setStatus(sStatus);
-                } // else if (980 <= x && x <= 1072)
-            } // else if (569 <= y && y <= 590 && sStatus != Player::YOU)
-            else if (619 <= y && y <= 640 && sStatus != Player::YOU) {
-                if (800 <= x && x <= 906) {
+                } // else if (1290 <= x && x <= 1382)
+            } // else if (749 <= y && y <= 770 && sStatus != Player::YOU)
+            else if (799 <= y && y <= 820 && sStatus != Player::YOU) {
+                if (1110 <= x && x <= 1216) {
                     // +2 stack, <OFF> button
                     sUno->setDraw2StackRule(false);
                     setStatus(sStatus);
-                } // if (800 <= x && x <= 906)
-                else if (980 <= x && x <= 1072) {
+                } // if (1110 <= x && x <= 1216)
+                else if (1290 <= x && x <= 1382) {
                     // +2 stack, <ON> button
                     sUno->setDraw2StackRule(true);
                     setStatus(sStatus);
-                } // else if (980 <= x && x <= 1072)
-            } // else if (619 <= y && y <= 640 && sStatus != Player::YOU)
-            else if (679 <= y && y <= 700) {
-                if (20 <= x && x <= 200) {
-                    // <OPTIONS> button
-                    // Leave options page
-                    sAdjustOptions = false;
-                    setStatus(sStatus);
-                } // if (20 <= x && x <= 200)
-            } // else if (679 <= y && y <= 700)
+                } // else if (1290 <= x && x <= 1382)
+            } // else if (799 <= y && y <= 820 && sStatus != Player::YOU)
+            else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
+                // <OPTIONS> button
+                // Leave options page
+                sAdjustOptions = false;
+                setStatus(sStatus);
+            } // else if (859 <= y && y <= 880 && 20 <= x && x <= 200)
         } // if (sAdjustOptions)
-        else if (679 <= y && y <= 700 && 1130 <= x && x <= 1260) {
+        else if (859 <= y && y <= 880 && 1450 <= x && x <= 1580) {
             // <AUTO> button
             // In player's action, automatically play or draw cards by AI
             if (sStatus == Player::YOU) {
                 sAuto = true;
                 setStatus(sStatus);
             } // if (sStatus == Player::YOU)
-        } // else if (679 <= y && y <= 700 && 1130 <= x && x <= 1260)
+        } // else if (859 <= y && y <= 880 && 1450 <= x && x <= 1580)
         else switch (sStatus) {
         case STAT_WELCOME:
-            if (270 <= y && y <= 450) {
-                if (580 <= x && x <= 700) {
-                    // UNO button, start a new game
-                    setStatus(STAT_NEW_GAME);
-                } // if (580 <= x && x <= 700)
-            } // if (270 <= y && y <= 450)
-            else if (679 <= y && y <= 700) {
-                if (20 <= x && x <= 200) {
-                    // <OPTIONS> button
-                    sAdjustOptions = true;
-                    setStatus(sStatus);
-                } // if (20 <= x && x <= 200)
-            } // else if (679 <= y && y <= 700)
+            if (360 <= y && y <= 540 && 740 <= x && x <= 860) {
+                // UNO button, start a new game
+                setStatus(STAT_NEW_GAME);
+            } // if (360 <= y && y <= 540 && 740 <= x && x <= 860)
+            else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
+                // <OPTIONS> button
+                sAdjustOptions = true;
+                setStatus(sStatus);
+            } // else if (859 <= y && y <= 880 && 20 <= x && x <= 200)
             break; // case STAT_WELCOME
 
         case Player::YOU:
@@ -1396,16 +1412,16 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 // Do operations automatically by AI strategies
                 break; // case Player::YOU
             } // if (sAuto)
-            else if (520 <= y && y <= 700) {
+            else if (700 <= y && y <= 880) {
                 Player* now = sUno->getPlayer(Player::YOU);
                 auto hand = now->getHandCards();
                 int size = int(hand.size());
-                int width = 45 * size + 75;
-                int startX = 640 - width / 2;
+                int width = 44 * size + 76;
+                int startX = 800 - width / 2;
                 if (startX <= x && x <= startX + width) {
                     // Hand card area
                     // Calculate which card clicked by the X-coordinate
-                    int index = qMin((x - startX) / 45, size - 1);
+                    int index = qMin((x - startX) / 44, size - 1);
                     Card* card = hand.at(index);
 
                     // Try to play it
@@ -1422,25 +1438,25 @@ void Main::mousePressEvent(QMouseEvent* event) {
                         } // else
                     } // else if (sUno->isLegalToPlay(card))
                 } // if (startX <= x && x <= startX + width)
-                else if (y >= 679 && 20 <= x && x <= 200) {
+                else if (y >= 859 && 20 <= x && x <= 200) {
                     // <OPTIONS> button
                     sAdjustOptions = true;
                     setStatus(sStatus);
-                } // else if (y >= 679 && 20 <= x && x <= 200)
+                } // else if (y >= 859 && 20 <= x && x <= 200)
                 else {
                     // Blank area, cancel your selection
                     sSelectedIdx = -1;
                     setStatus(sStatus);
                 } // else
-            } // else if (520 <= y && y <= 700)
-            else if (270 <= y && y <= 450 && 338 <= x && x <= 458) {
+            } // else if (700 <= y && y <= 880)
+            else if (360 <= y && y <= 540 && 338 <= x && x <= 458) {
                 // Card deck area, draw a card
                 draw();
-            } // else if (270 <= y && y <= 450 && 338 <= x && x <= 458)
+            } // else if (360 <= y && y <= 540 && 338 <= x && x <= 458)
             break; // case Player::YOU
 
         case STAT_WILD_COLOR:
-            if (220 < y && y < 315) {
+            if (310 < y && y < 405) {
                 if (310 < x && x < 405) {
                     // Red sector
                     play(sSelectedIdx, RED);
@@ -1449,8 +1465,8 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     // Blue sector
                     play(sSelectedIdx, BLUE);
                 } // else if (405 < x && x < 500)
-            } // if (220 < y && y < 315)
-            else if (315 < y && y < 410) {
+            } // if (310 < y && y < 405)
+            else if (405 < y && y < 500) {
                 if (310 < x && x < 405) {
                     // Yellow sector
                     play(sSelectedIdx, YELLOW);
@@ -1459,32 +1475,32 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     // Green sector
                     play(sSelectedIdx, GREEN);
                 } // else if (405 < x && x < 500)
-            } // else if (315 < y && y < 410)
+            } // else if (405 < y && y < 500)
             break; // case STAT_WILD_COLOR
 
         case STAT_DOUBT_WILD4:
             // Asking if you want to challenge your previous player
             if (310 < x && x < 500) {
-                if (220 < y && y < 315) {
+                if (310 < y && y < 405) {
                     // YES button, challenge wild +4
                     onChallenge();
-                } // if (220 < y && y < 315)
-                else if (315 < y && y < 410) {
+                } // if (310 < y && y < 405)
+                else if (405 < y && y < 500) {
                     // NO button, do not challenge wild +4
                     sUno->switchNow();
                     draw(4, /* force */ true);
-                } // else if (315 < y && y < 410)
+                } // else if (405 < y && y < 500)
             } // if (310 < x && x < 500)
             break; // case STAT_DOUBT_WILD4
 
         case STAT_SEVEN_TARGET:
-            if (198 < y && y < 276 && sUno->getPlayers() == 4) {
+            if (288 < y && y < 366 && sUno->getPlayers() == 4) {
                 if (338 < x && x < 472) {
                     // North sector
                     swapWith(Player::COM2);
                 } // if (338 < x && x < 472)
-            } // if (198 < y && y < 276 && sUno->getPlayers() == 4)
-            else if (315 < y && y < 410) {
+            } // if (288 < y && y < 366 && sUno->getPlayers() == 4)
+            else if (405 < y && y < 500) {
                 if (310 < x && x < 405) {
                     // West sector
                     swapWith(Player::COM1);
@@ -1493,23 +1509,19 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     // East sector
                     swapWith(Player::COM3);
                 } // else if (405 < x && x < 500)
-            } // else if (315 < y && y < 410)
+            } // else if (405 < y && y < 500)
             break; // case STAT_SEVEN_TARGET
 
         case STAT_GAME_OVER:
-            if (270 <= y && y <= 450) {
-                if (338 <= x && x <= 458) {
-                    // Card deck area, start a new game
-                    setStatus(STAT_NEW_GAME);
-                } // if (338 <= x && x <= 458)
-            } // if (270 <= y && y <= 450)
-            else if (679 <= y && y <= 700) {
-                if (20 <= x && x <= 200) {
-                    // <OPTIONS> button
-                    sAdjustOptions = true;
-                    setStatus(sStatus);
-                } // if (20 <= x && x <= 200)
-            } // else if (679 <= y && y <= 700)
+            if (360 <= y && y <= 540 && 338 <= x && x <= 458) {
+                // Card deck area, start a new game
+                setStatus(STAT_NEW_GAME);
+            } // if (360 <= y && y <= 540 && 338 <= x && x <= 458)
+            else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
+                // <OPTIONS> button
+                sAdjustOptions = true;
+                setStatus(sStatus);
+            } // else if (859 <= y && y <= 880 && 20 <= x && x <= 200)
             break; // case STAT_GAME_OVER
 
         default:

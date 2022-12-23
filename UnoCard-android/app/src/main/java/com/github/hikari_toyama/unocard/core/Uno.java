@@ -59,9 +59,9 @@ public class Uno {
     public static final int DIR_RIGHT = 3;
 
     /**
-     * In this application, everyone can hold 14 cards at most.
+     * In this application, everyone can hold 26 cards at most.
      */
-    public static final int MAX_HOLD_CARDS = 14;
+    public static final int MAX_HOLD_CARDS = 26;
 
     /**
      * Random number generator.
@@ -184,6 +184,11 @@ public class Uno {
     Mat hardImage, hardImage_d;
 
     /**
+     * 2vs2 button image resources.
+     */
+    Mat light2vs2, dark2vs2;
+
+    /**
      * Font image.
      */
     Mat font;
@@ -213,6 +218,11 @@ public class Uno {
      * Current difficulty (LV_EASY / LV_HARD).
      */
     int difficulty;
+
+    /**
+     * Whether the 2vs2 rule is enabled.
+     */
+    boolean _2vs2;
 
     /**
      * Whether the force play rule is enabled.
@@ -272,7 +282,7 @@ public class Uno {
 
         // Preparations
         loaded = 0;
-        total = 125;
+        total = 127;
         Log.i(TAG, "Loading... (0%)");
 
         // Load background image resources
@@ -301,6 +311,14 @@ public class Uno {
         Imgproc.cvtColor(easyImage_d, easyImage_d, Imgproc.COLOR_BGR2RGB);
         Imgproc.cvtColor(hardImage_d, hardImage_d, Imgproc.COLOR_BGR2RGB);
         loaded += 4;
+        Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
+
+        // Load 2vs2 image resources
+        dark2vs2 = Utils.loadResource(c, R.raw.dark_2vs2);
+        light2vs2 = Utils.loadResource(c, R.raw.front_2vs2);
+        Imgproc.cvtColor(dark2vs2, dark2vs2, Imgproc.COLOR_BGR2RGB);
+        Imgproc.cvtColor(light2vs2, light2vs2, Imgproc.COLOR_BGR2RGB);
+        loaded += 2;
         Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
 
         // Load cards' front image resources
@@ -496,7 +514,7 @@ public class Uno {
         forcePlay = true;
         difficulty = LV_EASY;
         direction = draw2StackCount = 0;
-        sevenZeroRule = draw2StackRule = false;
+        _2vs2 = sevenZeroRule = draw2StackRule = false;
         colorAnalysis = new int[Color.values().length];
         contentAnalysis = new int[Content.values().length];
         player = new Player[]{
@@ -565,6 +583,13 @@ public class Uno {
                 /* level == LV_EASY */ (hiLight ? easyImage : easyImage_d) :
                 /* level == LV_HARD */ (hiLight ? hardImage : hardImage_d);
     } // getLevelImage(int, boolean)
+
+    /**
+     * @return 2vs2 image resource.
+     */
+    public Mat get2vs2Image() {
+        return _2vs2 ? light2vs2 : dark2vs2;
+    } // get2vs2Image()
 
     /**
      * @return Background image resource in current direction.
@@ -874,6 +899,25 @@ public class Uno {
     } // setDifficulty(int)
 
     /**
+     * @return Whether the 2vs2 rule is enabled. In 2vs2 mode, you win the
+     * game either you or the player sitting on your opposite
+     * position played all of the hand cards.
+     */
+    public boolean is2vs2() {
+        return _2vs2;
+    } // is2vs2()
+
+    /**
+     * @param enabled Enable/Disable the 2vs2 rule.
+     */
+    public void set2vs2(boolean enabled) {
+        _2vs2 = enabled;
+        if (enabled) {
+            players = 4;
+        } // if (enabled)
+    } // set2vs2(boolean)
+
+    /**
      * @return This value tells that what's the next step
      * after you drew a playable card in your action.
      * When force play is enabled, play the card immediately.
@@ -1116,7 +1160,7 @@ public class Uno {
     /**
      * Call this function when someone needs to draw a card.
      * <p>
-     * NOTE: Everyone can hold 14 cards at most in this program, so even if this
+     * NOTE: Everyone can hold 26 cards at most in this program, so even if this
      * function is called, the specified player may not draw a card as a result.
      *
      * @param who   Who draws a card. Must be one of the following values:
@@ -1296,11 +1340,11 @@ public class Uno {
                 Log.i(TAG, "colorAnalysis & contentAnalysis:");
                 Log.i(TAG, Arrays.toString(colorAnalysis));
                 Log.i(TAG, Arrays.toString(contentAnalysis));
-                if (recent.size() > 5) {
+                if (recent.size() > 4) {
                     used.add(recent.get(0));
                     recent.remove(0);
                     recentColors.remove(0);
-                } // if (recent.size() > 5)
+                } // if (recent.size() > 4)
 
                 // Update the legality binary
                 legality = draw2StackCount > 0
