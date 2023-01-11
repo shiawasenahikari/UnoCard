@@ -52,6 +52,7 @@ public:
     virtual QString label_bgm() = 0;
     virtual QString label_draw2Stack() = 0;
     virtual QString label_forcePlay() = 0;
+    virtual QString label_initialCards() = 0;
     virtual QString label_level() = 0;
     virtual QString label_no() = 0;
     virtual QString label_players() = 0;
@@ -251,6 +252,10 @@ public:
     inline QString label_forcePlay() {
         return "When you draw a playable card:";
     } // label_forcePlay()
+
+    inline QString label_initialCards() {
+        return "Initial cards:";
+    } // label_initialCards()
 
     inline QString label_level() {
         return "LEVEL";
@@ -459,6 +464,10 @@ public:
     inline QString label_forcePlay() {
         return "摸到可出的牌时, 是否打出:";
     } // label_forcePlay()
+
+    inline QString label_initialCards() {
+        return "发牌张数:";
+    } // label_initialCards()
 
     inline QString label_level() {
         return "难度";

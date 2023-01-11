@@ -488,6 +488,7 @@ void Main::putFormatText(QPainter* painter, const QString& text, int x, int y) {
  */
 void Main::refreshScreen(const QString& message) {
     static QImage image;
+    static QString lack;
     int i, remain, status, used, width;
 
     // Lock the value of global variable [sStatus]
@@ -498,7 +499,7 @@ void Main::refreshScreen(const QString& message) {
 
     // Message area
     width = getFormatTextWidth(sPainter, message);
-    putFormatText(sPainter, message, 800 - width / 2, 670);
+    putFormatText(sPainter, message, 800 - width / 2, 620);
 
     // Left-bottom corner: <OPTIONS> button
     // Shows only when game is not in process
@@ -570,6 +571,12 @@ void Main::refreshScreen(const QString& message) {
             sPainter->drawImage(1290, 250, image);
 
             // Rule settings
+            // Initial cards
+            sPainter->drawText(60, 670, i18n->label_initialCards());
+            width = sUno->getInitialCards();
+            lack = QString::number(width / 10) + QString::number(width % 10);
+            sPainter->drawText(1110, 670, "< " + lack + " >");
+
             // Force play switch
             sPainter->drawText(60, 720, i18n->label_forcePlay());
             sPainter->setPen(sUno->isForcePlay() ? PEN_WHITE : PEN_RED);
@@ -646,6 +653,99 @@ void Main::refreshScreen(const QString& message) {
         remain = sUno->getDeckCount();
         used = sUno->getUsedCount();
         sPainter->drawText(20, 42, i18n->label_remain_used(remain, used));
+
+        // Right-top corner: lacks
+        lack = "LACK: ";
+        switch (sUno->getPlayer(Player::COM2)->getWeakColor()) {
+        case RED:
+            lack += "[R]N";
+            break; // case RED
+
+        case BLUE:
+            lack += "[B]N";
+            break; // case BLUE
+
+        case GREEN:
+            lack += "[G]N";
+            break; // case GREEN
+
+        case YELLOW:
+            lack += "[Y]N";
+            break; // case YELLOW
+
+        default:
+            lack += "[W]N";
+            break; // default
+        } // switch (sUno->getPlayer(Player::COM2)->getWeakColor())
+
+        switch (sUno->getPlayer(Player::COM3)->getWeakColor()) {
+        case RED:
+            lack += "[R]E";
+            break; // case RED
+
+        case BLUE:
+            lack += "[B]E";
+            break; // case BLUE
+
+        case GREEN:
+            lack += "[G]E";
+            break; // case GREEN
+
+        case YELLOW:
+            lack += "[Y]E";
+            break; // case YELLOW
+
+        default:
+            lack += "[W]E";
+            break; // default
+        } // switch (sUno->getPlayer(Player::COM3)->getWeakColor())
+
+        switch (sUno->getPlayer(Player::COM1)->getWeakColor()) {
+        case RED:
+            lack += "[R]W";
+            break; // case RED
+
+        case BLUE:
+            lack += "[B]W";
+            break; // case BLUE
+
+        case GREEN:
+            lack += "[G]W";
+            break; // case GREEN
+
+        case YELLOW:
+            lack += "[Y]W";
+            break; // case YELLOW
+
+        default:
+            lack += "[W]W";
+            break; // default
+        } // switch (sUno->getPlayer(Player::COM1)->getWeakColor())
+
+        switch (sUno->getPlayer(Player::YOU)->getWeakColor()) {
+        case RED:
+            lack += "[R]S";
+            break; // case RED
+
+        case BLUE:
+            lack += "[B]S";
+            break; // case BLUE
+
+        case GREEN:
+            lack += "[G]S";
+            break; // case GREEN
+
+        case YELLOW:
+            lack += "[Y]S";
+            break; // case YELLOW
+
+        default:
+            lack += "[W]S";
+            break; // default
+        } // switch (sUno->getPlayer(Player::YOU)->getWeakColor())
+
+        width = getFormatTextWidth(sPainter, lack);
+        putFormatText(sPainter, lack, 1580 - width, 42);
 
         // Left-center: Hand cards of Player West (COM1)
         if (status == STAT_GAME_OVER && sWinner == Player::COM1) {
@@ -1343,6 +1443,18 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     setStatus(sStatus);
                 } // else if (1110 <= x && x <= 1230 && sStatus != Player::YOU)
             } // else if (270 <= y && y <= 450)
+            else if (649 <= y && y <= 670 && sStatus != Player::YOU) {
+                if (1030 <= x && x <= 1130) {
+                    // Decrease initial cards
+                    sUno->decreaseInitialCards();
+                    setStatus(sStatus);
+                } // if (1030 <= x && x <= 1130)
+                else if (1187 <= x && x <= 1287) {
+                    // Increase initial cards
+                    sUno->increaseInitialCards();
+                    setStatus(sStatus);
+                } // else if (1187 <= x && x <= 1287)
+            } // else if (649 <= y && y <= 670 && sStatus != Player::YOU)
             else if (699 <= y && y <= 720 && sStatus != Player::YOU) {
                 if (1110 <= x && x <= 1237) {
                     // Force play, <KEEP> button

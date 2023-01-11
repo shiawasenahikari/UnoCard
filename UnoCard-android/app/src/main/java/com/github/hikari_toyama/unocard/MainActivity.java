@@ -480,6 +480,7 @@ public class MainActivity extends AppCompatActivity
     private void refreshScreen(String message) {
         Mat image;
         Size axes;
+        String lack;
         Point center;
         Color fontColor;
         List<Card> recent;
@@ -494,7 +495,7 @@ public class MainActivity extends AppCompatActivity
 
         // Message area
         width = mUno.getFormatTextWidth(message);
-        mUno.putFormatText(mScr, message, 800 - width / 2, 670);
+        mUno.putFormatText(mScr, message, 800 - width / 2, 620);
 
         // Left-bottom corner: <OPTIONS> button
         // Shows only when game is not in process
@@ -565,6 +566,12 @@ public class MainActivity extends AppCompatActivity
                 image.copyTo(mScr.submat(250, 431, 1290, 1411), image);
 
                 // Rule settings
+                // Initial Cards
+                mUno.putText(mScr, i18n.label_initialCards(), 60, 670, null);
+                width = mUno.getInitialCards();
+                lack = "" + width / 10 + width % 10;
+                mUno.putText(mScr, "< " + lack + " >", 1110, 670, null);
+
                 // Force play switch
                 mUno.putText(mScr, i18n.label_forcePlay(), 60, 720, null);
                 fontColor = mUno.isForcePlay() ? null : Color.RED;
@@ -649,6 +656,99 @@ public class MainActivity extends AppCompatActivity
         remain = mUno.getDeckCount();
         used = mUno.getUsedCount();
         mUno.putText(mScr, i18n.label_remain_used(remain, used), 20, 42, null);
+
+        // Right-top corner: lacks
+        lack = "LACK: ";
+        switch (mUno.getPlayer(Player.COM2).getWeakColor()) {
+            case RED:
+                lack += "[R]N";
+                break; // case RED
+
+            case BLUE:
+                lack += "[B]N";
+                break; // case BLUE
+
+            case GREEN:
+                lack += "[G]N";
+                break; // case GREEN
+
+            case YELLOW:
+                lack += "[Y]N";
+                break; // case YELLOW
+
+            default:
+                lack += "[W]N";
+                break; // default
+        } // switch (mUno.getPlayer(Player.COM2).getWeakColor())
+
+        switch (mUno.getPlayer(Player.COM3).getWeakColor()) {
+            case RED:
+                lack += "[R]E";
+                break; // case RED
+
+            case BLUE:
+                lack += "[B]E";
+                break; // case BLUE
+
+            case GREEN:
+                lack += "[G]E";
+                break; // case GREEN
+
+            case YELLOW:
+                lack += "[Y]E";
+                break; // case YELLOW
+
+            default:
+                lack += "[W]E";
+                break; // default
+        } // switch (mUno.getPlayer(Player.COM3).getWeakColor())
+
+        switch (mUno.getPlayer(Player.COM1).getWeakColor()) {
+            case RED:
+                lack += "[R]W";
+                break; // case RED
+
+            case BLUE:
+                lack += "[B]W";
+                break; // case BLUE
+
+            case GREEN:
+                lack += "[G]W";
+                break; // case GREEN
+
+            case YELLOW:
+                lack += "[Y]W";
+                break; // case YELLOW
+
+            default:
+                lack += "[W]W";
+                break; // default
+        } // switch (mUno.getPlayer(Player.COM1).getWeakColor())
+
+        switch (mUno.getPlayer(Player.YOU).getWeakColor()) {
+            case RED:
+                lack += "[R]S";
+                break; // case RED
+
+            case BLUE:
+                lack += "[B]S";
+                break; // case BLUE
+
+            case GREEN:
+                lack += "[G]S";
+                break; // case GREEN
+
+            case YELLOW:
+                lack += "[Y]S";
+                break; // case YELLOW
+
+            default:
+                lack += "[W]S";
+                break; // default
+        } // switch (mUno.getPlayer(Player.YOU).getWeakColor())
+
+        width = mUno.getFormatTextWidth(lack);
+        mUno.putFormatText(mScr, lack, 1580 - width, 42);
 
         // Left-center: Hand cards of Player West (COM1)
         if (status == STAT_GAME_OVER && mWinner == Player.COM1) {
@@ -1449,6 +1549,18 @@ public class MainActivity extends AppCompatActivity
                     setStatus(mStatus);
                 } // else if (1110 <= x && x <= 1230 && mStatus != Player.YOU)
             } // else if (270 <= y && y <= 450)
+            else if (649 <= y && y <= 670 && mStatus != Player.YOU) {
+                if (1030 <= x && x <= 1130) {
+                    // Decrease initial cards
+                    mUno.decreaseInitialCards();
+                    setStatus(mStatus);
+                } // if (1030 <= x && x <= 1130)
+                else if (1187 <= x && x <= 1287) {
+                    // Increase initial cards
+                    mUno.increaseInitialCards();
+                    setStatus(mStatus);
+                } // else if (1187 <= x && x <= 1287)
+            } // else if (649 <= y && y <= 670 && mStatus != Player.YOU)
             else if (699 <= y && y <= 720 && mStatus != Player.YOU) {
                 if (1110 <= x && x <= 1237) {
                     // Force play, <KEEP> button

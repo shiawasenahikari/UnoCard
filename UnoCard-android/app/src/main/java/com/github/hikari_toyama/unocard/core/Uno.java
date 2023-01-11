@@ -250,6 +250,12 @@ public class Uno {
     int draw2StackCount;
 
     /**
+     * How many initial cards for everyone in each game.
+     * This value can be set to 5~20. Default to 7.
+     */
+    int initialCards;
+
+    /**
      * This binary value shows that which cards are legal to play. When
      * 0x01L == ((legality >> i) & 0x01L), the card with id number i
      * is legal to play. When the recent-played-card queue changes,
@@ -510,6 +516,7 @@ public class Uno {
         // Initialize other members
         players = 3;
         legality = 0;
+        initialCards = 7;
         now = Uno.RNG.nextInt(4);
         forcePlay = true;
         difficulty = LV_EASY;
@@ -983,6 +990,33 @@ public class Uno {
     } // getDraw2StackCount()
 
     /**
+     * @return How many initial cards for everyone in each game.
+     */
+    public int getInitialCards() {
+        return initialCards;
+    } // getInitialCards()
+
+    /**
+     * Add a initial card for everyone.
+     * Initial cards can be increased to 20 at most.
+     */
+    public void increaseInitialCards() {
+        if (++initialCards > 20) {
+            initialCards = 20;
+        } // if (++initialCards > 20)
+    } // increaseInitialCards()
+
+    /**
+     * Remove a initial card for everyone.
+     * Initial cards can be decreased to 5 at least.
+     */
+    public void decreaseInitialCards() {
+        if (--initialCards < 5) {
+            initialCards = 5;
+        } // if (--initialCards < 5)
+    } // decreaseInitialCards()
+
+    /**
      * Find a card instance in card table.
      *
      * @param color   Color of the card you want to get.
@@ -1139,13 +1173,13 @@ public class Uno {
             } // else
         } while (recent.isEmpty());
 
-        // Let everyone draw 7 cards
-        for (i = 0; i < 7; ++i) {
+        // Let everyone draw initial cards
+        for (i = 0; i < initialCards; ++i) {
             draw(Player.YOU,  /* force */ true);
             draw(Player.COM1, /* force */ true);
             if (players == 4) draw(Player.COM2, /* force */ true);
             draw(Player.COM3, /* force */ true);
-        } // for (i = 0; i < 7; ++i)
+        } // for (i = 0; i < initialCards; ++i)
 
         // In the case of (last winner = NORTH) & (game mode = 3 player mode)
         // Re-specify the dealer randomly

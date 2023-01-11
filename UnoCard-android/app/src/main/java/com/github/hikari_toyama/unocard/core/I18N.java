@@ -90,6 +90,8 @@ public interface I18N {
 
     String label_forcePlay();
 
+    String label_initialCards();
+
     String label_level();
 
     String label_no();
@@ -320,6 +322,11 @@ class I18N_en_US implements I18N {
     public String label_forcePlay() {
         return "When you draw a playable card:";
     } // label_forcePlay()
+
+    @Override
+    public String label_initialCards() {
+        return "Initial cards:";
+    } // label_initialCards()
 
     @Override
     public String label_level() {
@@ -562,6 +569,11 @@ class I18N_zh_CN implements I18N {
     public String label_forcePlay() {
         return "摸到可出的牌时, 是否打出:";
     } // label_forcePlay()
+
+    @Override
+    public String label_initialCards() {
+        return "发牌张数:";
+    } // label_initialCards()
 
     @Override
     public String label_level() {

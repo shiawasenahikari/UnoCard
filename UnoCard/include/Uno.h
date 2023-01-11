@@ -126,6 +126,12 @@ private:
     int draw2StackCount;
 
     /**
+     * How many initial cards for everyone in each game.
+     * This value can be set to 5~20. Default to 7.
+     */
+    int initialCards;
+
+    /**
      * This binary value shows that which cards are legal to play. When
      * 0x01LL == ((legality >> i) & 0x01LL), the card with id number i
      * is legal to play. When the recent-played-card queue changes,
@@ -247,6 +253,7 @@ private:
         // Initialize other members
         players = 3;
         legality = 0;
+        initialCards = 7;
         now = rand() % 4;
         forcePlay = true;
         difficulty = LV_EASY;
@@ -637,6 +644,33 @@ public:
     } // getDraw2StackCount()
 
     /**
+     * @return How many initial cards for everyone in each game.
+     */
+    inline int getInitialCards() {
+        return initialCards;
+    } // getInitialCards()
+
+    /**
+     * Add a initial card for everyone.
+     * Initial cards can be increased to 20 at most.
+     */
+    inline void increaseInitialCards() {
+        if (++initialCards > 20) {
+            initialCards = 20;
+        } // if (++initialCards > 20)
+    } // increaseInitialCards()
+
+    /**
+     * Remove a initial card for everyone.
+     * Initial cards can be decreased to 5 at least.
+     */
+    inline void decreaseInitialCards() {
+        if (--initialCards < 5) {
+            initialCards = 5;
+        } // if (--initialCards < 5)
+    } // decreaseInitialCards()
+
+    /**
      * Find a card instance in card table.
      *
      * @param color   Color of the card you want to get.
@@ -791,13 +825,13 @@ public:
             } // else
         } while (recent.empty());
 
-        // Let everyone draw 7 cards
-        for (i = 0; i < 7; ++i) {
+        // Let everyone draw initial cards
+        for (i = 0; i < initialCards; ++i) {
             draw(Player::YOU,  /* force */ true);
             draw(Player::COM1, /* force */ true);
             if (players == 4) draw(Player::COM2, /* force */ true);
             draw(Player::COM3, /* force */ true);
-        } // for (i = 0; i < 7; ++i)
+        } // for (i = 0; i < initialCards; ++i)
 
         // In the case of (last winner = NORTH) & (game mode = 3 player mode)
         // Re-specify the dealer randomly
@@ -944,14 +978,14 @@ public:
             auto& hand = player[who].handCards;
             int size = int(hand.size());
             if (index < size) {
-                const char* p = "";
+                QString p;
 
                 card = hand.at(index);
                 if (card->isWild()) {
-                    p = qPrintable(Card::A(color));
+                    p = Card::A(color);
                 } // if (card->isWild())
 
-                qDebug("Player %d played %s%s", who, p, qPrintable(card->name));
+                qDebug("Player %d played %s", who, qPrintable(p + card->name));
                 hand.erase(hand.begin() + index);
                 if (card->isWild()) {
                     // When a wild card is played, register the specified
