@@ -114,6 +114,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     @UiThread
     protected void onCreate(Bundle savedInstanceState) {
+        int initialCards;
         SharedPreferences sp;
         DialogFragment dialog;
 
@@ -138,6 +139,15 @@ public class MainActivity extends AppCompatActivity
             mUno.setForcePlay(sp.getBoolean("forcePlay", true));
             mUno.setSevenZeroRule(sp.getBoolean("sevenZero", false));
             mUno.setDraw2StackRule(sp.getBoolean("stackDraw2", false));
+            initialCards = sp.getInt("initialCards", 7);
+            while (mUno.getInitialCards() < initialCards) {
+                mUno.increaseInitialCards();
+            } // while (mUno.getInitialCards() < initialCards)
+
+            while (mUno.getInitialCards() > initialCards) {
+                mUno.decreaseInitialCards();
+            } // while (mUno.getInitialCards() > initialCards)
+
             mSoundPool = new SoundPool(2, AudioManager.STREAM_MUSIC, 0);
             sndUno = mSoundPool.load(this, R.raw.snd_uno, 1);
             sndWin = mSoundPool.load(this, R.raw.snd_win, 1);
@@ -495,7 +505,7 @@ public class MainActivity extends AppCompatActivity
 
         // Message area
         width = mUno.getFormatTextWidth(message);
-        mUno.putFormatText(mScr, message, 800 - width / 2, 620);
+        mUno.putFormatText(mScr, message, 800 - width / 2, 670);
 
         // Left-bottom corner: <OPTIONS> button
         // Shows only when game is not in process
@@ -570,7 +580,9 @@ public class MainActivity extends AppCompatActivity
                 mUno.putText(mScr, i18n.label_initialCards(), 60, 670, null);
                 width = mUno.getInitialCards();
                 lack = "" + width / 10 + width % 10;
-                mUno.putText(mScr, "< " + lack + " >", 1110, 670, null);
+                mUno.putText(mScr, "<-", 1110, 670, null);
+                mUno.putText(mScr, lack, 1234, 670, null);
+                mUno.putText(mScr, "+>", 1358, 670, null);
 
                 // Force play switch
                 mUno.putText(mScr, i18n.label_forcePlay(), 60, 720, null);
@@ -658,95 +670,46 @@ public class MainActivity extends AppCompatActivity
         mUno.putText(mScr, i18n.label_remain_used(remain, used), 20, 42, null);
 
         // Right-top corner: lacks
-        lack = "LACK: ";
-        switch (mUno.getPlayer(Player.COM2).getWeakColor()) {
-            case RED:
-                lack += "[R]N";
-                break; // case RED
-
-            case BLUE:
-                lack += "[B]N";
-                break; // case BLUE
-
-            case GREEN:
-                lack += "[G]N";
-                break; // case GREEN
-
-            case YELLOW:
-                lack += "[Y]N";
-                break; // case YELLOW
-
-            default:
-                lack += "[W]N";
-                break; // default
-        } // switch (mUno.getPlayer(Player.COM2).getWeakColor())
-
-        switch (mUno.getPlayer(Player.COM3).getWeakColor()) {
-            case RED:
-                lack += "[R]E";
-                break; // case RED
-
-            case BLUE:
-                lack += "[B]E";
-                break; // case BLUE
-
-            case GREEN:
-                lack += "[G]E";
-                break; // case GREEN
-
-            case YELLOW:
-                lack += "[Y]E";
-                break; // case YELLOW
-
-            default:
-                lack += "[W]E";
-                break; // default
-        } // switch (mUno.getPlayer(Player.COM3).getWeakColor())
-
-        switch (mUno.getPlayer(Player.COM1).getWeakColor()) {
-            case RED:
-                lack += "[R]W";
-                break; // case RED
-
-            case BLUE:
-                lack += "[B]W";
-                break; // case BLUE
-
-            case GREEN:
-                lack += "[G]W";
-                break; // case GREEN
-
-            case YELLOW:
-                lack += "[Y]W";
-                break; // case YELLOW
-
-            default:
-                lack += "[W]W";
-                break; // default
-        } // switch (mUno.getPlayer(Player.COM1).getWeakColor())
-
-        switch (mUno.getPlayer(Player.YOU).getWeakColor()) {
-            case RED:
-                lack += "[R]S";
-                break; // case RED
-
-            case BLUE:
-                lack += "[B]S";
-                break; // case BLUE
-
-            case GREEN:
-                lack += "[G]S";
-                break; // case GREEN
-
-            case YELLOW:
-                lack += "[Y]S";
-                break; // case YELLOW
-
-            default:
-                lack += "[W]S";
-                break; // default
-        } // switch (mUno.getPlayer(Player.YOU).getWeakColor())
-
+        if (mUno.getPlayer(Player.COM2).getWeakColor() == Color.RED)
+            lack = "LACK: [R]N";
+        else if (mUno.getPlayer(Player.COM2).getWeakColor() == Color.BLUE)
+            lack = "LACK: [B]N";
+        else if (mUno.getPlayer(Player.COM2).getWeakColor() == Color.GREEN)
+            lack = "LACK: [G]N";
+        else if (mUno.getPlayer(Player.COM2).getWeakColor() == Color.YELLOW)
+            lack = "LACK: [Y]N";
+        else
+            lack = "LACK: N";
+        if (mUno.getPlayer(Player.COM3).getWeakColor() == Color.RED)
+            lack += "[R]E";
+        else if (mUno.getPlayer(Player.COM3).getWeakColor() == Color.BLUE)
+            lack += "[B]E";
+        else if (mUno.getPlayer(Player.COM3).getWeakColor() == Color.GREEN)
+            lack += "[G]E";
+        else if (mUno.getPlayer(Player.COM3).getWeakColor() == Color.YELLOW)
+            lack += "[Y]E";
+        else
+            lack += "[W]E";
+        if (mUno.getPlayer(Player.COM1).getWeakColor() == Color.RED)
+            lack += "[R]W";
+        else if (mUno.getPlayer(Player.COM1).getWeakColor() == Color.BLUE)
+            lack += "[B]W";
+        else if (mUno.getPlayer(Player.COM1).getWeakColor() == Color.GREEN)
+            lack += "[G]W";
+        else if (mUno.getPlayer(Player.COM1).getWeakColor() == Color.YELLOW)
+            lack += "[Y]W";
+        else
+            lack += "[W]W";
+        if (mUno.getPlayer(Player.YOU).getWeakColor() == Color.RED)
+            lack += "[R]S";
+        else if (mUno.getPlayer(Player.YOU).getWeakColor() == Color.BLUE)
+            lack += "[B]S";
+        else if (mUno.getPlayer(Player.YOU).getWeakColor() == Color.GREEN)
+            lack += "[G]S";
+        else if (mUno.getPlayer(Player.YOU).getWeakColor() == Color.YELLOW)
+            lack += "[Y]S";
+        else
+            lack += "[W]S";
         width = mUno.getFormatTextWidth(lack);
         mUno.putFormatText(mScr, lack, 1580 - width, 42);
 
@@ -809,12 +772,19 @@ public class MainActivity extends AppCompatActivity
             List<Card> hand = p.getHandCards();
             size = hand.size();
             width = 44 * Math.min(size, 13) + 136;
-            for (i = 0; i < size; ++i) {
-                x = 1460 - i / 13 * 44;
-                y = 450 - width / 2 + i % 13 * 44;
+            for (i = 13; i < size; ++i) {
+                x = 1416;
+                y = 450 - width / 2 + (i - 13) * 44;
                 image = p.isOpen(i) ? hand.get(i).image : mUno.getBackImage();
                 image.copyTo(mScr.submat(y, y + 181, x, x + 121), image);
-            } // for (i = 0; i < size; ++i)
+            } // for (i = 13; i < size; ++i)
+
+            for (i = 0; i < 13 && i < size; ++i) {
+                x = 1460;
+                y = 450 - width / 2 + i * 44;
+                image = p.isOpen(i) ? hand.get(i).image : mUno.getBackImage();
+                image.copyTo(mScr.submat(y, y + 181, x, x + 121), image);
+            } // for (i = 0; i < 13 && i < size; ++i)
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
@@ -1550,52 +1520,52 @@ public class MainActivity extends AppCompatActivity
                 } // else if (1110 <= x && x <= 1230 && mStatus != Player.YOU)
             } // else if (270 <= y && y <= 450)
             else if (649 <= y && y <= 670 && mStatus != Player.YOU) {
-                if (1030 <= x && x <= 1130) {
+                if (1110 <= x && x <= 1143) {
                     // Decrease initial cards
                     mUno.decreaseInitialCards();
                     setStatus(mStatus);
-                } // if (1030 <= x && x <= 1130)
-                else if (1187 <= x && x <= 1287) {
+                } // if (1110 <= x && x <= 1143)
+                else if (1358 <= x && x <= 1391) {
                     // Increase initial cards
                     mUno.increaseInitialCards();
                     setStatus(mStatus);
-                } // else if (1187 <= x && x <= 1287)
+                } // else if (1358 <= x && x <= 1391)
             } // else if (649 <= y && y <= 670 && mStatus != Player.YOU)
             else if (699 <= y && y <= 720 && mStatus != Player.YOU) {
-                if (1110 <= x && x <= 1237) {
+                if (1110 <= x && x <= 1211) {
                     // Force play, <KEEP> button
                     mUno.setForcePlay(false);
                     setStatus(mStatus);
-                } // if (1110 <= x && x <= 1237)
-                else if (1290 <= x && x <= 1414) {
+                } // if (1110 <= x && x <= 1211)
+                else if (1290 <= x && x <= 1391) {
                     // Force play, <PLAY> button
                     mUno.setForcePlay(true);
                     setStatus(mStatus);
-                } // else if (1290 <= x && x <= 1414)
+                } // else if (1290 <= x && x <= 1391)
             } // else if (699 <= y && y <= 720 && mStatus != Player.YOU)
             else if (749 <= y && y <= 770 && mStatus != Player.YOU) {
-                if (1110 <= x && x <= 1216) {
+                if (1110 <= x && x <= 1194) {
                     // 7-0, <OFF> button
                     mUno.setSevenZeroRule(false);
                     setStatus(mStatus);
-                } // if (1110 <= x && x <= 1216)
-                else if (1290 <= x && x <= 1382) {
+                } // if (1110 <= x && x <= 1194)
+                else if (1290 <= x && x <= 1357) {
                     // 7-0, <ON> button
                     mUno.setSevenZeroRule(true);
                     setStatus(mStatus);
-                } // else if (1290 <= x && x <= 1382)
+                } // else if (1290 <= x && x <= 1357)
             } // else if (749 <= y && y <= 770 && mStatus != Player.YOU)
             else if (799 <= y && y <= 820 && mStatus != Player.YOU) {
-                if (1110 <= x && x <= 1216) {
+                if (1110 <= x && x <= 1194) {
                     // +2 stack, <OFF> button
                     mUno.setDraw2StackRule(false);
                     setStatus(mStatus);
-                } // if (1110 <= x && x <= 1216)
-                else if (1290 <= x && x <= 1382) {
+                } // if (1110 <= x && x <= 1194)
+                else if (1290 <= x && x <= 1357) {
                     // +2 stack, <ON> button
                     mUno.setDraw2StackRule(true);
                     setStatus(mStatus);
-                } // else if (1290 <= x && x <= 1382)
+                } // else if (1290 <= x && x <= 1357)
             } // else if (799 <= y && y <= 820 && mStatus != Player.YOU)
             else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
                 // <OPTIONS> button
@@ -1779,21 +1749,19 @@ public class MainActivity extends AppCompatActivity
     @Override
     @UiThread
     protected void onPause() {
-        SharedPreferences sp;
-        SharedPreferences.Editor editor;
-
         if (OPENCV_INIT_SUCCESS) {
-            sp = getSharedPreferences("UnoStat", Context.MODE_PRIVATE);
-            editor = sp.edit();
-            editor.putFloat("sndVol", mSndVol);
-            editor.putFloat("bgmVol", mBgmVol);
-            editor.putInt("players", mUno.getPlayers());
-            editor.putInt("score", Math.max(-999, mScore));
-            editor.putInt("difficulty", mUno.getDifficulty());
-            editor.putBoolean("forcePlay", mUno.isForcePlay());
-            editor.putBoolean("sevenZero", mUno.isSevenZeroRule());
-            editor.putBoolean("stackDraw2", mUno.isDraw2StackRule());
-            editor.apply();
+            getSharedPreferences("UnoStat", Context.MODE_PRIVATE)
+                    .edit()
+                    .putFloat("sndVol", mSndVol)
+                    .putFloat("bgmVol", mBgmVol)
+                    .putInt("players", mUno.getPlayers())
+                    .putInt("score", Math.max(-999, mScore))
+                    .putInt("difficulty", mUno.getDifficulty())
+                    .putBoolean("forcePlay", mUno.isForcePlay())
+                    .putBoolean("sevenZero", mUno.isSevenZeroRule())
+                    .putBoolean("stackDraw2", mUno.isDraw2StackRule())
+                    .putInt("initialCards", mUno.getInitialCards())
+                    .apply();
             mSndVol = 0.0f;
             mMediaPlayer.pause();
         } // if (OPENCV_INIT_SUCCESS)

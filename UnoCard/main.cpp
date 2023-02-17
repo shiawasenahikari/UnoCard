@@ -7,9 +7,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <QPen>
+#include <map>
 #include <QUrl>
-#include <QFont>
+#include <QChar>
 #include <QIcon>
 #include <QRect>
 #include <QBrush>
@@ -19,7 +19,10 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <QBitmap>
+#include <QRegion>
 #include <QString>
+#include <QWidget>
 #include <QPainter>
 #include <QFileInfo>
 #include <QEventLoop>
@@ -48,11 +51,6 @@ static const int STAT_GAME_OVER = 0x4444;
 static const int STAT_WILD_COLOR = 0x5555;
 static const int STAT_DOUBT_WILD4 = 0x6666;
 static const int STAT_SEVEN_TARGET = 0x7777;
-static const QPen PEN_RED(QColor(0xFF, 0x77, 0x77));
-static const QPen PEN_BLUE(QColor(0x77, 0x77, 0xFF));
-static const QPen PEN_GREEN(QColor(0x77, 0xCC, 0x77));
-static const QPen PEN_WHITE(QColor(0xCC, 0xCC, 0xCC));
-static const QPen PEN_YELLOW(QColor(0xFF, 0xCC, 0x11));
 static const QBrush BRUSH_RED(QColor(0xFF, 0x55, 0x55));
 static const QBrush BRUSH_BLUE(QColor(0x55, 0x55, 0xFF));
 static const QBrush BRUSH_GREEN(QColor(0x55, 0xAA, 0x55));
@@ -74,9 +72,23 @@ static const char FILE_HEADER[] = {
 Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
     int i, hash;
     QString bgmPath;
+    int dw[64] = {0};
+    char header[9] = {0};
     std::ifstream reader;
-    int dw[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    char header[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    QString hanZi = QString()
+        + "一上下东为乐人仍"
+        + "从令以传余你保再"
+        + "准出击分则到剩功"
+        + "加北南发变叠可合"
+        + "向否和回堆备多失"
+        + "始定家将已度开张"
+        + "戏成或战所打托择"
+        + "指挑换接摸改效数"
+        + "新方无时是最有来"
+        + "标次欢法游点牌留"
+        + "的目管红给绿置色"
+        + "蓝被西规认设败跳"
+        + "过迎选重难音颜黄";
 
     // Preparations
     if (strstr(argv[0], "zh") != nullptr) {
@@ -111,6 +123,7 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
         i = int(reader.tellg());
         reader.seekg(0, std::ios::beg);
         if (i == 8 + 9 * sizeof(int)) {
+            // Old version
             reader.read(header, 8);
             reader.read((char*)dw, 9 * sizeof(int));
             for (hash = 0, i = 0; i < 8; ++i) {
@@ -131,6 +144,37 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
                 sMediaPlay->setVolume(dw[7]);
             } // if (strcmp(header, FILE_HEADER) == 0 && hash == dw[8])
         } // if (i == 8 + 9 * sizeof(int))
+        else if (i == 8 + 64 * sizeof(int)) {
+            // New version
+            reader.read(header, 8);
+            reader.read((char*)dw, 64 * sizeof(int));
+            for (hash = 0, i = 0; i < 63; ++i) {
+                hash = 31 * hash + dw[i];
+            } // for (hash = 0, i = 0; i < 63; ++i)
+
+            if (strcmp(header, FILE_HEADER) == 0 && hash == dw[63]) {
+                // File verification success
+                if (dw[0] > 9999) dw[0] = 9999;
+                else if (dw[0] < -999) dw[0] = -999;
+                sScore = dw[0];
+                sUno->setPlayers(dw[1]);
+                sUno->setDifficulty(dw[2]);
+                sUno->setForcePlay(dw[3] != 0);
+                sUno->setSevenZeroRule(dw[4] != 0);
+                sUno->setDraw2StackRule(dw[5] != 0);
+                sSoundPool->setEnabled(dw[6] != 0);
+                sMediaPlay->setVolume(dw[7]);
+                if (5 <= dw[8] && dw[8] <= 20) {
+                    while (sUno->getInitialCards() < dw[8]) {
+                        sUno->increaseInitialCards();
+                    } // while (sUno->getInitialCards() < dw[8])
+
+                    while (sUno->getInitialCards() > dw[8]) {
+                        sUno->decreaseInitialCards();
+                    } // while (sUno->getInitialCards() > dw[8])
+                } // if (5 <= dw[8] && dw[8] <= 20)
+            } // if (strcmp(header, FILE_HEADER) == 0 && hash == dw[63])
+        } // else if (i == 8 + 64 * sizeof(int))
 
         reader.close();
     } // if (!reader.fail())
@@ -140,8 +184,40 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
     sSelectedIdx = -1;
     sAIRunning = false;
     sWinner = Player::YOU;
-    sFont.setPointSize(20);
     sAdjustOptions = false;
+    if (sFontW.load("resource/font_w.png")) {
+        QBitmap mask = QBitmap::fromImage(sFontW.createAlphaMask());
+        int w = sFontW.width(), h = sFontW.height();
+        QImage font(w, h, QImage::Format_RGBA8888);
+        QPainter p(&font);
+
+        p.setClipRegion(mask);
+        p.setBrush(BRUSH_RED);
+        p.drawRect(0, 0, w, h);
+        sFontR = font.copy();
+        p.setBrush(BRUSH_BLUE);
+        p.drawRect(0, 0, w, h);
+        sFontB = font.copy();
+        p.setBrush(BRUSH_GREEN);
+        p.drawRect(0, 0, w, h);
+        sFontG = font.copy();
+        p.setBrush(BRUSH_YELLOW);
+        p.drawRect(0, 0, w, h);
+        sFontY = font.copy();
+        for (i = 0x20; i <= 0x7f; ++i) {
+            int r = (i >> 4) - 2, c = i & 0x0f;
+            sCharMap.insert({QChar(i), (r << 4) | c});
+        } // for (i = 0x20; i <= 0x7f; ++i)
+
+        for (i = 0; i < hanZi.length(); ++i) {
+            int r = (i >> 3) + 6, c = i & 0x07;
+            sCharMap.insert({hanZi[i], (r << 4) | c});
+        } // for (i = 0; i < hanZi.length(); ++i)
+    } // if (sFontW.load("resource/font_w.png"))
+    else {
+        exit(1);
+    } // else
+
     for (i = 0; i <= 3; ++i) {
         sBackup[i] = QImage(1600, 900, QImage::Format_RGB888);
         sBkPainter[i] = new QPainter(&sBackup[i]);
@@ -149,8 +225,7 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
 
     sScreen = QImage(1600, 900, QImage::Format_RGB888);
     sPainter = new QPainter(&sScreen);
-    sPainter->setPen(PEN_WHITE);
-    sPainter->setFont(sFont);
+    sPainter->setPen(Qt::NoPen);
     ui = new Ui::Main;
     ui->setupUi(this);
     sMediaPlay->play();
@@ -418,67 +493,79 @@ void Main::setStatus(int status) {
 } // setStatus(int)
 
 /**
- * Measure the text width.
+ * Measure the text width, using our custom font.
  * <p>
  * SPECIAL: In the text string, you can use color marks ([R], [B],
  * [G], [W] and [Y]) to control the color of the remaining text.
  * COLOR MARKS SHOULD NOT BE TREATED AS PRINTABLE CHARACTERS.
  *
- * @param painter Use which painter to draw text.
- * @param text    Measure which text's width.
+ * @param text Measure which text's width.
  * @return Width of the provided text (unit: pixels).
  */
-int Main::getFormatTextWidth(QPainter* painter, const QString& text) {
-    QString s;
+int Main::getTextWidth(const QString& text) {
+    int width = 0;
 
     for (int i = 0, n = text.length(); i < n; ++i) {
         if ('[' == text[i] && i + 2 < n && text[i + 2] == ']') {
             i += 2;
         } // if ('[' == text[i] && i + 2 < n && text[i + 2] == ']')
         else {
-            s += text[i];
+            auto which = sCharMap.find(text[i]);
+            int position = which != sCharMap.end() ? which->second : 0x1f;
+            int r = position >> 4;
+            width += r < 6 ? 17 : 33;
         } // else
     } // for (int i = 0, n = text.length(); i < n; ++i)
 
-    return painter->fontMetrics().horizontalAdvance(s);
-} // getFormatTextWidth(QPainter*, const QString&)
+    return width;
+} // getTextWidth(const QString&)
 
 /**
- * Put text on image.
+ * Put text on image, using our custom font.
+ * Unknown characters will be replaced with the question mark '?'.
  * <p>
  * SPECIAL: In the text string, you can use color marks ([R], [B],
  * [G], [W] and [Y]) to control the color of the remaining text.
  *
- * @param painter Use which painter to draw text.
- * @param text    Put which text.
- * @param x       Put on where (x coordinate).
- * @param y       Put on where (y coordinate).
+ * @param text  Put which text.
+ * @param x     Put on where (x coordinate).
+ * @param y     Put on where (y coordinate).
+ * @param color For non-formatted text, specify the display color.
+ *              For formatted text, ignore this param.
  */
-void Main::putFormatText(QPainter* painter, const QString& text, int x, int y) {
-    QString s;
+void Main::putText(const QString& text, int x, int y, Color color) {
+    QImage* font = &sFontW;
 
-    painter->setPen(PEN_WHITE);
+    y -= 36;
+    if (color == RED) font = &sFontR;
+    if (color == BLUE) font = &sFontB;
+    if (color == GREEN) font = &sFontG;
+    if (color == YELLOW) font = &sFontY;
     for (int i = 0, n = text.length(); i < n; ++i) {
         if ('[' == text[i] && i + 2 < n && text[i + 2] == ']') {
             ++i;
-            painter->drawText(x, y, s);
-            if (text[i] == 'R') painter->setPen(PEN_RED);
-            if (text[i] == 'B') painter->setPen(PEN_BLUE);
-            if (text[i] == 'G') painter->setPen(PEN_GREEN);
-            if (text[i] == 'W') painter->setPen(PEN_WHITE);
-            if (text[i] == 'Y') painter->setPen(PEN_YELLOW);
-            x += painter->fontMetrics().horizontalAdvance(s);
-            s.clear();
+            if (text[i] == 'R') font = &sFontR;
+            if (text[i] == 'B') font = &sFontB;
+            if (text[i] == 'G') font = &sFontG;
+            if (text[i] == 'W') font = &sFontW;
+            if (text[i] == 'Y') font = &sFontY;
             ++i;
         } // if ('[' == text[i] && i + 2 < n && text[i + 2] == ']')
         else {
-            s += text[i];
+            auto which = sCharMap.find(text[i]);
+            int position = which != sCharMap.end() ? which->second : 0x1f;
+            int r = position >> 4;
+            int c = position & 0x0f;
+            int w = r < 6 ? 17 : 33;
+            sPainter->drawImage(
+                /* target */ QRect(x, y, w, 48),
+                /* image  */ *font,
+                /* source */ QRect(w * c, 48 * r, w, 48)
+            ); // painter->drawImage()
+            x += w;
         } // else
     } // for (int i = 0; n = text.length(); i < n; ++i)
-
-    painter->drawText(x, y, s);
-    painter->setPen(PEN_WHITE);
-} // putFormatText(QPainter*, const QString*, int, int)
+} // putText(const QString&, int, int, Color)
 
 /**
  * Refresh the screen display. The content of global variable [sScreen]
@@ -489,6 +576,7 @@ void Main::putFormatText(QPainter* painter, const QString& text, int x, int y) {
 void Main::refreshScreen(const QString& message) {
     static QImage image;
     static QString lack;
+    static Color fontColor;
     int i, remain, status, used, width;
 
     // Lock the value of global variable [sStatus]
@@ -498,29 +586,28 @@ void Main::refreshScreen(const QString& message) {
     sPainter->drawImage(0, 0, sUno->getBackground());
 
     // Message area
-    width = getFormatTextWidth(sPainter, message);
-    putFormatText(sPainter, message, 800 - width / 2, 620);
+    width = getTextWidth(message);
+    putText(message, 800 - width / 2, 620);
 
     // Left-bottom corner: <OPTIONS> button
     // Shows only when game is not in process
     if (status == Player::YOU ||
         status == STAT_WELCOME ||
         status == STAT_GAME_OVER) {
-        if (sAdjustOptions) sPainter->setPen(PEN_YELLOW);
-        sPainter->drawText(20, 880, i18n->btn_settings());
-        if (sAdjustOptions) sPainter->setPen(PEN_WHITE);
+        fontColor = sAdjustOptions ? YELLOW : NONE;
+        putText(i18n->btn_settings(), 20, 880, fontColor);
     } // if (status == Player::YOU || ...)
 
     // Right-bottom corner: <AUTO> button
     if (status == Player::YOU && !sAuto && !sAdjustOptions) {
-        width = sPainter->fontMetrics().horizontalAdvance(i18n->btn_auto());
-        sPainter->drawText(1580 - width, 880, i18n->btn_auto());
+        width = getTextWidth(i18n->btn_auto());
+        putText(i18n->btn_auto(), 1580 - width, 880);
     } // if (status == Player::YOU && !sAuto && !sAdjustOptions)
 
     if (sAdjustOptions) {
         // Show special screen when configuring game options
         // BGM switch
-        sPainter->drawText(60, 160, i18n->label_bgm());
+        putText(i18n->label_bgm(), 60, 160);
         image = sMediaPlay->volume() > 0 ?
             sUno->findCard(RED, SKIP)->darkImg :
             sUno->findCard(RED, SKIP)->image;
@@ -531,7 +618,7 @@ void Main::refreshScreen(const QString& message) {
         sPainter->drawImage(330, 60, image);
 
         // Sound effect switch
-        sPainter->drawText(60, 350, i18n->label_snd());
+        putText(i18n->label_snd(), 60, 350);
         image = sSoundPool->isEnabled() ?
             sUno->findCard(RED, SKIP)->darkImg :
             sUno->findCard(RED, SKIP)->image;
@@ -543,7 +630,7 @@ void Main::refreshScreen(const QString& message) {
 
         if (status != Player::YOU) {
             // [Level] option: easy / hard
-            sPainter->drawText(780, 160, i18n->label_level());
+            putText(i18n->label_level(), 780, 160);
             image = sUno->getLevelImage(
                 /* level   */ Uno::LV_EASY,
                 /* hiLight */ !sUno->isSevenZeroRule() &&
@@ -558,7 +645,7 @@ void Main::refreshScreen(const QString& message) {
             sPainter->drawImage(1110, 60, image);
 
             // [Players] option: 3 / 4 / 2vs2
-            sPainter->drawText(780, 350, i18n->label_players());
+            putText(i18n->label_players(), 780, 350);
             image = sUno->getPlayers() == 3 ?
                 sUno->findCard(GREEN, NUM3)->image :
                 sUno->findCard(GREEN, NUM3)->darkImg;
@@ -572,42 +659,41 @@ void Main::refreshScreen(const QString& message) {
 
             // Rule settings
             // Initial cards
-            sPainter->drawText(60, 670, i18n->label_initialCards());
+            putText(i18n->label_initialCards(), 60, 670);
             width = sUno->getInitialCards();
             lack = QString::number(width / 10) + QString::number(width % 10);
-            sPainter->drawText(1110, 670, "< " + lack + " >");
+            putText("<-", 1110, 670);
+            putText(lack, 1234, 670);
+            putText("+>", 1358, 670);
 
             // Force play switch
-            sPainter->drawText(60, 720, i18n->label_forcePlay());
-            sPainter->setPen(sUno->isForcePlay() ? PEN_WHITE : PEN_RED);
-            sPainter->drawText(1110, 720, i18n->btn_keep());
-            sPainter->setPen(sUno->isForcePlay() ? PEN_GREEN : PEN_WHITE);
-            sPainter->drawText(1290, 720, i18n->btn_play());
-            sPainter->setPen(PEN_WHITE);
+            putText(i18n->label_forcePlay(), 60, 720);
+            fontColor = sUno->isForcePlay() ? NONE : RED;
+            putText(i18n->btn_keep(), 1110, 720, fontColor);
+            fontColor = sUno->isForcePlay() ? GREEN : NONE;
+            putText(i18n->btn_play(), 1290, 720, fontColor);
 
             // 7-0
-            sPainter->drawText(60, 770, i18n->label_7_0());
-            sPainter->setPen(sUno->isSevenZeroRule() ? PEN_WHITE : PEN_RED);
-            sPainter->drawText(1110, 770, i18n->btn_off());
-            sPainter->setPen(sUno->isSevenZeroRule() ? PEN_GREEN : PEN_WHITE);
-            sPainter->drawText(1290, 770, i18n->btn_on());
-            sPainter->setPen(PEN_WHITE);
+            putText(i18n->label_7_0(), 60, 770);
+            fontColor = sUno->isSevenZeroRule() ? NONE : RED;
+            putText(i18n->btn_off(), 1110, 770, fontColor);
+            fontColor = sUno->isSevenZeroRule() ? GREEN : NONE;
+            putText(i18n->btn_on(), 1290, 770, fontColor);
 
             // +2 stack
-            sPainter->drawText(60, 820, i18n->label_draw2Stack());
-            sPainter->setPen(sUno->isDraw2StackRule() ? PEN_WHITE : PEN_RED);
-            sPainter->drawText(1110, 820, i18n->btn_off());
-            sPainter->setPen(sUno->isDraw2StackRule() ? PEN_GREEN : PEN_WHITE);
-            sPainter->drawText(1290, 820, i18n->btn_on());
-            sPainter->setPen(PEN_WHITE);
+            putText(i18n->label_draw2Stack(), 60, 820);
+            fontColor = sUno->isDraw2StackRule() ? NONE : RED;
+            putText(i18n->btn_off(), 1110, 820, fontColor);
+            fontColor = sUno->isDraw2StackRule() ? GREEN : NONE;
+            putText(i18n->btn_on(), 1290, 820, fontColor);
         } // if (status != Player::YOU)
     } // if (sAdjustOptions)
     else if (status == STAT_WELCOME) {
         // For welcome screen, show the start button and your score
         image = sUno->getBackImage();
         sPainter->drawImage(740, 360, image);
-        width = sPainter->fontMetrics().horizontalAdvance(i18n->label_score());
-        sPainter->drawText(500 - width, 800, i18n->label_score());
+        width = getTextWidth(i18n->label_score());
+        putText(i18n->label_score(), 500 - width, 800);
         if (sScore < 0) {
             image = sUno->getColoredWildImage(NONE);
         } // if (sScore < 0)
@@ -652,108 +738,57 @@ void Main::refreshScreen(const QString& message) {
         // Left-top corner: remain / used
         remain = sUno->getDeckCount();
         used = sUno->getUsedCount();
-        sPainter->drawText(20, 42, i18n->label_remain_used(remain, used));
+        putText(i18n->label_remain_used(remain, used), 20, 42);
 
         // Right-top corner: lacks
-        lack = "LACK: ";
-        switch (sUno->getPlayer(Player::COM2)->getWeakColor()) {
-        case RED:
-            lack += "[R]N";
-            break; // case RED
-
-        case BLUE:
-            lack += "[B]N";
-            break; // case BLUE
-
-        case GREEN:
-            lack += "[G]N";
-            break; // case GREEN
-
-        case YELLOW:
-            lack += "[Y]N";
-            break; // case YELLOW
-
-        default:
-            lack += "[W]N";
-            break; // default
-        } // switch (sUno->getPlayer(Player::COM2)->getWeakColor())
-
-        switch (sUno->getPlayer(Player::COM3)->getWeakColor()) {
-        case RED:
+        if (sUno->getPlayer(Player::COM2)->getWeakColor() == RED)
+            lack = "LACK: [R]N";
+        else if (sUno->getPlayer(Player::COM2)->getWeakColor() == BLUE)
+            lack = "LACK: [B]N";
+        else if (sUno->getPlayer(Player::COM2)->getWeakColor() == GREEN)
+            lack = "LACK: [G]N";
+        else if (sUno->getPlayer(Player::COM2)->getWeakColor() == YELLOW)
+            lack = "LACK: [Y]N";
+        else
+            lack = "LACK: N";
+        if (sUno->getPlayer(Player::COM3)->getWeakColor() == RED)
             lack += "[R]E";
-            break; // case RED
-
-        case BLUE:
+        else if (sUno->getPlayer(Player::COM3)->getWeakColor() == BLUE)
             lack += "[B]E";
-            break; // case BLUE
-
-        case GREEN:
+        else if (sUno->getPlayer(Player::COM3)->getWeakColor() == GREEN)
             lack += "[G]E";
-            break; // case GREEN
-
-        case YELLOW:
+        else if (sUno->getPlayer(Player::COM3)->getWeakColor() == YELLOW)
             lack += "[Y]E";
-            break; // case YELLOW
-
-        default:
+        else
             lack += "[W]E";
-            break; // default
-        } // switch (sUno->getPlayer(Player::COM3)->getWeakColor())
-
-        switch (sUno->getPlayer(Player::COM1)->getWeakColor()) {
-        case RED:
+        if (sUno->getPlayer(Player::COM1)->getWeakColor() == RED)
             lack += "[R]W";
-            break; // case RED
-
-        case BLUE:
+        else if (sUno->getPlayer(Player::COM1)->getWeakColor() == BLUE)
             lack += "[B]W";
-            break; // case BLUE
-
-        case GREEN:
+        else if (sUno->getPlayer(Player::COM1)->getWeakColor() == GREEN)
             lack += "[G]W";
-            break; // case GREEN
-
-        case YELLOW:
+        else if (sUno->getPlayer(Player::COM1)->getWeakColor() == YELLOW)
             lack += "[Y]W";
-            break; // case YELLOW
-
-        default:
+        else
             lack += "[W]W";
-            break; // default
-        } // switch (sUno->getPlayer(Player::COM1)->getWeakColor())
-
-        switch (sUno->getPlayer(Player::YOU)->getWeakColor()) {
-        case RED:
+        if (sUno->getPlayer(Player::YOU)->getWeakColor() == RED)
             lack += "[R]S";
-            break; // case RED
-
-        case BLUE:
+        else if (sUno->getPlayer(Player::YOU)->getWeakColor() == BLUE)
             lack += "[B]S";
-            break; // case BLUE
-
-        case GREEN:
+        else if (sUno->getPlayer(Player::YOU)->getWeakColor() == GREEN)
             lack += "[G]S";
-            break; // case GREEN
-
-        case YELLOW:
+        else if (sUno->getPlayer(Player::YOU)->getWeakColor() == YELLOW)
             lack += "[Y]S";
-            break; // case YELLOW
-
-        default:
+        else
             lack += "[W]S";
-            break; // default
-        } // switch (sUno->getPlayer(Player::YOU)->getWeakColor())
-
-        width = getFormatTextWidth(sPainter, lack);
-        putFormatText(sPainter, lack, 1580 - width, 42);
+        width = getTextWidth(lack);
+        putText(lack, 1580 - width, 42);
 
         // Left-center: Hand cards of Player West (COM1)
         if (status == STAT_GAME_OVER && sWinner == Player::COM1) {
             // Played all hand cards, it's winner
-            sPainter->setPen(PEN_YELLOW);
-            width = sPainter->fontMetrics().horizontalAdvance("WIN");
-            sPainter->drawText(80 - width / 2, 461, "WIN");
-            sPainter->setPen(PEN_WHITE);
+            width = getTextWidth("WIN");
+            putText("WIN", 80 - width / 2, 461, YELLOW);
         } // if (status == STAT_GAME_OVER && sWinner == Player::COM1)
         else if (((sHideFlag >> 1) & 0x01) == 0x00) {
             Player* p = sUno->getPlayer(Player::COM1);
@@ -771,20 +806,16 @@ void Main::refreshScreen(const QString& message) {
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
-                sPainter->setPen(PEN_YELLOW);
-                width = sPainter->fontMetrics().horizontalAdvance("UNO");
-                sPainter->drawText(80 - width / 2, 584, "UNO");
-                sPainter->setPen(PEN_WHITE);
+                width = getTextWidth("UNO");
+                putText("UNO", 80 - width / 2, 584, YELLOW);
             } // if (size == 1)
         } // else if (((sHideFlag >> 1) & 0x01) == 0x00)
 
         // Top-center: Hand cards of Player North (COM2)
         if (status == STAT_GAME_OVER && sWinner == Player::COM2) {
             // Played all hand cards, it's winner
-            sPainter->setPen(PEN_YELLOW);
-            width = sPainter->fontMetrics().horizontalAdvance("WIN");
-            sPainter->drawText(800 - width / 2, 121, "WIN");
-            sPainter->setPen(PEN_WHITE);
+            width = getTextWidth("WIN");
+            putText("WIN", 800 - width / 2, 121, YELLOW);
         } // if (status == STAT_GAME_OVER && sWinner == Player::COM2)
         else if (((sHideFlag >> 2) & 0x01) == 0x00) {
             Player* p = sUno->getPlayer(Player::COM2);
@@ -798,51 +829,52 @@ void Main::refreshScreen(const QString& message) {
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
-                sPainter->setPen(PEN_YELLOW);
-                width = sPainter->fontMetrics().horizontalAdvance("UNO");
-                sPainter->drawText(720 - width, 121, "UNO");
-                sPainter->setPen(PEN_WHITE);
+                width = getTextWidth("UNO");
+                putText("UNO", 720 - width, 121, YELLOW);
             } // if (size == 1)
         } // else if (((sHideFlag >> 2) & 0x01) == 0x00)
 
         // Right-center: Hand cards of Player East (COM3)
         if (status == STAT_GAME_OVER && sWinner == Player::COM3) {
             // Played all hand cards, it's winner
-            sPainter->setPen(PEN_YELLOW);
-            width = sPainter->fontMetrics().horizontalAdvance("WIN");
-            sPainter->drawText(1520 - width / 2, 461, "WIN");
-            sPainter->setPen(PEN_WHITE);
+            width = getTextWidth("WIN");
+            putText("WIN", 1520 - width / 2, 461, YELLOW);
         } // if (status == STAT_GAME_OVER && sWinner == Player::COM3)
         else if (((sHideFlag >> 3) & 0x01) == 0x00) {
             Player* p = sUno->getPlayer(Player::COM3);
             auto hand = p->getHandCards();
             size = int(hand.size());
             width = 44 * qMin(size, 13) + 136;
-            for (i = 0; i < size; ++i) {
+            for (i = 13; i < size; ++i) {
                 image = p->isOpen(i) ? hand.at(i)->image : sUno->getBackImage();
                 sPainter->drawImage(
-                    /* x     */ 1460 - i / 13 * 44,
-                    /* y     */ 450 - width / 2 + i % 13 * 44,
+                    /* x     */ 1416,
+                    /* y     */ 450 - width / 2 + (i - 13) * 44,
                     /* image */ image
                 ); // drawImage(int, int, QImage&)
-            } // for (i = 0; i < size; ++i)
+            } // for (i = 13; i < size; ++i)
+
+            for (i = 0; i < 13 && i < size; ++i) {
+                image = p->isOpen(i) ? hand.at(i)->image : sUno->getBackImage();
+                sPainter->drawImage(
+                    /* x     */ 1460,
+                    /* y     */ 450 - width / 2 + i * 44,
+                    /* image */ image
+                ); // drawImage(int, int, QImage&)
+            } // for (i = 0; i < 13 && i < size; ++i)
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
-                sPainter->setPen(PEN_YELLOW);
-                width = sPainter->fontMetrics().horizontalAdvance("UNO");
-                sPainter->drawText(1520 - width / 2, 584, "UNO");
-                sPainter->setPen(PEN_WHITE);
+                width = getTextWidth("UNO");
+                putText("UNO", 1520 - width / 2, 584, YELLOW);
             } // if (size == 1)
         } // else if (((sHideFlag >> 3) & 0x01) == 0x00)
 
         // Bottom: Your hand cards
         if (status == STAT_GAME_OVER && sWinner == Player::YOU) {
             // Played all hand cards, it's winner
-            sPainter->setPen(PEN_YELLOW);
-            width = sPainter->fontMetrics().horizontalAdvance("WIN");
-            sPainter->drawText(800 - width / 2, 801, "WIN");
-            sPainter->setPen(PEN_WHITE);
+            width = getTextWidth("WIN");
+            putText("WIN", 800 - width / 2, 801, YELLOW);
         } // if (status == STAT_GAME_OVER && sWinner == Player::YOU)
         else if ((sHideFlag & 0x01) == 0x00) {
             // Show your all hand cards
@@ -864,9 +896,7 @@ void Main::refreshScreen(const QString& message) {
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
-                sPainter->setPen(PEN_YELLOW);
-                sPainter->drawText(880, 801, "UNO");
-                sPainter->setPen(PEN_WHITE);
+                putText("UNO", 880, 801, YELLOW);
             } // if (size == 1)
         } // else if ((sHideFlag & 0x01) == 0x00)
 
@@ -876,7 +906,6 @@ void Main::refreshScreen(const QString& message) {
             // Need to specify the following legal color after played a
             // wild card. Draw color sectors in the center of screen
             // Draw blue sector
-            sPainter->setPen(Qt::NoPen);
             sPainter->setBrush(BRUSH_BLUE);
             sPainter->drawPie(270, 270, 271, 271, 0, 90 * 16);
 
@@ -891,53 +920,42 @@ void Main::refreshScreen(const QString& message) {
             // Draw yellow sector
             sPainter->setBrush(BRUSH_YELLOW);
             sPainter->drawPie(270, 270, 271, 271, 180 * 16, 90 * 16);
-            sPainter->setPen(PEN_WHITE);
             break; // case STAT_WILD_COLOR
 
         case STAT_DOUBT_WILD4:
             // Ask whether you want to challenge your previous player
             // Draw YES button
-            sPainter->setPen(Qt::NoPen);
             sPainter->setBrush(BRUSH_GREEN);
             sPainter->drawPie(270, 270, 271, 271, 0, 180 * 16);
-            sPainter->setPen(PEN_WHITE);
-            width = sPainter->fontMetrics().horizontalAdvance(i18n->label_yes());
-            sPainter->drawText(405 - width / 2, 358, i18n->label_yes());
+            width = getTextWidth(i18n->label_yes());
+            putText(i18n->label_yes(), 405 - width / 2, 358);
 
             // Draw NO button
-            sPainter->setPen(Qt::NoPen);
             sPainter->setBrush(BRUSH_RED);
             sPainter->drawPie(270, 270, 271, 271, 0, -180 * 16);
-            sPainter->setPen(PEN_WHITE);
-            width = sPainter->fontMetrics().horizontalAdvance(i18n->label_no());
-            sPainter->drawText(405 - width / 2, 472, i18n->label_no());
+            width = getTextWidth(i18n->label_no());
+            putText(i18n->label_no(), 405 - width / 2, 472);
             break; // case STAT_DOUBT_WILD4
 
         case STAT_SEVEN_TARGET:
             // Ask the target you want to swap hand cards with
             // Draw west sector (red)
-            sPainter->setPen(Qt::NoPen);
             sPainter->setBrush(BRUSH_RED);
             sPainter->drawPie(270, 270, 271, 271, -90 * 16, -120 * 16);
-            sPainter->setPen(PEN_WHITE);
-            width = sPainter->fontMetrics().horizontalAdvance("W");
-            sPainter->drawText(338 - width / 2, 440, "W");
+            width = getTextWidth("W");
+            putText("W", 338 - width / 2, 440);
 
             // Draw east sector (green)
-            sPainter->setPen(Qt::NoPen);
             sPainter->setBrush(BRUSH_GREEN);
             sPainter->drawPie(270, 270, 271, 271, -90 * 16, 120 * 16);
-            sPainter->setPen(PEN_WHITE);
-            width = sPainter->fontMetrics().horizontalAdvance("E");
-            sPainter->drawText(472 - width / 2, 440, "E");
+            width = getTextWidth("E");
+            putText("E", 472 - width / 2, 440);
 
             // Draw north sector (yellow)
-            sPainter->setPen(Qt::NoPen);
             sPainter->setBrush(BRUSH_YELLOW);
             sPainter->drawPie(270, 270, 271, 271, 150 * 16, -120 * 16);
-            sPainter->setPen(PEN_WHITE);
-            width = sPainter->fontMetrics().horizontalAdvance("N");
-            sPainter->drawText(405 - width / 2, 360, "N");
+            width = getTextWidth("N");
+            putText("N", 405 - width / 2, 360);
             break; // case STAT_SEVEN_TARGET
 
         default:
@@ -1444,52 +1462,52 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 } // else if (1110 <= x && x <= 1230 && sStatus != Player::YOU)
             } // else if (270 <= y && y <= 450)
             else if (649 <= y && y <= 670 && sStatus != Player::YOU) {
-                if (1030 <= x && x <= 1130) {
+                if (1110 <= x && x <= 1143) {
                     // Decrease initial cards
                     sUno->decreaseInitialCards();
                     setStatus(sStatus);
-                } // if (1030 <= x && x <= 1130)
-                else if (1187 <= x && x <= 1287) {
+                } // if (1110 <= x && x <= 1143)
+                else if (1358 <= x && x <= 1391) {
                     // Increase initial cards
                     sUno->increaseInitialCards();
                     setStatus(sStatus);
-                } // else if (1187 <= x && x <= 1287)
+                } // else if (1358 <= x && x <= 1391)
             } // else if (649 <= y && y <= 670 && sStatus != Player::YOU)
             else if (699 <= y && y <= 720 && sStatus != Player::YOU) {
-                if (1110 <= x && x <= 1237) {
+                if (1110 <= x && x <= 1211) {
                     // Force play, <KEEP> button
                     sUno->setForcePlay(false);
                     setStatus(sStatus);
-                } // if (1110 <= x && x <= 1237)
-                else if (1290 <= x && x <= 1414) {
+                } // if (1110 <= x && x <= 1211)
+                else if (1290 <= x && x <= 1391) {
                     // Force play, <PLAY> button
                     sUno->setForcePlay(true);
                     setStatus(sStatus);
-                } // else if (1290 <= x && x <= 1414)
+                } // else if (1290 <= x && x <= 1391)
             } // else if (699 <= y && y <= 720 && sStatus != Player::YOU)
             else if (749 <= y && y <= 770 && sStatus != Player::YOU) {
-                if (1110 <= x && x <= 1216) {
+                if (1110 <= x && x <= 1194) {
                     // 7-0, <OFF> button
                     sUno->setSevenZeroRule(false);
                     setStatus(sStatus);
-                } // if (1110 <= x && x <= 1216)
-                else if (1290 <= x && x <= 1382) {
+                } // if (1110 <= x && x <= 1194)
+                else if (1290 <= x && x <= 1357) {
                     // 7-0, <ON> button
                     sUno->setSevenZeroRule(true);
                     setStatus(sStatus);
-                } // else if (1290 <= x && x <= 1382)
+                } // else if (1290 <= x && x <= 1357)
             } // else if (749 <= y && y <= 770 && sStatus != Player::YOU)
             else if (799 <= y && y <= 820 && sStatus != Player::YOU) {
-                if (1110 <= x && x <= 1216) {
+                if (1110 <= x && x <= 1194) {
                     // +2 stack, <OFF> button
                     sUno->setDraw2StackRule(false);
                     setStatus(sStatus);
-                } // if (1110 <= x && x <= 1216)
-                else if (1290 <= x && x <= 1382) {
+                } // if (1110 <= x && x <= 1194)
+                else if (1290 <= x && x <= 1357) {
                     // +2 stack, <ON> button
                     sUno->setDraw2StackRule(true);
                     setStatus(sStatus);
-                } // else if (1290 <= x && x <= 1382)
+                } // else if (1290 <= x && x <= 1357)
             } // else if (799 <= y && y <= 820 && sStatus != Player::YOU)
             else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
                 // <OPTIONS> button
@@ -1651,7 +1669,7 @@ void Main::closeEvent(QCloseEvent*) {
     writer.open("UnoCard.stat", std::ios::out | std::ios::binary);
     if (!writer.fail()) {
         // Store statistics data to file
-        int dw[] = {
+        int dw[64] = {
             /* dw[0] = your score         */ qMax(-999, sScore),
             /* dw[1] = players (3/4)      */ sUno->getPlayers(),
             /* dw[2] = difficulty (ez/hd) */ sUno->getDifficulty(),
@@ -1660,15 +1678,19 @@ void Main::closeEvent(QCloseEvent*) {
             /* dw[5] = +2 stack switch    */ sUno->isDraw2StackRule() ? 1 : 0,
             /* dw[6] = snd switch         */ sSoundPool->isEnabled() ? 1 : 0,
             /* dw[7] = bgm switch         */ sMediaPlay->volume(),
-            /* dw[8] = hash check         */ 0
+            /* dw[8] = initial cards      */ sUno->getInitialCards()
         }; // dw[]
 
-        for (int i = 0; i < 8; ++i) {
-            dw[8] = 31 * dw[8] + dw[i];
-        } // for (int i = 0; i < 8; ++i)
+        // Fill unused bits with 1
+        memset(dw + 9, -1, (63 - 9) * sizeof(int));
+
+        // Calculate hash
+        for (int i = 0; i < 63; ++i) {
+            dw[63] = 31 * dw[63] + dw[i];
+        } // for (int i = 0; i < 63; ++i)
 
         writer.write(FILE_HEADER, 8);
-        writer.write((char*)dw, 9 * sizeof(int));
+        writer.write((char*)dw, 64 * sizeof(int));
         writer.close();
     } // if (!writer.fail())
 
