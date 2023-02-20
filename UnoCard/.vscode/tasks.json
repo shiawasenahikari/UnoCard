@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "debug",
+            "type": "shell",
+            "command": "cmd",
+            "args": [
+                "/c",
+                "${workspaceRoot}/scripts/build_debug.bat",
+                "debug"
+            ], // args
+            "group": "build"
+        }, // debug
+        {
+            "label": "release",
+            "type": "shell",
+            "command": "cmd",
+            "args": [
+                "/c",
+                "${workspaceRoot}/scripts/build_release.bat",
+                "release"
+            ], // args
+            "group": "build"
+        } // release
+    ] // tasks
+} // tasks.json

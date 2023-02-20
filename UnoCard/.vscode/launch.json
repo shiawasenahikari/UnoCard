@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "release",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/UnoCard.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceRoot}",
+            "environment": [],
+            "preLaunchTask": "release"
+        } // release
+    ] // configurations
+} // launch.json

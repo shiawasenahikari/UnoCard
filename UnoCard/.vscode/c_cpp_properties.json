@@ -1,0 +1,15 @@
+{
+    "configurations": [
+        {
+            "name": "qt",
+            "includePath": [
+                "c:/Qt/Qt5.12.12/5.12.12/mingw73_64/include/**",
+                "${workspaceRoot}/**"
+            ], // includePath
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "compilerPath": "c:/Qt/Qt5.12.12/Tools/mingw730_64/bin/g++.exe"
+        } // qt
+    ], // configurations
+    "version": 4
+} // c_cpp_properties.json

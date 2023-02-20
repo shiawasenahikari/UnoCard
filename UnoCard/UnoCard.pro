@@ -13,7 +13,7 @@ CONFIG -= app_bundle
 DESTDIR = $$PWD
 RC_ICONS = resource/icon_128x128.ico
 QT += core gui multimedia widgets
-VERSION = 3.4.1.22121
+VERSION = 3.5.0.23021
 
 HEADERS += \
     include/AI.h \
