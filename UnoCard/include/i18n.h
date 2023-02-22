@@ -27,11 +27,11 @@ public:
     virtual QString ask_color() = 0;
     virtual QString ask_target() = 0;
     virtual QString btn_auto() = 0;
-    virtual QString btn_keep() = 0;
-    virtual QString btn_off() = 0;
-    virtual QString btn_on() = 0;
-    virtual QString btn_play() = 0;
-    virtual QString btn_settings() = 0;
+    virtual QString btn_keep(bool) = 0;
+    virtual QString btn_off(bool) = 0;
+    virtual QString btn_on(bool) = 0;
+    virtual QString btn_play(bool) = 0;
+    virtual QString btn_settings(bool) = 0;
     virtual QString info_0_rotate() = 0;
     virtual QString info_7_swap(int, int) = 0;
     virtual QString info_cannotDraw(int, int) = 0;
@@ -141,25 +141,25 @@ public:
         return "<AUTO>";
     } // btn_auto()
 
-    inline QString btn_keep() {
-        return "<KEEP>";
-    } // btn_keep()
+    inline QString btn_keep(bool active) {
+        return active ? "[R]<KEEP>" : "<KEEP>";
+    } // btn_keep(bool)
 
-    inline QString btn_off() {
-        return "<OFF>";
-    } // btn_off()
+    inline QString btn_off(bool active) {
+        return active ? "[R]<OFF>" : "<OFF>";
+    } // btn_off(bool)
 
-    inline QString btn_on() {
-        return "<ON>";
-    } // btn_on()
+    inline QString btn_on(bool active) {
+        return active ? "[G]<ON>" : "<ON>";
+    } // btn_on(bool)
 
-    inline QString btn_play() {
-        return "<PLAY>";
-    } // btn_play()
+    inline QString btn_play(bool active) {
+        return active ? "[G]<PLAY>" : "<PLAY>";
+    } // btn_play(bool)
 
-    inline QString btn_settings() {
-        return "<SETTINGS>";
-    } // btn_settings()
+    inline QString btn_settings(bool active) {
+        return active ? "[Y]<SETTINGS>" : "<SETTINGS>";
+    } // btn_settings(bool)
 
     inline QString info_0_rotate() {
         return "Hand cards transferred to next";
@@ -361,25 +361,25 @@ public:
         return "<托管>";
     } // btn_auto()
 
-    inline QString btn_keep() {
-        return "<保留>";
-    } // btn_keep()
+    inline QString btn_keep(bool active) {
+        return active ? "[R]<保留>" : "<保留>";
+    } // btn_keep(bool)
 
-    inline QString btn_off() {
-        return "<无效>";
-    } // btn_off()
+    inline QString btn_off(bool active) {
+        return active ? "[R]<无效>" : "<无效>";
+    } // btn_off(bool)
 
-    inline QString btn_on() {
-        return "<有效>";
-    } // btn_on()
+    inline QString btn_on(bool active) {
+        return active ? "[G]<有效>" : "<有效>";
+    } // btn_on(bool)
 
-    inline QString btn_play() {
-        return "<打出>";
-    } // btn_play()
+    inline QString btn_play(bool active) {
+        return active ? "[G]<打出>" : "<打出>";
+    } // btn_play(bool)
 
-    inline QString btn_settings() {
-        return "<设置>";
-    } // btn_options()
+    inline QString btn_settings(bool active) {
+        return active ? "[Y]<设置>" : "<设置>";
+    } // btn_options(bool)
 
     inline QString info_0_rotate() {
         return "所有人将牌传给下家";

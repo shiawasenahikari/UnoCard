@@ -635,27 +635,6 @@ public class Uno {
 
     /**
      * Measure the text width, using our custom font.
-     *
-     * @param text Measure which text's width.
-     * @return Width of the provided text (unit: pixels).
-     */
-    public int getTextWidth(String text) {
-        int r, width;
-        Integer position;
-
-        width = 0;
-        for (char ch : text.toCharArray()) {
-            position = CHAR_MAP.get(ch);
-            if (position == null) position = 0x1f;
-            r = position >>> 4;
-            width += r < 6 ? 17 : 33;
-        } // for (char ch : text.toCharArray())
-
-        return width;
-    } // getTextWidth(String)
-
-    /**
-     * Measure the text width, using our custom font.
      * <p>
      * SPECIAL: In the text string, you can use color marks ([R], [B],
      * [G], [W] and [Y]) to control the color of the remaining text.
@@ -664,7 +643,7 @@ public class Uno {
      * @param text Measure which text's width.
      * @return Width of the provided text (unit: pixels).
      */
-    public int getFormatTextWidth(String text) {
+    public int getTextWidth(String text) {
         char[] txt;
         int r, width;
         Integer position;
@@ -684,41 +663,16 @@ public class Uno {
         } // for (int i = 0, n = txt.length; i < n; ++i)
 
         return width;
-    } // getFormatTextWidth(String)
+    } // getTextWidth(String)
 
     /**
-     * Put text on image, using our custom font.
-     * Unknown characters will be replaced with the question mark '?'.
-     *
-     * @param m     Put on which image.
-     * @param text  Put which text.
-     * @param x     Put on where (x coordinate).
-     * @param y     Put on where (y coordinate).
-     * @param color Text color. Must be one of the following: Color.RED,
-     *              Color.BLUE, Color.GREEN, Color.YELLOW, null (as white).
+     * @see Uno#getTextWidth(String)
+     * @deprecated Call getTextWidth(text) instead.
      */
-    public void putText(Mat m, String text, int x, int y, Color color) {
-        Mat mask;
-        Mat[] blk;
-        int r, c, w;
-        Integer position;
-
-        y -= 36;
-        blk = color == Color.RED ? blk_r
-                : color == Color.BLUE ? blk_b
-                : color == Color.GREEN ? blk_g
-                : color == Color.YELLOW ? blk_y : blk_w;
-        for (char ch : text.toCharArray()) {
-            position = CHAR_MAP.get(ch);
-            if (position == null) position = 0x1f;
-            r = position >>> 4;
-            c = position & 0x0f;
-            w = r < 6 ? 17 : 33;
-            mask = font.submat(48 * r, 48 + 48 * r, w * c, w + w * c);
-            blk[r < 6 ? 0 : 1].copyTo(m.submat(y, y + 48, x, x + w), mask);
-            x += w;
-        } // for (char ch : text.toCharArray())
-    } // putText(Mat, String, int, int, Color)
+    @Deprecated
+    public int getFormatTextWidth(String text) {
+        return getTextWidth(text);
+    } // getFormatTextWidth(String)
 
     /**
      * Put text on image, using our custom font.
@@ -732,7 +686,7 @@ public class Uno {
      * @param x    Put on where (x coordinate).
      * @param y    Put on where (y coordinate).
      */
-    public void putFormatText(Mat m, String text, int x, int y) {
+    public void putText(Mat m, String text, int x, int y) {
         Mat mask;
         Mat[] blk;
         char[] txt;
@@ -763,6 +717,28 @@ public class Uno {
                 x += w;
             } // else
         } // for (int i = 0, n = txt.length; i < n; ++i)
+    } // putText(Mat, String, int, int)
+
+    /**
+     * @see Uno#putText(Mat, String, int, int)
+     * @deprecated Call putText(m, text, x, y) instead.
+     */
+    @Deprecated
+    public void putText(Mat m, String text, int x, int y, Color color) {
+        if (color == Color.RED) text = "[R]" + text;
+        if (color == Color.BLUE) text = "[B]" + text;
+        if (color == Color.GREEN) text = "[G]" + text;
+        if (color == Color.YELLOW) text = "[Y]" + text;
+        putText(m, text, x, y);
+    } // putText(Mat, String, int, int, Color)
+
+    /**
+     * @see Uno#putText(Mat, String, int, int)
+     * @deprecated Call putText(m, text, x, y) instead.
+     */
+    @Deprecated
+    public void putFormatText(Mat m, String text, int x, int y) {
+        putText(m, text, x, y);
     } // putFormatText(Mat, String, int, int)
 
     /**

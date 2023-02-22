@@ -10,12 +10,19 @@
 #ifndef __UNO_H_494649FDFA62B3C015120BCB9BE17613__
 #define __UNO_H_494649FDFA62B3C015120BCB9BE17613__
 
+#include <map>
 #include <ctime>
+#include <QChar>
+#include <QRect>
+#include <QBrush>
+#include <QColor>
 #include <QDebug>
 #include <QImage>
 #include <vector>
 #include <cstdlib>
+#include <QBitmap>
 #include <QString>
+#include <QPainter>
 #include "include/Card.h"
 #include "include/Color.h"
 #include "include/Player.h"
@@ -73,6 +80,11 @@ private:
      * 2vs2 button image resources.
      */
     QImage light2vs2, dark2vs2;
+
+    /**
+     * Custom font image resources.
+     */
+    QImage fontR, fontB, fontG, fontW, fontY;
 
     /**
      * Player in turn. Must be one of the following:
@@ -176,20 +188,41 @@ private:
     std::vector<Color> recentColors;
 
     /**
+     * Our custom font's character-to-position map.
+     */
+    std::map<QChar, int> charMap;
+
+    /**
      * Singleton, hide default constructor.
      */
     inline Uno(unsigned seed) {
-        QImage br, dk;
+        QPainter pt;
+        QBitmap mask;
         int i, done, total;
+        QImage br, dk,  font;
         QString A[] = { "k", "r", "b", "g", "y" };
         QString B[] = {
             "0", "1", "2", "3", "4", "5", "6", "7",
             "8", "9", "+", "@", "$", "w", "w+"
         }; // B[]
+        QString hanZi = QString()
+            + "一上下东为乐人仍"
+            + "从令以传余你保再"
+            + "准出击分则到剩功"
+            + "加北南发变叠可合"
+            + "向否和回堆备多失"
+            + "始定家将已度开张"
+            + "戏成或战所打托择"
+            + "指挑换接摸改效数"
+            + "新方无时是最有来"
+            + "标次欢法游点牌留"
+            + "的目管红给绿置色"
+            + "蓝被西规认设败跳"
+            + "过迎选重难音颜黄";
 
         // Preparations
         done = 0;
-        total = 126;
+        total = 127;
         qDebug("Loading... (0%%)");
 
         // Load background image resources
@@ -241,6 +274,37 @@ private:
             done += 2;
             qDebug("Loading... (%d%%)", 100 * done / total);
         } // for (i = 1; i < 5; ++i)
+
+        // Load font images
+        fontW = load("resource/font_w.png");
+        ++done;
+        qDebug("Loading... (%d%%)", 100 * done / total);
+        font = QImage(fontW.width(), fontW.height(), QImage::Format_RGBA8888);
+        mask = QBitmap::fromImage(fontW.createAlphaMask());
+        pt.begin(&font);
+        pt.setClipRegion(mask);
+        pt.setBrush(QBrush(QColor(0xFF, 0x77, 0x77)));
+        pt.drawRect(0, 0, fontW.width(), fontW.height());
+        fontR = font.copy();
+        pt.setBrush(QBrush(QColor(0x77, 0x77, 0xFF)));
+        pt.drawRect(0, 0, fontW.width(), fontW.height());
+        fontB = font.copy();
+        pt.setBrush(QBrush(QColor(0x77, 0xCC, 0x77)));
+        pt.drawRect(0, 0, fontW.width(), fontW.height());
+        fontG = font.copy();
+        pt.setBrush(QBrush(QColor(0xFF, 0xCC, 0x11)));
+        pt.drawRect(0, 0, fontW.width(), fontW.height());
+        fontY = font.copy();
+        pt.end();
+        for (i = 0x20; i <= 0x7f; ++i) {
+            int r = (i >> 4) - 2, c = i & 0x0f;
+            charMap.insert({QChar(i), (r << 4) | c});
+        } // for (i = 0x20; i <= 0x7f; ++i)
+
+        for (i = 0; i < hanZi.length(); ++i) {
+            int r = (i >> 3) + 6, c = i & 0x07;
+            charMap.insert({hanZi[i], (r << 4) | c});
+        } // for (i = 0; i < hanZi.length(); ++i)
 
         // Generate a random seed based on the current time stamp
         if (seed == 0U) {
@@ -310,16 +374,20 @@ private:
      * @param height   Resize to how many pixels of height.
      * @return Instance of the loaded image.
      */
-    inline static QImage load(const QString& fileName, int width, int height) {
+    inline static QImage load(const QString& fileName,
+                              int width = 0, int height = 0) {
         QImage img;
 
         if (!img.load(fileName)) {
             qDebug(BROKEN_IMAGE_RESOURCES_EXCEPTION);
             exit(1);
         } // if (!img.load(fileName))
-        else if (img.width() != width || img.height() != height) {
-            img = img.scaled(width, height);
-        } // else if (img.width() != width || img.height() != height)
+
+        if ((width | height) != 0) {
+            if (img.width() != width || img.height() != height) {
+                img = img.scaled(width, height);
+            } // if (img.width() != width || img.height() != height)
+        } // if ((width | height) != 0)
 
         return img;
     } // load(const QString&, int, int)
@@ -418,6 +486,76 @@ public:
     inline const QImage& getColoredWildDraw4Image(Color color) {
         return wildDraw4Image[color];
     } // getColoredWildDraw4Image(Color)
+
+    /**
+     * Measure the text width, using our custom font.
+     * <p>
+     * SPECIAL: In the text string, you can use color marks ([R], [B],
+     * [G], [W] and [Y]) to control the color of the remaining text.
+     * COLOR MARKS SHOULD NOT BE TREATED AS PRINTABLE CHARACTERS.
+     *
+     * @param text Measure which text's width.
+     * @return Width of the provided text (unit: pixels).
+     */
+    inline int getTextWidth(const QString& text) {
+        int width = 0;
+
+        for (int i = 0, n = text.length(); i < n; ++i) {
+            if ('[' == text[i] && i + 2 < n && text[i + 2] == ']') {
+                i += 2;
+            } // if ('[' == text[i] && i + 2 < n && text[i + 2] == ']')
+            else {
+                auto iter = charMap.find(text[i]);
+                int position = iter != charMap.end() ? iter->second : 0x1f;
+                int r = position >> 4;
+                width += r < 6 ? 17 : 33;
+            } // else
+        } // for (int i = 0, n = text.length(); i < n; ++i)
+
+        return width;
+    } // getTextWidth(const QString&)
+
+    /**
+     * Put text on image, using our custom font.
+     * Unknown characters will be replaced with the question mark '?'.
+     * <p>
+     * SPECIAL: In the text string, you can use color marks ([R], [B],
+     * [G], [W] and [Y]) to control the color of the remaining text.
+     *
+     * @param painter Use which painter.
+     * @param text    Put which text.
+     * @param x       Put on where (x coordinate).
+     * @param y       Put on where (y coordinate).
+     */
+    inline void putText(QPainter* painter, const QString& text, int x, int y) {
+        QImage* font = &fontW;
+
+        y -= 36;
+        for (int i = 0, n = text.length(); i < n; ++i) {
+            if ('[' == text[i] && i + 2 < n && text[i + 2] == ']') {
+                ++i;
+                if (text[i] == 'R') font = &fontR;
+                if (text[i] == 'B') font = &fontB;
+                if (text[i] == 'G') font = &fontG;
+                if (text[i] == 'W') font = &fontW;
+                if (text[i] == 'Y') font = &fontY;
+                ++i;
+            } // if ('[' == text[i] && i + 2 < n && text[i + 2] == ']')
+            else {
+                auto iter = charMap.find(text[i]);
+                int position = iter != charMap.end() ? iter->second : 0x1f;
+                int r = position >> 4;
+                int c = position & 0x0f;
+                int w = r < 6 ? 17 : 33;
+                painter->drawImage(
+                    /* target */ QRect(x, y, w, 48),
+                    /* image  */ *font,
+                    /* source */ QRect(w * c, 48 * r, w, 48)
+                ); // painter->drawImage()
+                x += w;
+            } // else
+        } // for (int i = 0, n = text.length(); i < n; ++i)
+    } // putText(QPainter*, const QString&, int, int)
 
     /**
      * @return Player in turn. Must be one of the following:

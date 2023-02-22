@@ -10,8 +10,6 @@
 #ifndef __MAIN_H_494649FDFA62B3C015120BCB9BE17613__
 #define __MAIN_H_494649FDFA62B3C015120BCB9BE17613__
 
-#include <map>
-#include <QChar>
 #include <QImage>
 #include <QString>
 #include <QWidget>
@@ -71,8 +69,6 @@ private:
     QPainter* sBkPainter[4];
     QMediaPlayer* sMediaPlay;
     QMediaPlaylist* sMediaList;
-    std::map<QChar, int> sCharMap;
-    QImage sFontR, sFontB, sFontG, sFontW, sFontY;
 
     // Functions
     void cycle();
@@ -83,12 +79,10 @@ private:
     void swapWith(int whom);
     void setStatus(int status);
     void threadWait(int millis);
-    int getTextWidth(const QString& text);
     void play(int index, Color color = NONE);
     void draw(int count = 1, bool force = false);
     void refreshScreen(const QString& message = "");
     void animate(int layerCount, AnimateLayer layer[]);
-    void putText(const QString& text, int x, int y, Color color = NONE);
 
 protected:
     // Implemented Listeners

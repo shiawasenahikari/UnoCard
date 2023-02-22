@@ -7,9 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <map>
 #include <QUrl>
-#include <QChar>
 #include <QIcon>
 #include <QRect>
 #include <QBrush>
@@ -19,8 +17,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
-#include <QBitmap>
-#include <QRegion>
 #include <QString>
 #include <QWidget>
 #include <QPainter>
@@ -75,20 +71,6 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
     int dw[64] = {0};
     char header[9] = {0};
     std::ifstream reader;
-    QString hanZi = QString()
-        + "一上下东为乐人仍"
-        + "从令以传余你保再"
-        + "准出击分则到剩功"
-        + "加北南发变叠可合"
-        + "向否和回堆备多失"
-        + "始定家将已度开张"
-        + "戏成或战所打托择"
-        + "指挑换接摸改效数"
-        + "新方无时是最有来"
-        + "标次欢法游点牌留"
-        + "的目管红给绿置色"
-        + "蓝被西规认设败跳"
-        + "过迎选重难音颜黄";
 
     // Preparations
     if (strstr(argv[0], "zh") != nullptr) {
@@ -185,39 +167,6 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
     sAIRunning = false;
     sWinner = Player::YOU;
     sAdjustOptions = false;
-    if (sFontW.load("resource/font_w.png")) {
-        QBitmap mask = QBitmap::fromImage(sFontW.createAlphaMask());
-        int w = sFontW.width(), h = sFontW.height();
-        QImage font(w, h, QImage::Format_RGBA8888);
-        QPainter p(&font);
-
-        p.setClipRegion(mask);
-        p.setBrush(BRUSH_RED);
-        p.drawRect(0, 0, w, h);
-        sFontR = font.copy();
-        p.setBrush(BRUSH_BLUE);
-        p.drawRect(0, 0, w, h);
-        sFontB = font.copy();
-        p.setBrush(BRUSH_GREEN);
-        p.drawRect(0, 0, w, h);
-        sFontG = font.copy();
-        p.setBrush(BRUSH_YELLOW);
-        p.drawRect(0, 0, w, h);
-        sFontY = font.copy();
-        for (i = 0x20; i <= 0x7f; ++i) {
-            int r = (i >> 4) - 2, c = i & 0x0f;
-            sCharMap.insert({QChar(i), (r << 4) | c});
-        } // for (i = 0x20; i <= 0x7f; ++i)
-
-        for (i = 0; i < hanZi.length(); ++i) {
-            int r = (i >> 3) + 6, c = i & 0x07;
-            sCharMap.insert({hanZi[i], (r << 4) | c});
-        } // for (i = 0; i < hanZi.length(); ++i)
-    } // if (sFontW.load("resource/font_w.png"))
-    else {
-        exit(1);
-    } // else
-
     for (i = 0; i <= 3; ++i) {
         sBackup[i] = QImage(1600, 900, QImage::Format_RGB888);
         sBkPainter[i] = new QPainter(&sBackup[i]);
@@ -493,91 +442,16 @@ void Main::setStatus(int status) {
 } // setStatus(int)
 
 /**
- * Measure the text width, using our custom font.
- * <p>
- * SPECIAL: In the text string, you can use color marks ([R], [B],
- * [G], [W] and [Y]) to control the color of the remaining text.
- * COLOR MARKS SHOULD NOT BE TREATED AS PRINTABLE CHARACTERS.
- *
- * @param text Measure which text's width.
- * @return Width of the provided text (unit: pixels).
- */
-int Main::getTextWidth(const QString& text) {
-    int width = 0;
-
-    for (int i = 0, n = text.length(); i < n; ++i) {
-        if ('[' == text[i] && i + 2 < n && text[i + 2] == ']') {
-            i += 2;
-        } // if ('[' == text[i] && i + 2 < n && text[i + 2] == ']')
-        else {
-            auto which = sCharMap.find(text[i]);
-            int position = which != sCharMap.end() ? which->second : 0x1f;
-            int r = position >> 4;
-            width += r < 6 ? 17 : 33;
-        } // else
-    } // for (int i = 0, n = text.length(); i < n; ++i)
-
-    return width;
-} // getTextWidth(const QString&)
-
-/**
- * Put text on image, using our custom font.
- * Unknown characters will be replaced with the question mark '?'.
- * <p>
- * SPECIAL: In the text string, you can use color marks ([R], [B],
- * [G], [W] and [Y]) to control the color of the remaining text.
- *
- * @param text  Put which text.
- * @param x     Put on where (x coordinate).
- * @param y     Put on where (y coordinate).
- * @param color For non-formatted text, specify the display color.
- *              For formatted text, ignore this param.
- */
-void Main::putText(const QString& text, int x, int y, Color color) {
-    QImage* font = &sFontW;
-
-    y -= 36;
-    if (color == RED) font = &sFontR;
-    if (color == BLUE) font = &sFontB;
-    if (color == GREEN) font = &sFontG;
-    if (color == YELLOW) font = &sFontY;
-    for (int i = 0, n = text.length(); i < n; ++i) {
-        if ('[' == text[i] && i + 2 < n && text[i + 2] == ']') {
-            ++i;
-            if (text[i] == 'R') font = &sFontR;
-            if (text[i] == 'B') font = &sFontB;
-            if (text[i] == 'G') font = &sFontG;
-            if (text[i] == 'W') font = &sFontW;
-            if (text[i] == 'Y') font = &sFontY;
-            ++i;
-        } // if ('[' == text[i] && i + 2 < n && text[i + 2] == ']')
-        else {
-            auto which = sCharMap.find(text[i]);
-            int position = which != sCharMap.end() ? which->second : 0x1f;
-            int r = position >> 4;
-            int c = position & 0x0f;
-            int w = r < 6 ? 17 : 33;
-            sPainter->drawImage(
-                /* target */ QRect(x, y, w, 48),
-                /* image  */ *font,
-                /* source */ QRect(w * c, 48 * r, w, 48)
-            ); // painter->drawImage()
-            x += w;
-        } // else
-    } // for (int i = 0; n = text.length(); i < n; ++i)
-} // putText(const QString&, int, int, Color)
-
-/**
  * Refresh the screen display. The content of global variable [sScreen]
  * will be changed after calling this function.
  *
  * @param message Extra message to show.
  */
 void Main::refreshScreen(const QString& message) {
+    static bool active;
     static QImage image;
-    static QString lack;
-    static Color fontColor;
-    int i, remain, status, used, width;
+    static QString info;
+    static int i, remain, status, used, width;
 
     // Lock the value of global variable [sStatus]
     status = sStatus;
@@ -586,28 +460,28 @@ void Main::refreshScreen(const QString& message) {
     sPainter->drawImage(0, 0, sUno->getBackground());
 
     // Message area
-    width = getTextWidth(message);
-    putText(message, 800 - width / 2, 620);
+    width = sUno->getTextWidth(message);
+    sUno->putText(sPainter, message, 800 - width / 2, 620);
 
     // Left-bottom corner: <OPTIONS> button
     // Shows only when game is not in process
     if (status == Player::YOU ||
         status == STAT_WELCOME ||
         status == STAT_GAME_OVER) {
-        fontColor = sAdjustOptions ? YELLOW : NONE;
-        putText(i18n->btn_settings(), 20, 880, fontColor);
+        active = sAdjustOptions;
+        sUno->putText(sPainter, i18n->btn_settings(active), 20, 880);
     } // if (status == Player::YOU || ...)
 
     // Right-bottom corner: <AUTO> button
     if (status == Player::YOU && !sAuto && !sAdjustOptions) {
-        width = getTextWidth(i18n->btn_auto());
-        putText(i18n->btn_auto(), 1580 - width, 880);
+        width = sUno->getTextWidth(i18n->btn_auto());
+        sUno->putText(sPainter, i18n->btn_auto(), 1580 - width, 880);
     } // if (status == Player::YOU && !sAuto && !sAdjustOptions)
 
     if (sAdjustOptions) {
         // Show special screen when configuring game options
         // BGM switch
-        putText(i18n->label_bgm(), 60, 160);
+        sUno->putText(sPainter, i18n->label_bgm(), 60, 160);
         image = sMediaPlay->volume() > 0 ?
             sUno->findCard(RED, SKIP)->darkImg :
             sUno->findCard(RED, SKIP)->image;
@@ -618,7 +492,7 @@ void Main::refreshScreen(const QString& message) {
         sPainter->drawImage(330, 60, image);
 
         // Sound effect switch
-        putText(i18n->label_snd(), 60, 350);
+        sUno->putText(sPainter, i18n->label_snd(), 60, 350);
         image = sSoundPool->isEnabled() ?
             sUno->findCard(RED, SKIP)->darkImg :
             sUno->findCard(RED, SKIP)->image;
@@ -630,7 +504,7 @@ void Main::refreshScreen(const QString& message) {
 
         if (status != Player::YOU) {
             // [Level] option: easy / hard
-            putText(i18n->label_level(), 780, 160);
+            sUno->putText(sPainter, i18n->label_level(), 780, 160);
             image = sUno->getLevelImage(
                 /* level   */ Uno::LV_EASY,
                 /* hiLight */ !sUno->isSevenZeroRule() &&
@@ -645,7 +519,7 @@ void Main::refreshScreen(const QString& message) {
             sPainter->drawImage(1110, 60, image);
 
             // [Players] option: 3 / 4 / 2vs2
-            putText(i18n->label_players(), 780, 350);
+            sUno->putText(sPainter, i18n->label_players(), 780, 350);
             image = sUno->getPlayers() == 3 ?
                 sUno->findCard(GREEN, NUM3)->image :
                 sUno->findCard(GREEN, NUM3)->darkImg;
@@ -659,41 +533,38 @@ void Main::refreshScreen(const QString& message) {
 
             // Rule settings
             // Initial cards
-            putText(i18n->label_initialCards(), 60, 670);
+            sUno->putText(sPainter, i18n->label_initialCards(), 60, 670);
             width = sUno->getInitialCards();
-            lack = QString::number(width / 10) + QString::number(width % 10);
-            putText("<-", 1110, 670);
-            putText(lack, 1234, 670);
-            putText("+>", 1358, 670);
+            info = QString::number(width / 10) + QString::number(width % 10);
+            sUno->putText(sPainter, "<-", 1110, 670);
+            sUno->putText(sPainter, info, 1234, 670);
+            sUno->putText(sPainter, "+>", 1358, 670);
 
             // Force play switch
-            putText(i18n->label_forcePlay(), 60, 720);
-            fontColor = sUno->isForcePlay() ? NONE : RED;
-            putText(i18n->btn_keep(), 1110, 720, fontColor);
-            fontColor = sUno->isForcePlay() ? GREEN : NONE;
-            putText(i18n->btn_play(), 1290, 720, fontColor);
+            active = sUno->isForcePlay();
+            sUno->putText(sPainter, i18n->label_forcePlay(), 60, 720);
+            sUno->putText(sPainter, i18n->btn_keep(!active), 1110, 720);
+            sUno->putText(sPainter, i18n->btn_play(active), 1290, 720);
 
             // 7-0
-            putText(i18n->label_7_0(), 60, 770);
-            fontColor = sUno->isSevenZeroRule() ? NONE : RED;
-            putText(i18n->btn_off(), 1110, 770, fontColor);
-            fontColor = sUno->isSevenZeroRule() ? GREEN : NONE;
-            putText(i18n->btn_on(), 1290, 770, fontColor);
+            active = sUno->isSevenZeroRule();
+            sUno->putText(sPainter, i18n->label_7_0(), 60, 770);
+            sUno->putText(sPainter, i18n->btn_off(!active), 1110, 770);
+            sUno->putText(sPainter, i18n->btn_on(active), 1290, 770);
 
             // +2 stack
-            putText(i18n->label_draw2Stack(), 60, 820);
-            fontColor = sUno->isDraw2StackRule() ? NONE : RED;
-            putText(i18n->btn_off(), 1110, 820, fontColor);
-            fontColor = sUno->isDraw2StackRule() ? GREEN : NONE;
-            putText(i18n->btn_on(), 1290, 820, fontColor);
+            active = sUno->isDraw2StackRule();
+            sUno->putText(sPainter, i18n->label_draw2Stack(), 60, 820);
+            sUno->putText(sPainter, i18n->btn_off(!active), 1110, 820);
+            sUno->putText(sPainter, i18n->btn_on(active), 1290, 820);
         } // if (status != Player::YOU)
     } // if (sAdjustOptions)
     else if (status == STAT_WELCOME) {
         // For welcome screen, show the start button and your score
         image = sUno->getBackImage();
         sPainter->drawImage(740, 360, image);
-        width = getTextWidth(i18n->label_score());
-        putText(i18n->label_score(), 500 - width, 800);
+        width = sUno->getTextWidth(i18n->label_score());
+        sUno->putText(sPainter, i18n->label_score(), 500 - width, 800);
         if (sScore < 0) {
             image = sUno->getColoredWildImage(NONE);
         } // if (sScore < 0)
@@ -738,57 +609,58 @@ void Main::refreshScreen(const QString& message) {
         // Left-top corner: remain / used
         remain = sUno->getDeckCount();
         used = sUno->getUsedCount();
-        putText(i18n->label_remain_used(remain, used), 20, 42);
+        info = i18n->label_remain_used(remain, used);
+        sUno->putText(sPainter, info, 20, 42);
 
         // Right-top corner: lacks
         if (sUno->getPlayer(Player::COM2)->getWeakColor() == RED)
-            lack = "LACK: [R]N";
+            info = "LACK: [R]N";
         else if (sUno->getPlayer(Player::COM2)->getWeakColor() == BLUE)
-            lack = "LACK: [B]N";
+            info = "LACK: [B]N";
         else if (sUno->getPlayer(Player::COM2)->getWeakColor() == GREEN)
-            lack = "LACK: [G]N";
+            info = "LACK: [G]N";
         else if (sUno->getPlayer(Player::COM2)->getWeakColor() == YELLOW)
-            lack = "LACK: [Y]N";
+            info = "LACK: [Y]N";
         else
-            lack = "LACK: N";
+            info = "LACK: N";
         if (sUno->getPlayer(Player::COM3)->getWeakColor() == RED)
-            lack += "[R]E";
+            info += "[R]E";
         else if (sUno->getPlayer(Player::COM3)->getWeakColor() == BLUE)
-            lack += "[B]E";
+            info += "[B]E";
         else if (sUno->getPlayer(Player::COM3)->getWeakColor() == GREEN)
-            lack += "[G]E";
+            info += "[G]E";
         else if (sUno->getPlayer(Player::COM3)->getWeakColor() == YELLOW)
-            lack += "[Y]E";
+            info += "[Y]E";
         else
-            lack += "[W]E";
+            info += "[W]E";
         if (sUno->getPlayer(Player::COM1)->getWeakColor() == RED)
-            lack += "[R]W";
+            info += "[R]W";
         else if (sUno->getPlayer(Player::COM1)->getWeakColor() == BLUE)
-            lack += "[B]W";
+            info += "[B]W";
         else if (sUno->getPlayer(Player::COM1)->getWeakColor() == GREEN)
-            lack += "[G]W";
+            info += "[G]W";
         else if (sUno->getPlayer(Player::COM1)->getWeakColor() == YELLOW)
-            lack += "[Y]W";
+            info += "[Y]W";
         else
-            lack += "[W]W";
+            info += "[W]W";
         if (sUno->getPlayer(Player::YOU)->getWeakColor() == RED)
-            lack += "[R]S";
+            info += "[R]S";
         else if (sUno->getPlayer(Player::YOU)->getWeakColor() == BLUE)
-            lack += "[B]S";
+            info += "[B]S";
         else if (sUno->getPlayer(Player::YOU)->getWeakColor() == GREEN)
-            lack += "[G]S";
+            info += "[G]S";
         else if (sUno->getPlayer(Player::YOU)->getWeakColor() == YELLOW)
-            lack += "[Y]S";
+            info += "[Y]S";
         else
-            lack += "[W]S";
-        width = getTextWidth(lack);
-        putText(lack, 1580 - width, 42);
+            info += "[W]S";
+        width = sUno->getTextWidth(info);
+        sUno->putText(sPainter, info, 1580 - width, 42);
 
         // Left-center: Hand cards of Player West (COM1)
         if (status == STAT_GAME_OVER && sWinner == Player::COM1) {
             // Played all hand cards, it's winner
-            width = getTextWidth("WIN");
-            putText("WIN", 80 - width / 2, 461, YELLOW);
+            width = sUno->getTextWidth("WIN");
+            sUno->putText(sPainter, "[G]WIN", 80 - width / 2, 461);
         } // if (status == STAT_GAME_OVER && sWinner == Player::COM1)
         else if (((sHideFlag >> 1) & 0x01) == 0x00) {
             Player* p = sUno->getPlayer(Player::COM1);
@@ -806,16 +678,16 @@ void Main::refreshScreen(const QString& message) {
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
-                width = getTextWidth("UNO");
-                putText("UNO", 80 - width / 2, 584, YELLOW);
+                width = sUno->getTextWidth("UNO");
+                sUno->putText(sPainter, "[Y]UNO", 80 - width / 2, 584);
             } // if (size == 1)
         } // else if (((sHideFlag >> 1) & 0x01) == 0x00)
 
         // Top-center: Hand cards of Player North (COM2)
         if (status == STAT_GAME_OVER && sWinner == Player::COM2) {
             // Played all hand cards, it's winner
-            width = getTextWidth("WIN");
-            putText("WIN", 800 - width / 2, 121, YELLOW);
+            width = sUno->getTextWidth("WIN");
+            sUno->putText(sPainter, "[G]WIN", 800 - width / 2, 121);
         } // if (status == STAT_GAME_OVER && sWinner == Player::COM2)
         else if (((sHideFlag >> 2) & 0x01) == 0x00) {
             Player* p = sUno->getPlayer(Player::COM2);
@@ -829,16 +701,16 @@ void Main::refreshScreen(const QString& message) {
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
-                width = getTextWidth("UNO");
-                putText("UNO", 720 - width, 121, YELLOW);
+                width = sUno->getTextWidth("UNO");
+                sUno->putText(sPainter, "[Y]UNO", 720 - width, 121);
             } // if (size == 1)
         } // else if (((sHideFlag >> 2) & 0x01) == 0x00)
 
         // Right-center: Hand cards of Player East (COM3)
         if (status == STAT_GAME_OVER && sWinner == Player::COM3) {
             // Played all hand cards, it's winner
-            width = getTextWidth("WIN");
-            putText("WIN", 1520 - width / 2, 461, YELLOW);
+            width = sUno->getTextWidth("WIN");
+            sUno->putText(sPainter, "[G]WIN", 1520 - width / 2, 461);
         } // if (status == STAT_GAME_OVER && sWinner == Player::COM3)
         else if (((sHideFlag >> 3) & 0x01) == 0x00) {
             Player* p = sUno->getPlayer(Player::COM3);
@@ -865,16 +737,16 @@ void Main::refreshScreen(const QString& message) {
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
-                width = getTextWidth("UNO");
-                putText("UNO", 1520 - width / 2, 584, YELLOW);
+                width = sUno->getTextWidth("UNO");
+                sUno->putText(sPainter, "[Y]UNO", 1520 - width / 2, 584);
             } // if (size == 1)
         } // else if (((sHideFlag >> 3) & 0x01) == 0x00)
 
         // Bottom: Your hand cards
         if (status == STAT_GAME_OVER && sWinner == Player::YOU) {
             // Played all hand cards, it's winner
-            width = getTextWidth("WIN");
-            putText("WIN", 800 - width / 2, 801, YELLOW);
+            width = sUno->getTextWidth("WIN");
+            sUno->putText(sPainter, "[G]WIN", 800 - width / 2, 801);
         } // if (status == STAT_GAME_OVER && sWinner == Player::YOU)
         else if ((sHideFlag & 0x01) == 0x00) {
             // Show your all hand cards
@@ -896,7 +768,7 @@ void Main::refreshScreen(const QString& message) {
 
             if (size == 1) {
                 // Show "UNO" warning when only one card in hand
-                putText("UNO", 880, 801, YELLOW);
+                sUno->putText(sPainter, "[Y]UNO", 880, 801);
             } // if (size == 1)
         } // else if ((sHideFlag & 0x01) == 0x00)
 
@@ -927,14 +799,14 @@ void Main::refreshScreen(const QString& message) {
             // Draw YES button
             sPainter->setBrush(BRUSH_GREEN);
             sPainter->drawPie(270, 270, 271, 271, 0, 180 * 16);
-            width = getTextWidth(i18n->label_yes());
-            putText(i18n->label_yes(), 405 - width / 2, 358);
+            width = sUno->getTextWidth(i18n->label_yes());
+            sUno->putText(sPainter, i18n->label_yes(), 405 - width / 2, 358);
 
             // Draw NO button
             sPainter->setBrush(BRUSH_RED);
             sPainter->drawPie(270, 270, 271, 271, 0, -180 * 16);
-            width = getTextWidth(i18n->label_no());
-            putText(i18n->label_no(), 405 - width / 2, 472);
+            width = sUno->getTextWidth(i18n->label_no());
+            sUno->putText(sPainter, i18n->label_no(), 405 - width / 2, 472);
             break; // case STAT_DOUBT_WILD4
 
         case STAT_SEVEN_TARGET:
@@ -942,20 +814,20 @@ void Main::refreshScreen(const QString& message) {
             // Draw west sector (red)
             sPainter->setBrush(BRUSH_RED);
             sPainter->drawPie(270, 270, 271, 271, -90 * 16, -120 * 16);
-            width = getTextWidth("W");
-            putText("W", 338 - width / 2, 440);
+            width = sUno->getTextWidth("W");
+            sUno->putText(sPainter, "W", 338 - width / 2, 440);
 
             // Draw east sector (green)
             sPainter->setBrush(BRUSH_GREEN);
             sPainter->drawPie(270, 270, 271, 271, -90 * 16, 120 * 16);
-            width = getTextWidth("E");
-            putText("E", 472 - width / 2, 440);
+            width = sUno->getTextWidth("E");
+            sUno->putText(sPainter, "E", 472 - width / 2, 440);
 
             // Draw north sector (yellow)
             sPainter->setBrush(BRUSH_YELLOW);
             sPainter->drawPie(270, 270, 271, 271, 150 * 16, -120 * 16);
-            width = getTextWidth("N");
-            putText("N", 405 - width / 2, 360);
+            width = sUno->getTextWidth("N");
+            sUno->putText(sPainter, "N", 405 - width / 2, 360);
             break; // case STAT_SEVEN_TARGET
 
         default:

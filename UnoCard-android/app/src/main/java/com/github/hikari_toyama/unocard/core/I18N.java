@@ -40,15 +40,15 @@ public interface I18N {
 
     String btn_auto();
 
-    String btn_keep();
+    String btn_keep(boolean active);
 
-    String btn_off();
+    String btn_off(boolean active);
 
-    String btn_on();
+    String btn_on(boolean active);
 
-    String btn_play();
+    String btn_play(boolean active);
 
-    String btn_settings();
+    String btn_settings(boolean active);
 
     String info_0_rotate();
 
@@ -191,29 +191,29 @@ class I18N_en_US implements I18N {
     } // btn_auto()
 
     @Override
-    public String btn_keep() {
-        return "<KEEP>";
-    } // btn_keep()
+    public String btn_keep(boolean active) {
+        return active ? "[R]<KEEP>" : "<KEEP>";
+    } // btn_keep(boolean)
 
     @Override
-    public String btn_off() {
-        return "<OFF>";
-    } // btn_off()
+    public String btn_off(boolean active) {
+        return active ? "[R]<OFF>" : "<OFF>";
+    } // btn_off(boolean)
 
     @Override
-    public String btn_on() {
-        return "<ON>";
-    } // btn_on()
+    public String btn_on(boolean active) {
+        return active ? "[G]<ON>" : "<ON>";
+    } // btn_on(boolean)
 
     @Override
-    public String btn_play() {
-        return "<PLAY>";
-    } // btn_play()
+    public String btn_play(boolean active) {
+        return active ? "[G]<PLAY>" : "<PLAY>";
+    } // btn_play(boolean)
 
     @Override
-    public String btn_settings() {
-        return "<SETTINGS>";
-    } // btn_settings()
+    public String btn_settings(boolean active) {
+        return active ? "[Y]<SETTINGS>" : "<SETTINGS>";
+    } // btn_settings(boolean)
 
     @Override
     public String info_0_rotate() {
@@ -444,29 +444,29 @@ class I18N_zh_CN implements I18N {
     } // btn_auto()
 
     @Override
-    public String btn_keep() {
-        return "<保留>";
-    } // btn_keep()
+    public String btn_keep(boolean active) {
+        return active ? "[R]<保留>" : "<保留>";
+    } // btn_keep(boolean)
 
     @Override
-    public String btn_off() {
-        return "<无效>";
-    } // btn_off()
+    public String btn_off(boolean active) {
+        return active ? "[R]<无效>" : "<无效>";
+    } // btn_off(boolean)
 
     @Override
-    public String btn_on() {
-        return "<有效>";
-    } // btn_on()
+    public String btn_on(boolean active) {
+        return active ? "[G]<有效>" : "<有效>";
+    } // btn_on(boolean)
 
     @Override
-    public String btn_play() {
-        return "<打出>";
-    } // btn_play()
+    public String btn_play(boolean active) {
+        return active ? "[G]<打出>" : "<打出>";
+    } // btn_play(boolean)
 
     @Override
-    public String btn_settings() {
-        return "<设置>";
-    } // btn_options()
+    public String btn_settings(boolean active) {
+        return active ? "[Y]<设置>" : "<设置>";
+    } // btn_options(boolean)
 
     @Override
     public String info_0_rotate() {
