@@ -950,7 +950,7 @@ public class AI {
                 iBest = i0;
             else if (has7)
                 iBest = i7;
-            else if (hasNum)
+            else if (hasNum && hand.get(iNum).color != prevStrong)
                 iBest = iNum;
             else if (hasSkip && hand.get(iSkip).color != prevStrong)
                 iBest = iSkip;
@@ -960,6 +960,8 @@ public class AI {
                 iBest = iWild;
             else if (hasWD4 && lastColor != bestColor)
                 iBest = iWD4;
+            else if (hasNum)
+                iBest = iNum;
         } // else if (prevSize == 1)
         else if (oppoSize == 1) {
             // Strategies when your opposite player remains only one card.
@@ -968,7 +970,7 @@ public class AI {
                 iBest = i7;
             else if (has0)
                 iBest = i0;
-            else if (hasNum)
+            else if (hasNum && hand.get(iNum).color != oppoStrong)
                 iBest = iNum;
             else if (hasRev && (prevSize > nextSize
                     || prev.getRecent() == null))
@@ -981,6 +983,8 @@ public class AI {
                 iBest = iWild;
             else if (hasWD4 && lastColor != bestColor)
                 iBest = iWD4;
+            else if (hasNum)
+                iBest = iNum;
         } // else if (oppoSize == 1)
         else {
             // Normal strategies
