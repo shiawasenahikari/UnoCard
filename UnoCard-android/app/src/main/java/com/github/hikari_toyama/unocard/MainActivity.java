@@ -139,6 +139,7 @@ public class MainActivity extends AppCompatActivity
             mUno.setForcePlay(sp.getBoolean("forcePlay", true));
             mUno.setSevenZeroRule(sp.getBoolean("sevenZero", false));
             mUno.setDraw2StackRule(sp.getBoolean("stackDraw2", false));
+            mUno.set2vs2(sp.getBoolean("2vs2", false));
             initialCards = sp.getInt("initialCards", 7);
             while (mUno.getInitialCards() < initialCards) {
                 mUno.increaseInitialCards();
@@ -290,6 +291,35 @@ public class MainActivity extends AppCompatActivity
     } // hardAI()
 
     /**
+     * Special AI strategies in 2vs2 rule.
+     */
+    @WorkerThread
+    private void teamAI() {
+        int idxBest;
+
+        if (!mAIRunning) {
+            mAIRunning = true;
+            while (mStatus == Player.COM1
+                    || mStatus == Player.COM2
+                    || mStatus == Player.COM3
+                    || (mStatus == Player.YOU && mAuto)) {
+                setStatus(STAT_IDLE); // block tap down events when idle
+                idxBest = mAI.teamAI_bestCardIndex4NowPlayer(mBestColor);
+                if (idxBest >= 0) {
+                    // Found an appropriate card to play
+                    play(idxBest, mBestColor[0]);
+                } // if (idxBest >= 0)
+                else {
+                    // No appropriate cards to play, or no card to play
+                    draw(1, /* force */ false);
+                } // else
+            } // while (mStatus == Player.COM1 || ...)
+
+            mAIRunning = false;
+        } // if (!mAIRunning)
+    } // teamAI()
+
+    /**
      * Special AI strategies in 7-0 rule.
      */
     @WorkerThread
@@ -378,9 +408,12 @@ public class MainActivity extends AppCompatActivity
             case Player.YOU:
                 // Your turn, select a hand card to play, or draw a card
                 if (mAuto) {
-                    if (mUno.isSevenZeroRule()) {
+                    if (mUno.is2vs2()) {
+                        teamAI();
+                    } // if (mUno.is2vs2())
+                    else if (mUno.isSevenZeroRule()) {
                         sevenZeroAI();
-                    } // if (mUno.isSevenZeroRule())
+                    } // else if (mUno.isSevenZeroRule())
                     else if (mUno.getDifficulty() == Uno.LV_EASY) {
                         easyAI();
                     } // else if (mUno.getDifficulty() == Uno.LV_EASY)
@@ -455,9 +488,12 @@ public class MainActivity extends AppCompatActivity
             case Player.COM2:
             case Player.COM3:
                 // AI players' turn
-                if (mUno.isSevenZeroRule()) {
+                if (mUno.is2vs2()) {
+                    teamAI();
+                } // if (mUno.is2vs2())
+                else if (mUno.isSevenZeroRule()) {
                     sevenZeroAI();
-                } // if (mUno.isSevenZeroRule())
+                } // else if (mUno.isSevenZeroRule())
                 else if (mUno.getDifficulty() == Uno.LV_EASY) {
                     easyAI();
                 } // else if (mUno.getDifficulty() == Uno.LV_EASY)
@@ -551,14 +587,16 @@ public class MainActivity extends AppCompatActivity
                 mUno.putText(mScr, i18n.label_level(), 780, 160);
                 image = mUno.getLevelImage(
                         /* level   */ Uno.LV_EASY,
-                        /* hiLight */ !mUno.isSevenZeroRule() &&
-                                mUno.getDifficulty() == Uno.LV_EASY
+                        /* hiLight */ mUno.getDifficulty() == Uno.LV_EASY
+                                && !mUno.isSevenZeroRule()
+                                && !mUno.is2vs2()
                 ); // image = mUno.getLevelImage()
                 image.copyTo(mScr.submat(60, 241, 930, 1051), image);
                 image = mUno.getLevelImage(
                         /* level   */ Uno.LV_HARD,
-                        /* hiLight */ !mUno.isSevenZeroRule() &&
-                                mUno.getDifficulty() == Uno.LV_HARD
+                        /* hiLight */ mUno.getDifficulty() == Uno.LV_HARD
+                                && !mUno.isSevenZeroRule()
+                                && !mUno.is2vs2()
                 ); // image = mUno.getLevelImage()
                 image.copyTo(mScr.submat(60, 241, 1110, 1231), image);
 
@@ -568,7 +606,7 @@ public class MainActivity extends AppCompatActivity
                         mUno.findCard(Color.GREEN, Content.NUM3).image :
                         mUno.findCard(Color.GREEN, Content.NUM3).darkImg;
                 image.copyTo(mScr.submat(250, 431, 930, 1051), image);
-                image = mUno.getPlayers() == 4 ?
+                image = mUno.getPlayers() == 4 && !mUno.is2vs2() ?
                         mUno.findCard(Color.YELLOW, Content.NUM4).image :
                         mUno.findCard(Color.YELLOW, Content.NUM4).darkImg;
                 image.copyTo(mScr.submat(250, 431, 1110, 1231), image);
@@ -1138,13 +1176,27 @@ public class MainActivity extends AppCompatActivity
             if (size == 1) {
                 // The player in action becomes winner when it played the
                 // final card in its hand successfully
-                if (now == Player.YOU) {
+                if (mUno.is2vs2()) {
+                    if (now == Player.YOU || now == Player.COM2) {
+                        mDiff = 2 * (mUno.getPlayer(Player.COM1).getHandScore()
+                                + mUno.getPlayer(Player.COM3).getHandScore());
+                        mScore = Math.min(9999, 200 + mScore + mDiff);
+                        mSoundPool.play(sndWin, mSndVol, mSndVol, 1, 0, 1.0f);
+                    } // if (now == Player.YOU || now == Player.COM2)
+                    else {
+                        mDiff = -2 * (mUno.getPlayer(Player.YOU).getHandScore()
+                                + mUno.getPlayer(Player.COM2).getHandScore());
+                        mScore = Math.max(-999, 200 + mScore + mDiff);
+                        mSoundPool.play(sndLose, mSndVol, mSndVol, 1, 0, 1.0f);
+                    } // else
+                } // if (mUno.is2vs2())
+                else if (now == Player.YOU) {
                     mDiff = mUno.getPlayer(Player.COM1).getHandScore() +
                             mUno.getPlayer(Player.COM2).getHandScore() +
                             mUno.getPlayer(Player.COM3).getHandScore();
                     mScore = Math.min(9999, 200 + mScore + mDiff);
                     mSoundPool.play(sndWin, mSndVol, mSndVol, 1, 0, 1.0f);
-                } // if (now == Player.YOU)
+                } // else if (now == Player.YOU)
                 else {
                     mDiff = -mUno.getPlayer(Player.YOU).getHandScore();
                     mScore = Math.max(-999, 200 + mScore + mDiff);
@@ -1514,6 +1566,11 @@ public class MainActivity extends AppCompatActivity
                     mUno.setPlayers(4);
                     setStatus(mStatus);
                 } // else if (1110 <= x && x <= 1230 && mStatus != Player.YOU)
+                else if (1290 <= x && x <= 1410 && mStatus != Player.YOU) {
+                    // 2vs2
+                    mUno.set2vs2(true);
+                    setStatus(mStatus);
+                } // else if (1290 <= x && x <= 1410 && mStatus != Player.YOU)
             } // else if (270 <= y && y <= 450)
             else if (649 <= y && y <= 670 && mStatus != Player.YOU) {
                 if (1110 <= x && x <= 1143) {
@@ -1757,6 +1814,7 @@ public class MainActivity extends AppCompatActivity
                     .putBoolean("sevenZero", mUno.isSevenZeroRule())
                     .putBoolean("stackDraw2", mUno.isDraw2StackRule())
                     .putInt("initialCards", mUno.getInitialCards())
+                    .putBoolean("2vs2", mUno.is2vs2())
                     .apply();
             mSndVol = 0.0f;
             mMediaPlayer.pause();

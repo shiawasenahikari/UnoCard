@@ -279,7 +279,7 @@ private:
         fontW = load("resource/font_w.png");
         ++done;
         qDebug("Loading... (%d%%)", 100 * done / total);
-        font = QImage(fontW.width(), fontW.height(), QImage::Format_RGBA8888);
+        font = fontW.convertToFormat(QImage::Format_RGBA8888);
         mask = QBitmap::fromImage(fontW.createAlphaMask());
         pt.begin(&font);
         pt.setClipRegion(mask);
@@ -666,6 +666,7 @@ public:
      */
     inline void setPlayers(int players) {
         if (players == 3 || players == 4) {
+            _2vs2 = false;
             this->players = players;
         } // if (players == 3 || players == 4)
     } // setPlayers(int)
@@ -713,6 +714,7 @@ public:
         _2vs2 = enabled;
         if (enabled) {
             players = 4;
+            sevenZeroRule = false;
         } // if (enabled)
     } // set2vs2(bool)
 
@@ -747,7 +749,7 @@ public:
      * @param enabled Enable/Disable the 7-0 rule.
      */
     inline void setSevenZeroRule(bool enabled) {
-        sevenZeroRule = enabled;
+        _2vs2 &= !(sevenZeroRule = enabled);
     } // setSevenZeroRule(bool)
 
     /**

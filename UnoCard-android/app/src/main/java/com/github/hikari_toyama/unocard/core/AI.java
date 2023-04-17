@@ -70,18 +70,26 @@ public class AI {
         nextIsUno = next.getHandSize() == 1;
         oppoIsUno = oppo.getHandSize() == 1;
         prevIsUno = prev.getHandSize() == 1;
+        nextStrong = next.getStrongColor();
+        oppoStrong = oppo.getStrongColor();
+        prevStrong = prev.getStrongColor();
         nextWeak = next.getWeakColor();
         oppoWeak = oppo.getWeakColor();
         prevWeak = prev.getWeakColor();
         if (nextIsUno && nextWeak != NONE) {
             bestColor = nextWeak;
         } // if (nextIsUno && nextWeak != NONE)
-        else if (oppoIsUno && oppoWeak != NONE) {
+        else if (oppoIsUno && oppoWeak != NONE && !uno.is2vs2()) {
             bestColor = oppoWeak;
-        } // else if (oppoIsUno && oppoWeak != NONE)
+        } // else if (oppoIsUno && oppoWeak != NONE && !uno.is2vs2())
         else if (prevIsUno && prevWeak != NONE) {
             bestColor = prevWeak;
         } // else if (prevIsUno && prevWeak != NONE)
+        else if (uno.is2vs2() &&
+                oppoStrong != NONE &&
+                uno.getCurrPlayer().getHandSize() > prev.getHandSize()) {
+            bestColor = oppoStrong;
+        } // else if (uno.is2vs2() && ...)
         else {
             int[] score = {0, 0, 0, 0, 0};
             Player curr = uno.getCurrPlayer();
@@ -131,18 +139,15 @@ public class AI {
                 // Use others' weak color as your best color
                 bestColor
                         = prevWeak != NONE ? prevWeak
-                        : oppoWeak != NONE ? oppoWeak
+                        : oppoWeak != NONE && !uno.is2vs2() ? oppoWeak
                         : nextWeak != NONE ? nextWeak : RED;
             } // if (bestColor == NONE)
         } // else
 
         // Determine your best color in dangerous cases. Be careful of the
         // conflict with other opponents' strong colors.
-        nextStrong = next.getStrongColor();
-        oppoStrong = oppo.getStrongColor();
-        prevStrong = prev.getStrongColor();
         while ((nextIsUno && bestColor == nextStrong)
-                || (oppoIsUno && bestColor == oppoStrong)
+                || (oppoIsUno && bestColor == oppoStrong && !uno.is2vs2())
                 || (prevIsUno && bestColor == prevStrong)) {
             bestColor = Color.values()[Uno.RNG.nextInt(4) + 1];
         } // while (nextIsUno && bestColor == nextStrong || ...)
@@ -788,6 +793,25 @@ public class AI {
         outColor[0] = bestColor;
         return iBest;
     } // hardAI_bestCardIndex4NowPlayer(Color[])
+
+    /**
+     * AI Strategies in 2vs2 special rule. Analyze current player's hand cards,
+     * and calculate which is the best card to play out.
+     *
+     * @param outColor This is a out parameter. Pass a Color array (length>=1)
+     *                 in order to let us pass the return value by assigning
+     *                 outColor[0]. When the best card to play becomes a wild
+     *                 card, outColor[0] will become the following legal color
+     *                 to change. When the best card to play becomes an action
+     *                 or a number card, outColor[0] will become the player's
+     *                 best color.
+     * @return Index of the best card to play, in current player's hand.
+     * Or a negative number that means no appropriate card to play.
+     */
+    public int teamAI_bestCardIndex4NowPlayer(Color[] outColor) {
+        // TODO: Strategy unimplemented, using easy AI as default.
+        return easyAI_bestCardIndex4NowPlayer(outColor);
+    } // teamAI_bestCardIndex4NowPlayer(Color[])
 
     /**
      * AI Strategies in 7-0 special rule. Analyze current player's hand cards,

@@ -850,6 +850,7 @@ public class Uno {
      */
     public void setPlayers(int players) {
         if (players == 3 || players == 4) {
+            _2vs2 = false;
             this.players = players;
         } // if (players == 3 || players == 4)
     } // setPlayers(int)
@@ -897,6 +898,7 @@ public class Uno {
         _2vs2 = enabled;
         if (enabled) {
             players = 4;
+            sevenZeroRule = false;
         } // if (enabled)
     } // set2vs2(boolean)
 
@@ -931,7 +933,7 @@ public class Uno {
      * @param enabled Enable/Disable the 7-0 rule.
      */
     public void setSevenZeroRule(boolean enabled) {
-        sevenZeroRule = enabled;
+        _2vs2 &= !(sevenZeroRule = enabled);
     } // setSevenZeroRule(boolean)
 
     /**

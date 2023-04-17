@@ -146,6 +146,7 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
                 sUno->setDraw2StackRule(dw[5] != 0);
                 sSoundPool->setEnabled(dw[6] != 0);
                 sMediaPlay->setVolume(dw[7]);
+                sUno->set2vs2(dw[9] != 0);
                 if (5 <= dw[8] && dw[8] <= 20) {
                     while (sUno->getInitialCards() < dw[8]) {
                         sUno->increaseInitialCards();
@@ -238,6 +239,35 @@ void Main::hardAI() {
         sAIRunning = false;
     } // if (!sAIRunning)
 } // hardAI()
+
+/**
+ * Special AI strategies in 2vs2 rule.
+ */
+void Main::teamAI() {
+    int idxBest;
+    Color bestColor[1];
+
+    if (!sAIRunning) {
+        sAIRunning = true;
+        while (sStatus == Player::COM1
+            || sStatus == Player::COM2
+            || sStatus == Player::COM3
+            || (sStatus == Player::YOU && sAuto)) {
+            setStatus(STAT_IDLE); // block mouse click events when idle
+            idxBest = sAI->teamAI_bestCardIndex4NowPlayer(bestColor);
+            if (idxBest >= 0) {
+                // Found an appropriate card to play
+                play(idxBest, bestColor[0]);
+            } // if (idxBest >= 0)
+            else {
+                // No appropriate cards to play, or no card to play
+                draw();
+            } // else
+        } // while (sStatus == Player::COM1 || ...)
+
+        sAIRunning = false;
+    } // if (!sAIRunning)
+} // teamAI()
 
 /**
  * Special AI strategies in 7-0 rule.
@@ -339,9 +369,12 @@ void Main::setStatus(int status) {
     case Player::YOU:
         // Your turn, select a hand card to play, or draw a card
         if (sAuto) {
-            if (sUno->isSevenZeroRule()) {
+            if (sUno->is2vs2()) {
+                teamAI();
+            } // if (sUno->is2vs2())
+            else if (sUno->isSevenZeroRule()) {
                 sevenZeroAI();
-            } // if (sUno->isSevenZeroRule())
+            } // else if (sUno->isSevenZeroRule())
             else if (sUno->getDifficulty() == Uno::LV_EASY) {
                 easyAI();
             } // else if (sUno->getDifficulty() == Uno::LV_EASY)
@@ -415,9 +448,12 @@ void Main::setStatus(int status) {
     case Player::COM2:
     case Player::COM3:
         // AI players' turn
-        if (sUno->isSevenZeroRule()) {
+        if (sUno->is2vs2()) {
+            teamAI();
+        } // if (sUno->is2vs2())
+        else if (sUno->isSevenZeroRule()) {
             sevenZeroAI();
-        } // if (sUno->isSevenZeroRule())
+        } // else if (sUno->isSevenZeroRule())
         else if (sUno->getDifficulty() == Uno::LV_EASY) {
             easyAI();
         } // else if (sUno->getDifficulty() == Uno::LV_EASY)
@@ -507,14 +543,16 @@ void Main::refreshScreen(const QString& message) {
             sUno->putText(sPainter, i18n->label_level(), 780, 160);
             image = sUno->getLevelImage(
                 /* level   */ Uno::LV_EASY,
-                /* hiLight */ !sUno->isSevenZeroRule() &&
-                sUno->getDifficulty() == Uno::LV_EASY
+                /* hiLight */ sUno->getDifficulty() == Uno::LV_EASY
+                && !sUno->isSevenZeroRule()
+                && !sUno->is2vs2()
             ); // image = sUno->getLevelImage()
             sPainter->drawImage(930, 60, image);
             image = sUno->getLevelImage(
                 /* level   */ Uno::LV_HARD,
-                /* hiLight */ !sUno->isSevenZeroRule() &&
-                sUno->getDifficulty() == Uno::LV_HARD
+                /* hiLight */ sUno->getDifficulty() == Uno::LV_HARD
+                && !sUno->isSevenZeroRule()
+                && !sUno->is2vs2()
             ); // image = sUno->getLevelImage()
             sPainter->drawImage(1110, 60, image);
 
@@ -993,13 +1031,27 @@ void Main::play(int index, Color color) {
         if (size == 1) {
             // The player in action becomes winner when it played the
             // final card in its hand successfully
-            if (now == Player::YOU) {
+            if (sUno->is2vs2()) {
+                if (now == Player::YOU || now == Player::COM2) {
+                    sDiff = 2 * (sUno->getPlayer(Player::COM1)->getHandScore()
+                        + sUno->getPlayer(Player::COM3)->getHandScore());
+                    sScore = qMin(9999, 200 + sScore + sDiff);
+                    sSoundPool->play(SoundPool::SND_WIN);
+                } // if (now == Player::YOU || now == Player::COM2)
+                else {
+                    sDiff = -2 * (sUno->getPlayer(Player::YOU)->getHandScore()
+                        + sUno->getPlayer(Player::COM2)->getHandScore());
+                    sScore = qMax(-999, 200 + sScore + sDiff);
+                    sSoundPool->play(SoundPool::SND_LOSE);
+                } // else
+            } // if (sUno->is2vs2())
+            else if (now == Player::YOU) {
                 sDiff = sUno->getPlayer(Player::COM1)->getHandScore()
                     + sUno->getPlayer(Player::COM2)->getHandScore()
                     + sUno->getPlayer(Player::COM3)->getHandScore();
                 sScore = qMin(9999, 200 + sScore + sDiff);
                 sSoundPool->play(SoundPool::SND_WIN);
-            } // if (now == Player::YOU)
+            } // else if (now == Player::YOU)
             else {
                 sDiff = -sUno->getPlayer(Player::YOU)->getHandScore();
                 sScore = qMax(-999, 200 + sScore + sDiff);
@@ -1332,6 +1384,11 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     sUno->setPlayers(4);
                     setStatus(sStatus);
                 } // else if (1110 <= x && x <= 1230 && sStatus != Player::YOU)
+                else if (1290 <= x && x <= 1410 && sStatus != Player::YOU) {
+                    // 2vs2
+                    sUno->set2vs2(true);
+                    setStatus(sStatus);
+                } // else if (1290 <= x && x <= 1410 && sStatus != Player::YOU)
             } // else if (270 <= y && y <= 450)
             else if (649 <= y && y <= 670 && sStatus != Player::YOU) {
                 if (1110 <= x && x <= 1143) {
@@ -1550,11 +1607,12 @@ void Main::closeEvent(QCloseEvent*) {
             /* dw[5] = +2 stack switch    */ sUno->isDraw2StackRule() ? 1 : 0,
             /* dw[6] = snd switch         */ sSoundPool->isEnabled() ? 1 : 0,
             /* dw[7] = bgm switch         */ sMediaPlay->volume(),
-            /* dw[8] = initial cards      */ sUno->getInitialCards()
+            /* dw[8] = initial cards      */ sUno->getInitialCards(),
+            /* dw[9] = 2vs2 switch        */ sUno->is2vs2() ? 1 : 0
         }; // dw[]
 
         // Fill unused bits with 1
-        memset(dw + 9, -1, (63 - 9) * sizeof(int));
+        memset(dw + 10, -1, (63 - 10) * sizeof(int));
 
         // Calculate hash
         for (int i = 0; i < 63; ++i) {

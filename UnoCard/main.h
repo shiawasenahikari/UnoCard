@@ -74,6 +74,7 @@ private:
     void cycle();
     void easyAI();
     void hardAI();
+    void teamAI();
     void sevenZeroAI();
     void onChallenge();
     void swapWith(int whom);
