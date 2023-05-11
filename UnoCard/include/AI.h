@@ -91,14 +91,13 @@ public:
         } // else if (prevIsUno && prevWeak != NONE)
         else if (uno->is2vs2() &&
             oppoStrong != NONE &&
-            uno->getCurrPlayer()->getHandSize() > oppo->getHandSize()) {
+            oppo->getHandSize() <= uno->getCurrPlayer()->getHandSize()) {
             bestColor = oppoStrong;
         } // else if (uno->is2vs2() && ...)
         else {
             int score[] = { 0, 0, 0, 0, 0 };
-            Player *curr = uno->getCurrPlayer();
 
-            for (Card* card : curr->getHandCards()) {
+            for (Card* card : uno->getCurrPlayer()->getHandCards()) {
                 switch (card->content) {
                 case WILD:
                 case WILD_DRAW4:
@@ -118,7 +117,7 @@ public:
                     score[card->color] += 4;
                     break; // default
                 } // switch (card->content)
-            } // for (Card* card : curr->getHandCards())
+            } // for (Card* card : uno->getCurrPlayer()->getHandCards())
 
             // Calculate the best color
             bestColor = NONE;
@@ -803,8 +802,177 @@ public:
      *         Or a negative number that means no appropriate card to play.
      */
     inline int teamAI_bestCardIndex4NowPlayer(Color outColor[]) {
-        // TODO: Strategy unimplemented, using easy AI as default.
-        return easyAI_bestCardIndex4NowPlayer(outColor);
+        Card* card;
+        int i, iBest, matches;
+        std::vector<Card*> hand;
+        Player *next, *oppo, *prev;
+        Color bestColor, lastColor;
+        Color nextStrong, oppoStrong, prevStrong;
+        int yourSize, nextSize, oppoSize, prevSize;
+        int iNum, iRev, iSkip, iDraw2, iWild, iWD4;
+        bool hasNum, hasRev, hasSkip, hasDraw2, hasWild, hasWD4;
+
+        if (outColor == nullptr) {
+            throw "outColor[] cannot be nullptr";
+        } // if (outColor == nullptr)
+
+        hand = uno->getCurrPlayer()->getHandCards();
+        yourSize = int(hand.size());
+        if (yourSize == 1) {
+            // Only one card remained. Play it when it's legal.
+            card = hand.at(0);
+            outColor[0] = card->color;
+            return uno->isLegalToPlay(card) ? 0 : -1;
+        } // if (yourSize == 1)
+
+        iBest = -1;
+        lastColor = uno->lastColor();
+        bestColor = calcBestColor4NowPlayer();
+        iNum = iRev = iSkip = iDraw2 = iWild = iWD4 = -1;
+        hasNum = hasRev = hasSkip = hasDraw2 = hasWild = hasWD4 = false;
+        for (i = matches = 0; i < yourSize; ++i) {
+            // Index of any kind
+            card = hand.at(i);
+            if (card->color == lastColor) {
+                ++matches;
+            } // if (card->color == lastColor)
+
+            if (uno->isLegalToPlay(card)) {
+                switch (card->content) {
+                case DRAW2:
+                    if (!hasDraw2 || card->color == bestColor) {
+                    iDraw2 = i;
+                    hasDraw2 = true;
+                    } // if (!hasDraw2 || card->color == bestColor)
+                    break; // case DRAW2
+
+                case SKIP:
+                    if (!hasSkip || card->color == bestColor) {
+                    iSkip = i;
+                    hasSkip = true;
+                    } // if (!hasSkip || card->color == bestColor)
+                    break; // case SKIP
+
+                case REV:
+                    if (!hasRev || card->color == bestColor) {
+                    iRev = i;
+                    hasRev = true;
+                    } // if (!hasRev || card->color == bestColor)
+                    break; // case REV
+
+                case WILD:
+                    iWild = i;
+                    hasWild = true;
+                    break; // case WILD
+
+                case WILD_DRAW4:
+                    iWD4 = i;
+                    hasWD4 = true;
+                    break; // case WILD_DRAW4
+
+                default: // number cards
+                    if (!hasNum || card->color == bestColor) {
+                    iNum = i;
+                    hasNum = true;
+                    } // if (!hasNum || card->color == bestColor)
+                    break; // default
+                } // switch (card->content)
+            } // if (uno->isLegalToPlay(card))
+        } // for (i = matches = 0; i < yourSize; ++i)
+
+        // Decision tree
+        next = uno->getNextPlayer();
+        nextSize = next->getHandSize();
+        nextStrong = next->getStrongColor();
+        oppo = uno->getOppoPlayer();
+        oppoSize = oppo->getHandSize();
+        oppoStrong = oppo->getStrongColor();
+        prev = uno->getPrevPlayer();
+        prevSize = prev->getHandSize();
+        prevStrong = prev->getStrongColor();
+        if (nextSize == 1) {
+            // Strategies when your next player remains only one card.
+            // Limit your next player's action as well as you can.
+            if (hasDraw2)
+                iBest = iDraw2;
+            else if (hasSkip)
+                iBest = iSkip;
+            else if (hasRev)
+                iBest = iRev;
+            else if (hasWD4 && matches == 0)
+                iBest = iWD4;
+            else if (hasWild && lastColor != bestColor)
+                iBest = iWild;
+            else if (hasWD4 && lastColor != bestColor)
+                iBest = iWD4;
+            else if (hasNum && hand.at(iNum)->color != nextStrong)
+                iBest = iNum;
+            else if (hasWild)
+                iBest = iWild;
+        } // if (nextSize == 1)
+        else if (prevSize == 1) {
+            // Strategies when your previous player remains only one card.
+            if (hasNum && hand.at(iNum)->color != prevStrong)
+                iBest = iNum;
+            else if (hasSkip && hand.at(iSkip)->color != prevStrong)
+                iBest = iSkip;
+            else if (hasDraw2 && hand.at(iDraw2)->color != prevStrong)
+                iBest = iDraw2;
+            else if (hasWild && lastColor != bestColor)
+                iBest = iWild;
+            else if (hasWD4 && lastColor != bestColor)
+                iBest = iWD4;
+            else if (hasNum)
+                iBest = iNum;
+        } // else if (prevSize == 1)
+        else if (oppoSize == 1) {
+            // Strategies when your team mate remains only one card.
+            if (hasSkip)
+                iBest = iSkip;
+            else if (hasDraw2)
+                iBest = iDraw2;
+            else if (hasWD4 && matches == 0)
+                iBest = iWD4;
+            else if (hasRev && hand.at(iRev)->color == oppoStrong)
+                iBest = iRev;
+            else if (hasNum && hand.at(iNum)->color == oppoStrong)
+                iBest = iNum;
+            else if (hasWild && oppoStrong != NONE && lastColor != oppoStrong)
+                iBest = iWild;
+            else if (hasRev && prevSize < nextSize)
+                iBest = iRev;
+            else if (hasNum)
+                iBest = iNum;
+            else if (hasRev)
+                iBest = iRev;
+            else if (hasWild)
+                iBest = iWild;
+            else if (hasWD4)
+                iBest = iWD4;
+        } // else if (oppoSize == 1)
+        else {
+            // Normal strategies
+            if (hasSkip && hand.at(iSkip)->color == oppoStrong)
+                iBest = iSkip;
+            else if (hasRev && (hand.at(iRev)->color == oppoStrong
+                || prev->getRecent() == nullptr))
+                iBest = iRev;
+            else if (hasNum)
+                iBest = iNum;
+            else if (hasSkip)
+                iBest = iSkip;
+            else if (hasDraw2)
+                iBest = iDraw2;
+            else if (hasRev)
+                iBest = iRev;
+            else if (hasWild && lastColor != oppoStrong)
+                iBest = iWild;
+            else if (hasWD4 && lastColor != oppoStrong)
+                iBest = iWD4;
+        } // else
+
+        outColor[0] = bestColor;
+        return iBest;
     } // teamAI_bestCardIndex4NowPlayer(Color[])
 
     /**
