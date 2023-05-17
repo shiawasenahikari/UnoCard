@@ -31,6 +31,7 @@ import androidx.annotation.UiThread;
 import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.math.MathUtils;
 import androidx.fragment.app.DialogFragment;
 
 import com.github.hikari_toyama.unocard.core.AI;
@@ -140,7 +141,7 @@ public class MainActivity extends AppCompatActivity
             mUno.setSevenZeroRule(sp.getBoolean("sevenZero", false));
             mUno.setDraw2StackRule(sp.getBoolean("stackDraw2", false));
             mUno.set2vs2(sp.getBoolean("2vs2", false));
-            initialCards = sp.getInt("initialCards", 7);
+            initialCards = MathUtils.clamp(sp.getInt("initialCards", 7), 5, 20);
             while (mUno.getInitialCards() < initialCards) {
                 mUno.increaseInitialCards();
             } // while (mUno.getInitialCards() < initialCards)
@@ -233,10 +234,10 @@ public class MainActivity extends AppCompatActivity
     } // threadWait(long)
 
     /**
-     * AI Strategies (Difficulty: EASY).
+     * The unique AI entry point.
      */
     @WorkerThread
-    private void easyAI() {
+    private void requestAI() {
         int idxBest;
 
         if (!mAIRunning) {
@@ -246,7 +247,13 @@ public class MainActivity extends AppCompatActivity
                     || mStatus == Player.COM3
                     || (mStatus == Player.YOU && mAuto)) {
                 setStatus(STAT_IDLE); // block tap down events when idle
-                idxBest = mAI.easyAI_bestCardIndex4NowPlayer(mBestColor);
+                idxBest = mUno.is2vs2()
+                        ? mAI.teamAI_bestCardIndex4NowPlayer(mBestColor)
+                        : mUno.isSevenZeroRule()
+                        ? mAI.sevenZeroAI_bestCardIndex4NowPlayer(mBestColor)
+                        : mUno.getDifficulty() == Uno.LV_EASY
+                        ? mAI.easyAI_bestCardIndex4NowPlayer(mBestColor)
+                        : mAI.hardAI_bestCardIndex4NowPlayer(mBestColor);
                 if (idxBest >= 0) {
                     // Found an appropriate card to play
                     play(idxBest, mBestColor[0]);
@@ -259,94 +266,7 @@ public class MainActivity extends AppCompatActivity
 
             mAIRunning = false;
         } // if (!mAIRunning)
-    } // easyAI()
-
-    /**
-     * AI Strategies (Difficulty: HARD).
-     */
-    @WorkerThread
-    private void hardAI() {
-        int idxBest;
-
-        if (!mAIRunning) {
-            mAIRunning = true;
-            while (mStatus == Player.COM1
-                    || mStatus == Player.COM2
-                    || mStatus == Player.COM3
-                    || (mStatus == Player.YOU && mAuto)) {
-                setStatus(STAT_IDLE); // block tap down events when idle
-                idxBest = mAI.hardAI_bestCardIndex4NowPlayer(mBestColor);
-                if (idxBest >= 0) {
-                    // Found an appropriate card to play
-                    play(idxBest, mBestColor[0]);
-                } // if (idxBest >= 0)
-                else {
-                    // No appropriate cards to play, or no card to play
-                    draw(1, /* force */ false);
-                } // else
-            } // while (mStatus == Player.COM1 || ...)
-
-            mAIRunning = false;
-        } // if (!mAIRunning)
-    } // hardAI()
-
-    /**
-     * Special AI strategies in 2vs2 rule.
-     */
-    @WorkerThread
-    private void teamAI() {
-        int idxBest;
-
-        if (!mAIRunning) {
-            mAIRunning = true;
-            while (mStatus == Player.COM1
-                    || mStatus == Player.COM2
-                    || mStatus == Player.COM3
-                    || (mStatus == Player.YOU && mAuto)) {
-                setStatus(STAT_IDLE); // block tap down events when idle
-                idxBest = mAI.teamAI_bestCardIndex4NowPlayer(mBestColor);
-                if (idxBest >= 0) {
-                    // Found an appropriate card to play
-                    play(idxBest, mBestColor[0]);
-                } // if (idxBest >= 0)
-                else {
-                    // No appropriate cards to play, or no card to play
-                    draw(1, /* force */ false);
-                } // else
-            } // while (mStatus == Player.COM1 || ...)
-
-            mAIRunning = false;
-        } // if (!mAIRunning)
-    } // teamAI()
-
-    /**
-     * Special AI strategies in 7-0 rule.
-     */
-    @WorkerThread
-    private void sevenZeroAI() {
-        int idxBest;
-
-        if (!mAIRunning) {
-            mAIRunning = true;
-            while (mStatus == Player.COM1
-                    || mStatus == Player.COM2
-                    || mStatus == Player.COM3
-                    || (mStatus == Player.YOU && mAuto)) {
-                setStatus(STAT_IDLE); // block tap down events when idle
-                idxBest = mAI.sevenZeroAI_bestCardIndex4NowPlayer(mBestColor);
-                if (idxBest >= 0) {
-                    // Found an appropriate card to play
-                    play(idxBest, mBestColor[0]);
-                } // if (idxBest >= 0)
-                else {
-                    // No appropriate cards to play, or no card to play
-                    draw(1, /* force */ false);
-                } // else
-            } // while (mStatus == Player.COM1 || ...)
-
-            mAIRunning = false;
-        } // if (!mAIRunning)
-    } // sevenZeroAI()
+    } // requestAI()
 
     /**
      * Change the value of global variable [mStatus]
@@ -408,18 +328,7 @@ public class MainActivity extends AppCompatActivity
             case Player.YOU:
                 // Your turn, select a hand card to play, or draw a card
                 if (mAuto) {
-                    if (mUno.is2vs2()) {
-                        teamAI();
-                    } // if (mUno.is2vs2())
-                    else if (mUno.isSevenZeroRule()) {
-                        sevenZeroAI();
-                    } // else if (mUno.isSevenZeroRule())
-                    else if (mUno.getDifficulty() == Uno.LV_EASY) {
-                        easyAI();
-                    } // else if (mUno.getDifficulty() == Uno.LV_EASY)
-                    else {
-                        hardAI();
-                    } // else
+                    requestAI();
                 } // if (mAuto)
                 else if (mUno.legalCardsCount4NowPlayer() == 0) {
                     draw(1, /* force */ false);
@@ -488,18 +397,7 @@ public class MainActivity extends AppCompatActivity
             case Player.COM2:
             case Player.COM3:
                 // AI players' turn
-                if (mUno.is2vs2()) {
-                    teamAI();
-                } // if (mUno.is2vs2())
-                else if (mUno.isSevenZeroRule()) {
-                    sevenZeroAI();
-                } // else if (mUno.isSevenZeroRule())
-                else if (mUno.getDifficulty() == Uno.LV_EASY) {
-                    easyAI();
-                } // else if (mUno.getDifficulty() == Uno.LV_EASY)
-                else {
-                    hardAI();
-                } // else
+                requestAI();
                 break; // case Player.COM1, Player.COM2, Player.COM3
 
             case STAT_GAME_OVER:

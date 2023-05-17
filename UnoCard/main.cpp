@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <QUrl>
+#include <QFile>
 #include <QIcon>
 #include <QRect>
 #include <QBrush>
@@ -16,11 +17,11 @@
 #include <QTimer>
 #include <cstdlib>
 #include <cstring>
-#include <fstream>
 #include <QString>
 #include <QWidget>
 #include <QPainter>
 #include <QFileInfo>
+#include <QIODevice>
 #include <QEventLoop>
 #include <QCloseEvent>
 #include <QMouseEvent>
@@ -70,7 +71,7 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
     QString bgmPath;
     int dw[64] = {0};
     char header[9] = {0};
-    std::ifstream reader;
+    QFile reader("UnoCard.stat");
 
     // Preparations
     if (strstr(argv[0], "zh") != nullptr) {
@@ -98,12 +99,9 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
     sMediaList->setPlaybackMode(QMediaPlaylist::Loop);
     sMediaPlay->setPlaylist(sMediaList);
     sMediaPlay->setVolume(50);
-    reader.open("UnoCard.stat", std::ios::in | std::ios::binary);
-    if (!reader.fail()) {
+    if (reader.open(QIODevice::ReadOnly)) {
         // Using statistics data in UnoCard.stat file.
-        reader.seekg(0, std::ios::end);
-        i = int(reader.tellg());
-        reader.seekg(0, std::ios::beg);
+        i = int(reader.size());
         if (i == 8 + 9 * sizeof(int)) {
             // Old version
             reader.read(header, 8);
@@ -160,7 +158,7 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
         } // else if (i == 8 + 64 * sizeof(int))
 
         reader.close();
-    } // if (!reader.fail())
+    } // if (reader.open(QIODevice::ReadOnly))
 
     sAuto = false;
     sHideFlag = 0x00;
@@ -183,9 +181,9 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
 } // Main(int, char*[], QWidget*) (Class Constructor)
 
 /**
- * AI Strategies (Difficulty: EASY).
+ * The unique AI entry point.
  */
-void Main::easyAI() {
+void Main::requestAI() {
     int idxBest;
     Color bestColor[1];
 
@@ -196,7 +194,13 @@ void Main::easyAI() {
             || sStatus == Player::COM3
             || (sStatus == Player::YOU && sAuto)) {
             setStatus(STAT_IDLE); // block mouse click events when idle
-            idxBest = sAI->easyAI_bestCardIndex4NowPlayer(bestColor);
+            idxBest = sUno->is2vs2()
+                ? sAI->teamAI_bestCardIndex4NowPlayer(bestColor)
+                : sUno->isSevenZeroRule()
+                ? sAI->sevenZeroAI_bestCardIndex4NowPlayer(bestColor)
+                : sUno->getDifficulty() == Uno::LV_EASY
+                ? sAI->easyAI_bestCardIndex4NowPlayer(bestColor)
+                : sAI->hardAI_bestCardIndex4NowPlayer(bestColor);
             if (idxBest >= 0) {
                 // Found an appropriate card to play
                 play(idxBest, bestColor[0]);
@@ -209,94 +213,7 @@ void Main::easyAI() {
 
         sAIRunning = false;
     } // if (!sAIRunning)
-} // easyAI()
-
-/**
- * AI Strategies (Difficulty: HARD).
- */
-void Main::hardAI() {
-    int idxBest;
-    Color bestColor[1];
-
-    if (!sAIRunning) {
-        sAIRunning = true;
-        while (sStatus == Player::COM1
-            || sStatus == Player::COM2
-            || sStatus == Player::COM3
-            || (sStatus == Player::YOU && sAuto)) {
-            setStatus(STAT_IDLE); // block mouse click events when idle
-            idxBest = sAI->hardAI_bestCardIndex4NowPlayer(bestColor);
-            if (idxBest >= 0) {
-                // Found an appropriate card to play
-                play(idxBest, bestColor[0]);
-            } // if (idxBest >= 0)
-            else {
-                // No appropriate cards to play, or no card to play
-                draw();
-            } // else
-        } // while (sStatus == Player::COM1 || ...)
-
-        sAIRunning = false;
-    } // if (!sAIRunning)
-} // hardAI()
-
-/**
- * Special AI strategies in 2vs2 rule.
- */
-void Main::teamAI() {
-    int idxBest;
-    Color bestColor[1];
-
-    if (!sAIRunning) {
-        sAIRunning = true;
-        while (sStatus == Player::COM1
-            || sStatus == Player::COM2
-            || sStatus == Player::COM3
-            || (sStatus == Player::YOU && sAuto)) {
-            setStatus(STAT_IDLE); // block mouse click events when idle
-            idxBest = sAI->teamAI_bestCardIndex4NowPlayer(bestColor);
-            if (idxBest >= 0) {
-                // Found an appropriate card to play
-                play(idxBest, bestColor[0]);
-            } // if (idxBest >= 0)
-            else {
-                // No appropriate cards to play, or no card to play
-                draw();
-            } // else
-        } // while (sStatus == Player::COM1 || ...)
-
-        sAIRunning = false;
-    } // if (!sAIRunning)
-} // teamAI()
-
-/**
- * Special AI strategies in 7-0 rule.
- */
-void Main::sevenZeroAI() {
-    int idxBest;
-    Color bestColor[1];
-
-    if (!sAIRunning) {
-        sAIRunning = true;
-        while (sStatus == Player::COM1
-            || sStatus == Player::COM2
-            || sStatus == Player::COM3
-            || (sStatus == Player::YOU && sAuto)) {
-            setStatus(STAT_IDLE); // block mouse click events when idle
-            idxBest = sAI->sevenZeroAI_bestCardIndex4NowPlayer(bestColor);
-            if (idxBest >= 0) {
-                // Found an appropriate card to play
-                play(idxBest, bestColor[0]);
-            } // if (idxBest >= 0)
-            else {
-                // No appropriate cards to play, or no card to play
-                draw();
-            } // else
-        } // while (sStatus == Player::COM1 || ...)
-
-        sAIRunning = false;
-    } // if (!sAIRunning)
-} // sevenZeroAI()
+} // requestAI()
 
 /**
  * Let our UI wait the number of specified milli seconds.
@@ -369,18 +286,7 @@ void Main::setStatus(int status) {
     case Player::YOU:
         // Your turn, select a hand card to play, or draw a card
         if (sAuto) {
-            if (sUno->is2vs2()) {
-                teamAI();
-            } // if (sUno->is2vs2())
-            else if (sUno->isSevenZeroRule()) {
-                sevenZeroAI();
-            } // else if (sUno->isSevenZeroRule())
-            else if (sUno->getDifficulty() == Uno::LV_EASY) {
-                easyAI();
-            } // else if (sUno->getDifficulty() == Uno::LV_EASY)
-            else {
-                hardAI();
-            } // else
+            requestAI();
         } // if (sAuto)
         else if (sUno->legalCardsCount4NowPlayer() == 0) {
             draw();
@@ -448,18 +354,7 @@ void Main::setStatus(int status) {
     case Player::COM2:
     case Player::COM3:
         // AI players' turn
-        if (sUno->is2vs2()) {
-            teamAI();
-        } // if (sUno->is2vs2())
-        else if (sUno->isSevenZeroRule()) {
-            sevenZeroAI();
-        } // else if (sUno->isSevenZeroRule())
-        else if (sUno->getDifficulty() == Uno::LV_EASY) {
-            easyAI();
-        } // else if (sUno->getDifficulty() == Uno::LV_EASY)
-        else {
-            hardAI();
-        } // else
+        requestAI();
         break; // case Player::COM1, Player::COM2, Player::COM3
 
     case STAT_GAME_OVER:
@@ -1593,10 +1488,9 @@ void Main::mousePressEvent(QMouseEvent* event) {
  * Triggered when application finishes.
  */
 void Main::closeEvent(QCloseEvent*) {
-    std::ofstream writer;
+    QFile writer("UnoCard.stat");
 
-    writer.open("UnoCard.stat", std::ios::out | std::ios::binary);
-    if (!writer.fail()) {
+    if (writer.open(QIODevice::WriteOnly)) {
         // Store statistics data to file
         int dw[64] = {
             /* dw[0] = your score         */ qMax(-999, sScore),
@@ -1622,7 +1516,7 @@ void Main::closeEvent(QCloseEvent*) {
         writer.write(FILE_HEADER, 8);
         writer.write((char*)dw, 64 * sizeof(int));
         writer.close();
-    } // if (!writer.fail())
+    } // if (writer.open(QIODevice::WriteOnly))
 
     exit(0);
 } // closeEvent(QCloseEvent*)

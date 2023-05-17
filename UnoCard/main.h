@@ -72,10 +72,7 @@ private:
 
     // Functions
     void cycle();
-    void easyAI();
-    void hardAI();
-    void teamAI();
-    void sevenZeroAI();
+    void requestAI();
     void onChallenge();
     void swapWith(int whom);
     void setStatus(int status);
