@@ -194,12 +194,12 @@ void Main::requestAI() {
             || sStatus == Player::COM3
             || (sStatus == Player::YOU && sAuto)) {
             setStatus(STAT_IDLE); // block mouse click events when idle
-            idxBest = sUno->is2vs2()
-                ? sAI->teamAI_bestCardIndex4NowPlayer(bestColor)
+            idxBest = sUno->getDifficulty() == Uno::LV_EASY
+                ? sAI->easyAI_bestCardIndex4NowPlayer(bestColor)
                 : sUno->isSevenZeroRule()
                 ? sAI->sevenZeroAI_bestCardIndex4NowPlayer(bestColor)
-                : sUno->getDifficulty() == Uno::LV_EASY
-                ? sAI->easyAI_bestCardIndex4NowPlayer(bestColor)
+                : sUno->is2vs2()
+                ? sAI->teamAI_bestCardIndex4NowPlayer(bestColor)
                 : sAI->hardAI_bestCardIndex4NowPlayer(bestColor);
             if (idxBest >= 0) {
                 // Found an appropriate card to play
@@ -439,15 +439,11 @@ void Main::refreshScreen(const QString& message) {
             image = sUno->getLevelImage(
                 /* level   */ Uno::LV_EASY,
                 /* hiLight */ sUno->getDifficulty() == Uno::LV_EASY
-                && !sUno->isSevenZeroRule()
-                && !sUno->is2vs2()
             ); // image = sUno->getLevelImage()
             sPainter->drawImage(930, 60, image);
             image = sUno->getLevelImage(
                 /* level   */ Uno::LV_HARD,
                 /* hiLight */ sUno->getDifficulty() == Uno::LV_HARD
-                && !sUno->isSevenZeroRule()
-                && !sUno->is2vs2()
             ); // image = sUno->getLevelImage()
             sPainter->drawImage(1110, 60, image);
 

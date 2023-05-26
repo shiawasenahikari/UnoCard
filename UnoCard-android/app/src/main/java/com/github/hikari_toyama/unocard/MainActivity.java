@@ -247,12 +247,12 @@ public class MainActivity extends AppCompatActivity
                     || mStatus == Player.COM3
                     || (mStatus == Player.YOU && mAuto)) {
                 setStatus(STAT_IDLE); // block tap down events when idle
-                idxBest = mUno.is2vs2()
-                        ? mAI.teamAI_bestCardIndex4NowPlayer(mBestColor)
+                idxBest = mUno.getDifficulty() == Uno.LV_EASY
+                        ? mAI.easyAI_bestCardIndex4NowPlayer(mBestColor)
                         : mUno.isSevenZeroRule()
                         ? mAI.sevenZeroAI_bestCardIndex4NowPlayer(mBestColor)
-                        : mUno.getDifficulty() == Uno.LV_EASY
-                        ? mAI.easyAI_bestCardIndex4NowPlayer(mBestColor)
+                        : mUno.is2vs2()
+                        ? mAI.teamAI_bestCardIndex4NowPlayer(mBestColor)
                         : mAI.hardAI_bestCardIndex4NowPlayer(mBestColor);
                 if (idxBest >= 0) {
                     // Found an appropriate card to play
@@ -486,15 +486,11 @@ public class MainActivity extends AppCompatActivity
                 image = mUno.getLevelImage(
                         /* level   */ Uno.LV_EASY,
                         /* hiLight */ mUno.getDifficulty() == Uno.LV_EASY
-                                && !mUno.isSevenZeroRule()
-                                && !mUno.is2vs2()
                 ); // image = mUno.getLevelImage()
                 image.copyTo(mScr.submat(60, 241, 930, 1051), image);
                 image = mUno.getLevelImage(
                         /* level   */ Uno.LV_HARD,
                         /* hiLight */ mUno.getDifficulty() == Uno.LV_HARD
-                                && !mUno.isSevenZeroRule()
-                                && !mUno.is2vs2()
                 ); // image = mUno.getLevelImage()
                 image.copyTo(mScr.submat(60, 241, 1110, 1231), image);
 
