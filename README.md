@@ -16,7 +16,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/releases) page and download the
-   latest version in zip file `(UnoCard-v3.5.zip)`.
+   latest version in zip file `(UnoCard-v3.6.zip)`.
 2. Unzip the downloaded zip file, then execute `UnoCard.exe` and have fun!
 
 Download the source code and compile manually
@@ -47,18 +47,15 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 brew install qt5
 brew link --force qt5
 ```
-2. Clone this repository by executing the following command in your bash terminal (replace
+2. Ensure that you have installed Visual Studio Code on your computer. If not, get installer from:
+   [Visual Studio Code - Code Editing. Redefined](https://code.visualstudio.com).
+3. Clone this repository by executing the following command in your bash terminal (replace
    `<proj_root>` with a directory path where you want to store this repository):
 ```Bash
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
-3. Build and run
-```Bash
-cd <proj_root>/UnoCard
-mkdir -p build && cd build
-qmake ../UnoCard.pro
-make && cd .. && ./UnoCard
-```
+4. Open `<proj_root>/UnoCard` directory in your Visual Studio Code.
+5. Execute [Run]->[Run Without Debugging] menu command (or press Ctrl+F5) to run this program.
 
 💻For Linux x86_64 PC Devices
 =============================
@@ -86,18 +83,15 @@ sudo apt install gstreamer1.0-pulseaudio
 # For Fedora/CentOS/RHEL users:
 sudo yum install epel-release && sudo yum install gstreamer*
 ```
-3. Clone this repository by executing the following command in your bash terminal (replace
+3. Ensure that you have installed Visual Studio Code on your computer. If not, get installer from:
+   [Visual Studio Code - Code Editing. Redefined](https://code.visualstudio.com).
+4. Clone this repository by executing the following command in your bash terminal (replace
    `<proj_root>` with a directory path where you want to store this repository):
 ```Bash
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
-4. Build and run
-```Bash
-cd <proj_root>/UnoCard
-mkdir -p build && cd build
-qmake ../UnoCard.pro
-make && cd .. && ./UnoCard
-```
+5. Open `<proj_root>/UnoCard` directory in your Visual Studio Code.
+6. Execute [Run]->[Run Without Debugging] menu command (or press Ctrl+F5) to run this program.
 
 📱For Android Phone Devices
 ===========================
@@ -106,7 +100,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/releases) page and download the
-   latest version in apk file `(UnoCard-v3.5.apk)`.
+   latest version in apk file `(UnoCard-v3.6.apk)`.
 2. On your Android phone, open [Settings] app, go to [Security] page, then check the [Unknown
    sources] toggle.
 3. Push the downloaded file to your Android phone, then install and launch it to have fun!
@@ -223,7 +217,7 @@ Stack
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/releases) 页面下载最新版本的 zip 包
-   `(UnoCard-v3.5.zip)`.
+   `(UnoCard-v3.6.zip)`.
 2. 解压并执行 `UnoCard.exe` 开始游戏。
 
 下载源码并手动编译
@@ -253,17 +247,14 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 brew install qt5
 brew link --force qt5
 ```
-2. 在 Bash 中执行如下命令以克隆本仓库 (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
+2. 请确认您的电脑上已安装 Visual Studio Code。若您尚未安装，则访问以下界面获取安装包：
+   [Visual Studio Code - Code Editing. Redefined](https://code.visualstudio.com)。
+3. 在 Bash 中执行如下命令以克隆本仓库 (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
 ```Bash
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
-3. 编译并运行
-```Bash
-cd <proj_root>/UnoCard
-mkdir -p build && cd build
-qmake ../UnoCard.pro
-make && cd .. && ./UnoCard
-```
+4. 用 Visual Studio Code 打开 `<proj_root>/UnoCard` 目录。
+5. 执行 [运行]->[以非调试模式运行] 菜单命令 (或按 Ctrl+F5) 开始运行。
 
 💻在 Linux x86_64 PC 设备上运行
 ===============================
@@ -289,17 +280,14 @@ sudo apt install gstreamer1.0-pulseaudio
 # Fedora/CentOS/RHEL 发行版用户执行以下命令
 sudo yum install epel-release && sudo yum install gstreamer*
 ```
-3. 在 Bash 中执行如下命令以克隆本仓库 (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
+3. 请确认您的电脑上已安装 Visual Studio Code。若您尚未安装，则访问以下界面获取安装包：
+   [Visual Studio Code - Code Editing. Redefined](https://code.visualstudio.com)。
+4. 在 Bash 中执行如下命令以克隆本仓库 (请将 `<proj_root>` 替换为存储本仓库源码的目录路径)
 ```Bash
 git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ```
-4. 编译并运行
-```Bash
-cd <proj_root>/UnoCard
-mkdir -p build && cd build
-qmake ../UnoCard.pro
-make && cd .. && ./UnoCard
-```
+5. 用 Visual Studio Code 打开 `<proj_root>/UnoCard` 目录。
+6. 执行 [运行]->[以非调试模式运行] 菜单命令 (或按 Ctrl+F5) 开始运行。
 
 📱在 Android 设备上运行
 =======================
@@ -308,7 +296,7 @@ make && cd .. && ./UnoCard
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/releases) 页面下载最新版本的 apk 包
-   `(UnoCard-v3.5.apk)`.
+   `(UnoCard-v3.6.apk)`.
 2. 打开您的 Android 设备中的 [设置] 应用，进入 [安全] 页面，勾选 [未知来源] 复选框。
 3. 将已下载的安装包传到手机中，安装并运行即可开始游戏。
 

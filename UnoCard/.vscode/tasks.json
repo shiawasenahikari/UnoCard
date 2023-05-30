@@ -4,23 +4,55 @@
         {
             "label": "debug",
             "type": "shell",
-            "command": "cmd",
-            "args": [
-                "/c",
-                "${workspaceRoot}/scripts/build_debug.bat",
-                "debug"
-            ], // args
+            "linux": {
+                "command": "sh",
+                "args": [
+                    "${workspaceRoot}/scripts/build_debug.sh",
+                    "debug"
+                ] // args
+            }, // linux
+            "osx": {
+                "command": "sh",
+                "args": [
+                    "${workspaceRoot}/scripts/build_debug.sh",
+                    "debug"
+                ] // args
+            }, // osx
+            "windows": {
+                "command": "cmd",
+                "args": [
+                    "/c",
+                    "${workspaceRoot}/scripts/build_debug.bat",
+                    "debug"
+                ] // args
+            }, // windows
             "group": "build"
         }, // debug
         {
             "label": "release",
             "type": "shell",
-            "command": "cmd",
-            "args": [
-                "/c",
-                "${workspaceRoot}/scripts/build_release.bat",
-                "release"
-            ], // args
+            "linux": {
+                "command": "sh",
+                "args": [
+                    "${workspaceRoot}/scripts/build_release.sh",
+                    "release"
+                ] // args
+            }, // linux
+            "osx": {
+                "command": "sh",
+                "args": [
+                    "${workspaceRoot}/scripts/build_release.sh",
+                    "release"
+                ] // args
+            }, // osx
+            "windows": {
+                "command": "cmd",
+                "args": [
+                    "/c",
+                    "${workspaceRoot}/scripts/build_release.bat",
+                    "release"
+                ] // args
+            }, // windows
             "group": "build"
         } // release
     ] // tasks

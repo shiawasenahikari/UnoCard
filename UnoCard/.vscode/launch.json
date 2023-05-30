@@ -2,15 +2,28 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "release",
-            "type": "cppvsdbg",
+            "name": "gdb",
+            "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/UnoCard.exe",
+            "program": "${workspaceRoot}/UnoCard",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceRoot}",
             "environment": [],
+            "MIMode": "gdb",
             "preLaunchTask": "release"
-        } // release
+        }, // gdb
+        {
+            "name": "lldb",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/UnoCard",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceRoot}",
+            "environment": [],
+            "MIMode": "lldb",
+            "preLaunchTask": "release"
+        } // lldb
     ] // configurations
 } // launch.json

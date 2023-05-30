@@ -3,6 +3,8 @@
         {
             "name": "qt",
             "includePath": [
+                "/usr/include/**",
+                "/opt/homebrew/include/**",
                 "c:/Qt/Qt5.12.12/5.12.12/mingw73_64/include/**",
                 "${workspaceRoot}/**"
             ], // includePath
