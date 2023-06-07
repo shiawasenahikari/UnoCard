@@ -20,7 +20,6 @@ import static com.github.hikari_toyama.unocard.core.Content.WILD;
 import static com.github.hikari_toyama.unocard.core.Content.WILD_DRAW4;
 
 import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
 
 /**
@@ -31,11 +30,6 @@ public class AI {
      * Uno runtime.
      */
     final Uno uno;
-
-    /**
-     * Message for IllegalArgumentException.
-     */
-    final String IAE = "outColor cannot be null or Color[0]";
 
     /**
      * Record the priorities of your candidates. Used by hard AI.
@@ -231,6 +225,7 @@ public class AI {
      */
     public int easyAI_bestCardIndex4NowPlayer(Color[] outColor) {
         Card card;
+        String errMsg;
         int yourSize, nextSize;
         int oppoSize, prevSize;
         Color bestColor, lastColor;
@@ -245,7 +240,8 @@ public class AI {
         List<Card> hand = uno.getCurrPlayer().getHandCards();
 
         if (outColor == null || outColor.length == 0) {
-            throw new IllegalArgumentException(IAE);
+            errMsg = "outColor cannot be null or Color[0]";
+            throw new IllegalArgumentException(errMsg);
         }  // if (outColor == null || outColor.length == 0)
 
         yourSize = hand.size();
@@ -447,6 +443,7 @@ public class AI {
      */
     public int hardAI_bestCardIndex4NowPlayer(Color[] outColor) {
         Card card;
+        String errMsg;
         boolean allWild;
         int yourSize, nextSize;
         int oppoSize, prevSize;
@@ -463,7 +460,8 @@ public class AI {
         List<Card> hand = uno.getCurrPlayer().getHandCards();
 
         if (outColor == null || outColor.length == 0) {
-            throw new IllegalArgumentException(IAE);
+            errMsg = "outColor cannot be null or Color[0]";
+            throw new IllegalArgumentException(errMsg);
         }  // if (outColor == null || outColor.length == 0)
 
         yourSize = hand.size();
@@ -547,12 +545,13 @@ public class AI {
                 // 3: Wild +4 cards, switch to your best color
                 // 4: Reverse cards, in any color
                 // 5: Draw one, and pray to get one of the above...
-                for (Map.Entry<Integer, Card> can : candidates.entrySet()) {
-                    if (can.getValue().color != nextStrong) {
-                        iBest = -can.getKey() % 100;
+                for (int can : candidates.keySet()) {
+                    i = -can % 100;
+                    if (hand.get(i).color != nextStrong) {
+                        iBest = i;
                         break;
-                    } // if (can.getValue().color != nextStrong)
-                } // for (Map.Entry<Integer, Card> can : candidates.entrySet())
+                    } // if (hand.get(i).color != nextStrong)
+                } // for (int can : candidates.keySet())
                 if (iBest < 0 && iSK >= 0)
                     iBest = iSK;
                 if (iBest < 0 && iWD >= 0)
@@ -569,12 +568,13 @@ public class AI {
                 // 1: Reverse cards, NOT in color of nextStrong
                 // 2: Skip cards, NOT in color of nextStrong
                 // 3: Draw one because it's not necessary to use wild cards
-                for (Map.Entry<Integer, Card> can : candidates.entrySet()) {
-                    if (can.getValue().color != nextStrong) {
-                        iBest = -can.getKey() % 100;
+                for (int can : candidates.keySet()) {
+                    i = -can % 100;
+                    if (hand.get(i).color != nextStrong) {
+                        iBest = i;
                         break;
-                    } // if (can.getValue().color != nextStrong)
-                } // for (Map.Entry<Integer, Card> can : candidates.entrySet())
+                    } // if (hand.get(i).color != nextStrong)
+                } // for (int can : candidates.keySet())
                 if (iBest < 0 && iRV >= 0 && prevSize >= 4 &&
                         hand.get(iRV).color != nextStrong)
                     iBest = iRV;
@@ -638,14 +638,13 @@ public class AI {
                 // 2: Draw one because it's not necessary to use other cards
                 if (iRV >= 0 && hand.get(iRV).color != prevStrong)
                     iBest = iRV;
-                if (iBest < 0) {
-                    for (Map.Entry<Integer, Card> can : candidates.entrySet()) {
-                        if (can.getValue().color != prevStrong) {
-                            iBest = -can.getKey() % 100;
-                            break;
-                        } // if (can.getValue().color != prevStrong)
-                    } // for (Map.Entry<Integer, Card> can : candidates.entrySet())
-                } // if (iBest < 0)
+                if (iBest < 0) for (int can : candidates.keySet()) {
+                    i = -can % 100;
+                    if (hand.get(i).color != prevStrong) {
+                        iBest = i;
+                        break;
+                    } // if (hand.get(i).color != prevStrong)
+                } // if (iBest < 0) for (int can : candidates.keySet())
             } // else if (prevStrong != NONE)
             else {
                 // Priority when prev called Uno & prevStrong is unknown:
@@ -683,12 +682,13 @@ public class AI {
                 //    (pray that prev can limit oppo!)
                 // 7: Number cards, in color of oppoStrong
                 //    (pray that next can limit oppo!)
-                for (Map.Entry<Integer, Card> can : candidates.entrySet()) {
-                    if (can.getValue().color != oppoStrong) {
-                        iBest = -can.getKey() % 100;
+                for (int can : candidates.keySet()) {
+                    i = -can % 100;
+                    if (hand.get(i).color != oppoStrong) {
+                        iBest = i;
                         break;
-                    } // if (can.getValue().color != oppoStrong)
-                } // for (Map.Entry<Integer, Card> can : candidates.entrySet())
+                    } // if (hand.get(i).color != oppoStrong)
+                } // for (int can : candidates.keySet())
                 if (iBest < 0 && iRV >= 0 &&
                         hand.get(iRV).color != oppoStrong)
                     iBest = iRV;
@@ -715,12 +715,13 @@ public class AI {
                 // 2: Skip cards, NOT in color of oppoStrong
                 // 3: +2 cards, NOT in color of oppoStrong
                 // 4: Draw one because it's not necessary to use other cards
-                for (Map.Entry<Integer, Card> can : candidates.entrySet()) {
-                    if (can.getValue().color != oppoStrong) {
-                        iBest = -can.getKey() % 100;
+                for (int can : candidates.keySet()) {
+                    i = -can % 100;
+                    if (hand.get(i).color != oppoStrong) {
+                        iBest = i;
                         break;
-                    } // if (can.getValue().color != oppoStrong)
-                } // for (Map.Entry<Integer, Card> can : candidates.entrySet())
+                    } // if (hand.get(i).color != oppoStrong)
+                } // for (int can : candidates.keySet())
                 if (iBest < 0 && iRV >= 0 &&
                         hand.get(iRV).color != oppoStrong)
                     iBest = iRV;
@@ -772,14 +773,13 @@ public class AI {
             // 4: +2 cards, in your best color
             if (iRV >= 0 && prevSize > nextSize)
                 iBest = iRV;
-            if (iBest < 0) {
-                for (Map.Entry<Integer, Card> can : candidates.entrySet()) {
-                    if (can.getValue().color == nextWeak) {
-                        iBest = -can.getKey() % 100;
-                        break;
-                    } // if (can.getValue().color == nextWeak)
-                } // for (Map.Entry<Integer, Card> can : candidates.entrySet())
-            } // if (iBest < 0)
+            if (iBest < 0) for (int can : candidates.keySet()) {
+                i = -can % 100;
+                if (hand.get(i).color == nextWeak) {
+                    iBest = i;
+                    break;
+                } // if (hand.get(i).color == nextWeak)
+            } // if (iBest < 0) for (int can : candidates.keySet())
             if (iBest < 0 && !candidates.isEmpty())
                 iBest = -candidates.firstKey() % 100;
             if (iBest < 0 && iRV >= 0 &&
@@ -867,6 +867,7 @@ public class AI {
      */
     public int teamAI_bestCardIndex4NowPlayer(Color[] outColor) {
         Card card;
+        String errMsg;
         int yourSize, nextSize;
         int oppoSize, prevSize;
         Color bestColor, lastColor;
@@ -881,7 +882,8 @@ public class AI {
         List<Card> hand = uno.getCurrPlayer().getHandCards();
 
         if (outColor == null || outColor.length == 0) {
-            throw new IllegalArgumentException(IAE);
+            errMsg = "outColor cannot be null or Color[0]";
+            throw new IllegalArgumentException(errMsg);
         }  // if (outColor == null || outColor.length == 0)
 
         yourSize = hand.size();
@@ -965,25 +967,25 @@ public class AI {
                 iBest = iWD;
             if (iBest < 0 && iWD4 >= 0 && lastColor != bestColor)
                 iBest = iWD4;
-            if (iBest < 0) {
-                for (Map.Entry<Integer, Card> can : candidates.entrySet()) {
-                    if (can.getValue().color != nextStrong) {
-                        iBest = -can.getKey() % 100;
-                        break;
-                    } // if (can.getValue().color != nextStrong)
-                } // for (Map.Entry<Integer, Card> can : candidates.entrySet())
-            } // if (iBest < 0)
+            if (iBest < 0) for (int can : candidates.keySet()) {
+                i = -can % 100;
+                if (hand.get(i).color != nextStrong) {
+                    iBest = i;
+                    break;
+                } // if (hand.get(i).color != nextStrong)
+            } // if (iBest < 0) for (int can : candidates.keySet())
             if (iBest < 0 && iWD >= 0)
                 iBest = iWD;
         } // if (nextSize == 1)
         else if (prevSize == 1) {
             // Strategies when your previous player remains only one card.
-            for (Map.Entry<Integer, Card> can : candidates.entrySet()) {
-                if (can.getValue().color != prevStrong) {
-                    iBest = -can.getKey() % 100;
+            for (int can : candidates.keySet()) {
+                i = -can % 100;
+                if (hand.get(i).color != prevStrong) {
+                    iBest = i;
                     break;
-                } // if (can.getValue().color != prevStrong)
-            } // for (Map.Entry<Integer, Card> can : candidates.entrySet())
+                } // if (hand.get(i).color != prevStrong)
+            } // for (int can : candidates.keySet())
             if (iBest < 0 && iSK >= 0 && hand.get(iSK).color != prevStrong)
                 iBest = iSK;
             if (iBest < 0 && iDW >= 0 && hand.get(iDW).color != prevStrong)
@@ -1005,14 +1007,13 @@ public class AI {
                 iBest = iWD4;
             if (iBest < 0 && iRV >= 0 && hand.get(iRV).color == oppoStrong)
                 iBest = iRV;
-            if (iBest < 0) {
-                for (Map.Entry<Integer, Card> can : candidates.entrySet()) {
-                    if (can.getValue().color == oppoStrong) {
-                        iBest = -can.getKey() % 100;
-                        break;
-                    } // if (can.getValue().color == oppoStrong)
-                } // for (Map.Entry<Integer, Card> can : candidates.entrySet())
-            } // if (iBest < 0)
+            if (iBest < 0) for (int can : candidates.keySet()) {
+                i = -can % 100;
+                if (hand.get(i).color == oppoStrong) {
+                    iBest = i;
+                    break;
+                } // if (hand.get(i).color == oppoStrong)
+            } // if (iBest < 0) for (int can : candidates.keySet())
             if (iBest < 0 && iWD >= 0 && oppoStrong != NONE
                     && lastColor != oppoStrong)
                 iBest = iWD;
@@ -1068,6 +1069,7 @@ public class AI {
      */
     public int sevenZeroAI_bestCardIndex4NowPlayer(Color[] outColor) {
         Card card;
+        String errMsg;
         int yourSize, nextSize;
         int oppoSize, prevSize;
         Color bestColor, lastColor;
@@ -1082,7 +1084,8 @@ public class AI {
         List<Card> hand = uno.getCurrPlayer().getHandCards();
 
         if (outColor == null || outColor.length == 0) {
-            throw new IllegalArgumentException(IAE);
+            errMsg = "outColor cannot be null or Color[0]";
+            throw new IllegalArgumentException(errMsg);
         }  // if (outColor == null || outColor.length == 0)
 
         yourSize = hand.size();
@@ -1189,14 +1192,13 @@ public class AI {
                 iBest = iWD;
             if (iBest < 0 && iWD4 >= 0 && lastColor != bestColor)
                 iBest = iWD4;
-            if (iBest < 0) {
-                for (Map.Entry<Integer, Card> can : candidates.entrySet()) {
-                    if (can.getValue().color != nextStrong) {
-                        iBest = -can.getKey() % 100;
-                        break;
-                    } // if (can.getValue().color != nextStrong)
-                } // for (Map.Entry<Integer, Card> can : candidates.entrySet())
-            } // if (iBest < 0)
+            if (iBest < 0) for (int can : candidates.keySet()) {
+                i = -can % 100;
+                if (hand.get(i).color != nextStrong) {
+                    iBest = i;
+                    break;
+                } // if (hand.get(i).color != nextStrong)
+            } // if (iBest < 0) for (int can : candidates.keySet())
             if (iBest < 0 && iWD >= 0 && i7 + i0 > -2)
                 iBest = iWD;
         } // if (nextSize == 1)
@@ -1207,14 +1209,13 @@ public class AI {
                 iBest = i0;
             if (iBest < 0 && i7 >= 0)
                 iBest = i7;
-            if (iBest < 0) {
-                for (Map.Entry<Integer, Card> can : candidates.entrySet()) {
-                    if (can.getValue().color != prevStrong) {
-                        iBest = -can.getKey() % 100;
-                        break;
-                    } // if (can.getValue().color != prevStrong)
-                } // for (Map.Entry<Integer, Card> can : candidates.entrySet())
-            } // if (iBest < 0)
+            if (iBest < 0) for (int can : candidates.keySet()) {
+                i = -can % 100;
+                if (hand.get(i).color != prevStrong) {
+                    iBest = i;
+                    break;
+                } // if (hand.get(i).color != prevStrong)
+            } // if (iBest < 0) for (int can : candidates.keySet())
             if (iBest < 0 && iSK >= 0 && hand.get(iSK).color != prevStrong)
                 iBest = iSK;
             if (iBest < 0 && iDW >= 0 && hand.get(iDW).color != prevStrong)
@@ -1233,14 +1234,13 @@ public class AI {
                 iBest = i7;
             if (iBest < 0 && i0 >= 0)
                 iBest = i0;
-            if (iBest < 0) {
-                for (Map.Entry<Integer, Card> can : candidates.entrySet()) {
-                    if (can.getValue().color != oppoStrong) {
-                        iBest = -can.getKey() % 100;
-                        break;
-                    } // if (can.getValue().color != oppoStrong)
-                } // for (Map.Entry<Integer, Card> can : candidates.entrySet())
-            } // if (iBest < 0)
+            if (iBest < 0) for (int can : candidates.keySet()) {
+                i = -can % 100;
+                if (hand.get(i).color != oppoStrong) {
+                    iBest = i;
+                    break;
+                } // if (hand.get(i).color != oppoStrong)
+            } // if (iBest < 0) for (int can : candidates.keySet())
             if (iBest < 0 && iRV >= 0 && prevSize > nextSize)
                 iBest = iRV;
             if (iBest < 0 && iSK >= 0 && hand.get(iSK).color != oppoStrong)

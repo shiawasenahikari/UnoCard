@@ -546,10 +546,11 @@ public:
                 // 4: Reverse cards, in any color
                 // 5: Draw one, and pray to get one of the above...
                 for (auto& can : candidates) {
-                    if (can.second->color != nextStrong) {
-                        iBest = -can.first % 100;
+                    i = -can.first % 100;
+                    if (hand.at(i)->color != nextStrong) {
+                        iBest = i;
                         break;
-                    } // if (can.second->color != nextStrong)
+                    } // if (hand.at(i)->color != nextStrong)
                 } // for (auto& can : candidates)
                 if (iBest < 0 && iSK >= 0)
                     iBest = iSK;
@@ -568,10 +569,11 @@ public:
                 // 2: Skip cards, NOT in color of nextStrong
                 // 3: Draw one because it's not necessary to use wild cards
                 for (auto& can : candidates) {
-                    if (can.second->color != nextStrong) {
-                        iBest = -can.first % 100;
+                    i = -can.first % 100;
+                    if (hand.at(i)->color != nextStrong) {
+                        iBest = i;
                         break;
-                    } // if (can.second->color != nextStrong)
+                    } // if (hand.at(i)->color != nextStrong)
                 } // for (auto& can : candidates)
                 if (iBest < 0 && iRV >= 0 && prevSize >= 4 &&
                     hand.at(iRV)->color != nextStrong)
@@ -636,10 +638,11 @@ public:
                 if (iRV >= 0 && hand.at(iRV)->color != prevStrong)
                     iBest = iRV;
                 if (iBest < 0) for (auto& can : candidates) {
-                    if (can.second->color != prevStrong) {
-                        iBest = -can.first % 100;
+                    i = -can.first % 100;
+                    if (hand.at(i)->color != prevStrong) {
+                        iBest = i;
                         break;
-                    } // if (can.second->color != prevStrong)
+                    } // if (hand.at(i)->color != prevStrong)
                 } // if (iBest < 0) for (auto& can : candidates)
             } // else if (prevStrong != NONE)
             else {
@@ -678,10 +681,11 @@ public:
                 // 7: Number cards, in color of oppoStrong
                 //    (pray that next can limit oppo!)
                 for (auto& can : candidates) {
-                    if (can.second->color != oppoStrong) {
-                        iBest = -can.first % 100;
+                    i = -can.first % 100;
+                    if (hand.at(i)->color != oppoStrong) {
+                        iBest = i;
                         break;
-                    } // if (can.second->color != oppoStrong)
+                    } // if (hand.at(i)->color != oppoStrong)
                 } // for (auto& can : candidates)
                 if (iBest < 0 && iRV >= 0 &&
                     hand.at(iRV)->color != oppoStrong)
@@ -710,10 +714,11 @@ public:
                 // 3: +2 cards, NOT in color of oppoStrong
                 // 4: Draw one because it's not necessary to use other cards
                 for (auto& can : candidates) {
-                    if (can.second->color != oppoStrong) {
-                        iBest = -can.first % 100;
+                    i = -can.first % 100;
+                    if (hand.at(i)->color != oppoStrong) {
+                        iBest = i;
                         break;
-                    } // if (can.second->color != oppoStrong)
+                    } // if (hand.at(i)->color != oppoStrong)
                 } // for (auto& can : candidates)
                 if (iBest < 0 && iRV >= 0 &&
                     hand.at(iRV)->color != oppoStrong)
@@ -767,10 +772,11 @@ public:
             if (iRV >= 0 && prevSize > nextSize)
                 iBest = iRV;
             if (iBest < 0) for (auto& can : candidates) {
-                if (can.second->color == nextWeak) {
-                    iBest = -can.first % 100;
+                i = -can.first % 100;
+                if (hand.at(i)->color == nextWeak) {
+                    iBest = i;
                     break;
-                } // if (can.second->color == nextWeak)
+                } // if (hand.at(i)->color == nextWeak)
             } // if (iBest < 0) for (auto& can : candidates)
             if (iBest < 0 && !candidates.empty())
                 iBest = -candidates.begin()->first % 100;
@@ -958,10 +964,11 @@ public:
             if (iBest < 0 && iWD4 >= 0 && lastColor != bestColor)
                 iBest = iWD4;
             if (iBest < 0) for (auto& can : candidates) {
-                if (can.second->color != nextStrong) {
-                    iBest = -can.first % 100;
+                i = -can.first % 100;
+                if (hand.at(i)->color != nextStrong) {
+                    iBest = i;
                     break;
-                } // if (can.second->color != nextStrong)
+                } // if (hand.at(i)->color != nextStrong)
             } // if (iBest < 0) for (auto& can : candidates)
             if (iBest < 0 && iWD >= 0)
                 iBest = iWD;
@@ -969,10 +976,11 @@ public:
         else if (prevSize == 1) {
             // Strategies when your previous player remains only one card.
             for (auto& can : candidates) {
-                if (can.second->color != prevStrong) {
-                    iBest = -can.first % 100;
+                i = -can.first % 100;
+                if (hand.at(i)->color != prevStrong) {
+                    iBest = i;
                     break;
-                } // if (can.second->color != prevStrong)
+                } // if (hand.at(i)->color != prevStrong)
             } // for (auto& can : candidates)
             if (iBest < 0 && iSK >= 0 && hand.at(iSK)->color != prevStrong)
                 iBest = iSK;
@@ -996,10 +1004,11 @@ public:
             if (iBest < 0 && iRV >= 0 && hand.at(iRV)->color == oppoStrong)
                 iBest = iRV;
             if (iBest < 0) for (auto& can : candidates) {
-                if (can.second->color != oppoStrong) {
-                    iBest = -can.first % 100;
+                i = -can.first % 100;
+                if (hand.at(i)->color != oppoStrong) {
+                    iBest = i;
                     break;
-                } // if (can.second->color != oppoStrong)
+                } // if (hand.at(i)->color != oppoStrong)
             } // if (iBest < 0) for (auto& can : candidates)
             if (iBest < 0 && iWD >= 0 && oppoStrong != NONE &&
                 lastColor != oppoStrong)
@@ -1178,10 +1187,11 @@ public:
             if (iBest < 0 && iWD4 >= 0 && lastColor != bestColor)
                 iBest = iWD4;
             if (iBest < 0) for (auto& can : candidates) {
-                if (can.second->color != nextStrong) {
-                    iBest = -can.first % 100;
+                i = -can.first % 100;
+                if (hand.at(i)->color != nextStrong) {
+                    iBest = i;
                     break;
-                } // if (can.second->color != nextStrong)
+                } // if (hand.at(i)->color != nextStrong)
             } // if (iBest < 0) for (auto& can : candidates)
             if (iBest < 0 && iWD >= 0 && i7 + i0 > -2)
                 iBest = iWD;
@@ -1194,10 +1204,11 @@ public:
             if (iBest < 0 && i7 >= 0)
                 iBest = i7;
             if (iBest < 0) for (auto& can : candidates) {
-                if (can.second->color != prevStrong) {
-                    iBest = -can.first % 100;
+                i = -can.first % 100;
+                if (hand.at(i)->color != prevStrong) {
+                    iBest = i;
                     break;
-                } // if (can.second->color != prevStrong)
+                } // if (hand.at(i)->color != prevStrong)
             } // if (iBest < 0) for (auto& can : candidates)
             if (iBest < 0 && iSK >= 0 && hand.at(iSK)->color != prevStrong)
                 iBest = iSK;
@@ -1218,10 +1229,11 @@ public:
             if (iBest < 0 && i0 >= 0)
                 iBest = i0;
             if (iBest < 0) for (auto& can : candidates) {
-                if (can.second->color != oppoStrong) {
-                    iBest = -can.first % 100;
+                i = -can.first % 100;
+                if (hand.at(i)->color != oppoStrong) {
+                    iBest = i;
                     break;
-                } // if (can.second->color != oppoStrong)
+                } // if (hand.at(i)->color != oppoStrong)
             } // if (iBest < 0) for (auto& can : candidates)
             if (iBest < 0 && iRV >= 0 && prevSize > nextSize)
                 iBest = iRV;
