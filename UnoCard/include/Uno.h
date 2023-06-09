@@ -343,11 +343,17 @@ private:
 
     /**
      * Fake C++ Macro
-     * #define MASK_ALL(u, p) MASK_BEGIN_TO_I((u)->getPlayer(p)->getHandSize())
+     * #define MAKE_PUBLIC(u, p) do {                            \
+     * Player* pl = (u)->getPlayer(p);                           \
+     * std::sort(pl->handCards.begin(), pl->handCards.end());    \
+     * pl->open = MASK_BEGIN_TO_I(pl->getHandSize());            \
+     * } while (false)
      */
-    inline static unsigned MASK_ALL(Uno* u, int p) {
-        return MASK_BEGIN_TO_I(u->getPlayer(p)->getHandSize());
-    } // MASK_ALL(Uno*, int)
+    static void MAKE_PUBLIC(Uno* u, int p) {
+        Player* pl = u->getPlayer(p);
+        std::sort(pl->handCards.begin(), pl->handCards.end());
+        pl->open = MASK_BEGIN_TO_I(pl->getHandSize());
+    } // MAKE_PUBLIC(Uno*, int)
 
     /**
      * Convert int[] array to string.
@@ -894,8 +900,8 @@ public:
      * then determine our start card.
      */
     inline void start() {
+        int i;
         Card* card;
-        int i, size;
 
         // Reset direction
         direction = DIR_LEFT;
@@ -940,11 +946,7 @@ public:
         } // for (i = 0; i < 54; ++i)
 
         // Shuffle cards
-        size = int(deck.size());
-        while (size > 0) {
-            i = rand() % size--;
-            card = deck[i]; deck[i] = deck[size]; deck[size] = card;
-        } // while (size > 0)
+        std::random_shuffle(deck.begin(), deck.end());
 
         // Determine a start card as the previous played card
         do {
@@ -1034,15 +1036,15 @@ public:
                 player[who].recent = nullptr;
                 if (deck.empty()) {
                     // Re-use the used cards when there are no more cards in deck
-                    int size = int(used.size());
                     qDebug("Re-use the used cards");
-                    while (size > 0) {
-                        int j = rand() % size--;
+                    for (int j = int(used.size()); --j >= 0; ) {
                         deck.push_back(used.at(j));
                         --colorAnalysis[used.at(j)->color];
                         --contentAnalysis[used.at(j)->content];
                         used.erase(used.begin() + j);
-                    } // while (size > 0)
+                    } // for (int j = int(used.size()); --j >= 0; )
+
+                    std::random_shuffle(deck.begin(), deck.end());
                 } // if (deck.empty())
             } // if (hand.size() < MAX_HOLD_CARDS)
             else {
@@ -1185,8 +1187,7 @@ public:
                     // Game over, change background & show everyone's hand cards
                     direction = 0;
                     for (int i = Player::COM1; i <= Player::COM3; ++i) {
-                        player[i].sort();
-                        player[i].open = MASK_ALL(this, i);
+                        MAKE_PUBLIC(this, i);
                     } // for (int i = Player::COM1; i <= Player::COM3; ++i)
 
                     qDebug("======= WINNER IS PLAYER %d =======", who);
@@ -1212,8 +1213,7 @@ public:
 
         if (whom >= Player::YOU && whom <= Player::COM3) {
             if (whom != Player::YOU) {
-                player[whom].sort();
-                player[whom].open = MASK_ALL(this, whom);
+                MAKE_PUBLIC(this, whom);
             } // if (whom != Player::YOU)
 
             for (Card* card : player[whom].handCards) {
@@ -1243,8 +1243,7 @@ public:
         player[a] = player[b];
         player[b] = store;
         if (a == Player::YOU || b == Player::YOU) {
-            player[Player::YOU].sort();
-            player[Player::YOU].open = MASK_ALL(this, Player::YOU);
+            MAKE_PUBLIC(this, Player::YOU);
         } // if (a == Player::YOU || b == Player::YOU)
 
         qDebug("Player %d swapped hand cards with Player %d", a, b);
@@ -1261,8 +1260,7 @@ public:
         player[prev] = player[oppo];
         player[oppo] = player[next];
         player[next] = store;
-        player[Player::YOU].sort();
-        player[Player::YOU].open = MASK_ALL(this, Player::YOU);
+        MAKE_PUBLIC(this, Player::YOU);
         qDebug("Everyone passed hand cards to the next player");
     } // cycle()
 }; // Uno Class

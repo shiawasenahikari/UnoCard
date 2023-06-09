@@ -550,11 +550,17 @@ public class Uno {
 
     /**
      * Fake C++ Macro
-     * #define MASK_ALL(u, p) MASK_BEGIN_TO_I((u)->getPlayer(p)->getHandSize())
+     * #define MAKE_PUBLIC(u, p) do {                            \
+     * Player* pl = (u)->getPlayer(p);                           \
+     * std::sort(pl->handCards.begin(), pl->handCards.end());    \
+     * pl->open = MASK_BEGIN_TO_I(pl->getHandSize());            \
+     * } while (false)
      */
-    static int MASK_ALL(Uno u, int p) {
-        return MASK_BEGIN_TO_I(u.getPlayer(p).getHandSize());
-    } // MASK_ALL(Uno, int)
+    static void MAKE_PUBLIC(Uno u, int p) {
+        Player pl = u.getPlayer(p);
+        Collections.sort(pl.handCards);
+        pl.open = MASK_BEGIN_TO_I(pl.getHandSize());
+    } // MAKE_PUBLIC(Uno, int)
 
     /**
      * In MainActivity Class, get Uno instance here.
@@ -1078,8 +1084,8 @@ public class Uno {
      * then determine our start card.
      */
     public void start() {
+        int i;
         Card card;
-        int i, size;
 
         // Reset direction
         direction = DIR_LEFT;
@@ -1124,13 +1130,7 @@ public class Uno {
         } // for (i = 0; i < 54; ++i)
 
         // Shuffle cards
-        size = deck.size();
-        while (size > 0) {
-            i = Uno.RNG.nextInt(size--);
-            card = deck.get(i);
-            deck.set(i, deck.get(size));
-            deck.set(size, card);
-        } // while (size > 0)
+        Collections.shuffle(deck, Uno.RNG);
 
         // Determine a start card as the previous played card
         do {
@@ -1220,15 +1220,15 @@ public class Uno {
                 player[who].recent = null;
                 if (deck.isEmpty()) {
                     // Re-use the used cards when there are no more cards in deck
-                    int size = used.size();
                     Log.i(TAG, "Re-use the used cards");
-                    while (size > 0) {
-                        int j = Uno.RNG.nextInt(size--);
+                    for (int j = used.size(); --j >= 0; ) {
                         --contentAnalysis[used.get(j).content.ordinal()];
                         --colorAnalysis[used.get(j).color.ordinal()];
                         deck.add(used.get(j));
                         used.remove(j);
-                    } // while (size > 0)
+                    } // for (int j = used.size(); --j >= 0; )
+
+                    Collections.shuffle(deck, Uno.RNG);
                 } // if (deck.isEmpty())
             } // if (hand.size() < MAX_HOLD_CARDS)
             else {
@@ -1371,8 +1371,7 @@ public class Uno {
                     // Game over, change background & show everyone's hand cards
                     direction = 0;
                     for (int i = Player.COM1; i <= Player.COM3; ++i) {
-                        player[i].sort();
-                        player[i].open = MASK_ALL(this, i);
+                        MAKE_PUBLIC(this, i);
                     } // for (int i = Player.COM1; i <= Player.COM3; ++i)
 
                     Log.i(TAG, "======= WINNER IS PLAYER " + who + " =======");
@@ -1398,8 +1397,7 @@ public class Uno {
 
         if (whom >= Player.YOU && whom <= Player.COM3) {
             if (whom != Player.YOU) {
-                player[whom].sort();
-                player[whom].open = MASK_ALL(this, whom);
+                MAKE_PUBLIC(this, whom);
             } // if (whom != Player.YOU)
 
             for (Card card : player[whom].handCards) {
@@ -1429,8 +1427,7 @@ public class Uno {
         player[a] = player[b];
         player[b] = store;
         if (a == Player.YOU || b == Player.YOU) {
-            player[Player.YOU].sort();
-            player[Player.YOU].open = MASK_ALL(this, Player.YOU);
+            MAKE_PUBLIC(this, Player.YOU);
         } // if (a == Player.YOU || b == Player.YOU)
 
         Log.i(TAG, "Player " + a + " swapped hand cards with Player " + b);
@@ -1447,8 +1444,7 @@ public class Uno {
         player[prev] = player[oppo];
         player[oppo] = player[next];
         player[next] = store;
-        player[Player.YOU].sort();
-        player[Player.YOU].open = MASK_ALL(this, Player.YOU);
+        MAKE_PUBLIC(this, Player.YOU);
         Log.i(TAG, "Everyone passed hand cards to the next player");
     } // cycle()
 } // Uno Class

@@ -185,9 +185,13 @@ public class Player {
     /**
      * Call this method to rearrange this player's hand cards.
      * The cards with same color will be arranged together.
+     *
+     * @deprecated Only Uno class is allowed to rearrange hand cards.
+     * Do not call this method in other classes.
      */
+    @Deprecated
     public void sort() {
-        Collections.sort(handCards);
+        throw new RuntimeException("ILLEGAL ACCESS");
     } // sort()
 } // Player Class
 

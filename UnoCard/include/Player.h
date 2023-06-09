@@ -187,9 +187,13 @@ public:
     /**
      * Call this function to rearrange this player's hand cards.
      * The cards with same color will be arranged together.
+     *
+     * @deprecated Only Uno class is allowed to rearrange hand cards.
+     * Do not call this function in other classes.
      */
+    [[deprecated]]
     inline void sort() {
-        std::sort(handCards.begin(), handCards.end());
+        throw "ILLEGAL ACCESS";
     } // sort()
 }; // Player Class
 
