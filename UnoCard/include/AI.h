@@ -187,7 +187,7 @@ public:
 
         if (hand.size() == 1 &&
             target == uno->getNext() &&
-            uno->isLegalToPlay(hand.at(0))) {
+            uno->isLegalToPlay(hand[0])) {
             // Do not swap with your next player when your final card is a legal
             // card. This will make your next player win the game.
             target = uno->getPrev();
@@ -205,12 +205,14 @@ public:
     inline bool needToChallenge() {
         Color lastColor = uno->lastColor();
         Color next2lastColor = uno->next2lastColor();
-        int size = uno->getNextPlayer()->getHandSize();
+        int s1 = uno->getNextPlayer()->getHandSize();
+        int s2 = uno->getCurrPlayer()->getHandSize();
 
         // Challenge when defending my UNO dash
         // Challenge when I have 10 or more cards already
+        // Challenge when previous player holds 10 or more cards
         // Challenge when legal color has not been changed
-        return size == 1 || size >= 10 || lastColor == next2lastColor;
+        return s1 == 1 || qMin(s1, s2) >= 10 || lastColor == next2lastColor;
     } // needToChallenge()
 
     /**
@@ -249,7 +251,7 @@ public:
         yourSize = int(hand.size());
         if (yourSize == 1) {
             // Only one card remained. Play it when it's legal.
-            card = hand.at(0);
+            card = hand[0];
             outColor[0] = card->color;
             return uno->isLegalToPlay(card) ? 0 : -1;
         } // if (yourSize == 1)
@@ -259,7 +261,7 @@ public:
         iBest = i0 = i7 = iNM = iRV = iSK = iDW = iWD = iWD4 = -1;
         for (i = matches = 0; i < yourSize; ++i) {
             // Index of any kind
-            card = hand.at(i);
+            card = hand[i];
             if (card->color == lastColor) {
                 ++matches;
             } // if (card->color == lastColor)
@@ -295,7 +297,7 @@ public:
                             i7 = i;
                         break; // case NUM7
                     } // if (uno->isSevenZeroRule())
-                    // fall through when not in 7-0 rule
+                    // fall through
 
                 case NUM0:
                     if (uno->isSevenZeroRule()) {
@@ -303,7 +305,7 @@ public:
                             i0 = i;
                         break; // case NUM0
                     } // if (uno->isSevenZeroRule())
-                    // fall through when not in 7-0 rule
+                    // fall through
 
                 default: // number cards
                     if (iNM < 0 || card->color == bestColor)
@@ -322,16 +324,16 @@ public:
             // Firstly consider to use a 7 to steal the UNO, if can't,
             // limit your next player's action as well as you can.
             if (i7 >= 0 && (yourSize > 2
-                || (hand.at(1 - i7)->content != NUM7
-                    && hand.at(1 - i7)->content != WILD
-                    && hand.at(1 - i7)->content != WILD_DRAW4
-                    && hand.at(1 - i7)->color != hand.at(i7)->color)))
+                || (hand[1 - i7]->content != NUM7
+                    && hand[1 - i7]->content != WILD
+                    && hand[1 - i7]->content != WILD_DRAW4
+                    && hand[1 - i7]->color != hand[i7]->color)))
                 iBest = i7;
             else if (i0 >= 0 && (yourSize > 2
-                || (hand.at(1 - i0)->content != NUM0
-                    && hand.at(1 - i0)->content != WILD
-                    && hand.at(1 - i0)->content != WILD_DRAW4
-                    && hand.at(1 - i0)->color != hand.at(i0)->color)))
+                || (hand[1 - i0]->content != NUM0
+                    && hand[1 - i0]->content != WILD
+                    && hand[1 - i0]->content != WILD_DRAW4
+                    && hand[1 - i0]->color != hand[i0]->color)))
                 iBest = i0;
             else if (iDW >= 0)
                 iBest = iDW;
@@ -345,7 +347,7 @@ public:
                 iBest = iWD;
             else if (iWD4 >= 0 && lastColor != bestColor)
                 iBest = iWD4;
-            else if (iNM >= 0 && hand.at(iNM)->color != nextStrong)
+            else if (iNM >= 0 && hand[iNM]->color != nextStrong)
                 iBest = iNM;
             else if (iWD >= 0 && i7 + i0 > -2)
                 iBest = iWD;
@@ -357,11 +359,11 @@ public:
                 iBest = i0;
             else if (i7 >= 0)
                 iBest = i7;
-            else if (iNM >= 0 && hand.at(iNM)->color != prevStrong)
+            else if (iNM >= 0 && hand[iNM]->color != prevStrong)
                 iBest = iNM;
-            else if (iSK >= 0 && hand.at(iSK)->color != prevStrong)
+            else if (iSK >= 0 && hand[iSK]->color != prevStrong)
                 iBest = iSK;
-            else if (iDW >= 0 && hand.at(iDW)->color != prevStrong)
+            else if (iDW >= 0 && hand[iDW]->color != prevStrong)
                 iBest = iDW;
             else if (iWD >= 0 && lastColor != bestColor)
                 iBest = iWD;
@@ -377,13 +379,13 @@ public:
                 iBest = i7;
             else if (i0 >= 0)
                 iBest = i0;
-            else if (iNM >= 0 && hand.at(iNM)->color != oppoStrong)
+            else if (iNM >= 0 && hand[iNM]->color != oppoStrong)
                 iBest = iNM;
             else if (iRV >= 0 && prevSize > nextSize)
                 iBest = iRV;
-            else if (iSK >= 0 && hand.at(iSK)->color != oppoStrong)
+            else if (iSK >= 0 && hand[iSK]->color != oppoStrong)
                 iBest = iSK;
-            else if (iDW >= 0 && hand.at(iDW)->color != oppoStrong)
+            else if (iDW >= 0 && hand[iDW]->color != oppoStrong)
                 iBest = iDW;
             else if (iWD >= 0 && lastColor != bestColor)
                 iBest = iWD;
@@ -394,11 +396,11 @@ public:
         } // else if (oppoSize == 1)
         else {
             // Normal strategies
-            if (i0 >= 0 && hand.at(i0)->color == prevStrong)
+            if (i0 >= 0 && hand[i0]->color == prevStrong)
                 iBest = i0;
-            else if (i7 >= 0 && (hand.at(i7)->color == prevStrong
-                || hand.at(i7)->color == oppoStrong
-                || hand.at(i7)->color == nextStrong))
+            else if (i7 >= 0 && (hand[i7]->color == prevStrong
+                || hand[i7]->color == oppoStrong
+                || hand[i7]->color == nextStrong))
                 iBest = i7;
             else if (iRV >= 0 && (prevSize > nextSize
                 || prev->getRecent() == nullptr))
@@ -416,10 +418,10 @@ public:
             else if (iWD4 >= 0)
                 iBest = iWD4;
             else if (i0 >= 0 && (yourSize > 2
-                || (hand.at(1 - i0)->content != NUM0
-                    && hand.at(1 - i0)->content != WILD
-                    && hand.at(1 - i0)->content != WILD_DRAW4
-                    && hand.at(1 - i0)->color != hand.at(i0)->color)))
+                || (hand[1 - i0]->content != NUM0
+                    && hand[1 - i0]->content != WILD
+                    && hand[1 - i0]->content != WILD_DRAW4
+                    && hand[1 - i0]->color != hand[i0]->color)))
                 iBest = i0;
             else if (i7 >= 0)
                 iBest = i7;
@@ -467,7 +469,7 @@ public:
         yourSize = int(hand.size());
         if (yourSize == 1) {
             // Only one card remained. Play it when it's legal.
-            card = hand.at(0);
+            card = hand[0];
             outColor[0] = card->color;
             return uno->isLegalToPlay(card) ? 0 : -1;
         } // if (yourSize == 1)
@@ -479,7 +481,7 @@ public:
         iBest = iRV = iSK = iDW = iWD = iWD4 = -1;
         for (i = matches = 0; i < yourSize; ++i) {
             // Index of any kind
-            card = hand.at(i);
+            card = hand[i];
             allWild = allWild && card->isWild();
             if (card->color == lastColor) {
                 ++matches;
@@ -547,10 +549,10 @@ public:
                 // 5: Draw one, and pray to get one of the above...
                 for (auto& can : candidates) {
                     i = -can.first % 100;
-                    if (hand.at(i)->color != nextStrong) {
+                    if (hand[i]->color != nextStrong) {
                         iBest = i;
                         break;
-                    } // if (hand.at(i)->color != nextStrong)
+                    } // if (hand[i]->color != nextStrong)
                 } // for (auto& can : candidates)
                 if (iBest < 0 && iSK >= 0)
                     iBest = iSK;
@@ -570,16 +572,16 @@ public:
                 // 3: Draw one because it's not necessary to use wild cards
                 for (auto& can : candidates) {
                     i = -can.first % 100;
-                    if (hand.at(i)->color != nextStrong) {
+                    if (hand[i]->color != nextStrong) {
                         iBest = i;
                         break;
-                    } // if (hand.at(i)->color != nextStrong)
+                    } // if (hand[i]->color != nextStrong)
                 } // for (auto& can : candidates)
                 if (iBest < 0 && iRV >= 0 && prevSize >= 4 &&
-                    hand.at(iRV)->color != nextStrong)
+                    hand[iRV]->color != nextStrong)
                     iBest = iRV;
                 if (iBest < 0 && iSK >= 0 &&
-                    hand.at(iSK)->color != nextStrong)
+                    hand[iSK]->color != nextStrong)
                     iBest = iSK;
             } // else if (nextStrong != NONE)
             else {
@@ -620,7 +622,7 @@ public:
                 // 2: Wild +4 cards, switch to your best color
                 // 3: Number cards, in any color, but firstly your best color
                 // 4: Draw one because it's not necessary to use other cards
-                if (iSK >= 0 && hand.at(iSK)->color != prevStrong)
+                if (iSK >= 0 && hand[iSK]->color != prevStrong)
                     iBest = iSK;
                 if (iBest < 0 && iWD >= 0)
                     iBest = iWD;
@@ -635,14 +637,14 @@ public:
                 // 0: Reverse cards, NOT in color of prevStrong
                 // 1: Number cards, NOT in color of prevStrong
                 // 2: Draw one because it's not necessary to use other cards
-                if (iRV >= 0 && hand.at(iRV)->color != prevStrong)
+                if (iRV >= 0 && hand[iRV]->color != prevStrong)
                     iBest = iRV;
                 if (iBest < 0) for (auto& can : candidates) {
                     i = -can.first % 100;
-                    if (hand.at(i)->color != prevStrong) {
+                    if (hand[i]->color != prevStrong) {
                         iBest = i;
                         break;
-                    } // if (hand.at(i)->color != prevStrong)
+                    } // if (hand[i]->color != prevStrong)
                 } // if (iBest < 0) for (auto& can : candidates)
             } // else if (prevStrong != NONE)
             else {
@@ -682,19 +684,19 @@ public:
                 //    (pray that next can limit oppo!)
                 for (auto& can : candidates) {
                     i = -can.first % 100;
-                    if (hand.at(i)->color != oppoStrong) {
+                    if (hand[i]->color != oppoStrong) {
                         iBest = i;
                         break;
-                    } // if (hand.at(i)->color != oppoStrong)
+                    } // if (hand[i]->color != oppoStrong)
                 } // for (auto& can : candidates)
                 if (iBest < 0 && iRV >= 0 &&
-                    hand.at(iRV)->color != oppoStrong)
+                    hand[iRV]->color != oppoStrong)
                     iBest = iRV;
                 if (iBest < 0 && iSK >= 0 &&
-                    hand.at(iSK)->color != oppoStrong)
+                    hand[iSK]->color != oppoStrong)
                     iBest = iSK;
                 if (iBest < 0 && iDW >= 0 &&
-                    hand.at(iDW)->color != oppoStrong)
+                    hand[iDW]->color != oppoStrong)
                     iBest = iDW;
                 if (iBest < 0 && iWD >= 0)
                     iBest = iWD;
@@ -715,19 +717,19 @@ public:
                 // 4: Draw one because it's not necessary to use other cards
                 for (auto& can : candidates) {
                     i = -can.first % 100;
-                    if (hand.at(i)->color != oppoStrong) {
+                    if (hand[i]->color != oppoStrong) {
                         iBest = i;
                         break;
-                    } // if (hand.at(i)->color != oppoStrong)
+                    } // if (hand[i]->color != oppoStrong)
                 } // for (auto& can : candidates)
                 if (iBest < 0 && iRV >= 0 &&
-                    hand.at(iRV)->color != oppoStrong)
+                    hand[iRV]->color != oppoStrong)
                     iBest = iRV;
                 if (iBest < 0 && iSK >= 0 &&
-                    hand.at(iSK)->color != oppoStrong)
+                    hand[iSK]->color != oppoStrong)
                     iBest = iSK;
                 if (iBest < 0 && iDW >= 0 &&
-                    hand.at(iDW)->color != oppoStrong)
+                    hand[iDW]->color != oppoStrong)
                     iBest = iDW;
             } // else if (oppoStrong != NONE)
             else {
@@ -773,10 +775,10 @@ public:
                 iBest = iRV;
             if (iBest < 0) for (auto& can : candidates) {
                 i = -can.first % 100;
-                if (hand.at(i)->color == nextWeak) {
+                if (hand[i]->color == nextWeak) {
                     iBest = i;
                     break;
-                } // if (hand.at(i)->color == nextWeak)
+                } // if (hand[i]->color == nextWeak)
             } // if (iBest < 0) for (auto& can : candidates)
             if (iBest < 0 && !candidates.empty())
                 iBest = -candidates.begin()->first % 100;
@@ -784,10 +786,10 @@ public:
                 (prevSize >= 4 || prev->getRecent() == nullptr))
                 iBest = iRV;
             if (iBest < 0 && iSK >= 0 && oppoSize >= 3 &&
-                hand.at(iSK)->color == bestColor)
+                hand[iSK]->color == bestColor)
                 iBest = iSK;
             if (iBest < 0 && iDW >= 0 && oppoSize >= 3 &&
-                hand.at(iDW)->color == bestColor)
+                hand[iDW]->color == bestColor)
                 iBest = iDW;
         } // else if (lastColor == nextWeak && yourSize > 2)
         else {
@@ -815,10 +817,10 @@ public:
             if (iBest < 0 && iRV >= 0 && prevSize >= 4)
                 iBest = iRV;
             if (iBest < 0 && iSK >= 0 && oppoSize >= 3 &&
-                hand.at(iSK)->color == bestColor)
+                hand[iSK]->color == bestColor)
                 iBest = iSK;
             if (iBest < 0 && iDW >= 0 && oppoSize >= 3 &&
-                hand.at(iDW)->color == bestColor)
+                hand[iDW]->color == bestColor)
                 iBest = iDW;
             if (iBest < 0 && iWD >= 0 && nextSize <= 4)
                 iBest = iWD;
@@ -885,7 +887,7 @@ public:
         yourSize = int(hand.size());
         if (yourSize == 1) {
             // Only one card remained. Play it when it's legal.
-            card = hand.at(0);
+            card = hand[0];
             outColor[0] = card->color;
             return uno->isLegalToPlay(card) ? 0 : -1;
         } // if (yourSize == 1)
@@ -896,7 +898,7 @@ public:
         iBest = iRV = iSK = iDW = iWD = iWD4 = -1;
         for (i = matches = 0; i < yourSize; ++i) {
             // Index of any kind
-            card = hand.at(i);
+            card = hand[i];
             if (card->color == lastColor) {
                 ++matches;
             } // if (card->color == lastColor)
@@ -965,10 +967,10 @@ public:
                 iBest = iWD4;
             if (iBest < 0) for (auto& can : candidates) {
                 i = -can.first % 100;
-                if (hand.at(i)->color != nextStrong) {
+                if (hand[i]->color != nextStrong) {
                     iBest = i;
                     break;
-                } // if (hand.at(i)->color != nextStrong)
+                } // if (hand[i]->color != nextStrong)
             } // if (iBest < 0) for (auto& can : candidates)
             if (iBest < 0 && iWD >= 0)
                 iBest = iWD;
@@ -977,14 +979,14 @@ public:
             // Strategies when your previous player remains only one card.
             for (auto& can : candidates) {
                 i = -can.first % 100;
-                if (hand.at(i)->color != prevStrong) {
+                if (hand[i]->color != prevStrong) {
                     iBest = i;
                     break;
-                } // if (hand.at(i)->color != prevStrong)
+                } // if (hand[i]->color != prevStrong)
             } // for (auto& can : candidates)
-            if (iBest < 0 && iSK >= 0 && hand.at(iSK)->color != prevStrong)
+            if (iBest < 0 && iSK >= 0 && hand[iSK]->color != prevStrong)
                 iBest = iSK;
-            if (iBest < 0 && iDW >= 0 && hand.at(iDW)->color != prevStrong)
+            if (iBest < 0 && iDW >= 0 && hand[iDW]->color != prevStrong)
                 iBest = iDW;
             if (iBest < 0 && iWD >= 0 && lastColor != bestColor)
                 iBest = iWD;
@@ -1001,14 +1003,14 @@ public:
                 iBest = iDW;
             if (iBest < 0 && iWD4 >= 0 && matches == 0)
                 iBest = iWD4;
-            if (iBest < 0 && iRV >= 0 && hand.at(iRV)->color == oppoStrong)
+            if (iBest < 0 && iRV >= 0 && hand[iRV]->color == oppoStrong)
                 iBest = iRV;
             if (iBest < 0) for (auto& can : candidates) {
                 i = -can.first % 100;
-                if (hand.at(i)->color != oppoStrong) {
+                if (hand[i]->color != oppoStrong) {
                     iBest = i;
                     break;
-                } // if (hand.at(i)->color != oppoStrong)
+                } // if (hand[i]->color != oppoStrong)
             } // if (iBest < 0) for (auto& can : candidates)
             if (iBest < 0 && iWD >= 0 && oppoStrong != NONE &&
                 lastColor != oppoStrong)
@@ -1026,9 +1028,9 @@ public:
         } // else if (oppoSize == 1)
         else {
             // Normal strategies
-            if (iSK >= 0 && hand.at(iSK)->color == oppoStrong)
+            if (iSK >= 0 && hand[iSK]->color == oppoStrong)
                 iBest = iSK;
-            if (iBest < 0 && iRV >= 0 && (hand.at(iRV)->color == oppoStrong
+            if (iBest < 0 && iRV >= 0 && (hand[iRV]->color == oppoStrong
                 || prev->getRecent() == nullptr))
                 iBest = iRV;
             if (iBest < 0 && !candidates.empty())
@@ -1085,7 +1087,7 @@ public:
         yourSize = int(hand.size());
         if (yourSize == 1) {
             // Only one card remained. Play it when it's legal.
-            card = hand.at(0);
+            card = hand[0];
             outColor[0] = card->color;
             return uno->isLegalToPlay(card) ? 0 : -1;
         } // if (yourSize == 1)
@@ -1096,7 +1098,7 @@ public:
         iBest = i0 = i7 = iRV = iSK = iDW = iWD = iWD4 = -1;
         for (i = matches = 0; i < yourSize; ++i) {
             // Index of any kind
-            card = hand.at(i);
+            card = hand[i];
             if (card->color == lastColor) {
                 ++matches;
             } // if (card->color == lastColor)
@@ -1163,16 +1165,16 @@ public:
             // Firstly consider to use a 7 to steal the UNO, if can't,
             // limit your next player's action as well as you can.
             if (i7 >= 0 && (yourSize > 2
-                || (hand.at(1 - i7)->content != NUM7
-                    && hand.at(1 - i7)->content != WILD
-                    && hand.at(1 - i7)->content != WILD_DRAW4
-                    && hand.at(1 - i7)->color != hand.at(i7)->color)))
+                || (hand[1 - i7]->content != NUM7
+                    && hand[1 - i7]->content != WILD
+                    && hand[1 - i7]->content != WILD_DRAW4
+                    && hand[1 - i7]->color != hand[i7]->color)))
                 iBest = i7;
             if (iBest < 0 && i0 >= 0 && (yourSize > 2
-                || (hand.at(1 - i0)->content != NUM0
-                    && hand.at(1 - i0)->content != WILD
-                    && hand.at(1 - i0)->content != WILD_DRAW4
-                    && hand.at(1 - i0)->color != hand.at(i0)->color)))
+                || (hand[1 - i0]->content != NUM0
+                    && hand[1 - i0]->content != WILD
+                    && hand[1 - i0]->content != WILD_DRAW4
+                    && hand[1 - i0]->color != hand[i0]->color)))
                 iBest = i0;
             if (iBest < 0 && iDW >= 0)
                 iBest = iDW;
@@ -1188,10 +1190,10 @@ public:
                 iBest = iWD4;
             if (iBest < 0) for (auto& can : candidates) {
                 i = -can.first % 100;
-                if (hand.at(i)->color != nextStrong) {
+                if (hand[i]->color != nextStrong) {
                     iBest = i;
                     break;
-                } // if (hand.at(i)->color != nextStrong)
+                } // if (hand[i]->color != nextStrong)
             } // if (iBest < 0) for (auto& can : candidates)
             if (iBest < 0 && iWD >= 0 && i7 + i0 > -2)
                 iBest = iWD;
@@ -1205,14 +1207,14 @@ public:
                 iBest = i7;
             if (iBest < 0) for (auto& can : candidates) {
                 i = -can.first % 100;
-                if (hand.at(i)->color != prevStrong) {
+                if (hand[i]->color != prevStrong) {
                     iBest = i;
                     break;
-                } // if (hand.at(i)->color != prevStrong)
+                } // if (hand[i]->color != prevStrong)
             } // if (iBest < 0) for (auto& can : candidates)
-            if (iBest < 0 && iSK >= 0 && hand.at(iSK)->color != prevStrong)
+            if (iBest < 0 && iSK >= 0 && hand[iSK]->color != prevStrong)
                 iBest = iSK;
-            if (iBest < 0 && iDW >= 0 && hand.at(iDW)->color != prevStrong)
+            if (iBest < 0 && iDW >= 0 && hand[iDW]->color != prevStrong)
                 iBest = iDW;
             if (iBest < 0 && iWD >= 0 && lastColor != bestColor)
                 iBest = iWD;
@@ -1230,16 +1232,16 @@ public:
                 iBest = i0;
             if (iBest < 0) for (auto& can : candidates) {
                 i = -can.first % 100;
-                if (hand.at(i)->color != oppoStrong) {
+                if (hand[i]->color != oppoStrong) {
                     iBest = i;
                     break;
-                } // if (hand.at(i)->color != oppoStrong)
+                } // if (hand[i]->color != oppoStrong)
             } // if (iBest < 0) for (auto& can : candidates)
             if (iBest < 0 && iRV >= 0 && prevSize > nextSize)
                 iBest = iRV;
-            if (iBest < 0 && iSK >= 0 && hand.at(iSK)->color != oppoStrong)
+            if (iBest < 0 && iSK >= 0 && hand[iSK]->color != oppoStrong)
                 iBest = iSK;
-            if (iBest < 0 && iDW >= 0 && hand.at(iDW)->color != oppoStrong)
+            if (iBest < 0 && iDW >= 0 && hand[iDW]->color != oppoStrong)
                 iBest = iDW;
             if (iBest < 0 && iWD >= 0 && lastColor != bestColor)
                 iBest = iWD;
@@ -1250,12 +1252,12 @@ public:
         } // else if (oppoSize == 1)
         else {
             // Normal strategies
-            if (i0 >= 0 && hand.at(i0)->color == prevStrong)
+            if (i0 >= 0 && hand[i0]->color == prevStrong)
                 iBest = i0;
             if (iBest < 0 && i7 >= 0
-                && (hand.at(i7)->color == prevStrong
-                || hand.at(i7)->color == oppoStrong
-                || hand.at(i7)->color == nextStrong))
+                && (hand[i7]->color == prevStrong
+                    || hand[i7]->color == oppoStrong
+                    || hand[i7]->color == nextStrong))
                 iBest = i7;
             if (iBest < 0 && iRV >= 0 && (prevSize > nextSize
                 || prev->getRecent() == nullptr))
@@ -1273,10 +1275,10 @@ public:
             if (iBest < 0 && iWD4 >= 0)
                 iBest = iWD4;
             if (iBest < 0 && i0 >= 0 && (yourSize > 2
-                || (hand.at(1 - i0)->content != NUM0
-                    && hand.at(1 - i0)->content != WILD
-                    && hand.at(1 - i0)->content != WILD_DRAW4
-                    && hand.at(1 - i0)->color != hand.at(i0)->color)))
+                || (hand[1 - i0]->content != NUM0
+                    && hand[1 - i0]->content != WILD
+                    && hand[1 - i0]->content != WILD_DRAW4
+                    && hand[1 - i0]->color != hand[i0]->color)))
                 iBest = i0;
             if (iBest < 0 && i7 >= 0)
                 iBest = i7;

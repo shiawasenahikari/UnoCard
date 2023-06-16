@@ -254,7 +254,7 @@ void Main::setStatus(int status) {
         sSelectedIdx = -1;
         refreshScreen(i18n->info_ready());
         threadWait(2000);
-        switch (sUno->getRecent().at(0)->content) {
+        switch (sUno->getRecentInfo()[3].card->content) {
         case DRAW2:
             // If starting with a [+2], let dealer draw 2 cards.
             draw(2, /* force */ true);
@@ -280,7 +280,7 @@ void Main::setStatus(int status) {
             // Otherwise, go to dealer's turn.
             setStatus(sUno->getNow());
             break; // default
-        } // switch (sUno->getRecent().at(0)->content)
+        } // switch (sUno->getRecentInfo()[3].card->content)
         break; // case STAT_NEW_GAME
 
     case Player::YOU:
@@ -306,7 +306,7 @@ void Main::setStatus(int status) {
                     : i18n->info_yourTurn_stackDraw2(c));
             } // else if (sSelectedIdx < 0)
             else {
-                Card* card = hand.at(sSelectedIdx);
+                Card* card = hand[sSelectedIdx];
                 refreshScreen(sUno->isLegalToPlay(card)
                     ? i18n->info_clickAgainToPlay(card->name)
                     : i18n->info_cannotPlay(card->name));
@@ -382,7 +382,8 @@ void Main::refreshScreen(const QString& message) {
     static bool active;
     static QImage image;
     static QString info;
-    static int i, remain, status, used, width;
+    static const RecentInfo* recent;
+    static int i, x, remain, size, status, used, width;
 
     // Lock the value of global variable [sStatus]
     status = sStatus;
@@ -515,25 +516,25 @@ void Main::refreshScreen(const QString& message) {
     } // else if (status == STAT_WELCOME)
     else {
         // Center: card deck & recent played card
-        auto recentColors = sUno->getRecentColors();
-        auto recent = sUno->getRecent();
-        int size = int(recent.size());
-        width = 44 * size + 76;
+        recent = sUno->getRecentInfo();
         image = sUno->getBackImage();
         sPainter->drawImage(338, 360, image);
-        for (i = 0; i < size; ++i) {
-            if (recent.at(i)->content == WILD) {
-                image = sUno->getColoredWildImage(recentColors.at(i));
-            } // if (recent.at(i)->content == WILD)
-            else if (recent.at(i)->content == WILD_DRAW4) {
-                image = sUno->getColoredWildDraw4Image(recentColors.at(i));
-            } // else if (recent.at(i)->content == WILD_DRAW4)
+        for (i = 0, x = 986; i < 4; ++i, x += 44) {
+            if (recent[i].card == nullptr) {
+                continue;
+            } // if (recent[i].card == nullptr)
+            else if (recent[i].card->content == WILD) {
+                image = sUno->getColoredWildImage(recent[i].color);
+            } // else if (recent[i].card->content == WILD)
+            else if (recent[i].card->content == WILD_DRAW4) {
+                image = sUno->getColoredWildDraw4Image(recent[i].color);
+            } // else if (recent[i].card->content == WILD_DRAW4)
             else {
-                image = recent.at(i)->image;
+                image = recent[i].card->image;
             } // else
 
-            sPainter->drawImage(1112 - width / 2 + 44 * i, 360, image);
-        } // for (i = 0; i < size; ++i)
+            sPainter->drawImage(x, 360, image);
+        } // for (i = 0, x = 986; i < 4; ++i, x += 44)
 
         // Left-top corner: remain / used
         remain = sUno->getDeckCount();
@@ -597,7 +598,7 @@ void Main::refreshScreen(const QString& message) {
             size = int(hand.size());
             width = 44 * qMin(size, 13) + 136;
             for (i = 0; i < size; ++i) {
-                image = p->isOpen(i) ? hand.at(i)->image : sUno->getBackImage();
+                image = p->isOpen(i) ? hand[i]->image : sUno->getBackImage();
                 sPainter->drawImage(
                     /* x     */ 20 + i / 13 * 44,
                     /* y     */ 450 - width / 2 + i % 13 * 44,
@@ -624,7 +625,7 @@ void Main::refreshScreen(const QString& message) {
             size = int(hand.size());
             width = 44 * size + 76;
             for (i = 0; i < size; ++i) {
-                image = p->isOpen(i) ? hand.at(i)->image : sUno->getBackImage();
+                image = p->isOpen(i) ? hand[i]->image : sUno->getBackImage();
                 sPainter->drawImage(800 - width / 2 + 44 * i, 20, image);
             } // for (i = 0; i < size; ++i)
 
@@ -647,7 +648,7 @@ void Main::refreshScreen(const QString& message) {
             size = int(hand.size());
             width = 44 * qMin(size, 13) + 136;
             for (i = 13; i < size; ++i) {
-                image = p->isOpen(i) ? hand.at(i)->image : sUno->getBackImage();
+                image = p->isOpen(i) ? hand[i]->image : sUno->getBackImage();
                 sPainter->drawImage(
                     /* x     */ 1416,
                     /* y     */ 450 - width / 2 + (i - 13) * 44,
@@ -656,7 +657,7 @@ void Main::refreshScreen(const QString& message) {
             } // for (i = 13; i < size; ++i)
 
             for (i = 0; i < 13 && i < size; ++i) {
-                image = p->isOpen(i) ? hand.at(i)->image : sUno->getBackImage();
+                image = p->isOpen(i) ? hand[i]->image : sUno->getBackImage();
                 sPainter->drawImage(
                     /* x     */ 1460,
                     /* y     */ 450 - width / 2 + i * 44,
@@ -683,7 +684,7 @@ void Main::refreshScreen(const QString& message) {
             size = int(hand.size());
             width = 44 * size + 76;
             for (i = 0; i < size; ++i) {
-                Card* card = hand.at(i);
+                Card* card = hand[i];
                 image = status == STAT_GAME_OVER
                     || (status == Player::YOU
                         && sUno->isLegalToPlay(card))
@@ -879,7 +880,7 @@ void Main::swapWith(int whom) {
  */
 void Main::play(int index, Color color) {
     Card* card;
-    int c, now, size, width, recentSize, next;
+    int c, now, size, width, next;
 
     setStatus(STAT_IDLE); // block mouse click events when idle
     now = sUno->getNow();
@@ -915,8 +916,7 @@ void Main::play(int index, Color color) {
             break; // default
         } // switch (now)
 
-        recentSize = int(sUno->getRecent().size());
-        sLayer[0].endLeft = 22 * recentSize + 1030;
+        sLayer[0].endLeft = 1118;
         sLayer[0].endTop = 360;
         animate(1, sLayer);
         if (size == 1) {
@@ -1059,7 +1059,7 @@ void Main::draw(int count, bool force) {
     for (i = 0; i < count; ++i) {
         index = sUno->draw(now, force);
         if (index >= 0) {
-            drawn = sUno->getCurrPlayer()->getHandCards().at(index);
+            drawn = sUno->getCurrPlayer()->getHandCards()[index];
             size = sUno->getCurrPlayer()->getHandSize();
             sLayer[0].startLeft = 338;
             sLayer[0].startTop = 360;
@@ -1372,7 +1372,7 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     // Hand card area
                     // Calculate which card clicked by the X-coordinate
                     int index = qMin((x - startX) / 44, size - 1);
-                    Card* card = hand.at(index);
+                    Card* card = hand[index];
 
                     // Try to play it
                     if (index != sSelectedIdx) {

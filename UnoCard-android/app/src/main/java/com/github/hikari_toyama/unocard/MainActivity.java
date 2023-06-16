@@ -296,7 +296,7 @@ public class MainActivity extends AppCompatActivity
                 mSelectedIdx = -1;
                 refreshScreen(i18n.info_ready());
                 threadWait(2000);
-                switch (mUno.getRecent().get(0).content) {
+                switch (mUno.getRecentInfo()[3].card.content) {
                     case DRAW2:
                         // If starting with a [+2], let dealer draw 2 cards.
                         draw(2, /* force */ true);
@@ -322,7 +322,7 @@ public class MainActivity extends AppCompatActivity
                         // Otherwise, go to dealer's turn.
                         setStatus(mUno.getNow());
                         break; // default
-                } // switch (mUno.getRecent().get(0).content)
+                } // switch (mUno.getRecentInfo()[3].card.content)
                 break; // case STAT_NEW_GAME
 
             case Player.YOU:
@@ -427,8 +427,7 @@ public class MainActivity extends AppCompatActivity
         String info;
         Point center;
         boolean active;
-        List<Card> recent;
-        List<Color> recentColors;
+        Uno.RecentInfo[] recent;
         int i, x, y, remain, size, status, used, width;
 
         // Lock the value of member [mStatus]
@@ -575,23 +574,23 @@ public class MainActivity extends AppCompatActivity
         // Center: card deck & recent played card
         image = mUno.getBackImage();
         image.copyTo(mScr.submat(360, 541, 338, 459), image);
-        recentColors = mUno.getRecentColors();
-        recent = mUno.getRecent();
-        size = recent.size();
-        width = 44 * size + 76;
-        for (i = 0, x = 1112 - width / 2; i < size; ++i, x += 44) {
-            if (recent.get(i).content == Content.WILD) {
-                image = mUno.getColoredWildImage(recentColors.get(i));
-            } // if (recent.get(i).content == Content.WILD)
-            else if (recent.get(i).content == Content.WILD_DRAW4) {
-                image = mUno.getColoredWildDraw4Image(recentColors.get(i));
-            } // else if (recent.get(i).content == Content.WILD_DRAW4)
+        recent = mUno.getRecentInfo();
+        for (i = 0, x = 986; i < 4; ++i, x += 44) {
+            if (recent[i].card == null) {
+                continue;
+            } // if (recent[i].card == null)
+            else if (recent[i].card.content == Content.WILD) {
+                image = mUno.getColoredWildImage(recent[i].color);
+            } // else if (recent[i].card.content == Content.WILD)
+            else if (recent[i].card.content == Content.WILD_DRAW4) {
+                image = mUno.getColoredWildDraw4Image(recent[i].color);
+            } // else if (recent[i].card.content == Content.WILD_DRAW4)
             else {
-                image = recent.get(i).image;
+                image = recent[i].card.image;
             } // else
 
             image.copyTo(mScr.submat(360, 541, x, x + 121), image);
-        } // for (i = 0, x = 1112 - width / 2; i < size; ++i, x += 44)
+        } // for (i = 0, x = 986; i < 4; ++i, x += 44)
 
         // Left-top corner: remain / used
         remain = mUno.getDeckCount();
@@ -1027,7 +1026,7 @@ public class MainActivity extends AppCompatActivity
     @WorkerThread
     private void play(int index, Color color) {
         Card card;
-        int c, now, size, width, recentSize, next;
+        int c, now, size, width, next;
 
         setStatus(STAT_IDLE); // block tap down events when idle
         now = mUno.getNow();
@@ -1063,8 +1062,7 @@ public class MainActivity extends AppCompatActivity
                     break; // default
             } // switch (now)
 
-            recentSize = mUno.getRecent().size();
-            mLayer[0].endLeft = 22 * recentSize + 1030;
+            mLayer[0].endLeft = 1118;
             mLayer[0].endTop = 360;
             animate(1, mLayer);
             if (size == 1) {

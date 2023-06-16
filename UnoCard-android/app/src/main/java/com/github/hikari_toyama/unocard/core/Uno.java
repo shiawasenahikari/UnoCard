@@ -119,24 +119,12 @@ public class Uno {
     /**
      * Recent played cards.
      */
-    final List<Card> recent = new ArrayList<>();
+    RecentInfo[] recent;
 
     /**
      * Recent played cards (read-only version, provide for external accesses).
      */
-    final List<Card> constRecent = Collections.unmodifiableList(recent);
-
-    /**
-     * Colors of recent played cards.
-     */
-    final List<Color> recentColors = new ArrayList<>();
-
-    /**
-     * Colors of recent played cards
-     * (read-only version, provide for external accesses).
-     */
-    final List<Color> constRecentColors
-            = Collections.unmodifiableList(recentColors);
+    RecentInfo[] constRecent;
 
     /**
      * Card map. table[i] stores the card instance of id number i.
@@ -530,6 +518,18 @@ public class Uno {
                 new Player(), // COM2
                 new Player()  // COM3
         }; // player = new Player[]{}
+        recent = new RecentInfo[]{
+                new RecentInfo(),
+                new RecentInfo(),
+                new RecentInfo(),
+                new RecentInfo()
+        }; // recent = new RecentInfo[]
+        constRecent = new RecentInfo[]{
+                new RecentInfo(),
+                new RecentInfo(),
+                new RecentInfo(),
+                new RecentInfo()
+        }; // constRecent = new RecentInfo[]{}
     } // Uno(Context) (Class Constructor)
 
     /**
@@ -1028,35 +1028,76 @@ public class Uno {
      * @return How many cards have been used.
      */
     public int getUsedCount() {
-        return used.size() + recent.size();
+        int count = used.size();
+
+        for (int i = 0; i < 4; ++i) {
+            count += recent[i].card != null ? 1 : 0;
+        } // for (int i = 0; i < 4; ++i)
+
+        return count;
     } // getUsedCount()
 
     /**
      * @return Recent played cards.
+     * @deprecated Call getRecentInfo() instead.
      */
+    @Deprecated
     public List<Card> getRecent() {
-        return constRecent;
+        List<Card> ret = new ArrayList<>();
+
+        for (int i = 0; i < 4; ++i) {
+            if (recent[i].card != null) {
+                ret.add(recent[i].card);
+            } // if (recent[i].card != null)
+        } // for (int i = 0; i < 4; ++i)
+
+        return ret;
     } // getRecent()
 
     /**
      * @return Colors of recent played cards.
+     * @deprecated Call getRecentInfo() instead.
      */
+    @Deprecated
     public List<Color> getRecentColors() {
-        return constRecentColors;
+        List<Color> ret = new ArrayList<>();
+
+        for (int i = 0; i < 4; ++i) {
+            if (recent[i].card != null) {
+                ret.add(recent[i].color);
+            } // if (recent[i].card != null)
+        } // for (int i = 0; i < 4; ++i)
+
+        return ret;
     } // getRecentColors()
+
+    /**
+     * @return Info of recent played cards. An array of RecentInfo objects
+     * will be returned. Access getRecentInfo()[3] for the info of
+     * the last played card, getRecentInfo()[2] for the info of the
+     * next-to-last played card, etc.
+     */
+    public RecentInfo[] getRecentInfo() {
+        for (int i = 0; i < 4; ++i) {
+            constRecent[i].card = recent[i].card;
+            constRecent[i].color = recent[i].color;
+        } // for (int i = 0; i < 4; ++i)
+
+        return constRecent;
+    } // getRecentInfo()
 
     /**
      * @return Color of the last played card.
      */
     public Color lastColor() {
-        return recentColors.get(recentColors.size() - 1);
+        return recent[3].color;
     } // lastColor()
 
     /**
      * @return Color of the next-to-last played card.
      */
     public Color next2lastColor() {
-        return recentColors.get(recentColors.size() - 2);
+        return recent[2].color;
     } // next2lastColor()
 
     /**
@@ -1101,14 +1142,14 @@ public class Uno {
         // everyone's hand cards, and everyone's strong/weak colors
         deck.clear();
         used.clear();
-        recent.clear();
-        recentColors.clear();
-        for (i = Player.YOU; i <= Player.COM3; ++i) {
+        for (i = 0; i < 4; ++i) {
+            recent[i].card = null;
+            recent[i].color = NONE;
             player[i].open = 0x00;
             player[i].handCards.clear();
             player[i].weakColor = NONE;
             player[i].strongColor = NONE;
-        } // for (i = Player.YOU; i <= Player.COM3; ++i)
+        } // for (i = 0; i < 4; ++i)
 
         // Generate a temporary sequenced card deck
         for (i = 0; i < 54; ++i) {
@@ -1144,12 +1185,12 @@ public class Uno {
             else {
                 // Any non-wild card can be start card
                 // Start card determined
-                recent.add(card);
+                recent[3].card = card;
                 ++colorAnalysis[card.color.ordinal()];
                 ++contentAnalysis[card.content.ordinal()];
-                recentColors.add(card.color);
+                recent[3].color = card.color;
             } // else
-        } while (recent.isEmpty());
+        } while (recent[3].card == null);
 
         // Let everyone draw initial cards
         for (i = 0; i < initialCards; ++i) {
@@ -1240,7 +1281,7 @@ public class Uno {
 
             if (draw2StackCount == 0) {
                 // Update the legality binary when necessary
-                Card card = recent.get(recent.size() - 1);
+                Card card = recent[3].card;
                 legality = card.isWild()
                         ? 0x30000000000000L
                         | (0x1fffL << 13 * (lastColor().ordinal() - 1))
@@ -1304,14 +1345,14 @@ public class Uno {
             List<Card> hand = player[who].handCards;
             int size = hand.size();
             if (index < size) {
-                String p = "";
+                if ((card = hand.get(index)).isWild()) {
+                    String name = Card.A[color.ordinal()] + card.name;
+                    Log.i(TAG, "Player " + who + " played " + name);
+                } // if ((card = hand.get(index)).isWild())
+                else {
+                    Log.i(TAG, "Player " + who + " played " + card.name);
+                } // else
 
-                card = hand.get(index);
-                if (card.isWild()) {
-                    p = Card.A[color.ordinal()];
-                } // if (card.isWild())
-
-                Log.i(TAG, "Player " + who + " played " + p + card.name);
                 hand.remove(index);
                 if (card.isWild()) {
                     // When a wild card is played, register the specified
@@ -1345,18 +1386,23 @@ public class Uno {
                         : (player[who].open & MASK_BEGIN_TO_I(index))
                         | (player[who].open & MASK_I_TO_END(index + 1)) >> 1;
                 player[who].recent = card;
-                recent.add(card);
+                for (int i = 0; i < 4; ++i) {
+                    if (i > 0) {
+                        recent[i - 1].card = recent[i].card;
+                        recent[i - 1].color = recent[i].color;
+                    } // if (i > 0)
+                    else if (recent[i].card != null) {
+                        used.add(recent[i].card);
+                    } // else if (recent[i].card != null)
+                } // for (int i = 0; i < 4; ++i)
+
+                recent[3].card = card;
                 ++colorAnalysis[card.color.ordinal()];
                 ++contentAnalysis[card.content.ordinal()];
-                recentColors.add(card.isWild() ? color : card.color);
+                recent[3].color = card.isWild() ? color : card.color;
                 Log.i(TAG, "colorAnalysis & contentAnalysis:");
                 Log.i(TAG, Arrays.toString(colorAnalysis));
                 Log.i(TAG, Arrays.toString(contentAnalysis));
-                if (recent.size() > 4) {
-                    used.add(recent.get(0));
-                    recent.remove(0);
-                    recentColors.remove(0);
-                } // if (recent.size() > 4)
 
                 // Update the legality binary
                 legality = draw2StackCount > 0
@@ -1447,6 +1493,14 @@ public class Uno {
         MAKE_PUBLIC(this, Player.YOU);
         Log.i(TAG, "Everyone passed hand cards to the next player");
     } // cycle()
+
+    /**
+     * RecentInfo Inner Class.
+     */
+    public static class RecentInfo {
+        public Card card = null;
+        public Color color = NONE;
+    } // RecentInfo Inner Class
 } // Uno Class
 
 // E.O.F

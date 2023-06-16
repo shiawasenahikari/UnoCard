@@ -32,6 +32,15 @@
 "One or more image resources are broken. Re-install this app."
 
 /**
+ * RecentInfo Class.
+ */
+class RecentInfo {
+public:
+    Card* card = nullptr;
+    Color color = NONE;
+}; // RecentInfo Class
+
+/**
  * Uno Runtime Class (Singleton).
  */
 class Uno {
@@ -180,12 +189,7 @@ private:
     /**
      * Recent played cards.
      */
-    std::vector<Card*> recent;
-
-    /**
-     * Colors of recent played cards.
-     */
-    std::vector<Color> recentColors;
+    RecentInfo recent[4];
 
     /**
      * Our custom font's character-to-position map.
@@ -196,10 +200,10 @@ private:
      * Singleton, hide default constructor.
      */
     inline Uno(unsigned seed) {
+        QImage font;
         QPainter pt;
         QBitmap mask;
         int i, done, total;
-        QImage br, dk,  font;
         QString A[] = { "k", "r", "b", "g", "y" };
         QString B[] = {
             "0", "1", "2", "3", "4", "5", "6", "7",
@@ -253,17 +257,17 @@ private:
         for (i = 0; i < 54; ++i) {
             Color a = i < 52 ? Color(i / 13 + 1) : Color(0);
             Content b = i < 52 ? Content(i % 13) : Content(i - 39);
+            QImage x = load("resource/front_" + A[a] + B[b] + ".png", 121, 181);
+            QImage y = load("resource/dark_" + A[a] + B[b] + ".png", 121, 181);
 
-            br = load("resource/front_" + A[a] + B[b] + ".png", 121, 181);
-            dk = load("resource/dark_" + A[a] + B[b] + ".png", 121, 181);
             done += 2;
-            table.push_back(Card(br, dk, a, b));
+            table.push_back(Card(x, y, a, b));
             qDebug("Loading... (%d%%)", 100 * done / total);
         } // for (i = 0; i < 54; ++i)
 
         // Load colored wild & wild +4 image resources
-        wildImage[0] = table.at(39 + WILD).image;
-        wildDraw4Image[0] = table.at(39 + WILD_DRAW4).image;
+        wildImage[0] = table[39 + WILD].image;
+        wildDraw4Image[0] = table[39 + WILD_DRAW4].image;
         for (i = 1; i < 5; ++i) {
             wildImage[i] = load(
                 "resource/front_" + A[i] + B[WILD] + ".png", 121, 181
@@ -825,11 +829,11 @@ public:
      */
     inline Card* findCard(Color color, Content content) {
         return color == NONE && content == WILD
-            ? &table.at(39 + WILD)
+            ? &table[39 + WILD]
             : color == NONE && content == WILD_DRAW4
-            ? &table.at(39 + WILD_DRAW4)
+            ? &table[39 + WILD_DRAW4]
             : color != NONE && content != WILD && content != WILD_DRAW4
-            ? &table.at(13 * (color - 1) + content)
+            ? &table[13 * (color - 1) + content]
             : nullptr;
     } // findCard(Color, Content)
 
@@ -844,35 +848,73 @@ public:
      * @return How many cards have been used.
      */
     inline int getUsedCount() {
-        return int(used.size() + recent.size());
+        int count = int(used.size());
+
+        for (int i = 0; i < 4; ++i) {
+            count += recent[i].card != nullptr ? 1 : 0;
+        } // for (int i = 0; i < 4; ++i)
+
+        return count;
     } // getUsedCount()
 
     /**
      * @return Recent played cards.
+     * @deprecated Call getRecentInfo() instead.
      */
+    [[deprecated]]
     inline const std::vector<Card*>& getRecent() {
-        return recent;
+        static std::vector<Card*> ret;
+
+        ret.clear();
+        for (int i = 0; i < 4; ++i) {
+            if (recent[i].card != nullptr) {
+                ret.push_back(recent[i].card);
+            } // if (recent[i].card != nullptr)
+        } // for (int i = 0; i < 4; ++i)
+
+        return ret;
     } // getRecent()
 
     /**
      * @return Colors of recent played cards.
+     * @deprecated Call getRecentInfo() instead.
      */
+    [[deprecated]]
     inline const std::vector<Color>& getRecentColors() {
-        return recentColors;
+        static std::vector<Color> ret;
+
+        ret.clear();
+        for (int i = 0; i < 4; ++i) {
+            if (recent[i].card != nullptr) {
+                ret.push_back(recent[i].color);
+            } // if (recent[i].card != nullptr)
+        } // for (int i = 0; i < 4; ++i)
+
+        return ret;
     } // getRecentColors()
+
+    /**
+     * @return Info of recent played cards. An array of RecentInfo objects
+     *         will be returned. Access getRecentInfo()[3] for the info of
+     *         the last played card, getRecentInfo()[2] for the info of the
+     *         next-to-last played card, etc.
+     */
+    inline const RecentInfo* getRecentInfo() {
+        return recent;
+    } // getRecentInfo()
 
     /**
      * @return Color of the last played card.
      */
     inline Color lastColor() {
-        return recentColors.back();
+        return recent[3].color;
     } // lastColor()
 
     /**
      * @return Color of the next-to-last played card.
      */
     inline Color next2lastColor() {
-        return recentColors.at(recentColors.size() - 2);
+        return recent[2].color;
     } // next2lastColor()
 
     /**
@@ -917,18 +959,18 @@ public:
         // everyone's hand cards, and everyone's strong/weak colors
         deck.clear();
         used.clear();
-        recent.clear();
-        recentColors.clear();
-        for (i = Player::YOU; i <= Player::COM3; ++i) {
+        for (i = 0; i < 4; ++i) {
+            recent[i].card = nullptr;
+            recent[i].color = NONE;
             player[i].open = 0x00;
             player[i].handCards.clear();
             player[i].weakColor = NONE;
             player[i].strongColor = NONE;
-        } // for (i = Player::YOU; i <= Player::COM3; ++i)
+        } // for (i = 0; i < 4; ++i)
 
         // Generate a temporary sequenced card deck
         for (i = 0; i < 54; ++i) {
-            card = &table.at(i);
+            card = &table[i];
             switch (card->content) {
             case WILD:
             case WILD_DRAW4:
@@ -960,12 +1002,12 @@ public:
             else {
                 // Any non-wild card can be start card
                 // Start card determined
-                recent.push_back(card);
+                recent[3].card = card;
                 ++colorAnalysis[card->color];
                 ++contentAnalysis[card->content];
-                recentColors.push_back(card->color);
+                recent[3].color = card->color;
             } // else
-        } while (recent.empty());
+        } while (recent[3].card == nullptr);
 
         // Let everyone draw initial cards
         for (i = 0; i < initialCards; ++i) {
@@ -1038,9 +1080,9 @@ public:
                     // Re-use the used cards when there are no more cards in deck
                     qDebug("Re-use the used cards");
                     for (int j = int(used.size()); --j >= 0; ) {
-                        deck.push_back(used.at(j));
-                        --colorAnalysis[used.at(j)->color];
-                        --contentAnalysis[used.at(j)->content];
+                        deck.push_back(used[j]);
+                        --colorAnalysis[used[j]->color];
+                        --contentAnalysis[used[j]->content];
                         used.erase(used.begin() + j);
                     } // for (int j = int(used.size()); --j >= 0; )
 
@@ -1056,7 +1098,7 @@ public:
 
             if (draw2StackCount == 0) {
                 // Update the legality binary when necessary
-                Card* card = recent.back();
+                Card* card = recent[3].card;
                 legality = card->isWild()
                     ? 0x30000000000000LL
                     | (0x1fffLL << 13 * (lastColor() - 1))
@@ -1120,14 +1162,14 @@ public:
             auto& hand = player[who].handCards;
             int size = int(hand.size());
             if (index < size) {
-                QString p;
+                if ((card = hand[index])->isWild()) {
+                    const char* name = qPrintable(Card::A(color) + card->name);
+                    qDebug("Player %d played %s", who, name);
+                } // if ((card = hand[index])->isWild())
+                else {
+                    qDebug("Player %d played %s", who, qPrintable(card->name));
+                } // else
 
-                card = hand.at(index);
-                if (card->isWild()) {
-                    p = Card::A(color);
-                } // if (card->isWild())
-
-                qDebug("Player %d played %s", who, qPrintable(p + card->name));
                 hand.erase(hand.begin() + index);
                 if (card->isWild()) {
                     // When a wild card is played, register the specified
@@ -1161,18 +1203,22 @@ public:
                     : (player[who].open & MASK_BEGIN_TO_I(index))
                     | (player[who].open & MASK_I_TO_END(index + 1)) >> 1;
                 player[who].recent = card;
-                recent.push_back(card);
+                for (int i = 0; i < 4; ++i) {
+                    if (i > 0) {
+                        recent[i - 1] = recent[i];
+                    } // if (i > 0)
+                    else if (recent[i].card != nullptr) {
+                        used.push_back(recent[i].card);
+                    } // else if (recent[i].card != nullptr)
+                } // for (int i = 0; i < 4; ++i)
+
+                recent[3].card = card;
                 ++colorAnalysis[card->color];
                 ++contentAnalysis[card->content];
-                recentColors.push_back(card->isWild() ? color : card->color);
+                recent[3].color = card->isWild() ? color : card->color;
                 qDebug("colorAnalysis & contentAnalysis:");
                 qDebug("%s", qPrintable(array2string(colorAnalysis, 5)));
                 qDebug("%s", qPrintable(array2string(contentAnalysis, 15)));
-                if (recent.size() > 4) {
-                    used.push_back(recent.front());
-                    recent.erase(recent.begin());
-                    recentColors.erase(recentColors.begin());
-                } // if (recent.size() > 4)
 
                 // Update the legality binary
                 legality = draw2StackCount > 0

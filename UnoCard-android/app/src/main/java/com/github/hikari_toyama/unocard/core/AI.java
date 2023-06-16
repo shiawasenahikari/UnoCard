@@ -201,12 +201,14 @@ public class AI {
     public boolean needToChallenge() {
         Color lastColor = uno.lastColor();
         Color next2lastColor = uno.next2lastColor();
-        int size = uno.getNextPlayer().getHandSize();
+        int s1 = uno.getNextPlayer().getHandSize();
+        int s2 = uno.getCurrPlayer().getHandSize();
 
         // Challenge when defending my UNO dash
         // Challenge when I have 10 or more cards already
+        // Challenge when previous player holds 10 or more cards
         // Challenge when legal color has not been changed
-        return size == 1 || size >= 10 || lastColor == next2lastColor;
+        return s1 == 1 || Math.min(s1, s2) >= 10 || lastColor == next2lastColor;
     } // needToChallenge()
 
     /**
@@ -293,7 +295,7 @@ public class AI {
                                 i7 = i;
                             break; // case NUM7
                         } // if (uno.isSevenZeroRule())
-                        // fall through when not in 7-0 rule
+                        // fall through
 
                     case NUM0:
                         if (uno.isSevenZeroRule()) {
@@ -301,7 +303,7 @@ public class AI {
                                 i0 = i;
                             break; // case NUM0
                         } // if (uno.isSevenZeroRule())
-                        // fall through when not in 7-0 rule
+                        // fall through
 
                     default: // number cards
                         if (iNM < 0 || card.color == bestColor)
