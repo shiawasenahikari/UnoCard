@@ -25,7 +25,7 @@ public class Card implements Comparable<Card> {
      */
     static final String[] B = {
             "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-            "Reverse", "Skip", "+2", "Wild", "Wild +4"
+            "+2", "Reverse", "Skip", "Wild", "Wild +4"
     }; // B[]
 
     /**

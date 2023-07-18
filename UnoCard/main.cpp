@@ -409,6 +409,11 @@ void Main::refreshScreen(const QString& message) {
         width = sUno->getTextWidth(i18n->btn_auto());
         sUno->putText(sPainter, i18n->btn_auto(), 1580 - width, 880);
     } // if (status == Player::YOU && !sAuto && !sAdjustOptions)
+    else if (status == STAT_GAME_OVER && !sAdjustOptions) {
+        // [UPDATE] When game over, change to <SAVE> button
+        width = sUno->getTextWidth("[B]<SAVE>");
+        sUno->putText(sPainter, "[B]<SAVE>", 1580 - width, 880);
+    } // else if (status == STAT_GAME_OVER && !sAdjustOptions)
 
     if (sAdjustOptions) {
         // Show special screen when configuring game options
@@ -1339,10 +1344,21 @@ void Main::mousePressEvent(QMouseEvent* event) {
         else if (859 <= y && y <= 880 && 1450 <= x && x <= 1580) {
             // <AUTO> button
             // In player's action, automatically play or draw cards by AI
-            if (sStatus == Player::YOU) {
+            if (sStatus == Player::YOU && !sAuto) {
                 sAuto = true;
                 setStatus(sStatus);
-            } // if (sStatus == Player::YOU)
+            } // if (sStatus == Player::YOU && !sAuto)
+            else if (sStatus == STAT_GAME_OVER) {
+                // [UPDATE] When game over, change to <SAVE> button
+                QString replayName = sUno->save();
+
+                if (replayName.length() > 0) {
+                    refreshScreen("Replay file saved as " + replayName);
+                } // if (replayName.length() > 0)
+                else {
+                    refreshScreen("Failed to save replay file");
+                } // else
+            } // else if (sStatus == STAT_GAME_OVER)
         } // else if (859 <= y && y <= 880 && 1450 <= x && x <= 1580)
         else switch (sStatus) {
         case STAT_WELCOME:

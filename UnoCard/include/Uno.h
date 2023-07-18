@@ -13,6 +13,7 @@
 #include <map>
 #include <ctime>
 #include <QChar>
+#include <QFile>
 #include <QRect>
 #include <QBrush>
 #include <QColor>
@@ -23,6 +24,7 @@
 #include <QBitmap>
 #include <QString>
 #include <QPainter>
+#include <QIODevice>
 #include "include/Card.h"
 #include "include/Color.h"
 #include "include/Player.h"
@@ -192,6 +194,11 @@ private:
     RecentInfo recent[4];
 
     /**
+     * Record the replay data.
+     */
+    QString replay;
+
+    /**
      * Our custom font's character-to-position map.
      */
     std::map<QChar, int> charMap;
@@ -207,7 +214,7 @@ private:
         QString A[] = { "k", "r", "b", "g", "y" };
         QString B[] = {
             "0", "1", "2", "3", "4", "5", "6", "7",
-            "8", "9", "+", "@", "$", "w", "w+"
+            "8", "9", "+", "$", "@", "w", "w+"
         }; // B[]
         QString hanZi = QString()
             + "一上下东为乐人仍"
@@ -1009,6 +1016,13 @@ public:
             } // else
         } while (recent[3].card == nullptr);
 
+        // Write log
+        qDebug("Game starts with %s", qPrintable(card->name));
+        replay.clear();
+        replay += "ST,", replay += QString::number(_2vs2 ? 1 : 0);
+        replay += ",", replay += QString::number(players);
+        replay += ",", replay += QString::number(card->id);
+
         // Let everyone draw initial cards
         for (i = 0; i < initialCards; ++i) {
             draw(Player::YOU,  /* force */ true);
@@ -1022,9 +1036,6 @@ public:
         if (players == 3 && now == Player::COM2) {
             now = (3 + rand() % 3) % 4;
         } // if (players == 3 && now == Player::COM2)
-
-        // Write log
-        qDebug("Game starts with %s", qPrintable(card->name));
     } // start()
 
     /**
@@ -1076,6 +1087,8 @@ public:
                 } // else
 
                 player[who].recent = nullptr;
+                replay += ";DR,", replay += QString::number(who);
+                replay += ",", replay += QString::number(card->id);
                 if (deck.empty()) {
                     // Re-use the used cards when there are no more cards in deck
                     qDebug("Re-use the used cards");
@@ -1094,6 +1107,7 @@ public:
                 // cards because of the max-hold-card limitation, force reset
                 // the counter to zero.
                 draw2StackCount = 0;
+                replay += ";DF,", replay += QString::number(who);
             } // else
 
             if (draw2StackCount == 0) {
@@ -1167,6 +1181,7 @@ public:
                     qDebug("Player %d played %s", who, name);
                 } // if ((card = hand[index])->isWild())
                 else {
+                    color = card->color;
                     qDebug("Player %d played %s", who, qPrintable(card->name));
                 } // else
 
@@ -1213,12 +1228,15 @@ public:
                 } // for (int i = 0; i < 4; ++i)
 
                 recent[3].card = card;
+                recent[3].color = color;
                 ++colorAnalysis[card->color];
                 ++contentAnalysis[card->content];
-                recent[3].color = card->isWild() ? color : card->color;
                 qDebug("colorAnalysis & contentAnalysis:");
                 qDebug("%s", qPrintable(array2string(colorAnalysis, 5)));
                 qDebug("%s", qPrintable(array2string(contentAnalysis, 15)));
+                replay += ";PL,", replay += QString::number(who);
+                replay += ",", replay += QString::number(card->id);
+                replay += ",", replay += QString::number(color);
 
                 // Update the legality binary
                 legality = draw2StackCount > 0
@@ -1271,6 +1289,7 @@ public:
         } // if (whom >= Player::YOU && whom <= Player::COM3)
 
         qDebug("Player %d is challenged. Result = %d", whom, result);
+        replay += ";CH,", replay += QString::number(whom);
         return result;
     } // challenge(int)
 
@@ -1293,6 +1312,8 @@ public:
         } // if (a == Player::YOU || b == Player::YOU)
 
         qDebug("Player %d swapped hand cards with Player %d", a, b);
+        replay += ";SW,", replay += QString::number(a);
+        replay += ",", replay += QString::number(b);
     } // swap(int, int)
 
     /**
@@ -1308,7 +1329,26 @@ public:
         player[next] = store;
         MAKE_PUBLIC(this, Player::YOU);
         qDebug("Everyone passed hand cards to the next player");
+        replay += ";CY";
     } // cycle()
+
+    /**
+     * Save current game as a new replay file.
+     *
+     * @return Name of the saved file, or an empty string if save failed.
+     */
+    inline QString save() {
+        QString name;
+        QFile f(QString::number(unsigned(time(nullptr))) + ".sav");
+
+        if (f.open(QIODevice::WriteOnly)) {
+            f.write(replay.toLatin1());
+            f.close();
+            name = f.fileName();
+        } // if (f.open(QIODevice::WriteOnly))
+
+        return name;
+    } // save()
 }; // Uno Class
 
 #endif // __UNO_H_494649FDFA62B3C015120BCB9BE17613__

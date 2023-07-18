@@ -25,7 +25,10 @@ import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -263,6 +266,16 @@ public class Uno {
     int[] colorAnalysis, contentAnalysis;
 
     /**
+     * Record the replay data.
+     */
+    StringBuilder replay;
+
+    /**
+     * The directory that stores your replay save files.
+     */
+    File replayDir;
+
+    /**
      * Singleton, hide default constructor.
      *
      * @param c Pass a context object to let us get the card image
@@ -327,9 +340,9 @@ public class Uno {
                 Utils.loadResource(c, R.raw.front_r7),
                 Utils.loadResource(c, R.raw.front_r8),
                 Utils.loadResource(c, R.raw.front_r9),
+                Utils.loadResource(c, R.raw.front_rd2),
                 Utils.loadResource(c, R.raw.front_rr),
                 Utils.loadResource(c, R.raw.front_rs),
-                Utils.loadResource(c, R.raw.front_rd2),
                 Utils.loadResource(c, R.raw.front_b0),
                 Utils.loadResource(c, R.raw.front_b1),
                 Utils.loadResource(c, R.raw.front_b2),
@@ -340,9 +353,9 @@ public class Uno {
                 Utils.loadResource(c, R.raw.front_b7),
                 Utils.loadResource(c, R.raw.front_b8),
                 Utils.loadResource(c, R.raw.front_b9),
+                Utils.loadResource(c, R.raw.front_bd2),
                 Utils.loadResource(c, R.raw.front_br),
                 Utils.loadResource(c, R.raw.front_bs),
-                Utils.loadResource(c, R.raw.front_bd2),
                 Utils.loadResource(c, R.raw.front_g0),
                 Utils.loadResource(c, R.raw.front_g1),
                 Utils.loadResource(c, R.raw.front_g2),
@@ -353,9 +366,9 @@ public class Uno {
                 Utils.loadResource(c, R.raw.front_g7),
                 Utils.loadResource(c, R.raw.front_g8),
                 Utils.loadResource(c, R.raw.front_g9),
+                Utils.loadResource(c, R.raw.front_gd2),
                 Utils.loadResource(c, R.raw.front_gr),
                 Utils.loadResource(c, R.raw.front_gs),
-                Utils.loadResource(c, R.raw.front_gd2),
                 Utils.loadResource(c, R.raw.front_y0),
                 Utils.loadResource(c, R.raw.front_y1),
                 Utils.loadResource(c, R.raw.front_y2),
@@ -366,9 +379,9 @@ public class Uno {
                 Utils.loadResource(c, R.raw.front_y7),
                 Utils.loadResource(c, R.raw.front_y8),
                 Utils.loadResource(c, R.raw.front_y9),
+                Utils.loadResource(c, R.raw.front_yd2),
                 Utils.loadResource(c, R.raw.front_yr),
                 Utils.loadResource(c, R.raw.front_ys),
-                Utils.loadResource(c, R.raw.front_yd2),
                 Utils.loadResource(c, R.raw.front_kw),
                 Utils.loadResource(c, R.raw.front_kw4)
         }; // br = new Mat[]{}
@@ -383,9 +396,9 @@ public class Uno {
                 Utils.loadResource(c, R.raw.dark_r7),
                 Utils.loadResource(c, R.raw.dark_r8),
                 Utils.loadResource(c, R.raw.dark_r9),
+                Utils.loadResource(c, R.raw.dark_rd2),
                 Utils.loadResource(c, R.raw.dark_rr),
                 Utils.loadResource(c, R.raw.dark_rs),
-                Utils.loadResource(c, R.raw.dark_rd2),
                 Utils.loadResource(c, R.raw.dark_b0),
                 Utils.loadResource(c, R.raw.dark_b1),
                 Utils.loadResource(c, R.raw.dark_b2),
@@ -396,9 +409,9 @@ public class Uno {
                 Utils.loadResource(c, R.raw.dark_b7),
                 Utils.loadResource(c, R.raw.dark_b8),
                 Utils.loadResource(c, R.raw.dark_b9),
+                Utils.loadResource(c, R.raw.dark_bd2),
                 Utils.loadResource(c, R.raw.dark_br),
                 Utils.loadResource(c, R.raw.dark_bs),
-                Utils.loadResource(c, R.raw.dark_bd2),
                 Utils.loadResource(c, R.raw.dark_g0),
                 Utils.loadResource(c, R.raw.dark_g1),
                 Utils.loadResource(c, R.raw.dark_g2),
@@ -409,9 +422,9 @@ public class Uno {
                 Utils.loadResource(c, R.raw.dark_g7),
                 Utils.loadResource(c, R.raw.dark_g8),
                 Utils.loadResource(c, R.raw.dark_g9),
+                Utils.loadResource(c, R.raw.dark_gd2),
                 Utils.loadResource(c, R.raw.dark_gr),
                 Utils.loadResource(c, R.raw.dark_gs),
-                Utils.loadResource(c, R.raw.dark_gd2),
                 Utils.loadResource(c, R.raw.dark_y0),
                 Utils.loadResource(c, R.raw.dark_y1),
                 Utils.loadResource(c, R.raw.dark_y2),
@@ -422,9 +435,9 @@ public class Uno {
                 Utils.loadResource(c, R.raw.dark_y7),
                 Utils.loadResource(c, R.raw.dark_y8),
                 Utils.loadResource(c, R.raw.dark_y9),
+                Utils.loadResource(c, R.raw.dark_yd2),
                 Utils.loadResource(c, R.raw.dark_yr),
                 Utils.loadResource(c, R.raw.dark_ys),
-                Utils.loadResource(c, R.raw.dark_yd2),
                 Utils.loadResource(c, R.raw.dark_kw),
                 Utils.loadResource(c, R.raw.dark_kw4)
         }; // dk = new Mat[]{}
@@ -508,7 +521,9 @@ public class Uno {
         now = Uno.RNG.nextInt(4);
         forcePlay = true;
         difficulty = LV_EASY;
+        replay = new StringBuilder();
         direction = draw2StackCount = 0;
+        replayDir = c.getExternalFilesDir("replay");
         _2vs2 = sevenZeroRule = draw2StackRule = false;
         colorAnalysis = new int[Color.values().length];
         contentAnalysis = new int[Content.values().length];
@@ -1192,6 +1207,13 @@ public class Uno {
             } // else
         } while (recent[3].card == null);
 
+        // Write log
+        Log.i(TAG, "Game starts with " + card.name);
+        replay.setLength(0);
+        replay.append("ST,").append(_2vs2 ? 1 : 0);
+        replay.append(",").append(players);
+        replay.append(",").append(card.id);
+
         // Let everyone draw initial cards
         for (i = 0; i < initialCards; ++i) {
             draw(Player.YOU,  /* force */ true);
@@ -1205,9 +1227,6 @@ public class Uno {
         if (players == 3 && now == Player.COM2) {
             now = (3 + Uno.RNG.nextInt(3)) % 4;
         } // if (players == 3 && now == Player.COM2)
-
-        // Write log
-        Log.i(TAG, "Game starts with " + card.name);
     } // start()
 
     /**
@@ -1259,6 +1278,8 @@ public class Uno {
                 } // else
 
                 player[who].recent = null;
+                replay.append(";DR,").append(who);
+                replay.append(",").append(card.id);
                 if (deck.isEmpty()) {
                     // Re-use the used cards when there are no more cards in deck
                     Log.i(TAG, "Re-use the used cards");
@@ -1277,6 +1298,7 @@ public class Uno {
                 // cards because of the max-hold-card limitation, force reset
                 // the counter to zero.
                 draw2StackCount = 0;
+                replay.append(";DF,").append(who);
             } // else
 
             if (draw2StackCount == 0) {
@@ -1350,6 +1372,7 @@ public class Uno {
                     Log.i(TAG, "Player " + who + " played " + name);
                 } // if ((card = hand.get(index)).isWild())
                 else {
+                    color = card.color;
                     Log.i(TAG, "Player " + who + " played " + card.name);
                 } // else
 
@@ -1397,12 +1420,15 @@ public class Uno {
                 } // for (int i = 0; i < 4; ++i)
 
                 recent[3].card = card;
+                recent[3].color = color;
                 ++colorAnalysis[card.color.ordinal()];
                 ++contentAnalysis[card.content.ordinal()];
-                recent[3].color = card.isWild() ? color : card.color;
                 Log.i(TAG, "colorAnalysis & contentAnalysis:");
                 Log.i(TAG, Arrays.toString(colorAnalysis));
                 Log.i(TAG, Arrays.toString(contentAnalysis));
+                replay.append(";PL,").append(who);
+                replay.append(",").append(card.id);
+                replay.append(",").append(color.ordinal());
 
                 // Update the legality binary
                 legality = draw2StackCount > 0
@@ -1455,6 +1481,7 @@ public class Uno {
         } // if (whom >= Player.YOU && whom <= Player.COM3)
 
         Log.i(TAG, "Player " + whom + " is challenged. Result = " + result);
+        replay.append(";CH,").append(whom);
         return result;
     } // challenge(int)
 
@@ -1477,6 +1504,8 @@ public class Uno {
         } // if (a == Player.YOU || b == Player.YOU)
 
         Log.i(TAG, "Player " + a + " swapped hand cards with Player " + b);
+        replay.append(";SW,").append(a);
+        replay.append(",").append(b);
     } // swap(int, int)
 
     /**
@@ -1492,7 +1521,30 @@ public class Uno {
         player[next] = store;
         MAKE_PUBLIC(this, Player.YOU);
         Log.i(TAG, "Everyone passed hand cards to the next player");
+        replay.append(";CY");
     } // cycle()
+
+    /**
+     * Save current game as a new replay file.
+     *
+     * @return Name of the saved file, or an empty string if save failed.
+     */
+    public String save() {
+        String name = "";
+
+        try {
+            File f = new File(replayDir, System.currentTimeMillis() + ".sav");
+            Writer w = new FileWriter(f);
+
+            w.write(replay.toString());
+            w.close();
+            name = f.getName();
+        } // try
+        catch (IOException ignore) {
+        } // catch (IOException ignore)
+
+        return name;
+    } // save()
 
     /**
      * RecentInfo Inner Class.

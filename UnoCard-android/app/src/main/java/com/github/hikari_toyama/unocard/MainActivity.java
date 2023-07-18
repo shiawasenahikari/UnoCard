@@ -454,6 +454,11 @@ public class MainActivity extends AppCompatActivity
             width = mUno.getTextWidth(i18n.btn_auto());
             mUno.putText(mScr, i18n.btn_auto(), 1580 - width, 880);
         } // if (status == Player.YOU && !mAuto && !mAdjustOptions)
+        else if (status == STAT_GAME_OVER && !mAdjustOptions) {
+            // [UPDATE] When game over, change to <SAVE> button
+            width = mUno.getTextWidth("[B]<SAVE>");
+            mUno.putText(mScr, "[B]<SAVE>", 1580 - width, 880);
+        } // else if (status == STAT_GAME_OVER && !mAdjustOptions)
 
         if (mAdjustOptions) {
             // Show special screen when configuring game options
@@ -1522,10 +1527,21 @@ public class MainActivity extends AppCompatActivity
         else if (859 <= y && y <= 880 && 1450 <= x && x <= 1580) {
             // <AUTO> button
             // In player's action, automatically play or draw cards by AI
-            if (mStatus == Player.YOU) {
+            if (mStatus == Player.YOU && !mAuto) {
                 mAuto = true;
                 setStatus(mStatus);
-            } // if (mStatus == Player.YOU)
+            } // if (mStatus == Player.YOU && !mAuto)
+            else if (mStatus == STAT_GAME_OVER) {
+                // [UPDATE] When game over, change to <SAVE> button
+                String replayName = mUno.save();
+
+                if (replayName.length() > 0) {
+                    refreshScreen("Replay file saved as " + replayName);
+                } // if (replayName.length() > 0)
+                else {
+                    refreshScreen("Failed to save replay file");
+                } // else
+            } // else if (mStatus == STAT_GAME_OVER)
         } // else if (859 <= y && y <= 880 && 1450 <= x && x <= 1580)
         else {
             switch (mStatus) {

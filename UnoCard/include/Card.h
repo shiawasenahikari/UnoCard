@@ -133,7 +133,7 @@ private:
     inline static const QString& B(Content content) {
         static const QString b[] = {
             "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-            "+2", "Skip", "Reverse", "Wild", "Wild +4"
+            "+2", "Reverse", "Skip", "Wild", "Wild +4"
         }; // b[]
         return b[content];
     } // B(Content)
