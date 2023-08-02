@@ -51,6 +51,9 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.File;
+import java.lang.ref.WeakReference;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -226,11 +229,11 @@ public class MainActivity extends AppCompatActivity
      */
     @WorkerThread
     private void threadWait(long millis) {
-        long start = System.currentTimeMillis();
+        long end = System.currentTimeMillis() + millis;
 
-        while (System.currentTimeMillis() - start < millis) {
-            mSubHandler.removeMessages(0);
-        } // while (System.currentTimeMillis() - st < millis)
+        while (System.currentTimeMillis() < end) {
+            mSubHandler.removeCallbacksAndMessages(null);
+        } // while (System.currentTimeMillis() < end)
     } // threadWait(long)
 
     /**
@@ -363,20 +366,18 @@ public class MainActivity extends AppCompatActivity
                 break; // case STAT_WILD_COLOR
 
             case STAT_DOUBT_WILD4:
-                if (mAuto || mUno.getNext() != Player.YOU) {
-                    // Challenge or not is decided by AI
-                    if (mAI.needToChallenge()) {
-                        onChallenge();
-                    } // if (mAI->needToChallenge())
-                    else {
-                        mUno.switchNow();
-                        draw(4, /* force */ true);
-                    } // else
-                } // if (mAuto || mUno.getNext() != Player.YOU)
-                else {
+                if (mUno.getNext() == Player.YOU && !mAuto) {
                     // Challenge or not is decided by you
                     refreshScreen(i18n.ask_challenge(
                             mUno.next2lastColor().ordinal()));
+                } // if (mUno.getNext() == Player.YOU && !mAuto)
+                else if (mAI.needToChallenge()) {
+                    // Challenge or not is decided by AI
+                    onChallenge();
+                } // else if (mAI.needToChallenge())
+                else {
+                    mUno.switchNow();
+                    draw(4, /* force */ true);
                 } // else
                 break; // case STAT_DOUBT_WILD4
 
@@ -454,6 +455,11 @@ public class MainActivity extends AppCompatActivity
             width = mUno.getTextWidth(i18n.btn_auto());
             mUno.putText(mScr, i18n.btn_auto(), 1580 - width, 880);
         } // if (status == Player.YOU && !mAuto && !mAdjustOptions)
+        else if (status == STAT_WELCOME && !mAdjustOptions) {
+            // [UPDATE] When in welcome screen, change to <LOAD> button
+            width = mUno.getTextWidth("[G]<LOAD>");
+            mUno.putText(mScr, "[G]<LOAD>", 1580 - width, 880);
+        } // else if (status == STAT_WELCOME && !mAdjustOptions)
         else if (status == STAT_GAME_OVER && !mAdjustOptions) {
             // [UPDATE] When game over, change to <SAVE> button
             width = mUno.getTextWidth("[B]<SAVE>");
@@ -1415,7 +1421,12 @@ public class MainActivity extends AppCompatActivity
     private boolean handleMessage2(Message message) {
         int x = message.arg1, y = message.arg2;
 
-        if (mAdjustOptions) {
+        if (message.what == 1) {
+            // When message.what == 1
+            // load the replay file named [message.obj]
+            loadReplay((String) message.obj);
+        } // if (message.what == 1)
+        else if (mAdjustOptions) {
             // Do special behaviors when configuring game options
             if (60 <= y && y <= 240) {
                 if (150 <= x && x <= 270) {
@@ -1523,7 +1534,7 @@ public class MainActivity extends AppCompatActivity
                 mAdjustOptions = false;
                 setStatus(mStatus);
             } // else if (859 <= y && y <= 880 && 20 <= x && x <= 200)
-        } // if (mAdjustOptions)
+        } // else if (mAdjustOptions)
         else if (859 <= y && y <= 880 && 1450 <= x && x <= 1580) {
             // <AUTO> button
             // In player's action, automatically play or draw cards by AI
@@ -1531,6 +1542,10 @@ public class MainActivity extends AppCompatActivity
                 mAuto = true;
                 setStatus(mStatus);
             } // if (mStatus == Player.YOU && !mAuto)
+            else if (mStatus == STAT_WELCOME) {
+                // [UPDATE] When in welcome screen, change to <LOAD> button
+                new OpenDialog().show(getSupportFragmentManager(), "OpenDialog");
+            } // else if (mStatus == STAT_WELCOME)
             else if (mStatus == STAT_GAME_OVER) {
                 // [UPDATE] When game over, change to <SAVE> button
                 String replayName = mUno.save();
@@ -1683,6 +1698,207 @@ public class MainActivity extends AppCompatActivity
     } // handleMessage2(Message)
 
     /**
+     * Load a existed replay file.
+     *
+     * @param replayName Provide the file name of your replay.
+     */
+    @WorkerThread
+    private void loadReplay(String replayName) {
+        if (mUno.loadReplay(replayName)) {
+            final int[] x = {740, 160, 740, 1320};
+            final int[] y = {670, 360, 50, 360};
+            int[] params = new int[3];
+
+            setStatus(STAT_IDLE);
+            while (true) {
+                Card card;
+                String cmd;
+                int a, b, c, d, i, size, width;
+
+                if ((cmd = mUno.forwardReplay(params)).equals("ST")) {
+                    refreshScreen(i18n.info_ready());
+                    threadWait(1000);
+                } // if ((cmd = mUno.forwardReplay(params)).equals("ST"))
+                else if (cmd.equals("DR")) {
+                    List<Card> h = mUno.getPlayer(a = params[0]).getHandCards();
+                    card = mUno.findCardById(params[1]);
+                    i = Collections.binarySearch(h, card);
+                    size = h.size();
+                    mLayer[0].startLeft = 338;
+                    mLayer[0].startTop = 360;
+                    mLayer[0].elem = card.image;
+                    if (a == Player.COM1) {
+                        width = 44 * Math.min(size, 13) + 136;
+                        mLayer[0].endLeft = 20 + i / 13 * 44;
+                        mLayer[0].endTop = 450 - width / 2 + i % 13 * 44;
+                    } // if (a == Player.COM1)
+                    else if (a == Player.COM2) {
+                        width = 44 * size + 76;
+                        mLayer[0].endLeft = 800 - width / 2 + 44 * i;
+                        mLayer[0].endTop = 20;
+                    } // else if (a == Player.COM2)
+                    else if (a == Player.COM3) {
+                        width = 44 * Math.min(size, 13) + 136;
+                        mLayer[0].endLeft = 1460 - i / 13 * 44;
+                        mLayer[0].endTop = 450 - width / 2 + i % 13 * 44;
+                    } // else if (a == Player.COM3)
+                    else {
+                        width = 44 * size + 76;
+                        mLayer[0].endLeft = 800 - width / 2 + 44 * i;
+                        mLayer[0].endTop = 700;
+                    } // else
+
+                    // Animation
+                    mSoundPool.play(sndDraw, mSndVol, mSndVol, 1, 0, 1.0f);
+                    animate(1, mLayer);
+                    refreshScreen(i18n.act_drawCard(a, card.name));
+                    threadWait(300);
+                } // else if (cmd.equals("DR"))
+                else if (cmd.equals("PL")) {
+                    List<Card> h = mUno.getPlayer(a = params[0]).getHandCards();
+                    card = mUno.findCardById(params[1]);
+                    i = Collections.binarySearch(h, card);
+                    if (i < 0) i = ~i;
+                    size = h.size() + 1;
+                    threadWait(750);
+                    mSoundPool.play(sndPlay, mSndVol, mSndVol, 1, 0, 1.0f);
+                    mLayer[0].elem = card.image;
+                    if (a == Player.COM1) {
+                        width = 44 * Math.min(size, 13) + 136;
+                        mLayer[0].startLeft = 160 + i / 13 * 44;
+                        mLayer[0].startTop = 450 - width / 2 + i % 13 * 44;
+                    } // if (a == Player.COM1)
+                    else if (a == Player.COM2) {
+                        width = 44 * size + 76;
+                        mLayer[0].startLeft = 800 - width / 2 + 44 * i;
+                        mLayer[0].startTop = 50;
+                    } // else if (a == Player.COM2)
+                    else if (a == Player.COM3) {
+                        width = 44 * Math.min(size, 13) + 136;
+                        mLayer[0].startLeft = 1320 - i / 13 * 44;
+                        mLayer[0].startTop = 450 - width / 2 + i % 13 * 44;
+                    } // else if (a == Player.COM3)
+                    else {
+                        width = 44 * size + 76;
+                        mLayer[0].startLeft = 800 - width / 2 + 44 * i;
+                        mLayer[0].startTop = 680;
+                    } // else
+
+                    // Animation
+                    mLayer[0].endLeft = 1118;
+                    mLayer[0].endTop = 360;
+                    animate(1, mLayer);
+                    if (size == 2)
+                        mSoundPool.play(sndUno, mSndVol, mSndVol, 1, 0, 1.0f);
+                    refreshScreen(i18n.act_playCard(a, card.name));
+                    threadWait(750);
+                } // else if (cmd.equals("PL"))
+                else if (cmd.equals("DF")) {
+                    a = params[0];
+                    refreshScreen(i18n.info_cannotDraw(a, Uno.MAX_HOLD_CARDS));
+                    threadWait(750);
+                } // else if (cmd.equals("DF"))
+                else if (cmd.equals("CH")) {
+                    a = params[0];
+                    threadWait(750);
+                    if (mUno.challenge(a)) {
+                        refreshScreen(i18n.info_challengeSuccess(a));
+                    } // if (mUno.challenge(a))
+                    else {
+                        b = mUno.getNow();
+                        refreshScreen(i18n.info_challengeFailure(b));
+                    } // else
+
+                    threadWait(750);
+                } // else if (cmd.equals("CH"))
+                else if (cmd.equals("SW")) {
+                    a = params[0];
+                    b = params[1];
+
+                    // Animation
+                    mHideFlag = (1 << a) | (1 << b);
+                    refreshScreen(i18n.info_7_swap(a, b));
+                    mLayer[0].elem = mLayer[1].elem = mUno.getBackImage();
+                    mLayer[0].startLeft = x[a];
+                    mLayer[0].startTop = y[a];
+                    mLayer[0].endLeft = x[b];
+                    mLayer[0].endTop = y[b];
+                    mLayer[1].startLeft = x[b];
+                    mLayer[1].startTop = y[b];
+                    mLayer[1].endLeft = x[a];
+                    mLayer[1].endTop = y[a];
+                    animate(2, mLayer);
+                    mHideFlag = 0x00;
+                    refreshScreen(i18n.info_7_swap(a, b));
+                    threadWait(750);
+                } // else if (cmd.equals("SW"))
+                else if (cmd.equals("CY")) {
+                    // Animation
+                    mHideFlag = 0x0f;
+                    refreshScreen(i18n.info_0_rotate());
+                    a = mUno.getNow();
+                    b = mUno.getNext();
+                    c = mUno.getOppo();
+                    d = mUno.getPrev();
+                    mLayer[0].elem = mUno.getBackImage();
+                    mLayer[0].startLeft = x[a];
+                    mLayer[0].startTop = y[a];
+                    mLayer[0].endLeft = x[b];
+                    mLayer[0].endTop = y[b];
+                    mLayer[1].elem = mUno.getBackImage();
+                    mLayer[1].startLeft = x[b];
+                    mLayer[1].startTop = y[b];
+                    mLayer[1].endLeft = x[c];
+                    mLayer[1].endTop = y[c];
+                    if (mUno.getPlayers() == 3) {
+                        mLayer[2].elem = mUno.getBackImage();
+                        mLayer[2].startLeft = x[c];
+                        mLayer[2].startTop = y[c];
+                        mLayer[2].endLeft = x[a];
+                        mLayer[2].endTop = y[a];
+                        animate(3, mLayer);
+                    } // if (mUno.getPlayers() == 3)
+                    else {
+                        mLayer[2].elem = mUno.getBackImage();
+                        mLayer[2].startLeft = x[c];
+                        mLayer[2].startTop = y[c];
+                        mLayer[2].endLeft = x[d];
+                        mLayer[2].endTop = y[d];
+                        mLayer[3].elem = mUno.getBackImage();
+                        mLayer[3].startLeft = x[d];
+                        mLayer[3].startTop = y[d];
+                        mLayer[3].endLeft = x[a];
+                        mLayer[3].endTop = y[a];
+                        animate(4, mLayer);
+                    } // else
+
+                    mHideFlag = 0x00;
+                    refreshScreen(i18n.info_0_rotate());
+                    threadWait(750);
+                } // else if (cmd.equals("CY"))
+                else {
+                    break;
+                } // else
+            } // while (true)
+
+            if ((mUno.is2vs2()
+                    && mUno.getPlayer(Player.COM2).getHandSize() == 0)
+                    || mUno.getPlayer(Player.YOU).getHandSize() == 0) {
+                mSoundPool.play(sndWin, mSndVol, mSndVol, 1, 0, 1.0f);
+            } // if ((mUno.is2vs2() && ...)
+            else {
+                mSoundPool.play(sndLose, mSndVol, mSndVol, 1, 0, 1.0f);
+            } // else
+
+            threadWait(3000);
+            setStatus(STAT_WELCOME);
+        } // if (mUno.loadReplay(replayName))
+        else {
+            refreshScreen("[Y]Failed to load " + replayName);
+        } // else
+    } // loadReplay(String)
+
+    /**
      * Triggered when user pressed a system key.
      *
      * @param keyCode Which key is pressed, e.g. KeyEvent.KEYCODE_BACK
@@ -1785,6 +2001,54 @@ public class MainActivity extends AppCompatActivity
             requireActivity().finish();
         } // onClick(DialogInterface, int)
     } // UnsupportedDeviceDialog Inner Class
+
+    public static class OpenDialog extends DialogFragment
+            implements DialogInterface.OnClickListener {
+        private WeakReference<MainActivity> parent;
+        private String[] files;
+
+        /**
+         * Triggered when dialog box created.
+         *
+         * @return Created dialog object.
+         */
+        @NonNull
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            MainActivity p = (MainActivity) requireActivity();
+            File replayDir = p.getExternalFilesDir("replay");
+
+            parent = new WeakReference<>(p);
+            files = replayDir.list();
+            return new AlertDialog.Builder(p)
+                    .setTitle("Choose a replay file")
+                    .setItems(files, this)
+                    .setIcon(android.R.drawable.ic_dialog_dialer)
+                    .setNegativeButton(android.R.string.cancel, this)
+                    .create();
+        } // onCreateDialog(Bundle)
+
+        /**
+         * Implementation method of interface DialogInterface.OnClickListener.
+         * Triggered when a dialog button is pressed.
+         *
+         * @param dialog The button in which dialog box is pressed.
+         * @param which  Which button is pressed, e.g.
+         *               DialogInterface.BUTTON_POSITIVE
+         */
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            dismiss();
+            if (which >= 0) {
+                MainActivity p = parent.get();
+                Handler h = p == null ? null : p.mSubHandler;
+
+                if (h != null) {
+                    h.sendMessage(h.obtainMessage(1, files[which]));
+                } // if (h != null)
+            } // if (which >= 0)
+        } // onClick(DialogInterface, int)
+    } // OpenDialog Inner Class
 
     /**
      * Exit Dialog.

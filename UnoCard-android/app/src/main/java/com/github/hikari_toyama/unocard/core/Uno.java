@@ -11,6 +11,7 @@ package com.github.hikari_toyama.unocard.core;
 
 import static com.github.hikari_toyama.unocard.core.Color.NONE;
 import static com.github.hikari_toyama.unocard.core.Content.DRAW2;
+import static com.github.hikari_toyama.unocard.core.Content.REV;
 import static com.github.hikari_toyama.unocard.core.Content.WILD;
 import static com.github.hikari_toyama.unocard.core.Content.WILD_DRAW4;
 
@@ -26,12 +27,14 @@ import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -269,6 +272,11 @@ public class Uno {
      * Record the replay data.
      */
     StringBuilder replay;
+
+    /**
+     * Iterator of your loaded replay.
+     */
+    Iterator<String> it;
 
     /**
      * The directory that stores your replay save files.
@@ -1033,6 +1041,16 @@ public class Uno {
     } // findCard(Color, Content)
 
     /**
+     * Find a card instance in card table by card ID (0 ~ 53).
+     *
+     * @param id ID of the card you want to get.
+     * @return Corresponding card instance.
+     */
+    public Card findCardById(int id) {
+        return 0 <= id && id <= 53 ? table[id] : null;
+    } // findCardById(int)
+
+    /**
      * @return How many cards in deck (haven't been used yet).
      */
     public int getDeckCount() {
@@ -1545,6 +1563,252 @@ public class Uno {
 
         return name;
     } // save()
+
+    /**
+     * @param val Provide a value (in string format, 10 based).
+     * @param lo  Provide a lower bound.
+     * @param hi  Provide a upper bound.
+     * @return True if lo <= val <= hi.
+     */
+    boolean checkParam(String val, int lo, int hi) {
+        int iVal;
+
+        try {
+            iVal = Integer.parseInt(val);
+        } // try
+        catch (NumberFormatException e) {
+            iVal = 0;
+        } // catch (NumberFormatException e)
+
+        return lo <= iVal && iVal <= hi;
+    } // checkParam(String, int, int)
+
+    /**
+     * Load a existed replay file.
+     *
+     * @param replayName Provide the file name of your replay.
+     * @return True if load success.
+     */
+    public boolean loadReplay(String replayName) {
+        File f = new File(replayDir, replayName);
+        boolean ok = f.canRead();
+        String[] loaded = null;
+
+        if (ok) try {
+            FileReader r = new FileReader(f);
+            StringBuilder sb = new StringBuilder();
+
+            for (int c = r.read(); c >= 0; c = r.read()) {
+                sb.append((char) c);
+            } // for (int c = r.read(); c >= 0; c = r.read())
+
+            loaded = sb.toString().split(";");
+            r.close();
+        } // if (ok) try
+        catch (IOException e) {
+            ok = false;
+        } // catch (IOException e)
+
+        for (int i = 0; ok && i < loaded.length; ++i) {
+            String[] x = loaded[i].split(",");
+
+            if (x.length == 0 ||
+                    (i == 0 && !x[0].equals("ST")) ||
+                    (i != 0 && x[0].equals("ST"))) {
+                // Empty command is forbidden
+                // ST command can only appear once at the beginning
+                ok = false;
+            } // if (x.length == 0 || ...)
+            else if (x[0].equals("ST")) {
+                // ST: Start a new game
+                // Command format: ST,a,b,c
+                // a = 1 if in 2vs2 mode, otherwise 0
+                // b = players in game [3, 4]
+                // c = start card's id [0, 51]
+                ok = x.length > 3
+                        && checkParam(x[1], 0, 1)
+                        && checkParam(x[2], 3, 4)
+                        && checkParam(x[3], 0, 51);
+            } // else if (x[0].equals("ST"))
+            else if (x[0].equals("DR")) {
+                // DR: Draw a card from deck
+                // Command format: DR,a,b
+                // a = who drew a card [0, 3]
+                // b = drawn card's id [0, 53]
+                ok = x.length > 2
+                        && checkParam(x[1], 0, 3)
+                        && checkParam(x[2], 0, 53);
+            } // else if (x[0].equals("DR"))
+            else if (x[0].equals("PL")) {
+                // PL: Play a card
+                // Command format: PL,a,b,c
+                // a = who played a card [0, 3]
+                // b = played card's id [0, 53]
+                // c = the following legal color [0, 4]
+                ok = x.length > 3
+                        && checkParam(x[1], 0, 3)
+                        && checkParam(x[2], 0, 53)
+                        && checkParam(x[3], 0, 4);
+            } // else if (x[0].equals("PL"))
+            else if (x[0].equals("DF") || x[0].equals("CH")) {
+                // DF: Draw but failure
+                // Command format: DF,a
+                // a = who drew but failure [0, 3]
+                // CH: Make a challenge
+                // Command format: CH,a
+                // a = challenged to whom [0, 3]
+                ok = x.length > 1
+                        && checkParam(x[1], 0, 3);
+            } // else if (x[0].equals("DF") || x[0].equals("CH"))
+            else if (x[0].equals("SW")) {
+                // SW: Swap hand cards between player A and B
+                // Command format: SW,a,b
+                // a = player A's id [0, 3]
+                // b = player B's id [0, 3]
+                ok = x.length > 2
+                        && checkParam(x[1], 0, 3)
+                        && checkParam(x[2], 0, 3)
+                        && !x[1].equals(x[2]);
+            } // else if (x[0].equals("SW"))
+            else if (!x[0].equals("CY")) {
+                // CY: Cycle, everyone pass hand cards to the next
+                // Command format: CY
+                // Other commands are all unknown commands
+                ok = false;
+            } // else if (!x[0].equals("CY"))
+        } // for (int i = 0; ok && i < loaded.length; ++i)
+
+        it = ok ? Arrays.asList(loaded).iterator() : null;
+        return ok;
+    } // loadReplay(String)
+
+    /**
+     * Go to next step of your replay.
+     * This method will do nothing when we reached the end of your replay.
+     *
+     * @param out This is a out parameter. Pass an int array (length>=3)
+     *            in order to let us pass the return values by assigning
+     *            out[0~2]. For a command "COM,a,b,c", out[0] will become
+     *            the value of a, out[1] will become the value of b, and
+     *            out[2] will become the value of c.
+     * @return Name of current command, e.g. "ST".
+     * When end of replay reached, return an empty string.
+     */
+    public String forwardReplay(int[] out) {
+        String s = "";
+
+        if (out == null || out.length < 3) {
+            throw new IllegalArgumentException("out == null || out.length < 3");
+        } // if (out == null || out.length < 3)
+
+        if (it != null && it.hasNext()) {
+            String[] x = it.next().split(",");
+
+            if ((s = x[0]).equals("ST")) {
+                // ST: Start a new game
+                // Command format: ST,a,b,c
+                // a = 1 if in 2vs2 mode, otherwise 0
+                // b = players in game [3, 4]
+                // c = start card's id [0, 51]
+                int a = out[0] = Integer.parseInt(x[1]);
+                int b = out[1] = Integer.parseInt(x[2]);
+                int c = out[2] = Integer.parseInt(x[3]);
+                Card card = table[c];
+                setPlayers(b);
+                set2vs2(a != 0);
+                deck.clear();
+                used.clear();
+                for (int i = 0; i < 4; ++i) {
+                    recent[i].card = null;
+                    recent[i].color = NONE;
+                    player[i].open = 0x00;
+                    player[i].handCards.clear();
+                    player[i].weakColor = NONE;
+                    player[i].strongColor = NONE;
+                } // for (int i = 0; i < 4; ++i)
+
+                recent[3].card = card;
+                recent[3].color = card.color;
+                direction = card.content == REV ? DIR_RIGHT : DIR_LEFT;
+            } // if ((s = x[0]).equals("ST"))
+            else if (s.equals("DR")) {
+                // DR: Draw a card from deck
+                // Command format: DR,a,b
+                // a = who drew a card [0, 3]
+                // b = drawn card's id [0, 53]
+                int a = out[0] = Integer.parseInt(x[1]);
+                int b = out[1] = Integer.parseInt(x[2]);
+                Card card = table[b];
+                List<Card> hand = player[a].handCards;
+                int i = Collections.binarySearch(hand, card);
+                hand.add(i < 0 ? ~i : i, card);
+                player[a].open = (player[a].open << 1) | 0x01;
+                now = a;
+            } // else if (s.equals("DR"))
+            else if (s.equals("PL")) {
+                // PL: Play a card
+                // Command format: PL,a,b,c
+                // a = who played a card [0, 3]
+                // b = played card's id [0, 53]
+                // c = the following legal color [0, 4]
+                int a = out[0] = Integer.parseInt(x[1]);
+                int b = out[1] = Integer.parseInt(x[2]);
+                int c = out[2] = Integer.parseInt(x[3]);
+                Card card = table[b];
+                List<Card> hand = player[a].handCards;
+                int i = Collections.binarySearch(hand, card);
+                if (i >= 0) {
+                    hand.remove(i);
+                    player[a].open = player[a].open >> 1;
+                    for (i = 1; i < 4; ++i) {
+                        recent[i - 1].card = recent[i].card;
+                        recent[i - 1].color = recent[i].color;
+                    } // for (i = 1; i < 4; ++i)
+
+                    recent[3].card = card;
+                    recent[3].color = Color.values()[c];
+                } // if (i >= 0)
+
+                now = a;
+                if (card.content == REV) {
+                    switchDirection();
+                } // if (card.content == REV)
+            } // else if (s.equals("PL"))
+            else if (s.equals("DF")) {
+                // DF: Draw but failure
+                // Command format: DF,a
+                // a = who drew but failure [0, 3]
+                now = out[0] = Integer.parseInt(x[1]);
+            } // else if (s.equals("DF"))
+            else if (s.equals("SW")) {
+                // SW: Swap hand cards between player A and B
+                // Command format: SW,a,b
+                // a = player A's id [0, 3]
+                // b = player B's id [0, 3]
+                int a = out[0] = Integer.parseInt(x[1]);
+                int b = out[1] = Integer.parseInt(x[2]);
+                Player store = player[a];
+                player[a] = player[b];
+                player[b] = store;
+            } // else if (s.equals("SW"))
+            else if (s.equals("CY")) {
+                // CY: Cycle, everyone pass hand cards to the next
+                // Command format: CY
+                int curr = now, next = getNext();
+                int oppo = getOppo(), prev = getPrev();
+                Player store = player[curr];
+                player[curr] = player[prev];
+                player[prev] = player[oppo];
+                player[oppo] = player[next];
+                player[next] = store;
+            } // else if (s.equals("CY"))
+        } // if (it != null && it.hasNext())
+        else {
+            direction = 0;
+        } // else
+
+        return s;
+    } // forwardReplay(int[])
 
     /**
      * RecentInfo Inner Class.

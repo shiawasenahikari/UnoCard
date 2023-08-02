@@ -24,6 +24,7 @@
 #include <QIODevice>
 #include <QEventLoop>
 #include <QCloseEvent>
+#include <QFileDialog>
 #include <QMouseEvent>
 #include <QPaintEvent>
 #include <QApplication>
@@ -321,19 +322,17 @@ void Main::setStatus(int status) {
         break; // case STAT_WILD_COLOR
 
     case STAT_DOUBT_WILD4:
-        if (sAuto || sUno->getNext() != Player::YOU) {
-            // Challenge or not is decided by AI
-            if (sAI->needToChallenge()) {
-                onChallenge();
-            } // if (sAI->needToChallenge())
-            else {
-                sUno->switchNow();
-                draw(4, /* force */ true);
-            } // else
-        } // if (sAuto || sUno->getNext() != Player::YOU)
-        else {
+        if (sUno->getNext() == Player::YOU && !sAuto) {
             // Challenge or not is decided by you
             refreshScreen(i18n->ask_challenge(sUno->next2lastColor()));
+        } // if (sUno->getNext() == Player::YOU && !sAuto)
+        else if (sAI->needToChallenge()) {
+            // Challenge or not is decided by AI
+            onChallenge();
+        } // else if (sAI->needToChallenge())
+        else {
+            sUno->switchNow();
+            draw(4, /* force */ true);
         } // else
         break; // case STAT_DOUBT_WILD4
 
@@ -409,6 +408,11 @@ void Main::refreshScreen(const QString& message) {
         width = sUno->getTextWidth(i18n->btn_auto());
         sUno->putText(sPainter, i18n->btn_auto(), 1580 - width, 880);
     } // if (status == Player::YOU && !sAuto && !sAdjustOptions)
+    else if (status == STAT_WELCOME && !sAdjustOptions) {
+        // [UPDATE] When in welcome screen, change to <LOAD> button
+        width = sUno->getTextWidth("[G]<LOAD>");
+        sUno->putText(sPainter, "[G]<LOAD>", 1580 - width, 880);
+    } // else if (status == STAT_WELCOME && !sAdjustOptions)
     else if (status == STAT_GAME_OVER && !sAdjustOptions) {
         // [UPDATE] When game over, change to <SAVE> button
         width = sUno->getTextWidth("[B]<SAVE>");
@@ -1348,6 +1352,19 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 sAuto = true;
                 setStatus(sStatus);
             } // if (sStatus == Player::YOU && !sAuto)
+            else if (sStatus == STAT_WELCOME) {
+                // [UPDATE] When in welcome screen, change to <LOAD> button
+                QString replayName = QFileDialog::getOpenFileName(
+                    /* parent  */ this,
+                    /* caption */ "Open...",
+                    /* dir     */ QApplication::applicationDirPath(),
+                    /* filter  */ "Uno replay files (*.sav)"
+                ); // getOpenFileName()
+
+                if (!replayName.isNull()) {
+                    loadReplay(replayName);
+                } // if (!replayName.isNull())
+            } // else if (sStatus == STAT_WELCOME)
             else if (sStatus == STAT_GAME_OVER) {
                 // [UPDATE] When game over, change to <SAVE> button
                 QString replayName = sUno->save();
@@ -1495,6 +1512,205 @@ void Main::mousePressEvent(QMouseEvent* event) {
         } // else switch (sStatus)
     } // if (event->button() == Qt::LeftButton)
 } // mousePressEvent(QMouseEvent*)
+
+/**
+ * Load a existed replay file.
+ *
+ * @param replayName Provide the file name of your replay.
+ */
+void Main::loadReplay(const QString& replayName) {
+    if (sUno->loadReplay(replayName)) {
+        static int x[] = { 740, 160, 740, 1320 };
+        static int y[] = { 670, 360, 50, 360 };
+        int params[3];
+
+        setStatus(STAT_IDLE);
+        while (true) {
+            Card* card;
+            QString cmd;
+            int a, b, c, d, i, size, width;
+
+            if ((cmd = sUno->forwardReplay(params)) == "ST") {
+                refreshScreen(i18n->info_ready());
+                threadWait(1000);
+            } // if ((cmd = sUno->forwardReplay(params)) == "ST")
+            else if (cmd == "DR") {
+                auto h = sUno->getPlayer(a = params[0])->getHandCards();
+                card = sUno->findCardById(params[1]);
+                i = std::lower_bound(h.begin(), h.end(), card) - h.begin();
+                size = int(h.size());
+                sLayer[0].startLeft = 338;
+                sLayer[0].startTop = 360;
+                sLayer[0].elem = card->image;
+                if (a == Player::COM1) {
+                    width = 44 * qMin(size, 13) + 136;
+                    sLayer[0].endLeft = 20 + i / 13 * 44;
+                    sLayer[0].endTop = 450 - width / 2 + i % 13 * 44;
+                } // if (a == Player::COM1)
+                else if (a == Player::COM2) {
+                    width = 44 * size + 76;
+                    sLayer[0].endLeft = 800 - width / 2 + 44 * i;
+                    sLayer[0].endTop = 20;
+                } // else if (a == Player::COM2)
+                else if (a == Player::COM3) {
+                    width = 44 * qMin(size, 13) + 136;
+                    sLayer[0].endLeft = 1460 - i / 13 * 44;
+                    sLayer[0].endTop = 450 - width / 2 + i % 13 * 44;
+                } // else if (a == Player::COM3)
+                else {
+                    width = 44 * size + 76;
+                    sLayer[0].endLeft = 800 - width / 2 + 44 * i;
+                    sLayer[0].endTop = 700;
+                } // else
+
+                // Animation
+                sSoundPool->play(SoundPool::SND_DRAW);
+                animate(1, sLayer);
+                refreshScreen(i18n->act_drawCard(a, card->name));
+                threadWait(300);
+            } // else if (cmd == "DR")
+            else if (cmd == "PL") {
+                auto h = sUno->getPlayer(a = params[0])->getHandCards();
+                card = sUno->findCardById(params[1]);
+                i = std::lower_bound(h.begin(), h.end(), card) - h.begin();
+                size = int(h.size()) + 1;
+                threadWait(750);
+                sSoundPool->play(SoundPool::SND_PLAY);
+                sLayer[0].elem = card->image;
+                if (a == Player::COM1) {
+                    width = 44 * qMin(size, 13) + 136;
+                    sLayer[0].startLeft = 160 + i / 13 * 44;
+                    sLayer[0].startTop = 450 - width / 2 + i % 13 * 44;
+                } // if (a == Player::COM1)
+                else if (a == Player::COM2) {
+                    width = 44 * size + 76;
+                    sLayer[0].startLeft = 800 - width / 2 + 44 * i;
+                    sLayer[0].startTop = 50;
+                } // else if (a == Player::COM2)
+                else if (a == Player::COM3) {
+                    width = 44 * qMin(size, 13) + 136;
+                    sLayer[0].startLeft = 1320 - i / 13 * 44;
+                    sLayer[0].startTop = 450 - width / 2 + i % 13 * 44;
+                } // else if (a == Player::COM3)
+                else {
+                    width = 44 * size + 76;
+                    sLayer[0].startLeft = 800 - width / 2 + 44 * i;
+                    sLayer[0].startTop = 680;
+                } // else
+
+                // Animation
+                sLayer[0].endLeft = 1118;
+                sLayer[0].endTop = 360;
+                animate(1, sLayer);
+                if (size == 2)
+                    sSoundPool->play(SoundPool::SND_UNO);
+                refreshScreen(i18n->act_playCard(a, card->name));
+                threadWait(750);
+            } // else if (cmd == "PL")
+            else if (cmd == "DF") {
+                a = params[0];
+                refreshScreen(i18n->info_cannotDraw(a, Uno::MAX_HOLD_CARDS));
+                threadWait(750);
+            } // else if (cmd == "DF")
+            else if (cmd == "CH") {
+                a = params[0];
+                threadWait(750);
+                if (sUno->challenge(a)) {
+                    refreshScreen(i18n->info_challengeSuccess(a));
+                } // if (sUno->challenge(a))
+                else {
+                    b = sUno->getNow();
+                    refreshScreen(i18n->info_challengeFailure(b));
+                } // else
+
+                threadWait(750);
+            } // else if (cmd == "CH")
+            else if (cmd == "SW") {
+                a = params[0];
+                b = params[1];
+
+                // Animation
+                sHideFlag = (1 << a) | (1 << b);
+                refreshScreen(i18n->info_7_swap(a, b));
+                sLayer[0].elem = sLayer[1].elem = sUno->getBackImage();
+                sLayer[0].startLeft = x[a];
+                sLayer[0].startTop = y[a];
+                sLayer[0].endLeft = x[b];
+                sLayer[0].endTop = y[b];
+                sLayer[1].startLeft = x[b];
+                sLayer[1].startTop = y[b];
+                sLayer[1].endLeft = x[a];
+                sLayer[1].endTop = y[a];
+                animate(2, sLayer);
+                sHideFlag = 0x00;
+                refreshScreen(i18n->info_7_swap(a, b));
+                threadWait(750);
+            } // else if (cmd == "SW")
+            else if (cmd == "CY") {
+                // Animation
+                sHideFlag = 0x0f;
+                refreshScreen(i18n->info_0_rotate());
+                a = sUno->getNow();
+                b = sUno->getNext();
+                c = sUno->getOppo();
+                d = sUno->getPrev();
+                sLayer[0].elem = sUno->getBackImage();
+                sLayer[0].startLeft = x[a];
+                sLayer[0].startTop = y[a];
+                sLayer[0].endLeft = x[b];
+                sLayer[0].endTop = y[b];
+                sLayer[1].elem = sUno->getBackImage();
+                sLayer[1].startLeft = x[b];
+                sLayer[1].startTop = y[b];
+                sLayer[1].endLeft = x[c];
+                sLayer[1].endTop = y[c];
+                if (sUno->getPlayers() == 3) {
+                    sLayer[2].elem = sUno->getBackImage();
+                    sLayer[2].startLeft = x[c];
+                    sLayer[2].startTop = y[c];
+                    sLayer[2].endLeft = x[a];
+                    sLayer[2].endTop = y[a];
+                    animate(3, sLayer);
+                } // if (sUno->getPlayers() == 3)
+                else {
+                    sLayer[2].elem = sUno->getBackImage();
+                    sLayer[2].startLeft = x[c];
+                    sLayer[2].startTop = y[c];
+                    sLayer[2].endLeft = x[d];
+                    sLayer[2].endTop = y[d];
+                    sLayer[3].elem = sUno->getBackImage();
+                    sLayer[3].startLeft = x[d];
+                    sLayer[3].startTop = y[d];
+                    sLayer[3].endLeft = x[a];
+                    sLayer[3].endTop = y[a];
+                    animate(4, sLayer);
+                } // else
+
+                sHideFlag = 0x00;
+                refreshScreen(i18n->info_0_rotate());
+                threadWait(750);
+            } // else if (cmd == "CY")
+            else {
+                break;
+            } // else
+        } // while (true)
+
+        if ((sUno->is2vs2()
+            && sUno->getPlayer(Player::COM2)->getHandSize() == 0)
+            || sUno->getPlayer(Player::YOU)->getHandSize() == 0) {
+            sSoundPool->play(SoundPool::SND_WIN);
+        } // if ((sUno->is2vs2() && ...)
+        else {
+            sSoundPool->play(SoundPool::SND_LOSE);
+        } // else
+
+        threadWait(3000);
+        setStatus(STAT_WELCOME);
+    } // if (sUno->loadReplay(replayName))
+    else {
+        refreshScreen("[Y]Failed to load " + replayName);
+    } // else
+} // loadReplay(const QString&)
 
 /**
  * Triggered when application finishes.

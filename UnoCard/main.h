@@ -80,6 +80,7 @@ private:
     void play(int index, Color color = NONE);
     void draw(int count = 1, bool force = false);
     void refreshScreen(const QString& message = "");
+    void loadReplay(const QString& replayName = "");
     void animate(int layerCount, AnimateLayer layer[]);
 
 protected:

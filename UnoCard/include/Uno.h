@@ -25,6 +25,7 @@
 #include <QString>
 #include <QPainter>
 #include <QIODevice>
+#include <QStringList>
 #include "include/Card.h"
 #include "include/Color.h"
 #include "include/Player.h"
@@ -197,6 +198,16 @@ private:
      * Record the replay data.
      */
     QString replay;
+
+    /**
+     * Your loaded replay.
+     */
+    QStringList loaded;
+
+    /**
+     * Iterator of your loaded replay.
+     */
+    QStringList::Iterator it;
 
     /**
      * Our custom font's character-to-position map.
@@ -845,6 +856,16 @@ public:
     } // findCard(Color, Content)
 
     /**
+     * Find a card instance in card table by card ID (0 ~ 53).
+     *
+     * @param id ID of the card you want to get.
+     * @return Corresponding card instance.
+     */
+    inline Card* findCardById(int id) {
+        return 0 <= id && id <= 53 ? &table[id] : nullptr;
+    } // findCardById(int)
+
+    /**
      * @return How many cards in deck (haven't been used yet).
      */
     inline int getDeckCount() {
@@ -1349,6 +1370,225 @@ public:
 
         return name;
     } // save()
+
+    /**
+     * Load a existed replay file.
+     *
+     * @param replayName Provide the file name of your replay.
+     * @return True if load success.
+     */
+    inline bool loadReplay(const QString& replayName) {
+        QFile f(replayName);
+        bool ok = f.open(QIODevice::ReadOnly);
+        auto checkParam = [](const QString& val, int lo, int hi) {
+            int iVal = val.toInt();
+            return lo <= iVal && iVal <= hi;
+        }; // checkParam(const QString&, int, int)
+
+        if (ok) {
+            loaded = QString(f.readAll()).split(';');
+            f.close();
+        } // if (ok)
+
+        for (int i = 0; ok && i < loaded.size(); ++i) {
+            QStringList x = loaded[i].split(',');
+
+            if (x.size() == 0 ||
+                (i == 0 && x[0] != "ST") ||
+                (i != 0 && x[0] == "ST")) {
+                // Empty command is forbidden
+                // ST command can only appear once at the beginning
+                ok = false;
+            } // if (x.size() == 0 || ...)
+            else if (x[0] == "ST") {
+                // ST: Start a new game
+                // Command format: ST,a,b,c
+                // a = 1 if in 2vs2 mode, otherwise 0
+                // b = players in game [3, 4]
+                // c = start card's id [0, 51]
+                ok = x.size() > 3
+                    && checkParam(x[1], 0, 1)
+                    && checkParam(x[2], 3, 4)
+                    && checkParam(x[3], 0, 51);
+            } // else if (x[0] == "ST")
+            else if (x[0] == "DR") {
+                // DR: Draw a card from deck
+                // Command format: DR,a,b
+                // a = who drew a card [0, 3]
+                // b = drawn card's id [0, 53]
+                ok = x.size() > 2
+                    && checkParam(x[1], 0, 3)
+                    && checkParam(x[2], 0, 53);
+            } // else if (x[0] == "DR")
+            else if (x[0] == "PL") {
+                // PL: Play a card
+                // Command format: PL,a,b,c
+                // a = who played a card [0, 3]
+                // b = played card's id [0, 53]
+                // c = the following legal color [0, 4]
+                ok = x.size() > 3
+                    && checkParam(x[1], 0, 3)
+                    && checkParam(x[2], 0, 53)
+                    && checkParam(x[3], 0, 4);
+            } // else if (x[0] == "PL")
+            else if (x[0] == "DF" || x[0] == "CH") {
+                // DF: Draw but failure
+                // Command format: DF,a
+                // a = who drew but failure [0, 3]
+                // CH: Make a challenge
+                // Command format: CH,a
+                // a = challenged to whom [0, 3]
+                ok = x.size() > 1
+                    && checkParam(x[1], 0, 3);
+            } // else if (x[0] == "DF" || x[0] == "CH")
+            else if (x[0] == "SW") {
+                // SW: Swap hand cards between player A and B
+                // Command format: SW,a,b
+                // a = player A's id [0, 3]
+                // b = player B's id [0, 3]
+                ok = x.size() > 2
+                    && checkParam(x[1], 0, 3)
+                    && checkParam(x[2], 0, 3)
+                    && x[1] != x[2];
+            } // else if (x[0] == "SW")
+            else if (x[0] != "CY") {
+                // CY: Cycle, everyone pass hand cards to the next
+                // Command format: CY
+                // Other commands are all unknown commands
+                ok = false;
+            } // else if (x[0] != "CY")
+        } // for (int i = 0; ok && i < loaded.size(); ++i)
+
+        it = ok ? loaded.begin() : (loaded.clear(), loaded).begin();
+        return ok;
+    } // loadReplay(const QString&)
+
+    /**
+     * Go to next step of your replay.
+     * This method will do nothing when we reached the end of your replay.
+     *
+     * @param out This is an out parameter. Pass an int array (length>=3)
+     *            in order to let us pass the return values by assigning
+     *            out[0~2]. For a command "COM,a,b,c", out[0] will become
+     *            the value of a, out[1] will become the value of b, and
+     *            out[2] will become the value of c.
+     * @return Name of current command, e.g. "ST". When out == nullptr,
+     *         or end of replay reached, return an empty string.
+     */
+    inline QString forwardReplay(int out[]) {
+        QString s;
+
+        if (out == nullptr) {
+            throw "out == nullptr";
+        } // if (out == nullptr)
+
+        if (loaded.size() > 0 && it != loaded.end()) {
+            QStringList x = (it++)->split(',');
+
+            if ((s = x[0]) == "ST") {
+                // ST: Start a new game
+                // Command format: ST,a,b,c
+                // a = 1 if in 2vs2 mode, otherwise 0
+                // b = players in game [3, 4]
+                // c = start card's id [0, 51]
+                int a = out[0] = x[1].toInt();
+                int b = out[1] = x[2].toInt();
+                int c = out[2] = x[3].toInt();
+                Card* card = &table[c];
+                setPlayers(b);
+                set2vs2(a != 0);
+                deck.clear();
+                used.clear();
+                for (int i = 0; i < 4; ++i) {
+                    recent[i].card = nullptr;
+                    recent[i].color = NONE;
+                    player[i].open = 0x00;
+                    player[i].handCards.clear();
+                    player[i].weakColor = NONE;
+                    player[i].strongColor = NONE;
+                } // for (int i = 0; i < 4; ++i)
+
+                recent[3].card = card;
+                recent[3].color = card->color;
+                direction = card->content == REV ? DIR_RIGHT : DIR_LEFT;
+            } // if ((s = x[0]) == "ST")
+            else if (s == "DR") {
+                // DR: Draw a card from deck
+                // Command format: DR,a,b
+                // a = who drew a card [0, 3]
+                // b = drawn card's id [0, 53]
+                int a = out[0] = x[1].toInt();
+                int b = out[1] = x[2].toInt();
+                Card* card = &table[b];
+                auto& hand = player[a].handCards;
+                auto i = std::lower_bound(hand.begin(), hand.end(), card);
+                hand.insert(i, card);
+                player[a].open = (player[a].open << 1) | 0x01;
+                now = a;
+            } // else if (s == "DR")
+            else if (s == "PL") {
+                // PL: Play a card
+                // Command format: PL,a,b,c
+                // a = who played a card [0, 3]
+                // b = played card's id [0, 53]
+                // c = the following legal color [0, 4]
+                int a = out[0] = x[1].toInt();
+                int b = out[1] = x[2].toInt();
+                int c = out[2] = x[3].toInt();
+                Card* card = &table[b];
+                auto& hand = player[a].handCards;
+                auto i = std::lower_bound(hand.begin(), hand.end(), card);
+                if (i != hand.end() && i[0] == card) {
+                    hand.erase(i);
+                    player[a].open = player[a].open >> 1;
+                    for (int j = 1; j < 4; ++j) {
+                        recent[j - 1] = recent[j];
+                    } // for (int j = 1; j < 4; ++j)
+
+                    recent[3].card = card;
+                    recent[3].color = Color(c);
+                } // if (i != hand.end() && i[0] == card)
+
+                now = a;
+                if (card->content == REV) {
+                    switchDirection();
+                } // if (card->content == REV)
+            } // else if (s == "PL")
+            else if (s == "DF") {
+                // DF: Draw but failure
+                // Command format: DF,a
+                // a = who drew but failure [0, 3]
+                now = out[0] = x[1].toInt();
+            } // else if (s == "DF")
+            else if (s == "SW") {
+                // SW: Swap hand cards between player A and B
+                // Command format: SW,a,b
+                // a = player A's id [0, 3]
+                // b = player B's id [0, 3]
+                int a = out[0] = x[1].toInt();
+                int b = out[1] = x[2].toInt();
+                Player store = player[a];
+                player[a] = player[b];
+                player[b] = store;
+            } // else if (s == "SW")
+            else if (s == "CY") {
+                // CY: Cycle, everyone pass hand cards to the next
+                // Command format: CY
+                int curr = now, next = getNext();
+                int oppo = getOppo(), prev = getPrev();
+                Player store = player[curr];
+                player[curr] = player[prev];
+                player[prev] = player[oppo];
+                player[oppo] = player[next];
+                player[next] = store;
+            } // else if (s == "CY")
+        } // if (loaded.size() > 0 && it != loaded.end())
+        else {
+            direction = 0;
+        } // else
+
+        return s;
+    } // forwardReplay(int[])
 }; // Uno Class
 
 #endif // __UNO_H_494649FDFA62B3C015120BCB9BE17613__
