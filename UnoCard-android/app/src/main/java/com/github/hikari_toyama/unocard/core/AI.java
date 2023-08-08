@@ -208,7 +208,7 @@ public class AI {
         // Challenge when I have 10 or more cards already
         // Challenge when previous player holds 10 or more cards
         // Challenge when legal color has not been changed
-        return s1 == 1 || Math.min(s1, s2) >= 10 || lastColor == next2lastColor;
+        return s1 == 1 || Math.max(s1, s2) >= 10 || lastColor == next2lastColor;
     } // needToChallenge()
 
     /**

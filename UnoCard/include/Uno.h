@@ -526,19 +526,20 @@ public:
      * @return Width of the provided text (unit: pixels).
      */
     inline int getTextWidth(const QString& text) {
-        int width = 0;
+        int i, n, position, r, width;
 
-        for (int i = 0, n = text.length(); i < n; ++i) {
+        for (i = width = 0, n = text.length(); i < n; ++i) {
             if ('[' == text[i] && i + 2 < n && text[i + 2] == ']') {
                 i += 2;
             } // if ('[' == text[i] && i + 2 < n && text[i + 2] == ']')
             else {
                 auto iter = charMap.find(text[i]);
-                int position = iter != charMap.end() ? iter->second : 0x1f;
-                int r = position >> 4;
+
+                position = iter != charMap.end() ? iter->second : 0x1f;
+                r = position >> 4;
                 width += r < 6 ? 17 : 33;
             } // else
-        } // for (int i = 0, n = text.length(); i < n; ++i)
+        } // for (i = width = 0, n = text.length(); i < n; ++i)
 
         return width;
     } // getTextWidth(const QString&)
@@ -557,9 +558,10 @@ public:
      */
     inline void putText(QPainter* painter, const QString& text, int x, int y) {
         QImage* font = &fontW;
+        int i, n, position, r, c, w;
 
         y -= 36;
-        for (int i = 0, n = text.length(); i < n; ++i) {
+        for (i = 0, n = text.length(); i < n; ++i) {
             if ('[' == text[i] && i + 2 < n && text[i + 2] == ']') {
                 ++i;
                 if (text[i] == 'R') font = &fontR;
@@ -571,10 +573,11 @@ public:
             } // if ('[' == text[i] && i + 2 < n && text[i + 2] == ']')
             else {
                 auto iter = charMap.find(text[i]);
-                int position = iter != charMap.end() ? iter->second : 0x1f;
-                int r = position >> 4;
-                int c = position & 0x0f;
-                int w = r < 6 ? 17 : 33;
+
+                position = iter != charMap.end() ? iter->second : 0x1f;
+                r = position >> 4;
+                c = position & 0x0f;
+                w = r < 6 ? 17 : 33;
                 painter->drawImage(
                     /* target */ QRect(x, y, w, 48),
                     /* image  */ *font,
@@ -582,7 +585,7 @@ public:
                 ); // painter->drawImage()
                 x += w;
             } // else
-        } // for (int i = 0, n = text.length(); i < n; ++i)
+        } // for (i = 0, n = text.length(); i < n; ++i)
     } // putText(QPainter*, const QString&, int, int)
 
     /**
@@ -609,6 +612,7 @@ public:
      */
     inline int getNext() {
         int next = (now + direction) % 4;
+
         if (players == 3 && next == Player::COM2) {
             next = (next + direction) % 4;
         } // if (players == 3 && next == Player::COM2)
@@ -623,6 +627,7 @@ public:
      */
     inline int getOppo() {
         int oppo = (getNext() + direction) % 4;
+
         if (players == 3 && oppo == Player::COM2) {
             oppo = (oppo + direction) % 4;
         } // if (players == 3 && oppo == Player::COM2)
@@ -636,6 +641,7 @@ public:
      */
     inline int getPrev() {
         int prev = (4 + now - direction) % 4;
+
         if (players == 3 && prev == Player::COM2) {
             prev = (4 + prev - direction) % 4;
         } // if (players == 3 && prev == Player::COM2)
@@ -1075,10 +1081,12 @@ public:
      *         didn't draw a card because of the limitation.
      */
     inline int draw(int who, bool force) {
-        int i = -1;
+        Card* card;
+        int i = -1, j;
 
-        if (who >= Player::YOU && who <= Player::COM3) {
+        if (Player::YOU <= who && who <= Player::COM3) {
             auto& hand = player[who].handCards;
+
             if (draw2StackCount > 0) {
                 --draw2StackCount;
             } // if (draw2StackCount > 0)
@@ -1093,13 +1101,13 @@ public:
 
             if (hand.size() < MAX_HOLD_CARDS) {
                 // Draw a card from card deck, and put it to an appropriate position
-                Card* card = deck.back();
+                card = deck.back();
                 qDebug("Player %d draw a card", who);
                 deck.pop_back();
                 if (who == Player::YOU) {
-                    auto j = std::upper_bound(hand.begin(), hand.end(), card);
-                    i = int(j - hand.begin());
-                    hand.insert(j, card);
+                    i = std::upper_bound(hand.begin(), hand.end(), card)
+                        - hand.begin();
+                    hand.insert(hand.begin() + i, card);
                     player[who].open = (player[who].open << 1) | 0x01;
                 } // if (who == Player::YOU)
                 else {
@@ -1113,12 +1121,12 @@ public:
                 if (deck.empty()) {
                     // Re-use the used cards when there are no more cards in deck
                     qDebug("Re-use the used cards");
-                    for (int j = int(used.size()); --j >= 0; ) {
+                    for (j = int(used.size()); --j >= 0; ) {
                         deck.push_back(used[j]);
                         --colorAnalysis[used[j]->color];
                         --contentAnalysis[used[j]->content];
                         used.erase(used.begin() + j);
-                    } // for (int j = int(used.size()); --j >= 0; )
+                    } // for (j = int(used.size()); --j >= 0; )
 
                     std::random_shuffle(deck.begin(), deck.end());
                 } // if (deck.empty())
@@ -1133,7 +1141,7 @@ public:
 
             if (draw2StackCount == 0) {
                 // Update the legality binary when necessary
-                Card* card = recent[3].card;
+                card = recent[3].card;
                 legality = card->isWild()
                     ? 0x30000000000000LL
                     | (0x1fffLL << 13 * (lastColor() - 1))
@@ -1141,7 +1149,7 @@ public:
                     | (0x1fffLL << 13 * (lastColor() - 1))
                     | (0x8004002001LL << card->content);
             } // if (draw2StackCount == 0)
-        } // if (who >= Player::YOU && who <= Player::COM3)
+        } // if (Player::YOU <= who && who <= Player::COM3)
 
         return i;
     } // draw(int, bool)
@@ -1191,11 +1199,13 @@ public:
      * @return Reference of the played card.
      */
     inline Card* play(int who, int index, Color color) {
+        int i, size;
         Card* card = nullptr;
 
-        if (who >= Player::YOU && who <= Player::COM3) {
+        if (Player::YOU <= who && who <= Player::COM3) {
             auto& hand = player[who].handCards;
-            int size = int(hand.size());
+
+            size = int(hand.size());
             if (index < size) {
                 if ((card = hand[index])->isWild()) {
                     const char* name = qPrintable(Card::A(color) + card->name);
@@ -1239,14 +1249,14 @@ public:
                     : (player[who].open & MASK_BEGIN_TO_I(index))
                     | (player[who].open & MASK_I_TO_END(index + 1)) >> 1;
                 player[who].recent = card;
-                for (int i = 0; i < 4; ++i) {
+                for (i = 0; i < 4; ++i) {
                     if (i > 0) {
                         recent[i - 1] = recent[i];
                     } // if (i > 0)
                     else if (recent[i].card != nullptr) {
                         used.push_back(recent[i].card);
                     } // else if (recent[i].card != nullptr)
-                } // for (int i = 0; i < 4; ++i)
+                } // for (i = 0; i < 4; ++i)
 
                 recent[3].card = card;
                 recent[3].color = color;
@@ -1271,14 +1281,14 @@ public:
                 if (size == 1) {
                     // Game over, change background & show everyone's hand cards
                     direction = 0;
-                    for (int i = Player::COM1; i <= Player::COM3; ++i) {
+                    for (i = Player::COM1; i <= Player::COM3; ++i) {
                         MAKE_PUBLIC(this, i);
-                    } // for (int i = Player::COM1; i <= Player::COM3; ++i)
+                    } // for (i = Player::COM1; i <= Player::COM3; ++i)
 
                     qDebug("======= WINNER IS PLAYER %d =======", who);
                 } // if (size == 1)
             } // if (index < size)
-        } // if (who >= Player::YOU && who <= Player::COM3)
+        } // if (Player::YOU <= who && who <= Player::COM3)
 
         return card;
     } // play(int, int, Color)
@@ -1296,7 +1306,7 @@ public:
     inline bool challenge(int whom) {
         bool result = false;
 
-        if (whom >= Player::YOU && whom <= Player::COM3) {
+        if (Player::YOU <= whom && whom <= Player::COM3) {
             if (whom != Player::YOU) {
                 MAKE_PUBLIC(this, whom);
             } // if (whom != Player::YOU)
@@ -1307,7 +1317,7 @@ public:
                     break;
                 } // if (card->color == next2lastColor())
             } // for (Card* card : player[whom].handCards)
-        } // if (whom >= Player::YOU && whom <= Player::COM3)
+        } // if (Player::YOU <= whom && whom <= Player::COM3)
 
         qDebug("Player %d is challenged. Result = %d", whom, result);
         replay += ";CH,", replay += QString::number(whom);
@@ -1378,6 +1388,7 @@ public:
      * @return True if load success.
      */
     inline bool loadReplay(const QString& replayName) {
+        int i;
         QFile f(replayName);
         bool ok = f.open(QIODevice::ReadOnly);
         auto checkParam = [](const QString& val, int lo, int hi) {
@@ -1390,7 +1401,7 @@ public:
             f.close();
         } // if (ok)
 
-        for (int i = 0; ok && i < loaded.size(); ++i) {
+        for (i = 0; ok && i < loaded.size(); ++i) {
             QStringList x = loaded[i].split(',');
 
             if (x.size() == 0 ||
@@ -1457,7 +1468,7 @@ public:
                 // Other commands are all unknown commands
                 ok = false;
             } // else if (x[0] != "CY")
-        } // for (int i = 0; ok && i < loaded.size(); ++i)
+        } // for (i = 0; ok && i < loaded.size(); ++i)
 
         it = ok ? loaded.begin() : (loaded.clear(), loaded).begin();
         return ok;
@@ -1477,6 +1488,8 @@ public:
      */
     inline QString forwardReplay(int out[]) {
         QString s;
+        Card* card;
+        int a, b, c, i;
 
         if (out == nullptr) {
             throw "out == nullptr";
@@ -1485,28 +1498,28 @@ public:
         if (loaded.size() > 0 && it != loaded.end()) {
             QStringList x = (it++)->split(',');
 
+            a = out[0] = x.size() > 1 ? x[1].toInt() : 0;
+            b = out[1] = x.size() > 2 ? x[2].toInt() : 0;
+            c = out[2] = x.size() > 3 ? x[3].toInt() : 0;
             if ((s = x[0]) == "ST") {
                 // ST: Start a new game
                 // Command format: ST,a,b,c
                 // a = 1 if in 2vs2 mode, otherwise 0
                 // b = players in game [3, 4]
                 // c = start card's id [0, 51]
-                int a = out[0] = x[1].toInt();
-                int b = out[1] = x[2].toInt();
-                int c = out[2] = x[3].toInt();
-                Card* card = &table[c];
                 setPlayers(b);
                 set2vs2(a != 0);
+                card = &table[c];
                 deck.clear();
                 used.clear();
-                for (int i = 0; i < 4; ++i) {
+                for (i = 0; i < 4; ++i) {
                     recent[i].card = nullptr;
                     recent[i].color = NONE;
                     player[i].open = 0x00;
                     player[i].handCards.clear();
                     player[i].weakColor = NONE;
                     player[i].strongColor = NONE;
-                } // for (int i = 0; i < 4; ++i)
+                } // for (i = 0; i < 4; ++i)
 
                 recent[3].card = card;
                 recent[3].color = card->color;
@@ -1517,12 +1530,12 @@ public:
                 // Command format: DR,a,b
                 // a = who drew a card [0, 3]
                 // b = drawn card's id [0, 53]
-                int a = out[0] = x[1].toInt();
-                int b = out[1] = x[2].toInt();
-                Card* card = &table[b];
                 auto& hand = player[a].handCards;
-                auto i = std::lower_bound(hand.begin(), hand.end(), card);
-                hand.insert(i, card);
+
+                card = &table[b];
+                i = std::lower_bound(hand.begin(), hand.end(), card)
+                    - hand.begin();
+                hand.insert(hand.begin() + i, card);
                 player[a].open = (player[a].open << 1) | 0x01;
                 now = a;
             } // else if (s == "DR")
@@ -1532,22 +1545,21 @@ public:
                 // a = who played a card [0, 3]
                 // b = played card's id [0, 53]
                 // c = the following legal color [0, 4]
-                int a = out[0] = x[1].toInt();
-                int b = out[1] = x[2].toInt();
-                int c = out[2] = x[3].toInt();
-                Card* card = &table[b];
                 auto& hand = player[a].handCards;
-                auto i = std::lower_bound(hand.begin(), hand.end(), card);
-                if (i != hand.end() && i[0] == card) {
-                    hand.erase(i);
+
+                card = &table[b];
+                i = std::lower_bound(hand.begin(), hand.end(), card)
+                    - hand.begin();
+                if (i < player[a].getHandSize() && hand[i] == card) {
+                    hand.erase(hand.begin() + i);
                     player[a].open = player[a].open >> 1;
-                    for (int j = 1; j < 4; ++j) {
-                        recent[j - 1] = recent[j];
-                    } // for (int j = 1; j < 4; ++j)
+                    for (i = 0; i < 3; ++i) {
+                        recent[i] = recent[i + 1];
+                    } // for (i = 0; i < 3; ++i)
 
                     recent[3].card = card;
                     recent[3].color = Color(c);
-                } // if (i != hand.end() && i[0] == card)
+                } // if (i < player[a].getHandSize() && hand[i] == card)
 
                 now = a;
                 if (card->content == REV) {
@@ -1558,15 +1570,13 @@ public:
                 // DF: Draw but failure
                 // Command format: DF,a
                 // a = who drew but failure [0, 3]
-                now = out[0] = x[1].toInt();
+                now = a;
             } // else if (s == "DF")
             else if (s == "SW") {
                 // SW: Swap hand cards between player A and B
                 // Command format: SW,a,b
                 // a = player A's id [0, 3]
                 // b = player B's id [0, 3]
-                int a = out[0] = x[1].toInt();
-                int b = out[1] = x[2].toInt();
                 Player store = player[a];
                 player[a] = player[b];
                 player[b] = store;

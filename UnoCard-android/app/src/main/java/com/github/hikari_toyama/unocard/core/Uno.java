@@ -674,12 +674,11 @@ public class Uno {
      */
     public int getTextWidth(String text) {
         char[] txt;
-        int r, width;
         Integer position;
+        int i, n, r, width;
 
-        width = 0;
         txt = text.toCharArray();
-        for (int i = 0, n = txt.length; i < n; ++i) {
+        for (i = width = 0, n = txt.length; i < n; ++i) {
             if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']') {
                 i += 2;
             } // if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']')
@@ -689,7 +688,7 @@ public class Uno {
                 r = position >>> 4;
                 width += r < 6 ? 17 : 33;
             } // else
-        } // for (int i = 0, n = txt.length; i < n; ++i)
+        } // for (i = width = 0, n = txt.length; i < n; ++i)
 
         return width;
     } // getTextWidth(String)
@@ -719,13 +718,13 @@ public class Uno {
         Mat mask;
         Mat[] blk;
         char[] txt;
-        int r, c, w;
         Integer position;
+        int i, n, r, c, w;
 
         y -= 36;
         blk = blk_w;
         txt = text.toCharArray();
-        for (int i = 0, n = txt.length; i < n; ++i) {
+        for (i = 0, n = txt.length; i < n; ++i) {
             if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']') {
                 ++i;
                 if (txt[i] == 'R') blk = blk_r;
@@ -745,7 +744,7 @@ public class Uno {
                 blk[r < 6 ? 0 : 1].copyTo(m.submat(y, y + 48, x, x + w), mask);
                 x += w;
             } // else
-        } // for (int i = 0, n = txt.length; i < n; ++i)
+        } // for (i = 0, n = txt.length; i < n; ++i)
     } // putText(Mat, String, int, int)
 
     /**
@@ -794,6 +793,7 @@ public class Uno {
      */
     public int getNext() {
         int next = (now + direction) % 4;
+
         if (players == 3 && next == Player.COM2) {
             next = (next + direction) % 4;
         } // if (players == 3 && next == Player.COM2)
@@ -808,6 +808,7 @@ public class Uno {
      */
     public int getOppo() {
         int oppo = (getNext() + direction) % 4;
+
         if (players == 3 && oppo == Player.COM2) {
             oppo = (oppo + direction) % 4;
         } // if (players == 3 && oppo == Player.COM2)
@@ -821,6 +822,7 @@ public class Uno {
      */
     public int getPrev() {
         int prev = (4 + now - direction) % 4;
+
         if (players == 3 && prev == Player.COM2) {
             prev = (4 + prev - direction) % 4;
         } // if (players == 3 && prev == Player.COM2)
@@ -1263,10 +1265,12 @@ public class Uno {
      * didn't draw a card because of the limitation.
      */
     public int draw(int who, boolean force) {
-        int i = -1;
+        Card card;
+        int i = -1, j;
 
-        if (who >= Player.YOU && who <= Player.COM3) {
+        if (Player.YOU <= who && who <= Player.COM3) {
             List<Card> hand = player[who].handCards;
+
             if (draw2StackCount > 0) {
                 --draw2StackCount;
             } // if (draw2StackCount > 0)
@@ -1281,7 +1285,7 @@ public class Uno {
 
             if (hand.size() < MAX_HOLD_CARDS) {
                 // Draw a card from card deck, and put it to an appropriate position
-                Card card = deck.get(deck.size() - 1);
+                card = deck.get(deck.size() - 1);
                 Log.i(TAG, "Player " + who + " draw a card");
                 deck.remove(deck.size() - 1);
                 if (who == Player.YOU) {
@@ -1301,12 +1305,12 @@ public class Uno {
                 if (deck.isEmpty()) {
                     // Re-use the used cards when there are no more cards in deck
                     Log.i(TAG, "Re-use the used cards");
-                    for (int j = used.size(); --j >= 0; ) {
+                    for (j = used.size(); --j >= 0; ) {
                         --contentAnalysis[used.get(j).content.ordinal()];
                         --colorAnalysis[used.get(j).color.ordinal()];
                         deck.add(used.get(j));
                         used.remove(j);
-                    } // for (int j = used.size(); --j >= 0; )
+                    } // for (j = used.size(); --j >= 0; )
 
                     Collections.shuffle(deck, Uno.RNG);
                 } // if (deck.isEmpty())
@@ -1321,7 +1325,7 @@ public class Uno {
 
             if (draw2StackCount == 0) {
                 // Update the legality binary when necessary
-                Card card = recent[3].card;
+                card = recent[3].card;
                 legality = card.isWild()
                         ? 0x30000000000000L
                         | (0x1fffL << 13 * (lastColor().ordinal() - 1))
@@ -1329,7 +1333,7 @@ public class Uno {
                         | (0x1fffL << 13 * (lastColor().ordinal() - 1))
                         | (0x8004002001L << card.content.ordinal());
             } // if (draw2StackCount == 0)
-        } // if (who >= Player.YOU && who <= Player.COM3)
+        } // if (Player.YOU <= who && who <= Player.COM3)
 
         return i;
     } // draw(int, boolean)
@@ -1379,11 +1383,13 @@ public class Uno {
      * @return Reference of the played card.
      */
     public Card play(int who, int index, Color color) {
+        int i, size;
         Card card = null;
 
-        if (who >= Player.YOU && who <= Player.COM3) {
+        if (Player.YOU <= who && who <= Player.COM3) {
             List<Card> hand = player[who].handCards;
-            int size = hand.size();
+
+            size = hand.size();
             if (index < size) {
                 if ((card = hand.get(index)).isWild()) {
                     String name = Card.A[color.ordinal()] + card.name;
@@ -1427,7 +1433,7 @@ public class Uno {
                         : (player[who].open & MASK_BEGIN_TO_I(index))
                         | (player[who].open & MASK_I_TO_END(index + 1)) >> 1;
                 player[who].recent = card;
-                for (int i = 0; i < 4; ++i) {
+                for (i = 0; i < 4; ++i) {
                     if (i > 0) {
                         recent[i - 1].card = recent[i].card;
                         recent[i - 1].color = recent[i].color;
@@ -1435,7 +1441,7 @@ public class Uno {
                     else if (recent[i].card != null) {
                         used.add(recent[i].card);
                     } // else if (recent[i].card != null)
-                } // for (int i = 0; i < 4; ++i)
+                } // for (i = 0; i < 4; ++i)
 
                 recent[3].card = card;
                 recent[3].color = color;
@@ -1460,14 +1466,14 @@ public class Uno {
                 if (size == 1) {
                     // Game over, change background & show everyone's hand cards
                     direction = 0;
-                    for (int i = Player.COM1; i <= Player.COM3; ++i) {
+                    for (i = Player.COM1; i <= Player.COM3; ++i) {
                         MAKE_PUBLIC(this, i);
-                    } // for (int i = Player.COM1; i <= Player.COM3; ++i)
+                    } // for (i = Player.COM1; i <= Player.COM3; ++i)
 
                     Log.i(TAG, "======= WINNER IS PLAYER " + who + " =======");
                 } // if (size == 1)
             } // if (index < size)
-        } // if (who >= Player.YOU && who <= Player.COM3)
+        } // if (Player.YOU <= who && who <= Player.COM3)
 
         return card;
     } // play(int, int, Color)
@@ -1485,7 +1491,7 @@ public class Uno {
     public boolean challenge(int whom) {
         boolean result = false;
 
-        if (whom >= Player.YOU && whom <= Player.COM3) {
+        if (Player.YOU <= whom && whom <= Player.COM3) {
             if (whom != Player.YOU) {
                 MAKE_PUBLIC(this, whom);
             } // if (whom != Player.YOU)
@@ -1496,7 +1502,7 @@ public class Uno {
                     break;
                 } // if (card.color == next2lastColor())
             } // for (Card card : player[whom].handCards)
-        } // if (whom >= Player.YOU && whom <= Player.COM3)
+        } // if (Player.YOU <= whom && whom <= Player.COM3)
 
         Log.i(TAG, "Player " + whom + " is challenged. Result = " + result);
         replay.append(";CH,").append(whom);
@@ -1548,12 +1554,13 @@ public class Uno {
      * @return Name of the saved file, or an empty string if save failed.
      */
     public String save() {
+        File f;
+        Writer w;
         String name = "";
 
         try {
-            File f = new File(replayDir, System.currentTimeMillis() + ".sav");
-            Writer w = new FileWriter(f);
-
+            f = new File(replayDir, System.currentTimeMillis() + ".sav");
+            w = new FileWriter(f);
             w.write(replay.toString());
             w.close();
             name = f.getName();
@@ -1590,17 +1597,21 @@ public class Uno {
      * @return True if load success.
      */
     public boolean loadReplay(String replayName) {
-        File f = new File(replayDir, replayName);
-        boolean ok = f.canRead();
+        int i;
+        File f;
+        boolean ok;
+        FileReader r;
+        StringBuilder sb;
         String[] loaded = null;
 
+        f = new File(replayDir, replayName);
+        ok = f.canRead();
         if (ok) try {
-            FileReader r = new FileReader(f);
-            StringBuilder sb = new StringBuilder();
-
-            for (int c = r.read(); c >= 0; c = r.read()) {
-                sb.append((char) c);
-            } // for (int c = r.read(); c >= 0; c = r.read())
+            r = new FileReader(f);
+            sb = new StringBuilder();
+            for (i = r.read(); i >= 0; i = r.read()) {
+                sb.append((char) i);
+            } // for (i = r.read(); i >= 0; i = r.read())
 
             loaded = sb.toString().split(";");
             r.close();
@@ -1609,7 +1620,7 @@ public class Uno {
             ok = false;
         } // catch (IOException e)
 
-        for (int i = 0; ok && i < loaded.length; ++i) {
+        for (i = 0; ok && i < loaded.length; ++i) {
             String[] x = loaded[i].split(",");
 
             if (x.length == 0 ||
@@ -1676,7 +1687,7 @@ public class Uno {
                 // Other commands are all unknown commands
                 ok = false;
             } // else if (!x[0].equals("CY"))
-        } // for (int i = 0; ok && i < loaded.length; ++i)
+        } // for (i = 0; ok && i < loaded.length; ++i)
 
         it = ok ? Arrays.asList(loaded).iterator() : null;
         return ok;
@@ -1695,7 +1706,9 @@ public class Uno {
      * When end of replay reached, return an empty string.
      */
     public String forwardReplay(int[] out) {
+        Card card;
         String s = "";
+        int a, b, c, i;
 
         if (out == null || out.length < 3) {
             throw new IllegalArgumentException("out == null || out.length < 3");
@@ -1704,28 +1717,28 @@ public class Uno {
         if (it != null && it.hasNext()) {
             String[] x = it.next().split(",");
 
+            a = out[0] = x.length > 1 ? Integer.parseInt(x[1]) : 0;
+            b = out[1] = x.length > 2 ? Integer.parseInt(x[2]) : 0;
+            c = out[2] = x.length > 3 ? Integer.parseInt(x[3]) : 0;
             if ((s = x[0]).equals("ST")) {
                 // ST: Start a new game
                 // Command format: ST,a,b,c
                 // a = 1 if in 2vs2 mode, otherwise 0
                 // b = players in game [3, 4]
                 // c = start card's id [0, 51]
-                int a = out[0] = Integer.parseInt(x[1]);
-                int b = out[1] = Integer.parseInt(x[2]);
-                int c = out[2] = Integer.parseInt(x[3]);
-                Card card = table[c];
                 setPlayers(b);
                 set2vs2(a != 0);
+                card = table[c];
                 deck.clear();
                 used.clear();
-                for (int i = 0; i < 4; ++i) {
+                for (i = 0; i < 4; ++i) {
                     recent[i].card = null;
                     recent[i].color = NONE;
                     player[i].open = 0x00;
                     player[i].handCards.clear();
                     player[i].weakColor = NONE;
                     player[i].strongColor = NONE;
-                } // for (int i = 0; i < 4; ++i)
+                } // for (i = 0; i < 4; ++i)
 
                 recent[3].card = card;
                 recent[3].color = card.color;
@@ -1736,11 +1749,10 @@ public class Uno {
                 // Command format: DR,a,b
                 // a = who drew a card [0, 3]
                 // b = drawn card's id [0, 53]
-                int a = out[0] = Integer.parseInt(x[1]);
-                int b = out[1] = Integer.parseInt(x[2]);
-                Card card = table[b];
                 List<Card> hand = player[a].handCards;
-                int i = Collections.binarySearch(hand, card);
+
+                card = table[b];
+                i = Collections.binarySearch(hand, card);
                 hand.add(i < 0 ? ~i : i, card);
                 player[a].open = (player[a].open << 1) | 0x01;
                 now = a;
@@ -1751,12 +1763,10 @@ public class Uno {
                 // a = who played a card [0, 3]
                 // b = played card's id [0, 53]
                 // c = the following legal color [0, 4]
-                int a = out[0] = Integer.parseInt(x[1]);
-                int b = out[1] = Integer.parseInt(x[2]);
-                int c = out[2] = Integer.parseInt(x[3]);
-                Card card = table[b];
                 List<Card> hand = player[a].handCards;
-                int i = Collections.binarySearch(hand, card);
+
+                card = table[b];
+                i = Collections.binarySearch(hand, card);
                 if (i >= 0) {
                     hand.remove(i);
                     player[a].open = player[a].open >> 1;
@@ -1778,15 +1788,13 @@ public class Uno {
                 // DF: Draw but failure
                 // Command format: DF,a
                 // a = who drew but failure [0, 3]
-                now = out[0] = Integer.parseInt(x[1]);
+                now = a;
             } // else if (s.equals("DF"))
             else if (s.equals("SW")) {
                 // SW: Swap hand cards between player A and B
                 // Command format: SW,a,b
                 // a = player A's id [0, 3]
                 // b = player B's id [0, 3]
-                int a = out[0] = Integer.parseInt(x[1]);
-                int b = out[1] = Integer.parseInt(x[2]);
                 Player store = player[a];
                 player[a] = player[b];
                 player[b] = store;

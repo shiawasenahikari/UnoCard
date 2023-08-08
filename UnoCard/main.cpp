@@ -289,29 +289,29 @@ void Main::setStatus(int status) {
         if (sAuto) {
             requestAI();
         } // if (sAuto)
-        else if (sUno->legalCardsCount4NowPlayer() == 0) {
-            draw();
-        } // else if (sUno->legalCardsCount4NowPlayer() == 0)
         else if (sAdjustOptions) {
             refreshScreen();
         } // else if (sAdjustOptions)
+        else if (sUno->legalCardsCount4NowPlayer() == 0) {
+            draw();
+        } // else if (sUno->legalCardsCount4NowPlayer() == 0)
+        else if (sUno->getPlayer(Player::YOU)->getHandSize() == 1) {
+            play(0);
+        } // else if (sUno->getPlayer(Player::YOU)->getHandSize() == 1)
+        else if (sSelectedIdx < 0) {
+            int c = sUno->getDraw2StackCount();
+
+            refreshScreen(c == 0
+                ? i18n->info_yourTurn()
+                : i18n->info_yourTurn_stackDraw2(c));
+        } // else if (sSelectedIdx < 0)
         else {
             auto hand = sUno->getPlayer(Player::YOU)->getHandCards();
-            if (hand.size() == 1) {
-                play(0);
-            } // if (hand.size() == 1)
-            else if (sSelectedIdx < 0) {
-                int c = sUno->getDraw2StackCount();
-                refreshScreen(c == 0
-                    ? i18n->info_yourTurn()
-                    : i18n->info_yourTurn_stackDraw2(c));
-            } // else if (sSelectedIdx < 0)
-            else {
-                Card* card = hand[sSelectedIdx];
-                refreshScreen(sUno->isLegalToPlay(card)
-                    ? i18n->info_clickAgainToPlay(card->name)
-                    : i18n->info_cannotPlay(card->name));
-            } // else
+            Card* card = hand[sSelectedIdx];
+
+            refreshScreen(sUno->isLegalToPlay(card)
+                ? i18n->info_clickAgainToPlay(card->name)
+                : i18n->info_cannotPlay(card->name));
         } // else
         break; // case Player::YOU
 
@@ -604,6 +604,7 @@ void Main::refreshScreen(const QString& message) {
         else if (((sHideFlag >> 1) & 0x01) == 0x00) {
             Player* p = sUno->getPlayer(Player::COM1);
             auto hand = p->getHandCards();
+
             size = int(hand.size());
             width = 44 * qMin(size, 13) + 136;
             for (i = 0; i < size; ++i) {
@@ -631,6 +632,7 @@ void Main::refreshScreen(const QString& message) {
         else if (((sHideFlag >> 2) & 0x01) == 0x00) {
             Player* p = sUno->getPlayer(Player::COM2);
             auto hand = p->getHandCards();
+
             size = int(hand.size());
             width = 44 * size + 76;
             for (i = 0; i < size; ++i) {
@@ -654,6 +656,7 @@ void Main::refreshScreen(const QString& message) {
         else if (((sHideFlag >> 3) & 0x01) == 0x00) {
             Player* p = sUno->getPlayer(Player::COM3);
             auto hand = p->getHandCards();
+
             size = int(hand.size());
             width = 44 * qMin(size, 13) + 136;
             for (i = 13; i < size; ++i) {
@@ -690,14 +693,14 @@ void Main::refreshScreen(const QString& message) {
         else if ((sHideFlag & 0x01) == 0x00) {
             // Show your all hand cards
             auto hand = sUno->getPlayer(Player::YOU)->getHandCards();
+
             size = int(hand.size());
             width = 44 * size + 76;
             for (i = 0; i < size; ++i) {
-                Card* card = hand[i];
                 image = status == STAT_GAME_OVER
                     || (status == Player::YOU
-                        && sUno->isLegalToPlay(card))
-                    ? card->image : card->darkImg;
+                        && sUno->isLegalToPlay(hand[i]))
+                    ? hand[i]->image : hand[i]->darkImg;
                 sPainter->drawImage(
                     /* x     */ 800 - width / 2 + 44 * i,
                     /* y     */ i == sSelectedIdx ? 680 : 700,
@@ -1401,6 +1404,7 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 int size = int(hand.size());
                 int width = 44 * size + 76;
                 int startX = 800 - width / 2;
+
                 if (startX <= x && x <= startX + width) {
                     // Hand card area
                     // Calculate which card clicked by the X-coordinate
@@ -1522,7 +1526,7 @@ void Main::loadReplay(const QString& replayName) {
     if (sUno->loadReplay(replayName)) {
         static int x[] = { 740, 160, 740, 1320 };
         static int y[] = { 670, 360, 50, 360 };
-        int params[3];
+        int params[] = { 0, 0, 0 };
 
         setStatus(STAT_IDLE);
         while (true) {
@@ -1536,6 +1540,7 @@ void Main::loadReplay(const QString& replayName) {
             } // if ((cmd = sUno->forwardReplay(params)) == "ST")
             else if (cmd == "DR") {
                 auto h = sUno->getPlayer(a = params[0])->getHandCards();
+
                 card = sUno->findCardById(params[1]);
                 i = std::lower_bound(h.begin(), h.end(), card) - h.begin();
                 size = int(h.size());
@@ -1571,6 +1576,7 @@ void Main::loadReplay(const QString& replayName) {
             } // else if (cmd == "DR")
             else if (cmd == "PL") {
                 auto h = sUno->getPlayer(a = params[0])->getHandCards();
+
                 card = sUno->findCardById(params[1]);
                 i = std::lower_bound(h.begin(), h.end(), card) - h.begin();
                 size = int(h.size()) + 1;

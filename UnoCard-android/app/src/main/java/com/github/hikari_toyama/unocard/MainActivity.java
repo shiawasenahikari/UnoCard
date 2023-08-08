@@ -333,29 +333,29 @@ public class MainActivity extends AppCompatActivity
                 if (mAuto) {
                     requestAI();
                 } // if (mAuto)
-                else if (mUno.legalCardsCount4NowPlayer() == 0) {
-                    draw(1, /* force */ false);
-                } // else if (mUno.legalCardsCount4NowPlayer() == 0)
                 else if (mAdjustOptions) {
                     refreshScreen("");
                 } // else if (mAdjustOptions)
+                else if (mUno.legalCardsCount4NowPlayer() == 0) {
+                    draw(1, /* force */ false);
+                } // else if (mUno.legalCardsCount4NowPlayer() == 0)
+                else if (mUno.getPlayer(Player.YOU).getHandSize() == 1) {
+                    play(0, Color.NONE);
+                } // else if (mUno.getPlayer(Player.YOU).getHandSize() == 1)
+                else if (mSelectedIdx < 0) {
+                    int c = mUno.getDraw2StackCount();
+
+                    refreshScreen(c == 0
+                            ? i18n.info_yourTurn()
+                            : i18n.info_yourTurn_stackDraw2(c));
+                } // else if (mSelectedIdx < 0)
                 else {
                     List<Card> hand = mUno.getPlayer(Player.YOU).getHandCards();
-                    if (hand.size() == 1) {
-                        play(0, Color.NONE);
-                    } // if (hand.size() == 1)
-                    else if (mSelectedIdx < 0) {
-                        int c = mUno.getDraw2StackCount();
-                        refreshScreen(c == 0
-                                ? i18n.info_yourTurn()
-                                : i18n.info_yourTurn_stackDraw2(c));
-                    } // else if (mSelectedIdx < 0)
-                    else {
-                        Card card = hand.get(mSelectedIdx);
-                        refreshScreen(mUno.isLegalToPlay(card)
-                                ? i18n.info_clickAgainToPlay(card.name)
-                                : i18n.info_cannotPlay(card.name));
-                    } // else
+                    Card card = hand.get(mSelectedIdx);
+
+                    refreshScreen(mUno.isLegalToPlay(card)
+                            ? i18n.info_clickAgainToPlay(card.name)
+                            : i18n.info_cannotPlay(card.name));
                 } // else
                 break; // case Player.YOU
 
@@ -662,6 +662,7 @@ public class MainActivity extends AppCompatActivity
         else if (((mHideFlag >> 1) & 0x01) == 0x00) {
             Player p = mUno.getPlayer(Player.COM1);
             List<Card> hand = p.getHandCards();
+
             size = hand.size();
             width = 44 * Math.min(size, 13) + 136;
             for (i = 0; i < size; ++i) {
@@ -687,6 +688,7 @@ public class MainActivity extends AppCompatActivity
         else if (((mHideFlag >> 2) & 0x01) == 0x00) {
             Player p = mUno.getPlayer(Player.COM2);
             List<Card> hand = p.getHandCards();
+
             size = hand.size();
             width = 44 * size + 76;
             for (i = 0, x = 800 - width / 2; i < size; ++i, x += 44) {
@@ -710,6 +712,7 @@ public class MainActivity extends AppCompatActivity
         else if (((mHideFlag >> 3) & 0x01) == 0x00) {
             Player p = mUno.getPlayer(Player.COM3);
             List<Card> hand = p.getHandCards();
+
             size = hand.size();
             width = 44 * Math.min(size, 13) + 136;
             for (i = 13; i < size; ++i) {
@@ -742,14 +745,14 @@ public class MainActivity extends AppCompatActivity
         else if ((mHideFlag & 0x01) == 0x00) {
             // Show your all hand cards
             List<Card> hand = mUno.getPlayer(Player.YOU).getHandCards();
+
             size = hand.size();
             width = 44 * size + 76;
             for (i = 0, x = 800 - width / 2; i < size; ++i, x += 44) {
-                Card card = hand.get(i);
                 image = status == STAT_GAME_OVER
                         || (status == Player.YOU
-                        && mUno.isLegalToPlay(card))
-                        ? card.image : card.darkImg;
+                        && mUno.isLegalToPlay(hand.get(i)))
+                        ? hand.get(i).image : hand.get(i).darkImg;
                 y = i == mSelectedIdx ? 680 : 700;
                 image.copyTo(mScr.submat(y, y + 181, x, x + 121), image);
             } // for (i = 0, x = 800 - width / 2; i < size; ++i, x += 44)
@@ -1583,6 +1586,7 @@ public class MainActivity extends AppCompatActivity
                         int size = hand.size();
                         int width = 44 * size + 76;
                         int startX = 800 - width / 2;
+
                         if (startX <= x && x <= startX + width) {
                             // Hand card area
                             // Calculate which card clicked by the X-coordinate
@@ -1707,7 +1711,7 @@ public class MainActivity extends AppCompatActivity
         if (mUno.loadReplay(replayName)) {
             final int[] x = {740, 160, 740, 1320};
             final int[] y = {670, 360, 50, 360};
-            int[] params = new int[3];
+            int[] params = {0, 0, 0};
 
             setStatus(STAT_IDLE);
             while (true) {
@@ -1721,6 +1725,7 @@ public class MainActivity extends AppCompatActivity
                 } // if ((cmd = mUno.forwardReplay(params)).equals("ST"))
                 else if (cmd.equals("DR")) {
                     List<Card> h = mUno.getPlayer(a = params[0]).getHandCards();
+
                     card = mUno.findCardById(params[1]);
                     i = Collections.binarySearch(h, card);
                     size = h.size();
@@ -1756,6 +1761,7 @@ public class MainActivity extends AppCompatActivity
                 } // else if (cmd.equals("DR"))
                 else if (cmd.equals("PL")) {
                     List<Card> h = mUno.getPlayer(a = params[0]).getHandCards();
+
                     card = mUno.findCardById(params[1]);
                     i = Collections.binarySearch(h, card);
                     if (i < 0) i = ~i;
