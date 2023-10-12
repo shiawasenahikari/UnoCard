@@ -1625,7 +1625,7 @@ void Main::loadReplay(const QString& replayName) {
                     refreshScreen(i18n->info_challengeSuccess(a));
                 } // if (sUno->challenge(a))
                 else {
-                    b = sUno->getNow();
+                    b = sUno->getNext();
                     refreshScreen(i18n->info_challengeFailure(b));
                 } // else
 
