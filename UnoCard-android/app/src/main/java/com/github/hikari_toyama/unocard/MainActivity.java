@@ -1811,7 +1811,7 @@ public class MainActivity extends AppCompatActivity
                         refreshScreen(i18n.info_challengeSuccess(a));
                     } // if (mUno.challenge(a))
                     else {
-                        b = mUno.getNow();
+                        b = mUno.getNext();
                         refreshScreen(i18n.info_challengeFailure(b));
                     } // else
 
