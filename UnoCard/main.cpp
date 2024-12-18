@@ -49,6 +49,7 @@ static const int STAT_GAME_OVER = 0x4444;
 static const int STAT_WILD_COLOR = 0x5555;
 static const int STAT_DOUBT_WILD4 = 0x6666;
 static const int STAT_SEVEN_TARGET = 0x7777;
+static const int STAT_ASK_KEEP_PLAY = 0x8888;
 static const QBrush BRUSH_RED(QColor(0xFF, 0x55, 0x55));
 static const QBrush BRUSH_BLUE(QColor(0x55, 0x55, 0xFF));
 static const QBrush BRUSH_GREEN(QColor(0x55, 0xAA, 0x55));
@@ -348,6 +349,15 @@ void Main::setStatus(int status) {
             refreshScreen(i18n->ask_target());
         } // else
         break; // case STAT_SEVEN_TARGET
+
+    case STAT_ASK_KEEP_PLAY:
+        if (sAuto) {
+            play(sSelectedIdx, sAI->calcBestColor4NowPlayer());
+        } // if (sAuto)
+        else {
+            refreshScreen(i18n->ask_keep_play());
+        } // else
+        break; // case STAT_ASK_KEEP_PLAY
 
     case Player::COM1:
     case Player::COM2:
@@ -698,8 +708,8 @@ void Main::refreshScreen(const QString& message) {
             width = 44 * size + 76;
             for (i = 0; i < size; ++i) {
                 image = status == STAT_GAME_OVER
-                    || (status == Player::YOU
-                        && sUno->isLegalToPlay(hand[i]))
+                    || (status == Player::YOU && sUno->isLegalToPlay(hand[i]))
+                    || (status == STAT_ASK_KEEP_PLAY && i == sSelectedIdx)
                     ? hand[i]->image : hand[i]->darkImg;
                 sPainter->drawImage(
                     /* x     */ 800 - width / 2 + 44 * i,
@@ -737,6 +747,7 @@ void Main::refreshScreen(const QString& message) {
             break; // case STAT_WILD_COLOR
 
         case STAT_DOUBT_WILD4:
+        case STAT_ASK_KEEP_PLAY:
             // Ask whether you want to challenge your previous player
             // Draw YES button
             sPainter->setBrush(BRUSH_GREEN);
@@ -749,7 +760,7 @@ void Main::refreshScreen(const QString& message) {
             sPainter->drawPie(270, 270, 271, 271, 0, -180 * 16);
             width = sUno->getTextWidth(i18n->label_no());
             sUno->putText(sPainter, i18n->label_no(), 405 - width / 2, 472);
-            break; // case STAT_DOUBT_WILD4
+            break; // case STAT_DOUBT_WILD4, STAT_ASK_KEEP_PLAY
 
         case STAT_SEVEN_TARGET:
             // Ask the target you want to swap hand cards with
@@ -1128,17 +1139,14 @@ void Main::draw(int count, bool force) {
         sUno->isLegalToPlay(drawn)) {
         // Player drew one card by itself, the drawn card
         // can be played immediately if it's legal to play
-        if (!drawn->isWild()) {
-            play(index);
-        } // if (!drawn->isWild())
-        else if (sAuto || now != Player::YOU) {
+        if (sAuto || now != Player::YOU) {
             play(index, sAI->calcBestColor4NowPlayer());
-        } // else if (sAuto || now != Player::YOU)
+        } // if (sAuto || now != Player::YOU)
         else {
             // Store index value as global value. This value
             // will be used after the wild color determined.
             sSelectedIdx = index;
-            setStatus(STAT_WILD_COLOR);
+            setStatus(STAT_ASK_KEEP_PLAY);
         } // else
     } // if (count == 1 && ...)
     else {
@@ -1372,9 +1380,9 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 // [UPDATE] When game over, change to <SAVE> button
                 QString replayName = sUno->save();
 
-                if (replayName.length() > 0) {
+                if (!replayName.isEmpty()) {
                     refreshScreen("Replay file saved as " + replayName);
-                } // if (replayName.length() > 0)
+                } // if (!replayName.isEmpty())
                 else {
                     refreshScreen("Failed to save replay file");
                 } // else
@@ -1479,6 +1487,54 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 } // else if (405 < y && y < 500)
             } // if (310 < x && x < 500)
             break; // case STAT_DOUBT_WILD4
+
+        case STAT_ASK_KEEP_PLAY:
+            if (310 < x && x < 500 && 405 < y && y < 500) {
+                // No button, keep the drawn card
+                sSelectedIdx = -1;
+                setStatus(STAT_IDLE);
+                refreshScreen(i18n->act_pass(Player::YOU));
+                threadWait(750);
+                setStatus(sUno->switchNow());
+            } // if (310 < x && x < 500 && 405 < y && y < 500)
+            else if (310 < x && x < 500 && 310 < y && y < 405) {
+                // YES button, play the drawn card
+                Player* now = sUno->getPlayer(Player::YOU);
+                auto hand = now->getHandCards();
+                Card* card = hand[sSelectedIdx];
+
+                if (card->isWild() && hand.size() > 1) {
+                    setStatus(STAT_WILD_COLOR);
+                } // if (card->isWild() && hand.size() > 1)
+                else {
+                    play(sSelectedIdx, card->color);
+                } // else
+            } // else if (310 < x && x < 500 && 310 < y && y < 405)
+            else if (700 <= y && y <= 880) {
+                Player* now = sUno->getPlayer(Player::YOU);
+                auto hand = now->getHandCards();
+                int size = int(hand.size());
+                int width = 44 * size + 76;
+                int startX = 800 - width / 2;
+                Card* card = hand[sSelectedIdx];
+                int index = qMin((x - startX) / 44, size - 1);
+
+                if (!(startX <= x && x <= startX + width)) {
+                    break; // case STAT_ASK_KEEP_PLAY
+                } // if (!(startX <= x && x <= startX + width))
+
+                if (index != sSelectedIdx) {
+                    break; // case STAT_ASK_KEEP_PLAY
+                } // if (index != sSelectedIdx)
+
+                if (card->isWild() && hand.size() > 1) {
+                    setStatus(STAT_WILD_COLOR);
+                } // if (card->isWild() && hand.size() > 1)
+                else {
+                    play(sSelectedIdx, card->color);
+                } // else
+            } // else if (700 <= y && y <= 880)
+            break; // case STAT_ASK_KEEP_PLAY
 
         case STAT_SEVEN_TARGET:
             if (288 < y && y < 366 && sUno->getPlayers() == 4) {

@@ -25,6 +25,7 @@ public:
     virtual QString act_playWildDraw4(int, int) = 0;
     virtual QString ask_challenge(int) = 0;
     virtual QString ask_color() = 0;
+    virtual QString ask_keep_play() = 0;
     virtual QString ask_target() = 0;
     virtual QString btn_auto() = 0;
     virtual QString btn_keep(bool) = 0;
@@ -132,6 +133,10 @@ public:
     inline QString ask_color() {
         return "^ Specify the following legal color";
     } // ask_color()
+
+    inline QString ask_keep_play() {
+        return "^ Play the drawn card?";
+    } // ask_keep_play()
 
     inline QString ask_target() {
         return "^ Specify the target to swap hand cards with";
@@ -352,6 +357,10 @@ public:
     inline QString ask_color() {
         return "^ 指定接下来的合法颜色";
     } // ask_color()
+
+    inline QString ask_keep_play() {
+        return "^ 是否打出摸到的牌?";
+    } // ask_keep_play()
 
     inline QString ask_target() {
         return "^ 指定换牌目标";

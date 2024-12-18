@@ -36,6 +36,8 @@ public interface I18N {
 
     String ask_color();
 
+    String ask_keep_play();
+
     String ask_target();
 
     String btn_auto();
@@ -179,6 +181,11 @@ class I18N_en_US implements I18N {
     public String ask_color() {
         return "^ Specify the following legal color";
     } // ask_color()
+
+    @Override
+    public String ask_keep_play() {
+        return "^ Play the drawn card?";
+    } // ask_keep_play()
 
     @Override
     public String ask_target() {
@@ -432,6 +439,11 @@ class I18N_zh_CN implements I18N {
     public String ask_color() {
         return "^ 指定接下来的合法颜色";
     } // ask_color()
+
+    @Override
+    public String ask_keep_play() {
+        return "^ 是否打出摸到的牌?";
+    } // ask_keep_play()
 
     @Override
     public String ask_target() {

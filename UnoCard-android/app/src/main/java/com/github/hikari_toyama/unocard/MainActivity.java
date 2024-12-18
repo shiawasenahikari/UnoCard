@@ -76,6 +76,7 @@ public class MainActivity extends AppCompatActivity
     private static final Scalar RGB_GREEN = new Scalar(0x55, 0xAA, 0x55);
     private static final Scalar RGB_BLUE = new Scalar(0x55, 0x55, 0xFF);
     private static final Scalar RGB_RED = new Scalar(0xFF, 0x55, 0x55);
+    private static final int STAT_ASK_KEEP_PLAY = 0x8888;
     private static final int STAT_SEVEN_TARGET = 0x7777;
     private static final int STAT_DOUBT_WILD4 = 0x6666;
     private static final int STAT_WILD_COLOR = 0x5555;
@@ -217,7 +218,7 @@ public class MainActivity extends AppCompatActivity
     @WorkerThread
     public void run() {
         Looper.prepare();
-        mSubHandler = new Handler(Looper.myLooper(), this::handleMessage2);
+        mSubHandler = new Handler(this::handleMessage2);
         setStatus(STAT_WELCOME);
         Looper.loop();
     } // run()
@@ -393,6 +394,15 @@ public class MainActivity extends AppCompatActivity
                     refreshScreen(i18n.ask_target());
                 } // else
                 break; // case STAT_SEVEN_TARGET
+
+            case STAT_ASK_KEEP_PLAY:
+                if (mAuto) {
+                    play(mSelectedIdx, mAI.calcBestColor4NowPlayer());
+                } // if (mAuto)
+                else {
+                    refreshScreen(i18n.ask_keep_play());
+                } // else
+                break; // case STAT_ASK_KEEP_PLAY
 
             case Player.COM1:
             case Player.COM2:
@@ -750,8 +760,8 @@ public class MainActivity extends AppCompatActivity
             width = 44 * size + 76;
             for (i = 0, x = 800 - width / 2; i < size; ++i, x += 44) {
                 image = status == STAT_GAME_OVER
-                        || (status == Player.YOU
-                        && mUno.isLegalToPlay(hand.get(i)))
+                        || (status == Player.YOU && mUno.isLegalToPlay(hand.get(i)))
+                        || (status == STAT_ASK_KEEP_PLAY && i == mSelectedIdx)
                         ? hand.get(i).image : hand.get(i).darkImg;
                 y = i == mSelectedIdx ? 680 : 700;
                 image.copyTo(mScr.submat(y, y + 181, x, x + 121), image);
@@ -825,6 +835,7 @@ public class MainActivity extends AppCompatActivity
                 break; // case STAT_WILD_COLOR
 
             case STAT_DOUBT_WILD4:
+            case STAT_ASK_KEEP_PLAY:
                 // Ask whether you want to challenge your previous player
                 center = new Point(405, 405);
                 axes = new Size(135, 135);
@@ -868,7 +879,7 @@ public class MainActivity extends AppCompatActivity
                         /* x     */ 405 - width / 2,
                         /* y     */ 472
                 ); // mUno.putText()
-                break; // case STAT_DOUBT_WILD4
+                break; // case STAT_DOUBT_WILD4, STAT_ASK_KEEP_PLAY
 
             case STAT_SEVEN_TARGET:
                 // Ask the target you want to swap hand cards with
@@ -935,10 +946,10 @@ public class MainActivity extends AppCompatActivity
      */
     @Override
     @UiThread
-    public boolean handleMessage(Message message) {
+    public boolean handleMessage(@NonNull Message message) {
         mImgScreen.setImageBitmap(mBmp);
         return true;
-    } // handleMessage(Message)
+    } // handleMessage(@NonNull Message)
 
     /**
      * In 7-0 rule, when a zero card is put down, everyone need to pass
@@ -1278,17 +1289,14 @@ public class MainActivity extends AppCompatActivity
                 mUno.isLegalToPlay(drawn)) {
             // Player drew one card by itself, the drawn card
             // can be played immediately if it's legal to play
-            if (!drawn.isWild()) {
-                play(index, Color.NONE);
-            } // if (!drawn.isWild())
-            else if (mAuto || now != Player.YOU) {
+            if (mAuto || now != Player.YOU) {
                 play(index, mAI.calcBestColor4NowPlayer());
-            } // else if (mAuto || now != Player.YOU)
+            } // if (mAuto || now != Player.YOU)
             else {
                 // Store index value as global value. This value
                 // will be used after the wild color determined.
                 mSelectedIdx = index;
-                setStatus(STAT_WILD_COLOR);
+                setStatus(STAT_ASK_KEEP_PLAY);
             } // else
         } // if (count == 1 && ...)
         else {
@@ -1553,9 +1561,9 @@ public class MainActivity extends AppCompatActivity
                 // [UPDATE] When game over, change to <SAVE> button
                 String replayName = mUno.save();
 
-                if (replayName.length() > 0) {
+                if (!replayName.isEmpty()) {
                     refreshScreen("Replay file saved as " + replayName);
-                } // if (replayName.length() > 0)
+                } // if (!replayName.isEmpty())
                 else {
                     refreshScreen("Failed to save replay file");
                 } // else
@@ -1661,6 +1669,54 @@ public class MainActivity extends AppCompatActivity
                         } // else if (405 < y && y < 500)
                     } // if (310 < x && x < 500)
                     break; // case STAT_DOUBT_WILD4
+
+                case STAT_ASK_KEEP_PLAY:
+                    if (310 < x && x < 500 && 405 < y && y < 500) {
+                        // No button, keep the drawn card
+                        mSelectedIdx = -1;
+                        setStatus(STAT_IDLE);
+                        refreshScreen(i18n.act_pass(Player.YOU));
+                        threadWait(750);
+                        setStatus(mUno.switchNow());
+                    } // if (310 < x && x < 500 && 405 < y && y < 500)
+                    else if (310 < x && x < 500 && 310 < y && y < 405) {
+                        // YES button, play the drawn card
+                        Player now = mUno.getPlayer(Player.YOU);
+                        List<Card> hand = now.getHandCards();
+                        Card card = hand.get(mSelectedIdx);
+
+                        if (card.isWild() && hand.size() > 1) {
+                            setStatus(STAT_WILD_COLOR);
+                        } // if (card.isWild() && hand.size() > 1)
+                        else {
+                            play(mSelectedIdx, card.color);
+                        } // else
+                    } // else if (310 < x && x < 500 && 310 < y && y < 405)
+                    else if (700 <= y && y <= 880) {
+                        Player now = mUno.getPlayer(Player.YOU);
+                        List<Card> hand = now.getHandCards();
+                        int size = hand.size();
+                        int width = 44 * size + 76;
+                        int startX = 800 - width / 2;
+                        Card card = hand.get(mSelectedIdx);
+                        int index = Math.min((x - startX) / 44, size - 1);
+
+                        if (!(startX <= x && x <= startX + width)) {
+                            break; // case STAT_ASK_KEEP_PLAY
+                        } // if (!(startX <= x && x <= startX + width))
+
+                        if (index != mSelectedIdx) {
+                            break; // case STAT_ASK_KEEP_PLAY
+                        } // if (index != mSelectedIdx)
+
+                        if (card.isWild() && hand.size() > 1) {
+                            setStatus(STAT_WILD_COLOR);
+                        } // if (card.isWild() && hand.size() > 1)
+                        else {
+                            play(mSelectedIdx, card.color);
+                        } // else
+                    } // else if (700 <= y && y <= 880)
+                    break; // case STAT_ASK_KEEP_PLAY
 
                 case STAT_SEVEN_TARGET:
                     if (288 < y && y < 366 && mUno.getPlayers() == 4) {
@@ -2025,7 +2081,7 @@ public class MainActivity extends AppCompatActivity
             File replayDir = p.getExternalFilesDir("replay");
 
             parent = new WeakReference<>(p);
-            files = replayDir.list();
+            files = replayDir != null ? replayDir.list() : new String[0];
             return new AlertDialog.Builder(p)
                     .setTitle("Choose a replay file")
                     .setItems(files, this)
