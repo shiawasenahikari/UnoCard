@@ -143,7 +143,7 @@ public class MainActivity extends AppCompatActivity
             mUno.setDifficulty(sp.getInt("difficulty", Uno.LV_EASY));
             mUno.setForcePlay(sp.getBoolean("forcePlay", true));
             mUno.setSevenZeroRule(sp.getBoolean("sevenZero", false));
-            mUno.setDraw2StackRule(sp.getBoolean("stackDraw2", false));
+            mUno.setStackRule(sp.getInt("stackRule", 0));
             mUno.set2vs2(sp.getBoolean("2vs2", false));
             initialCards = MathUtils.clamp(sp.getInt("initialCards", 7), 5, 20);
             while (mUno.getInitialCards() < initialCards) {
@@ -348,7 +348,9 @@ public class MainActivity extends AppCompatActivity
 
                     refreshScreen(c == 0
                             ? i18n.info_yourTurn()
-                            : i18n.info_yourTurn_stackDraw2(c));
+                            : mUno.getStackRule() == 1
+                            ? i18n.info_yourTurn_stackDraw2(c)
+                            : i18n.info_yourTurn_stackDraw2(c, 2));
                 } // else if (mSelectedIdx < 0)
                 else {
                     List<Card> hand = mUno.getPlayer(Player.YOU).getHandCards();
@@ -549,10 +551,11 @@ public class MainActivity extends AppCompatActivity
                 mUno.putText(mScr, i18n.btn_on(active), 1290, 770);
 
                 // +2 stack
-                active = mUno.isDraw2StackRule();
+                i = mUno.getStackRule();
                 mUno.putText(mScr, i18n.label_draw2Stack(), 60, 820);
-                mUno.putText(mScr, i18n.btn_off(!active), 1110, 820);
-                mUno.putText(mScr, i18n.btn_on(active), 1290, 820);
+                mUno.putText(mScr, i18n.btn_off(i == 0), 1110, 820);
+                mUno.putText(mScr, i18n.btn_d2(i == 1), 1290, 820);
+                mUno.putText(mScr, i18n.btn_d4(i == 2), 860, 820);
             } // if (status != Player.YOU)
 
             // Show image
@@ -1056,6 +1059,11 @@ public class MainActivity extends AppCompatActivity
         setStatus(STAT_IDLE); // block tap down events when idle
         now = mUno.getNow();
         size = mUno.getCurrPlayer().getHandSize();
+        if (mUno.getStackRule() == 2 && mUno.getCurrPlayer()
+                .getHandCards().get(index).content == Content.WILD_DRAW4) {
+            color = mUno.lastColor();
+        } // if (mUno.getStackRule() == 2 && ...)
+
         card = mUno.play(now, index, color);
         mSelectedIdx = -1;
         mSoundPool.play(sndPlay, mSndVol, mSndVol, 1, 0, 1.0f);
@@ -1134,12 +1142,12 @@ public class MainActivity extends AppCompatActivity
                 switch (card.content) {
                     case DRAW2:
                         next = mUno.switchNow();
-                        if (mUno.isDraw2StackRule()) {
+                        if (mUno.getStackRule() != 0) {
                             c = mUno.getDraw2StackCount();
                             refreshScreen(i18n.act_playDraw2(now, next, c));
                             threadWait(1500);
                             setStatus(next);
-                        } // if (mUno.isDraw2StackRule())
+                        } // if (mUno.getStackRule() != 0)
                         else {
                             refreshScreen(i18n.act_playDraw2(now, next, 2));
                             threadWait(1500);
@@ -1168,10 +1176,19 @@ public class MainActivity extends AppCompatActivity
                         break; // case WILD
 
                     case WILD_DRAW4:
-                        next = mUno.getNext();
-                        refreshScreen(i18n.act_playWildDraw4(now, next));
-                        threadWait(1500);
-                        setStatus(STAT_DOUBT_WILD4);
+                        if (mUno.getStackRule() == 2) {
+                            next = mUno.switchNow();
+                            c = mUno.getDraw2StackCount();
+                            refreshScreen(i18n.act_playDraw2(now, next, c));
+                            threadWait(1500);
+                            setStatus(next);
+                        } // if (mUno.getStackRule() == 2)
+                        else {
+                            next = mUno.getNext();
+                            refreshScreen(i18n.act_playWildDraw4(now, next));
+                            threadWait(1500);
+                            setStatus(STAT_DOUBT_WILD4);
+                        } // else
                         break; // case WILD_DRAW4
 
                     case NUM7:
@@ -1529,15 +1546,20 @@ public class MainActivity extends AppCompatActivity
             } // else if (749 <= y && y <= 770 && mStatus != Player.YOU)
             else if (799 <= y && y <= 820 && mStatus != Player.YOU) {
                 if (1110 <= x && x <= 1194) {
-                    // +2 stack, <OFF> button
-                    mUno.setDraw2StackRule(false);
+                    // stacking, <OFF> button
+                    mUno.setStackRule(0);
                     setStatus(mStatus);
                 } // if (1110 <= x && x <= 1194)
                 else if (1290 <= x && x <= 1357) {
-                    // +2 stack, <ON> button
-                    mUno.setDraw2StackRule(true);
+                    // stacking, <+2> button
+                    mUno.setStackRule(1);
                     setStatus(mStatus);
                 } // else if (1290 <= x && x <= 1357)
+                else if (860 <= x && x <= 982) {
+                    // stacking, <+2 & +4> button
+                    mUno.setStackRule(2);
+                    setStatus(mStatus);
+                } // else if (860 <= x && x <= 982)
             } // else if (799 <= y && y <= 820 && mStatus != Player.YOU)
             else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
                 // <OPTIONS> button
@@ -1607,11 +1629,15 @@ public class MainActivity extends AppCompatActivity
                                 setStatus(mStatus);
                             } // if (index != mSelectedIdx)
                             else if (mUno.isLegalToPlay(card)) {
-                                if (card.isWild() && size > 1) {
-                                    setStatus(STAT_WILD_COLOR);
-                                } // if (card.isWild() && size > 1)
-                                else {
+                                if (!card.isWild() || size < 2) {
                                     play(index, Color.NONE);
+                                } // if (!card.isWild() || size < 2)
+                                else if (mUno.getStackRule() != 2 ||
+                                        card.content != Content.WILD_DRAW4) {
+                                    setStatus(STAT_WILD_COLOR);
+                                } // else if (mUno.getStackRule() != 2 || ...)
+                                else {
+                                    play(index, mUno.lastColor());
                                 } // else
                             } // else if (mUno.isLegalToPlay(card))
                         } // if (startX <= x && x <= startX + width)
@@ -1998,7 +2024,7 @@ public class MainActivity extends AppCompatActivity
                     .putInt("difficulty", mUno.getDifficulty())
                     .putBoolean("forcePlay", mUno.isForcePlay())
                     .putBoolean("sevenZero", mUno.isSevenZeroRule())
-                    .putBoolean("stackDraw2", mUno.isDraw2StackRule())
+                    .putInt("stackRule", mUno.getStackRule())
                     .putInt("initialCards", mUno.getInitialCards())
                     .putBoolean("2vs2", mUno.is2vs2())
                     .apply();

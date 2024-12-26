@@ -121,7 +121,7 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
                 sUno->setDifficulty(dw[2]);
                 sUno->setForcePlay(dw[3] != 0);
                 sUno->setSevenZeroRule(dw[4] != 0);
-                sUno->setDraw2StackRule(dw[5] != 0);
+                sUno->setStackRule(dw[5]);
                 sSoundPool->setEnabled(dw[6] != 0);
                 sMediaPlay->setVolume(dw[7]);
             } // if (strcmp(header, FILE_HEADER) == 0 && hash == dw[8])
@@ -143,7 +143,7 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
                 sUno->setDifficulty(dw[2]);
                 sUno->setForcePlay(dw[3] != 0);
                 sUno->setSevenZeroRule(dw[4] != 0);
-                sUno->setDraw2StackRule(dw[5] != 0);
+                sUno->setStackRule(dw[5]);
                 sSoundPool->setEnabled(dw[6] != 0);
                 sMediaPlay->setVolume(dw[7]);
                 sUno->set2vs2(dw[9] != 0);
@@ -304,7 +304,9 @@ void Main::setStatus(int status) {
 
             refreshScreen(c == 0
                 ? i18n->info_yourTurn()
-                : i18n->info_yourTurn_stackDraw2(c));
+                : sUno->getStackRule() == 1
+                ? i18n->info_yourTurn_stackDraw2(c)
+                : i18n->info_yourTurn_stackDraw2(c, 2));
         } // else if (sSelectedIdx < 0)
         else {
             auto hand = sUno->getPlayer(Player::YOU)->getHandCards();
@@ -501,11 +503,12 @@ void Main::refreshScreen(const QString& message) {
             sUno->putText(sPainter, i18n->btn_off(!active), 1110, 770);
             sUno->putText(sPainter, i18n->btn_on(active), 1290, 770);
 
-            // +2 stack
-            active = sUno->isDraw2StackRule();
+            // stacking
+            i = sUno->getStackRule();
             sUno->putText(sPainter, i18n->label_draw2Stack(), 60, 820);
-            sUno->putText(sPainter, i18n->btn_off(!active), 1110, 820);
-            sUno->putText(sPainter, i18n->btn_on(active), 1290, 820);
+            sUno->putText(sPainter, i18n->btn_off(i == 0), 1110, 820);
+            sUno->putText(sPainter, i18n->btn_d2(i == 1), 1290, 820);
+            sUno->putText(sPainter, i18n->btn_d4(i == 2), 860, 820);
         } // if (status != Player::YOU)
     } // if (sAdjustOptions)
     else if (status == STAT_WELCOME) {
@@ -908,6 +911,11 @@ void Main::play(int index, Color color) {
     setStatus(STAT_IDLE); // block mouse click events when idle
     now = sUno->getNow();
     size = sUno->getCurrPlayer()->getHandSize();
+    if (sUno->getStackRule() == 2 && sUno->getCurrPlayer()
+        ->getHandCards()[index]->content == WILD_DRAW4) {
+        color = sUno->lastColor();
+    } // if (sUno->getStackRule() == 2 && ...)
+
     card = sUno->play(now, index, color);
     sSelectedIdx = -1;
     sSoundPool->play(SoundPool::SND_PLAY);
@@ -986,12 +994,12 @@ void Main::play(int index, Color color) {
             switch (card->content) {
             case DRAW2:
                 next = sUno->switchNow();
-                if (sUno->isDraw2StackRule()) {
+                if (sUno->getStackRule() != 0) {
                     c = sUno->getDraw2StackCount();
                     refreshScreen(i18n->act_playDraw2(now, next, c));
                     threadWait(1500);
                     setStatus(next);
-                } // if (sUno->isDraw2StackRule())
+                } // if (sUno->getStackRule() != 0)
                 else {
                     refreshScreen(i18n->act_playDraw2(now, next, 2));
                     threadWait(1500);
@@ -1020,10 +1028,19 @@ void Main::play(int index, Color color) {
                 break; // case WILD
 
             case WILD_DRAW4:
-                next = sUno->getNext();
-                refreshScreen(i18n->act_playWildDraw4(now, next));
-                threadWait(1500);
-                setStatus(STAT_DOUBT_WILD4);
+                if (sUno->getStackRule() == 2) {
+                    next = sUno->switchNow();
+                    c = sUno->getDraw2StackCount();
+                    refreshScreen(i18n->act_playDraw2(now, next, c));
+                    threadWait(1500);
+                    setStatus(next);
+                } // if (sUno->getStackRule() == 2)
+                else {
+                    next = sUno->getNext();
+                    refreshScreen(i18n->act_playWildDraw4(now, next));
+                    threadWait(1500);
+                    setStatus(STAT_DOUBT_WILD4);
+                } // else
                 break; // case WILD_DRAW4
 
             case NUM7:
@@ -1339,15 +1356,20 @@ void Main::mousePressEvent(QMouseEvent* event) {
             } // else if (749 <= y && y <= 770 && sStatus != Player::YOU)
             else if (799 <= y && y <= 820 && sStatus != Player::YOU) {
                 if (1110 <= x && x <= 1194) {
-                    // +2 stack, <OFF> button
-                    sUno->setDraw2StackRule(false);
+                    // stacking, <OFF> button
+                    sUno->setStackRule(0);
                     setStatus(sStatus);
                 } // if (1110 <= x && x <= 1194)
                 else if (1290 <= x && x <= 1357) {
-                    // +2 stack, <ON> button
-                    sUno->setDraw2StackRule(true);
+                    // stacking, <+2> button
+                    sUno->setStackRule(1);
                     setStatus(sStatus);
                 } // else if (1290 <= x && x <= 1357)
+                else if (860 <= x && x <= 1012) {
+                    // stacking, <+2 & +4> button
+                    sUno->setStackRule(2);
+                    setStatus(sStatus);
+                } // else if (860 <= x && x <= 1012)
             } // else if (799 <= y && y <= 820 && sStatus != Player::YOU)
             else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
                 // <OPTIONS> button
@@ -1425,11 +1447,15 @@ void Main::mousePressEvent(QMouseEvent* event) {
                         setStatus(sStatus);
                     } // if (index != sSelectedIdx)
                     else if (sUno->isLegalToPlay(card)) {
-                        if (card->isWild() && size > 1) {
-                            setStatus(STAT_WILD_COLOR);
-                        } // if (card->isWild() && size > 1)
-                        else {
+                        if (!card->isWild() || size < 2) {
                             play(index);
+                        } // if (!card->isWild() || size < 2)
+                        else if (sUno->getStackRule() != 2 ||
+                            card->content != WILD_DRAW4) {
+                            setStatus(STAT_WILD_COLOR);
+                        } // else if (sUno->getStackRule() != 2 || ...)
+                        else {
+                            play(index, sUno->lastColor());
                         } // else
                     } // else if (sUno->isLegalToPlay(card))
                 } // if (startX <= x && x <= startX + width)
@@ -1788,7 +1814,7 @@ void Main::closeEvent(QCloseEvent*) {
             /* dw[2] = difficulty (ez/hd) */ sUno->getDifficulty(),
             /* dw[3] = force play switch  */ sUno->isForcePlay() ? 1 : 0,
             /* dw[4] = seven zero switch  */ sUno->isSevenZeroRule() ? 1 : 0,
-            /* dw[5] = +2 stack switch    */ sUno->isDraw2StackRule() ? 1 : 0,
+            /* dw[5] = stacking switch    */ sUno->getStackRule(),
             /* dw[6] = snd switch         */ sSoundPool->isEnabled() ? 1 : 0,
             /* dw[7] = bgm switch         */ sMediaPlay->volume(),
             /* dw[8] = initial cards      */ sUno->getInitialCards(),

@@ -229,9 +229,11 @@ public class Uno {
     boolean sevenZeroRule;
 
     /**
-     * Can or cannot stack +2 cards.
+     * 0: No cards can be stacked.
+     * 1: Only +2 cards can be stacked.
+     * 2: +2 & +4 cards can be stacked.
      */
-    boolean draw2StackRule;
+    int stackRule;
 
     /**
      * Only available in +2 stack rule. In this rule, when a +2 card is put
@@ -530,9 +532,9 @@ public class Uno {
         forcePlay = true;
         difficulty = LV_EASY;
         replay = new StringBuilder();
-        direction = draw2StackCount = 0;
+        _2vs2 = sevenZeroRule = false;
+        stackRule = direction = draw2StackCount = 0;
         replayDir = c.getExternalFilesDir("replay");
-        _2vs2 = sevenZeroRule = draw2StackRule = false;
         colorAnalysis = new int[Color.values().length];
         contentAnalysis = new int[Content.values().length];
         player = new Player[]{
@@ -972,17 +974,46 @@ public class Uno {
      * card, the next player may transfer the punishment to its next
      * player by stacking another +2 card. Finally the first one who
      * does not stack a +2 card must draw all of the required cards.
+     * @deprecated Use <code>getStackRule() == 1</code> instead.
      */
+    @Deprecated
     public boolean isDraw2StackRule() {
-        return draw2StackRule;
+        return stackRule == 1;
     } // isDraw2StackRule()
 
     /**
      * @param enabled Enable/Disable the +2 stacking rule.
+     * @deprecated Use <code>setStackRule(enabled ? 1 : 0)</code> instead.
      */
+    @Deprecated
     public void setDraw2StackRule(boolean enabled) {
-        draw2StackRule = enabled;
+        stackRule = enabled ? 1 : 0;
     } // setDraw2StackRule(boolean)
+
+    /**
+     * Can or cannot stack +2/+4 cards. If can, when you put down a +2/+4
+     * card, the next player may transfer the punishment to its next player
+     * by stacking another +2/+4 card. Finally the first one who does not
+     * stack a +2/+4 card must draw all of the required cards.
+     *
+     * @return 0: No cards can be stacked.
+     * 1: Only +2 cards can be stacked.
+     * 2: +2 & +4 cards can be stacked.
+     */
+    public int getStackRule() {
+        return stackRule;
+    } // getStackRule()
+
+    /**
+     * @param rule 0: No cards can be stacked.
+     *             1: Only +2 cards can be stacked.
+     *             2: +2 & +4 cards can be stacked.
+     */
+    public void setStackRule(int rule) {
+        if (0 <= rule && rule <= 2) {
+            stackRule = rule;
+        } // if (0 <= rule && rule <= 2)
+    } // setStackRule(int)
 
     /**
      * Only available in +2 stack rule. In this rule, when a +2 card is put
@@ -1424,9 +1455,12 @@ public class Uno {
                     player[who].strongCount = size - 1;
                 } // else if (player[who].strongCount >= size)
 
-                if (card.content == DRAW2 && draw2StackRule) {
+                if (card.content == DRAW2 && stackRule != 0) {
                     draw2StackCount += 2;
-                } // if (card.content == DRAW2 && draw2StackRule)
+                } // if (card.content == DRAW2 && stackRule != 0)
+                else if (card.content == WILD_DRAW4 && stackRule == 2) {
+                    draw2StackCount += 4;
+                } // else if (card.content == WILD_DRAW4 && stackRule == 2)
 
                 player[who].open = who == Player.YOU
                         ? (player[who].open >> 1)
@@ -1455,14 +1489,24 @@ public class Uno {
                 replay.append(",").append(color.ordinal());
 
                 // Update the legality binary
-                legality = draw2StackCount > 0
-                        ? (0x8004002001L << DRAW2.ordinal())
-                        : card.isWild()
-                        ? 0x30000000000000L
-                        | (0x1fffL << 13 * (lastColor().ordinal() - 1))
-                        : 0x30000000000000L
-                        | (0x1fffL << 13 * (lastColor().ordinal() - 1))
-                        | (0x8004002001L << card.content.ordinal());
+                if (draw2StackCount < 1) {
+                    legality = card.isWild()
+                            ? 0x30000000000000L
+                            | (0x1fffL << 13 * (lastColor().ordinal() - 1))
+                            : 0x30000000000000L
+                            | (0x1fffL << 13 * (lastColor().ordinal() - 1))
+                            | (0x8004002001L << card.content.ordinal());
+                } // if (draw2StackCount < 1)
+                else if (stackRule == 1) {
+                    legality = 0x8004002001L << DRAW2.ordinal();
+                } // else if (stackRule == 1)
+                else {
+                    legality = 0x20000000000000L
+                            | (!card.isWild()
+                            ? 0x8004002001L << DRAW2.ordinal()
+                            : 0x1L << DRAW2.ordinal() << 13
+                            * (lastColor().ordinal() - 1));
+                } // else
                 if (size == 1) {
                     // Game over, change background & show everyone's hand cards
                     direction = 0;

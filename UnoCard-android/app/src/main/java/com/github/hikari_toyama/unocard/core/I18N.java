@@ -44,6 +44,10 @@ public interface I18N {
 
     String btn_keep(boolean active);
 
+    String btn_d2(boolean active);
+
+    String btn_d4(boolean active);
+
     String btn_off(boolean active);
 
     String btn_on(boolean active);
@@ -82,7 +86,11 @@ public interface I18N {
 
     String info_yourTurn();
 
-    String info_yourTurn_stackDraw2(int i);
+    default String info_yourTurn_stackDraw2(int i) {
+        return info_yourTurn_stackDraw2(i, 1);
+    } // info_yourTurn_stackDraw2(int)
+
+    String info_yourTurn_stackDraw2(int i1, int i2);
 
     String label_7_0();
 
@@ -198,6 +206,16 @@ class I18N_en_US implements I18N {
     } // btn_auto()
 
     @Override
+    public String btn_d2(boolean active) {
+        return active ? "[G]<+2>" : "<+2>";
+    } // btn_d2(boolean)
+
+    @Override
+    public String btn_d4(boolean active) {
+        return active ? "[Y]<+2 & +4>" : "<+2 & +4>";
+    } // btn_d4(boolean)
+
+    @Override
     public String btn_keep(boolean active) {
         return active ? "[R]<KEEP>" : "<KEEP>";
     } // btn_keep(boolean)
@@ -306,9 +324,11 @@ class I18N_en_US implements I18N {
     } // info_yourTurn()
 
     @Override
-    public String info_yourTurn_stackDraw2(int i) {
-        return "Stack a +2 card, or draw " + i + " cards from deck";
-    } // info_yourTurn_stackDraw2(int)
+    public String info_yourTurn_stackDraw2(int i1, int i2) {
+        return i2 == 1
+                ? "Stack a +2 card, or draw " + i1 + " cards"
+                : "Stack a +2/+4 card, or draw " + i1 + " cards";
+    } // info_yourTurn_stackDraw2(int, int)
 
     @Override
     public String label_7_0() {
@@ -322,7 +342,7 @@ class I18N_en_US implements I18N {
 
     @Override
     public String label_draw2Stack() {
-        return "+2 can be stacked:";
+        return "Stackable cards:";
     } // label_draw2Stack()
 
     @Override
@@ -456,6 +476,16 @@ class I18N_zh_CN implements I18N {
     } // btn_auto()
 
     @Override
+    public String btn_d2(boolean active) {
+        return active ? "[G]<+2>" : "<+2>";
+    } // btn_d2(boolean)
+
+    @Override
+    public String btn_d4(boolean active) {
+        return active ? "[Y]<+2 & +4>" : "<+2 & +4>";
+    } // btn_d4(boolean)
+
+    @Override
     public String btn_keep(boolean active) {
         return active ? "[R]<保留>" : "<保留>";
     } // btn_keep(boolean)
@@ -558,9 +588,11 @@ class I18N_zh_CN implements I18N {
     } // info_yourTurn()
 
     @Override
-    public String info_yourTurn_stackDraw2(int i) {
-        return "叠加一张 +2, 或从发牌堆摸 " + i + " 张牌";
-    } // info_yourTurn_stackDraw2(int)
+    public String info_yourTurn_stackDraw2(int i1, int i2) {
+        return i2 == 1
+                ? "叠加一张 +2, 或从发牌堆摸 " + i1 + " 张牌"
+                : "叠加一张 +2/+4, 或从发牌堆摸 " + i1 + " 张牌";
+    } // info_yourTurn_stackDraw2(int, int)
 
     @Override
     public String label_7_0() {
@@ -574,7 +606,7 @@ class I18N_zh_CN implements I18N {
 
     @Override
     public String label_draw2Stack() {
-        return "+2 牌可以被叠加:";
+        return "叠牌:";
     } // label_draw2Stack()
 
     @Override

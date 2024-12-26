@@ -135,9 +135,11 @@ private:
     bool sevenZeroRule;
 
     /**
-     * Can or cannot stack +2 cards.
+     * 0: No cards can be stacked.
+     * 1: Only +2 cards can be stacked.
+     * 2: +2 & +4 cards can be stacked.
      */
-    bool draw2StackRule;
+    int stackRule;
 
     /**
      * Only available in +2 stack rule. In this rule, when a +2 card is put
@@ -343,8 +345,8 @@ private:
         now = rand() % 4;
         forcePlay = true;
         difficulty = LV_EASY;
-        draw2StackCount = direction = 0;
-        _2vs2 = draw2StackRule = sevenZeroRule = false;
+        _2vs2 = sevenZeroRule = false;
+        stackRule = draw2StackCount = direction = 0;
     } // Uno(unsigned) (Class Constructor)
 
     /**
@@ -791,17 +793,46 @@ public:
      *         card, the next player may transfer the punishment to its next
      *         player by stacking another +2 card. Finally the first one who
      *         does not stack a +2 card must draw all of the required cards.
+     * @deprecated Use <code>getStackRule() == 1</code> instead.
      */
+    [[deprecated]]
     inline bool isDraw2StackRule() {
-        return draw2StackRule;
+        return stackRule == 1;
     } // isDraw2StackRule()
 
     /**
      * @param enabled Enable/Disable the +2 stacking rule.
+     * @deprecated Use <code>setStackRule(enabled ? 1 : 0)</code> instead.
      */
+    [[deprecated]]
     inline void setDraw2StackRule(bool enabled) {
-        draw2StackRule = enabled;
+        stackRule = enabled ? 1 : 0;
     } // setDraw2StackRule(bool)
+
+    /**
+     * Can or cannot stack +2/+4 cards. If can, when you put down a +2/+4
+     * card, the next player may transfer the punishment to its next player
+     * by stacking another +2/+4 card. Finally the first one who does not
+     * stack a +2/+4 card must draw all of the required cards.
+     *
+     * @return 0: No cards can be stacked.
+     *         1: Only +2 cards can be stacked.
+     *         2: +2 & +4 cards can be stacked.
+     */
+    inline int getStackRule() {
+        return stackRule;
+    } // getStackRule()
+
+    /**
+     * @param rule 0: No cards can be stacked.
+     *             1: Only +2 cards can be stacked.
+     *             2: +2 & +4 cards can be stacked.
+     */
+    inline void setStackRule(int rule) {
+        if (0 <= rule && rule <= 2) {
+            stackRule = rule;
+        } // if (0 <= rule && rule <= 2)
+    } // setStackRule(int)
 
     /**
      * Only available in +2 stack rule. In this rule, when a +2 card is put
@@ -1240,9 +1271,12 @@ public:
                     player[who].strongCount = size - 1;
                 } // else if (player[who].strongCount >= size)
 
-                if (card->content == DRAW2 && draw2StackRule) {
+                if (card->content == DRAW2 && stackRule != 0) {
                     draw2StackCount += 2;
-                } // if (card->content == DRAW2 && draw2StackRule)
+                } // if (card->content == DRAW2 && stackRule != 0)
+                else if (card->content == WILD_DRAW4 && stackRule == 2) {
+                    draw2StackCount += 4;
+                } // else if (card->content == WILD_DRAW4 && stackRule == 2)
 
                 player[who].open = who == Player::YOU
                     ? (player[who].open >> 1)
@@ -1270,14 +1304,24 @@ public:
                 replay += ",", replay += QString::number(color);
 
                 // Update the legality binary
-                legality = draw2StackCount > 0
-                    ? (0x8004002001LL << DRAW2)
-                    : card->isWild()
-                    ? 0x30000000000000LL
-                    | (0x1fffLL << 13 * (lastColor() - 1))
-                    : 0x30000000000000LL
-                    | (0x1fffLL << 13 * (lastColor() - 1))
-                    | (0x8004002001LL << card->content);
+                if (draw2StackCount < 1) {
+                    legality = card->isWild()
+                        ? 0x30000000000000LL
+                        | (0x1fffLL << 13 * (lastColor() - 1))
+                        : 0x30000000000000LL
+                        | (0x1fffLL << 13 * (lastColor() - 1))
+                        | (0x8004002001LL << card->content);
+                } // if (draw2StackCount < 1)
+                else if (stackRule == 1) {
+                    legality = 0x8004002001LL << DRAW2;
+                } // else if (stackRule == 1)
+                else {
+                    legality = 0x20000000000000LL
+                        | (!card->isWild()
+                        ? 0x8004002001LL << DRAW2
+                        : 0x1LL << DRAW2 << 13 * (lastColor() - 1));
+                } // else
+
                 if (size == 1) {
                     // Game over, change background & show everyone's hand cards
                     direction = 0;

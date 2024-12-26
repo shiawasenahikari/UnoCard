@@ -28,6 +28,8 @@ public:
     virtual QString ask_keep_play() = 0;
     virtual QString ask_target() = 0;
     virtual QString btn_auto() = 0;
+    virtual QString btn_d2(bool) = 0;
+    virtual QString btn_d4(bool) = 0;
     virtual QString btn_keep(bool) = 0;
     virtual QString btn_off(bool) = 0;
     virtual QString btn_on(bool) = 0;
@@ -48,7 +50,7 @@ public:
     virtual QString info_skipped(int) = 0;
     virtual QString info_welcome() = 0;
     virtual QString info_yourTurn() = 0;
-    virtual QString info_yourTurn_stackDraw2(int) = 0;
+    virtual QString info_yourTurn_stackDraw2(int, int = 1) = 0;
     virtual QString label_7_0() = 0;
     virtual QString label_bgm() = 0;
     virtual QString label_draw2Stack() = 0;
@@ -146,6 +148,14 @@ public:
         return "<AUTO>";
     } // btn_auto()
 
+    inline QString btn_d2(bool active) {
+        return active ? "[G]<+2>" : "<+2>";
+    } // btn_d2(bool)
+
+    inline QString btn_d4(bool active) {
+        return active ? "[Y]<+2 & +4>" : "<+2 & +4>";
+    } // btn_d4(bool)
+
     inline QString btn_keep(bool active) {
         return active ? "[R]<KEEP>" : "<KEEP>";
     } // btn_keep(bool)
@@ -237,10 +247,11 @@ public:
         return "Select a card to play, or draw a card from deck";
     } // info_yourTurn()
 
-    inline QString info_yourTurn_stackDraw2(int i) {
-        return "Stack a +2 card, or draw "
-            + QString::number(i) + " cards from deck";
-    } // info_yourTurn_stackDraw2(int)
+    inline QString info_yourTurn_stackDraw2(int i1, int i2) {
+        return i2 == 1
+            ? "Stack a +2 card, or draw " + QString::number(i1) + " cards"
+            : "Stack a +2/+4 card, or draw " + QString::number(i1) + " cards";
+    } // info_yourTurn_stackDraw2(int, int)
 
     inline QString label_7_0() {
         return "7 to swap, 0 to rotate:";
@@ -251,7 +262,7 @@ public:
     } // label_bgm()
 
     inline QString label_draw2Stack() {
-        return "+2 can be stacked:";
+        return "Stackable cards:";
     } // label_draw2Stack()
 
     inline QString label_forcePlay() {
@@ -370,6 +381,14 @@ public:
         return "<托管>";
     } // btn_auto()
 
+    inline QString btn_d2(bool active) {
+        return active ? "[G]<+2>" : "<+2>";
+    } // btn_d2(bool)
+
+    inline QString btn_d4(bool active) {
+        return active ? "[Y]<+2 & +4>" : "<+2 & +4>";
+    } // btn_d4(bool)
+
     inline QString btn_keep(bool active) {
         return active ? "[R]<保留>" : "<保留>";
     } // btn_keep(bool)
@@ -454,9 +473,11 @@ public:
         return "选择一张牌打出, 或从发牌堆摸一张牌";
     } // info_yourTurn()
 
-    inline QString info_yourTurn_stackDraw2(int i) {
-        return "叠加一张 +2, 或从发牌堆摸 " + QString::number(i) + " 张牌";
-    } // info_yourTurn_stackDraw2(int)
+    inline QString info_yourTurn_stackDraw2(int i1, int i2) {
+        return i2 == 1
+            ? "叠加一张 +2, 或从发牌堆摸 " + QString::number(i1) + " 张牌"
+            : "叠加一张 +2/+4, 或从发牌堆摸 " + QString::number(i1) + " 张牌";
+    } // info_yourTurn_stackDraw2(int, int)
 
     inline QString label_7_0() {
         return "7 换牌, 0 传给下家:";
@@ -467,7 +488,7 @@ public:
     } // label_bgm()
 
     inline QString label_draw2Stack() {
-        return "+2 牌可以被叠加:";
+        return "叠牌:";
     } // label_draw2Stack()
 
     inline QString label_forcePlay() {
