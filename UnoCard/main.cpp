@@ -304,7 +304,7 @@ void Main::setStatus(int status) {
 
             refreshScreen(c == 0
                 ? i18n->info_yourTurn()
-                : sUno->getStackRule() == 1
+                : sUno->getStackRule() != 2
                 ? i18n->info_yourTurn_stackDraw2(c)
                 : i18n->info_yourTurn_stackDraw2(c, 2));
         } // else if (sSelectedIdx < 0)
@@ -1529,11 +1529,15 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 auto hand = now->getHandCards();
                 Card* card = hand[sSelectedIdx];
 
-                if (card->isWild() && hand.size() > 1) {
-                    setStatus(STAT_WILD_COLOR);
-                } // if (card->isWild() && hand.size() > 1)
-                else {
+                if (!card->isWild() || hand.size() < 2) {
                     play(sSelectedIdx, card->color);
+                } // if (!card->isWild() || hand.size() < 2)
+                else if (sUno->getStackRule() != 2 ||
+                    card->content != WILD_DRAW4) {
+                    setStatus(STAT_WILD_COLOR);
+                } // else if (sUno->getStackRule() != 2 || ...)
+                else {
+                    play(sSelectedIdx, sUno->lastColor());
                 } // else
             } // else if (310 < x && x < 500 && 310 < y && y < 405)
             else if (700 <= y && y <= 880) {
@@ -1553,11 +1557,15 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     break; // case STAT_ASK_KEEP_PLAY
                 } // if (index != sSelectedIdx)
 
-                if (card->isWild() && hand.size() > 1) {
-                    setStatus(STAT_WILD_COLOR);
-                } // if (card->isWild() && hand.size() > 1)
-                else {
+                if (!card->isWild() || hand.size() < 2) {
                     play(sSelectedIdx, card->color);
+                } // if (!card->isWild() || hand.size() < 2)
+                else if (sUno->getStackRule() != 2 ||
+                    card->content != WILD_DRAW4) {
+                    setStatus(STAT_WILD_COLOR);
+                } // else if (sUno->getStackRule() != 2 || ...)
+                else {
+                    play(sSelectedIdx, sUno->lastColor());
                 } // else
             } // else if (700 <= y && y <= 880)
             break; // case STAT_ASK_KEEP_PLAY

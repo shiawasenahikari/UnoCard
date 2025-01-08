@@ -348,7 +348,7 @@ public class MainActivity extends AppCompatActivity
 
                     refreshScreen(c == 0
                             ? i18n.info_yourTurn()
-                            : mUno.getStackRule() == 1
+                            : mUno.getStackRule() != 2
                             ? i18n.info_yourTurn_stackDraw2(c)
                             : i18n.info_yourTurn_stackDraw2(c, 2));
                 } // else if (mSelectedIdx < 0)
@@ -1711,11 +1711,15 @@ public class MainActivity extends AppCompatActivity
                         List<Card> hand = now.getHandCards();
                         Card card = hand.get(mSelectedIdx);
 
-                        if (card.isWild() && hand.size() > 1) {
-                            setStatus(STAT_WILD_COLOR);
-                        } // if (card.isWild() && hand.size() > 1)
-                        else {
+                        if (!card.isWild() || hand.size() < 2) {
                             play(mSelectedIdx, card.color);
+                        } // if (!card.isWild() || hand.size() < 2)
+                        else if (mUno.getStackRule() != 2 ||
+                                card.content != Content.WILD_DRAW4) {
+                            setStatus(STAT_WILD_COLOR);
+                        } // else if (mUno.getStackRule() != 2 || ...)
+                        else {
+                            play(mSelectedIdx, mUno.lastColor());
                         } // else
                     } // else if (310 < x && x < 500 && 310 < y && y < 405)
                     else if (700 <= y && y <= 880) {
@@ -1735,11 +1739,15 @@ public class MainActivity extends AppCompatActivity
                             break; // case STAT_ASK_KEEP_PLAY
                         } // if (index != mSelectedIdx)
 
-                        if (card.isWild() && hand.size() > 1) {
-                            setStatus(STAT_WILD_COLOR);
-                        } // if (card.isWild() && hand.size() > 1)
-                        else {
+                        if (!card.isWild() || hand.size() < 2) {
                             play(mSelectedIdx, card.color);
+                        } // if (!card.isWild() || hand.size() < 2)
+                        else if (mUno.getStackRule() != 2 ||
+                                card.content != Content.WILD_DRAW4) {
+                            setStatus(STAT_WILD_COLOR);
+                        } // else if (mUno.getStackRule() != 2 || ...)
+                        else {
+                            play(mSelectedIdx, mUno.lastColor());
                         } // else
                     } // else if (700 <= y && y <= 880)
                     break; // case STAT_ASK_KEEP_PLAY
