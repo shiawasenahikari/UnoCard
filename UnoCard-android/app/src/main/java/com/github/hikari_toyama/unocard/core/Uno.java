@@ -870,6 +870,14 @@ public class Uno {
     } // getPrevPlayer()
 
     /**
+     * @param whom Get whose hand cards.
+     * @return Same as this.getPlayer(whom).getHandCards().
+     */
+    public List<Card> getHandCardsOf(int whom) {
+        return getPlayer(whom).getHandCards();
+    } // getHandCardsOf(int)
+
+    /**
      * @return How many players in game (3 or 4).
      */
     public int getPlayers() {

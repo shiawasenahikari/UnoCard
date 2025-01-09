@@ -340,9 +340,9 @@ public class MainActivity extends AppCompatActivity
                 else if (mUno.legalCardsCount4NowPlayer() == 0) {
                     draw(1, /* force */ false);
                 } // else if (mUno.legalCardsCount4NowPlayer() == 0)
-                else if (mUno.getPlayer(Player.YOU).getHandSize() == 1) {
+                else if (mUno.getHandCardsOf(Player.YOU).size() == 1) {
                     play(0, Color.NONE);
-                } // else if (mUno.getPlayer(Player.YOU).getHandSize() == 1)
+                } // else if (mUno.getHandCardsOf(Player.YOU).size() == 1)
                 else if (mSelectedIdx < 0) {
                     int c = mUno.getDraw2StackCount();
 
@@ -353,7 +353,7 @@ public class MainActivity extends AppCompatActivity
                             : i18n.info_yourTurn_stackDraw2(c, 2));
                 } // else if (mSelectedIdx < 0)
                 else {
-                    List<Card> hand = mUno.getPlayer(Player.YOU).getHandCards();
+                    List<Card> hand = mUno.getHandCardsOf(Player.YOU);
                     Card card = hand.get(mSelectedIdx);
 
                     refreshScreen(mUno.isLegalToPlay(card)
@@ -757,7 +757,7 @@ public class MainActivity extends AppCompatActivity
         } // if (status == STAT_GAME_OVER && mWinner == Player.YOU)
         else if ((mHideFlag & 0x01) == 0x00) {
             // Show your all hand cards
-            List<Card> hand = mUno.getPlayer(Player.YOU).getHandCards();
+            List<Card> hand = mUno.getHandCardsOf(Player.YOU);
 
             size = hand.size();
             width = 44 * size + 76;
@@ -1611,8 +1611,7 @@ public class MainActivity extends AppCompatActivity
                         break; // case Player.YOU
                     } // if (mAuto)
                     else if (700 <= y && y <= 880) {
-                        Player now = mUno.getPlayer(Player.YOU);
-                        List<Card> hand = now.getHandCards();
+                        List<Card> hand = mUno.getHandCardsOf(Player.YOU);
                         int size = hand.size();
                         int width = 44 * size + 76;
                         int startX = 800 - width / 2;
@@ -1707,8 +1706,7 @@ public class MainActivity extends AppCompatActivity
                     } // if (310 < x && x < 500 && 405 < y && y < 500)
                     else if (310 < x && x < 500 && 310 < y && y < 405) {
                         // YES button, play the drawn card
-                        Player now = mUno.getPlayer(Player.YOU);
-                        List<Card> hand = now.getHandCards();
+                        List<Card> hand = mUno.getHandCardsOf(Player.YOU);
                         Card card = hand.get(mSelectedIdx);
 
                         if (!card.isWild() || hand.size() < 2) {
@@ -1723,8 +1721,7 @@ public class MainActivity extends AppCompatActivity
                         } // else
                     } // else if (310 < x && x < 500 && 310 < y && y < 405)
                     else if (700 <= y && y <= 880) {
-                        Player now = mUno.getPlayer(Player.YOU);
-                        List<Card> hand = now.getHandCards();
+                        List<Card> hand = mUno.getHandCardsOf(Player.YOU);
                         int size = hand.size();
                         int width = 44 * size + 76;
                         int startX = 800 - width / 2;
@@ -1814,7 +1811,7 @@ public class MainActivity extends AppCompatActivity
                     threadWait(1000);
                 } // if ((cmd = mUno.forwardReplay(params)).equals("ST"))
                 else if (cmd.equals("DR")) {
-                    List<Card> h = mUno.getPlayer(a = params[0]).getHandCards();
+                    List<Card> h = mUno.getHandCardsOf(a = params[0]);
 
                     card = mUno.findCardById(params[1]);
                     i = Collections.binarySearch(h, card);
@@ -1850,7 +1847,7 @@ public class MainActivity extends AppCompatActivity
                     threadWait(300);
                 } // else if (cmd.equals("DR"))
                 else if (cmd.equals("PL")) {
-                    List<Card> h = mUno.getPlayer(a = params[0]).getHandCards();
+                    List<Card> h = mUno.getHandCardsOf(a = params[0]);
 
                     card = mUno.findCardById(params[1]);
                     i = Collections.binarySearch(h, card);
@@ -1977,9 +1974,8 @@ public class MainActivity extends AppCompatActivity
                 } // else
             } // while (true)
 
-            if ((mUno.is2vs2()
-                    && mUno.getPlayer(Player.COM2).getHandSize() == 0)
-                    || mUno.getPlayer(Player.YOU).getHandSize() == 0) {
+            if ((mUno.is2vs2() && mUno.getHandCardsOf(Player.COM2).isEmpty()) ||
+                    mUno.getHandCardsOf(Player.YOU).isEmpty()) {
                 mSoundPool.play(sndWin, mSndVol, mSndVol, 1, 0, 1.0f);
             } // if ((mUno.is2vs2() && ...)
             else {

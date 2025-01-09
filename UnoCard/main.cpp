@@ -296,9 +296,9 @@ void Main::setStatus(int status) {
         else if (sUno->legalCardsCount4NowPlayer() == 0) {
             draw();
         } // else if (sUno->legalCardsCount4NowPlayer() == 0)
-        else if (sUno->getPlayer(Player::YOU)->getHandSize() == 1) {
+        else if (sUno->getHandCardsOf(Player::YOU).size() == 1) {
             play(0);
-        } // else if (sUno->getPlayer(Player::YOU)->getHandSize() == 1)
+        } // else if (sUno->getHandCardsOf(Player::YOU).size() == 1)
         else if (sSelectedIdx < 0) {
             int c = sUno->getDraw2StackCount();
 
@@ -309,7 +309,7 @@ void Main::setStatus(int status) {
                 : i18n->info_yourTurn_stackDraw2(c, 2));
         } // else if (sSelectedIdx < 0)
         else {
-            auto hand = sUno->getPlayer(Player::YOU)->getHandCards();
+            auto hand = sUno->getHandCardsOf(Player::YOU);
             Card* card = hand[sSelectedIdx];
 
             refreshScreen(sUno->isLegalToPlay(card)
@@ -705,7 +705,7 @@ void Main::refreshScreen(const QString& message) {
         } // if (status == STAT_GAME_OVER && sWinner == Player::YOU)
         else if ((sHideFlag & 0x01) == 0x00) {
             // Show your all hand cards
-            auto hand = sUno->getPlayer(Player::YOU)->getHandCards();
+            auto hand = sUno->getHandCardsOf(Player::YOU);
 
             size = int(hand.size());
             width = 44 * size + 76;
@@ -1429,8 +1429,7 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 break; // case Player::YOU
             } // if (sAuto)
             else if (700 <= y && y <= 880) {
-                Player* now = sUno->getPlayer(Player::YOU);
-                auto hand = now->getHandCards();
+                auto hand = sUno->getHandCardsOf(Player::YOU);
                 int size = int(hand.size());
                 int width = 44 * size + 76;
                 int startX = 800 - width / 2;
@@ -1525,8 +1524,7 @@ void Main::mousePressEvent(QMouseEvent* event) {
             } // if (310 < x && x < 500 && 405 < y && y < 500)
             else if (310 < x && x < 500 && 310 < y && y < 405) {
                 // YES button, play the drawn card
-                Player* now = sUno->getPlayer(Player::YOU);
-                auto hand = now->getHandCards();
+                auto hand = sUno->getHandCardsOf(Player::YOU);
                 Card* card = hand[sSelectedIdx];
 
                 if (!card->isWild() || hand.size() < 2) {
@@ -1541,8 +1539,7 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 } // else
             } // else if (310 < x && x < 500 && 310 < y && y < 405)
             else if (700 <= y && y <= 880) {
-                Player* now = sUno->getPlayer(Player::YOU);
-                auto hand = now->getHandCards();
+                auto hand = sUno->getHandCardsOf(Player::YOU);
                 int size = int(hand.size());
                 int width = 44 * size + 76;
                 int startX = 800 - width / 2;
@@ -1629,7 +1626,7 @@ void Main::loadReplay(const QString& replayName) {
                 threadWait(1000);
             } // if ((cmd = sUno->forwardReplay(params)) == "ST")
             else if (cmd == "DR") {
-                auto h = sUno->getPlayer(a = params[0])->getHandCards();
+                auto h = sUno->getHandCardsOf(a = params[0]);
 
                 card = sUno->findCardById(params[1]);
                 i = std::lower_bound(h.begin(), h.end(), card) - h.begin();
@@ -1665,7 +1662,7 @@ void Main::loadReplay(const QString& replayName) {
                 threadWait(300);
             } // else if (cmd == "DR")
             else if (cmd == "PL") {
-                auto h = sUno->getPlayer(a = params[0])->getHandCards();
+                auto h = sUno->getHandCardsOf(a = params[0]);
 
                 card = sUno->findCardById(params[1]);
                 i = std::lower_bound(h.begin(), h.end(), card) - h.begin();
@@ -1791,9 +1788,8 @@ void Main::loadReplay(const QString& replayName) {
             } // else
         } // while (true)
 
-        if ((sUno->is2vs2()
-            && sUno->getPlayer(Player::COM2)->getHandSize() == 0)
-            || sUno->getPlayer(Player::YOU)->getHandSize() == 0) {
+        if ((sUno->is2vs2() && sUno->getHandCardsOf(Player::COM2).empty()) ||
+            sUno->getHandCardsOf(Player::YOU).empty()) {
             sSoundPool->play(SoundPool::SND_WIN);
         } // if ((sUno->is2vs2() && ...)
         else {
