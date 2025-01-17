@@ -508,7 +508,7 @@ class I18N_zh_CN implements I18N {
     @Override
     public String btn_settings(boolean active) {
         return active ? "[Y]<设置>" : "<设置>";
-    } // btn_options(boolean)
+    } // btn_settings(boolean)
 
     @Override
     public String info_0_rotate() {
@@ -548,7 +548,7 @@ class I18N_zh_CN implements I18N {
     @Override
     public String info_clickAgainToPlay(String s) {
         return "再次点击以打出 " + s;
-    } // info_clickAgainToPlay()
+    } // info_clickAgainToPlay(String)
 
     @Override
     public String info_dirChanged() {

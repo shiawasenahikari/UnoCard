@@ -34,6 +34,8 @@
 #define BROKEN_IMAGE_RESOURCES_EXCEPTION \
 "One or more image resources are broken. Re-install this app."
 
+typedef const char* String;
+
 /**
  * RecentInfo Class.
  */
@@ -322,12 +324,12 @@ private:
         pt.end();
         for (i = 0x20; i <= 0x7f; ++i) {
             int r = (i >> 4) - 2, c = i & 0x0f;
-            charMap.insert({QChar(i), (r << 4) | c});
+            charMap.insert({ QChar(i), (r << 4) | c });
         } // for (i = 0x20; i <= 0x7f; ++i)
 
         for (i = 0; i < hanZi.length(); ++i) {
             int r = (i >> 3) + 6, c = i & 0x07;
-            charMap.insert({hanZi[i], (r << 4) | c});
+            charMap.insert({ hanZi[i], (r << 4) | c });
         } // for (i = 0; i < hanZi.length(); ++i)
 
         // Generate a random seed based on the current time stamp
@@ -405,7 +407,7 @@ private:
      * @return Instance of the loaded image.
      */
     inline static QImage load(const QString& fileName,
-                              int width = 0, int height = 0) {
+        int width = 0, int height = 0) {
         QImage img;
 
         if (!img.load(fileName)) {
@@ -1083,7 +1085,7 @@ public:
         } while (recent[3].card == nullptr);
 
         // Write log
-        qDebug("Game starts with %s", qPrintable(card->name));
+        qDebug("Game starts with %s", card->name);
         replay.clear();
         replay += "ST,", replay += QString::number(_2vs2 ? 1 : 0);
         replay += ",", replay += QString::number(players);
@@ -1247,12 +1249,12 @@ public:
             size = int(hand.size());
             if (index < size) {
                 if ((card = hand[index])->isWild()) {
-                    const char* name = qPrintable(Card::A(color) + card->name);
-                    qDebug("Player %d played %s", who, name);
+                    static String p[] = { "", "[R]", "[B]", "[G]", "[Y]" };
+                    qDebug("Player %d played %s%s", who, p[color], card->name);
                 } // if ((card = hand[index])->isWild())
                 else {
                     color = card->color;
-                    qDebug("Player %d played %s", who, qPrintable(card->name));
+                    qDebug("Player %d played %s", who, card->name);
                 } // else
 
                 hand.erase(hand.begin() + index);
@@ -1324,10 +1326,10 @@ public:
                     legality = 0x8004002001LL << DRAW2;
                 } // else if (stackRule == 1)
                 else {
-                    legality = 0x20000000000000LL
-                        | (!card->isWild()
-                        ? 0x8004002001LL << DRAW2
-                        : 0x1LL << DRAW2 << 13 * (lastColor() - 1));
+                    legality = (card->isWild()
+                        ? 0x1LL << DRAW2 << 13 * (lastColor() - 1)
+                        : 0x8004002001LL << DRAW2)
+                        | 0x20000000000000LL;
                 } // else
 
                 if (size == 1) {

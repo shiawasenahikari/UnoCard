@@ -1431,8 +1431,8 @@ public class Uno {
             size = hand.size();
             if (index < size) {
                 if ((card = hand.get(index)).isWild()) {
-                    String name = Card.A[color.ordinal()] + card.name;
-                    Log.i(TAG, "Player " + who + " played " + name);
+                    String p = "[" + color.name().charAt(0) + "]";
+                    Log.i(TAG, "Player " + who + " played " + p + card.name);
                 } // if ((card = hand.get(index)).isWild())
                 else {
                     color = card.color;
@@ -1509,11 +1509,11 @@ public class Uno {
                     legality = 0x8004002001L << DRAW2.ordinal();
                 } // else if (stackRule == 1)
                 else {
-                    legality = 0x20000000000000L
-                            | (!card.isWild()
+                    legality = (!card.isWild()
                             ? 0x8004002001L << DRAW2.ordinal()
                             : 0x1L << DRAW2.ordinal() << 13
-                            * (lastColor().ordinal() - 1));
+                            * (lastColor().ordinal() - 1))
+                            | 0x20000000000000L;
                 } // else
                 if (size == 1) {
                     // Game over, change background & show everyone's hand cards

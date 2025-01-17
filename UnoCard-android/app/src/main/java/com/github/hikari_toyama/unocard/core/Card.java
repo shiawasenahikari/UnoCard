@@ -16,17 +16,19 @@ import org.opencv.core.Mat;
  */
 public class Card implements Comparable<Card> {
     /**
-     * Color part of name string.
+     * Card name list.
      */
-    static final String[] A = {"", "[R]", "[B]", "[G]", "[Y]"};
-
-    /**
-     * Content part of name string.
-     */
-    static final String[] B = {
-            "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-            "+2", "Reverse", "Skip", "Wild", "Wild +4"
-    }; // B[]
+    static final String[] NAME = {
+            "[R]0", "[R]1", "[R]2", "[R]3", "[R]4", "[R]5", "[R]6",
+            "[R]7", "[R]8", "[R]9", "[R]+2", "[R]Reverse", "[R]Skip",
+            "[B]0", "[B]1", "[B]2", "[B]3", "[B]4", "[B]5", "[B]6",
+            "[B]7", "[B]8", "[B]9", "[B]+2", "[B]Reverse", "[B]Skip",
+            "[G]0", "[G]1", "[G]2", "[G]3", "[G]4", "[G]5", "[G]6",
+            "[G]7", "[G]8", "[G]9", "[G]+2", "[G]Reverse", "[G]Skip",
+            "[Y]0", "[Y]1", "[Y]2", "[Y]3", "[Y]4", "[Y]5", "[Y]6",
+            "[Y]7", "[Y]8", "[Y]9", "[Y]+2", "[Y]Reverse", "[Y]Skip",
+            "Wild", "Wild +4"
+    }; // NAME[]
 
     /**
      * Card's color, e.g. Color.BLUE
@@ -85,10 +87,10 @@ public class Card implements Comparable<Card> {
         this.image = image;
         this.darkImg = darkImg;
         this.content = content;
-        this.name = A[color.ordinal()] + B[content.ordinal()];
         this.id = isWild()
                 ? 39 + content.ordinal()
                 : 13 * (color.ordinal() - 1) + content.ordinal();
+        this.name = NAME[id];
     } // Card(Mat, Mat, Color, Content) (Class Constructor)
 
     /**
