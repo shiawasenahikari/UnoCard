@@ -1261,12 +1261,18 @@ public:
                 if (card->isWild()) {
                     // When a wild card is played, register the specified
                     // following legal color as the player's strong color
-                    player[who].strongColor = color;
-                    player[who].strongCount = 1 + size / 3;
-                    if (color == player[who].weakColor) {
-                        // Strong color cannot also be weak color
-                        player[who].weakColor = NONE;
-                    } // if (color == player[who].weakColor)
+                    if (stackRule != 2 || card->content != WILD_DRAW4) {
+                        // In +2/+4 stack rule, Wild +4 cards will lose their
+                        // "change color" ability, and cannot be challenged.
+                        // So when someone played a Wild +4 card in this rule,
+                        // strong color will not be registered.
+                        player[who].strongColor = color;
+                        player[who].strongCount = 1 + size / 3;
+                        if (color == player[who].weakColor) {
+                            // Strong color cannot also be weak color
+                            player[who].weakColor = NONE;
+                        } // if (color == player[who].weakColor)
+                    } // if (stackRule != 2 || card->content != WILD_DRAW4)
                 } // if (card->isWild())
                 else if (card->color == player[who].strongColor) {
                     // Played a card that matches the registered

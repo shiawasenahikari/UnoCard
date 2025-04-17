@@ -1262,6 +1262,7 @@ void Main::onChallenge() {
  * Triggered when a mouse press event occurred. Called by system.
  */
 void Main::mousePressEvent(QMouseEvent* event) {
+    static bool gameSaved = false;
     if (event->button() == Qt::LeftButton) {
         // Only response to left-click events, and ignore the others
         int x = 1600 * event->x() / this->width();
@@ -1398,22 +1399,24 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     loadReplay(replayName);
                 } // if (!replayName.isNull())
             } // else if (sStatus == STAT_WELCOME)
-            else if (sStatus == STAT_GAME_OVER) {
+            else if (sStatus == STAT_GAME_OVER && !gameSaved) {
                 // [UPDATE] When game over, change to <SAVE> button
                 QString replayName = sUno->save();
 
                 if (!replayName.isEmpty()) {
+                    gameSaved = true;
                     refreshScreen("Replay file saved as " + replayName);
                 } // if (!replayName.isEmpty())
                 else {
                     refreshScreen("Failed to save replay file");
                 } // else
-            } // else if (sStatus == STAT_GAME_OVER)
+            } // else if (sStatus == STAT_GAME_OVER && !gameSaved)
         } // else if (859 <= y && y <= 880 && 1450 <= x && x <= 1580)
         else switch (sStatus) {
         case STAT_WELCOME:
             if (360 <= y && y <= 540 && 740 <= x && x <= 860) {
                 // UNO button, start a new game
+                gameSaved = false;
                 setStatus(STAT_NEW_GAME);
             } // if (360 <= y && y <= 540 && 740 <= x && x <= 860)
             else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
@@ -1589,6 +1592,7 @@ void Main::mousePressEvent(QMouseEvent* event) {
         case STAT_GAME_OVER:
             if (360 <= y && y <= 540 && 338 <= x && x <= 458) {
                 // Card deck area, start a new game
+                gameSaved = false;
                 setStatus(STAT_NEW_GAME);
             } // if (360 <= y && y <= 540 && 338 <= x && x <= 458)
             else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {

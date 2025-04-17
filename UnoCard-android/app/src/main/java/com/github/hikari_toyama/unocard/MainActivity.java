@@ -92,6 +92,7 @@ public class MainActivity extends AppCompatActivity
     private Handler mSubHandler;
     private Handler mUIHandler;
     private Color[] mBestColor;
+    private boolean mGameSaved;
     private boolean mAIRunning;
     private int mScore, mDiff;
     private int mSelectedIdx;
@@ -1579,23 +1580,25 @@ public class MainActivity extends AppCompatActivity
                 // [UPDATE] When in welcome screen, change to <LOAD> button
                 new OpenDialog().show(getSupportFragmentManager(), "OpenDialog");
             } // else if (mStatus == STAT_WELCOME)
-            else if (mStatus == STAT_GAME_OVER) {
+            else if (mStatus == STAT_GAME_OVER && !mGameSaved) {
                 // [UPDATE] When game over, change to <SAVE> button
                 String replayName = mUno.save();
 
                 if (!replayName.isEmpty()) {
+                    mGameSaved = true;
                     refreshScreen("Replay file saved as " + replayName);
                 } // if (!replayName.isEmpty())
                 else {
                     refreshScreen("Failed to save replay file");
                 } // else
-            } // else if (mStatus == STAT_GAME_OVER)
+            } // else if (mStatus == STAT_GAME_OVER && !mGameSaved)
         } // else if (859 <= y && y <= 880 && 1450 <= x && x <= 1580)
         else {
             switch (mStatus) {
                 case STAT_WELCOME:
                     if (360 <= y && y <= 540 && 740 <= x && x <= 860) {
                         // UNO button, start a new game
+                        mGameSaved = false;
                         setStatus(STAT_NEW_GAME);
                     } // if (360 <= y && y <= 540 && 740 <= x && x <= 860)
                     else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
@@ -1771,6 +1774,7 @@ public class MainActivity extends AppCompatActivity
                 case STAT_GAME_OVER:
                     if (360 <= y && y <= 540 && 338 <= x && x <= 458) {
                         // Card deck area, start a new game
+                        mGameSaved = false;
                         setStatus(STAT_NEW_GAME);
                     } // if (360 <= y && y <= 540 && 338 <= x && x <= 458)
                     else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
