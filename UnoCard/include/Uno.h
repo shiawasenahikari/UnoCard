@@ -127,9 +127,11 @@ private:
     bool _2vs2;
 
     /**
-     * Whether the force play rule is enabled.
+     * 0: When you draw a playable card, you must keep it in hand.
+     * 1: When you draw a playable card, choose to play it or not.
+     * 2: When you draw a playable card, you must play it.
      */
-    bool forcePlay;
+    int forcePlayRule;
 
     /**
      * Whether the 7-0 rule is enabled.
@@ -345,7 +347,7 @@ private:
         legality = 0;
         initialCards = 7;
         now = rand() % 4;
-        forcePlay = true;
+        forcePlayRule = 1;
         difficulty = LV_EASY;
         _2vs2 = sevenZeroRule = false;
         stackRule = draw2StackCount = direction = 0;
@@ -769,17 +771,43 @@ public:
      *         after you drew a playable card in your action.
      *         When force play is enabled, play the card immediately.
      *         When force play is disabled, keep the card in your hand.
+     * @deprecated Use <code>getForcePlayRule() != 0</code> instead.
      */
+    [[deprecated]]
     inline bool isForcePlay() {
-        return forcePlay;
+        return forcePlayRule != 0;
     } // isForcePlay()
 
     /**
      * @param enabled Enable/Disable the force play rule.
+     * @deprecated Use <code>setForcePlayRule(enabled ? 1 : 0)</code> instead.
      */
+    [[deprecated]]
     inline void setForcePlay(bool enabled) {
-        forcePlay = enabled;
+        forcePlayRule = enabled ? 1 : 0;
     } // setForcePlay(bool)
+
+    /**
+     * @return This value tells that what's the next step
+     *         after you drew a playable card in your action.
+     *         0: When you draw a playable card, you must keep it in hand.
+     *         1: When you draw a playable card, choose to play it or not.
+     *         2: When you draw a playable card, you must play it.
+     */
+    inline int getForcePlayRule() {
+        return forcePlayRule;
+    } // getForcePlayRule()
+
+    /**
+     * @param rule 0: When you draw a playable card, you must keep it in hand.
+     *             1: When you draw a playable card, choose to play it or not.
+     *             2: When you draw a playable card, you must play it.
+     */
+    inline void setForcePlayRule(int rule) {
+        if (0 <= rule && rule <= 2) {
+            forcePlayRule = rule;
+        } // if (0 <= rule && rule <= 2)
+    } // setForcePlayRule(int)
 
     /**
      * @return Whether the 7-0 rule is enabled. In 7-0 rule, when a seven card
@@ -1261,12 +1289,18 @@ public:
                 if (card->isWild()) {
                     // When a wild card is played, register the specified
                     // following legal color as the player's strong color
-                    player[who].strongColor = color;
-                    player[who].strongCount = 1 + size / 3;
-                    if (color == player[who].weakColor) {
-                        // Strong color cannot also be weak color
-                        player[who].weakColor = NONE;
-                    } // if (color == player[who].weakColor)
+                    if (stackRule != 2 || card->content != WILD_DRAW4) {
+                        // In +2/+4 stack rule, Wild +4 cards will lose their
+                        // "change color" ability, and cannot be challenged.
+                        // So when someone played a Wild +4 card in this rule,
+                        // strong color will not be registered.
+                        player[who].strongColor = color;
+                        player[who].strongCount = 1 + size / 3;
+                        if (color == player[who].weakColor) {
+                            // Strong color cannot also be weak color
+                            player[who].weakColor = NONE;
+                        } // if (color == player[who].weakColor)
+                    } // if (stackRule != 2 || card->content != WILD_DRAW4)
                 } // if (card->isWild())
                 else if (card->color == player[who].strongColor) {
                     // Played a card that matches the registered

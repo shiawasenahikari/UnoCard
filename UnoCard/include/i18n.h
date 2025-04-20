@@ -29,6 +29,7 @@ public:
     virtual String ask_color() = 0;
     virtual String ask_keep_play() = 0;
     virtual String ask_target() = 0;
+    virtual String btn_ask(bool) = 0;
     virtual String btn_auto() = 0;
     virtual String btn_d2(bool) = 0;
     virtual String btn_d4(bool) = 0;
@@ -157,16 +158,20 @@ public:
         return "^ Specify the target to swap hand cards with";
     } // ask_target()
 
+    inline String btn_ask(bool active) {
+        return active ? "[Y]<ASK>" : "<ASK>";
+    } // btn_ask(bool)
+
     inline String btn_auto() {
         return "<AUTO>";
     } // btn_auto()
 
     inline String btn_d2(bool active) {
-        return active ? "[G]<+2>" : "<+2>";
+        return active ? "[Y]<+2>" : "<+2>";
     } // btn_d2(bool)
 
     inline String btn_d4(bool active) {
-        return active ? "[Y]<+2 & +4>" : "<+2 & +4>";
+        return active ? "[G]<+2+4>" : "<+2+4>";
     } // btn_d4(bool)
 
     inline String btn_keep(bool active) {
@@ -178,7 +183,7 @@ public:
     } // btn_off(bool)
 
     inline String btn_on(bool active) {
-        return active ? "[G]<ON>" : "<ON>";
+        return active ? "[G]< ON >" : "< ON >";
     } // btn_on(bool)
 
     inline String btn_play(bool active) {
@@ -407,16 +412,20 @@ public:
         return "^ 指定换牌目标";
     } // ask_target()
 
+    inline String btn_ask(bool active) {
+        return active ? "[Y]<可选>" : "<可选>";
+    } // btn_ask(bool)
+
     inline String btn_auto() {
         return "<托管>";
     } // btn_auto()
 
     inline String btn_d2(bool active) {
-        return active ? "[G]<+2>" : "<+2>";
+        return active ? "[Y]<+2>" : "<+2>";
     } // btn_d2(bool)
 
     inline String btn_d4(bool active) {
-        return active ? "[Y]<+2 & +4>" : "<+2 & +4>";
+        return active ? "[G]<+2+4>" : "<+2+4>";
     } // btn_d4(bool)
 
     inline String btn_keep(bool active) {

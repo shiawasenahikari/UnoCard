@@ -42,6 +42,8 @@ public interface I18N {
 
     String btn_auto();
 
+    String btn_ask(boolean active);
+
     String btn_keep(boolean active);
 
     String btn_d2(boolean active);
@@ -201,18 +203,23 @@ class I18N_en_US implements I18N {
     } // ask_target()
 
     @Override
+    public String btn_ask(boolean active) {
+        return active ? "[Y]<ASK>" : "<ASK>";
+    } // btn_ask(boolean)
+
+    @Override
     public String btn_auto() {
         return "<AUTO>";
     } // btn_auto()
 
     @Override
     public String btn_d2(boolean active) {
-        return active ? "[G]<+2>" : "<+2>";
+        return active ? "[Y]<+2>" : "<+2>";
     } // btn_d2(boolean)
 
     @Override
     public String btn_d4(boolean active) {
-        return active ? "[Y]<+2 & +4>" : "<+2 & +4>";
+        return active ? "[G]<+2+4>" : "<+2+4>";
     } // btn_d4(boolean)
 
     @Override
@@ -227,7 +234,7 @@ class I18N_en_US implements I18N {
 
     @Override
     public String btn_on(boolean active) {
-        return active ? "[G]<ON>" : "<ON>";
+        return active ? "[G]< ON >" : "< ON >";
     } // btn_on(boolean)
 
     @Override
@@ -471,18 +478,23 @@ class I18N_zh_CN implements I18N {
     } // ask_target()
 
     @Override
+    public String btn_ask(boolean active) {
+        return active ? "[Y]<可选>" : "<可选>";
+    } // btn_ask(boolean)
+
+    @Override
     public String btn_auto() {
         return "<托管>";
     } // btn_auto()
 
     @Override
     public String btn_d2(boolean active) {
-        return active ? "[G]<+2>" : "<+2>";
+        return active ? "[Y]<+2>" : "<+2>";
     } // btn_d2(boolean)
 
     @Override
     public String btn_d4(boolean active) {
-        return active ? "[Y]<+2 & +4>" : "<+2 & +4>";
+        return active ? "[G]<+2+4>" : "<+2+4>";
     } // btn_d4(boolean)
 
     @Override

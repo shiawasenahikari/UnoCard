@@ -92,6 +92,7 @@ public class MainActivity extends AppCompatActivity
     private Handler mSubHandler;
     private Handler mUIHandler;
     private Color[] mBestColor;
+    private boolean mGameSaved;
     private boolean mAIRunning;
     private int mScore, mDiff;
     private int mSelectedIdx;
@@ -141,7 +142,7 @@ public class MainActivity extends AppCompatActivity
             mUno = Uno.getInstance(this);
             mUno.setPlayers(sp.getInt("players", 3));
             mUno.setDifficulty(sp.getInt("difficulty", Uno.LV_EASY));
-            mUno.setForcePlay(sp.getBoolean("forcePlay", true));
+            mUno.setForcePlayRule(sp.getInt("forcePlayRule", 1));
             mUno.setSevenZeroRule(sp.getBoolean("sevenZero", false));
             mUno.setStackRule(sp.getInt("stackRule", 0));
             mUno.set2vs2(sp.getBoolean("2vs2", false));
@@ -534,28 +535,29 @@ public class MainActivity extends AppCompatActivity
                 mUno.putText(mScr, i18n.label_initialCards(), 60, 670);
                 width = mUno.getInitialCards();
                 info = "" + width / 10 + width % 10;
-                mUno.putText(mScr, "<-", 1110, 670);
-                mUno.putText(mScr, info, 1234, 670);
+                mUno.putText(mScr, "<-", 896, 670);
+                mUno.putText(mScr, info, 1127, 670);
                 mUno.putText(mScr, "+>", 1358, 670);
 
                 // Force play switch
-                active = mUno.isForcePlay();
+                i = mUno.getForcePlayRule();
                 mUno.putText(mScr, i18n.label_forcePlay(), 60, 720);
-                mUno.putText(mScr, i18n.btn_keep(!active), 1110, 720);
-                mUno.putText(mScr, i18n.btn_play(active), 1290, 720);
+                mUno.putText(mScr, i18n.btn_keep(i == 0), 896, 720);
+                mUno.putText(mScr, i18n.btn_ask(i == 1), 1110, 720);
+                mUno.putText(mScr, i18n.btn_play(i == 2), 1290, 720);
 
                 // 7-0
                 active = mUno.isSevenZeroRule();
                 mUno.putText(mScr, i18n.label_7_0(), 60, 770);
-                mUno.putText(mScr, i18n.btn_off(!active), 1110, 770);
+                mUno.putText(mScr, i18n.btn_off(!active), 896, 770);
                 mUno.putText(mScr, i18n.btn_on(active), 1290, 770);
 
                 // +2 stack
                 i = mUno.getStackRule();
                 mUno.putText(mScr, i18n.label_draw2Stack(), 60, 820);
-                mUno.putText(mScr, i18n.btn_off(i == 0), 1110, 820);
-                mUno.putText(mScr, i18n.btn_d2(i == 1), 1290, 820);
-                mUno.putText(mScr, i18n.btn_d4(i == 2), 860, 820);
+                mUno.putText(mScr, i18n.btn_off(i == 0), 896, 820);
+                mUno.putText(mScr, i18n.btn_d2(i == 1), 1110, 820);
+                mUno.putText(mScr, i18n.btn_d4(i == 2), 1290, 820);
             } // if (status != Player.YOU)
 
             // Show image
@@ -1302,18 +1304,32 @@ public class MainActivity extends AppCompatActivity
         threadWait(750);
         if (count == 1 &&
                 drawn != null &&
-                mUno.isForcePlay() &&
+                mUno.getForcePlayRule() != 0 &&
                 mUno.isLegalToPlay(drawn)) {
             // Player drew one card by itself, the drawn card
             // can be played immediately if it's legal to play
             if (mAuto || now != Player.YOU) {
                 play(index, mAI.calcBestColor4NowPlayer());
             } // if (mAuto || now != Player.YOU)
-            else {
+            else if (mUno.getForcePlayRule() == 1) {
                 // Store index value as global value. This value
                 // will be used after the wild color determined.
                 mSelectedIdx = index;
                 setStatus(STAT_ASK_KEEP_PLAY);
+            } // else if (mUno.getForcePlayRule() == 1)
+            else if (!drawn.isWild()) {
+                // Force play a non-wild card
+                play(index, drawn.color);
+            } // else if (!drawn.isWild())
+            else if (mUno.getStackRule() == 2 &&
+                    drawn.content == Content.WILD_DRAW4) {
+                // Force play a Wild +4 card, but do not change the next color
+                play(index, mUno.lastColor());
+            } // else if (mUno.getStackRule() == 2 && ...)
+            else {
+                // Force play a Wild / Wild +4 card, and change the next color
+                mSelectedIdx = index;
+                setStatus(STAT_WILD_COLOR);
             } // else
         } // if (count == 1 && ...)
         else {
@@ -1509,11 +1525,11 @@ public class MainActivity extends AppCompatActivity
                 } // else if (1290 <= x && x <= 1410 && mStatus != Player.YOU)
             } // else if (270 <= y && y <= 450)
             else if (649 <= y && y <= 670 && mStatus != Player.YOU) {
-                if (1110 <= x && x <= 1143) {
+                if (896 <= x && x <= 929) {
                     // Decrease initial cards
                     mUno.decreaseInitialCards();
                     setStatus(mStatus);
-                } // if (1110 <= x && x <= 1143)
+                } // if (896 <= x && x <= 929)
                 else if (1358 <= x && x <= 1391) {
                     // Increase initial cards
                     mUno.increaseInitialCards();
@@ -1521,45 +1537,50 @@ public class MainActivity extends AppCompatActivity
                 } // else if (1358 <= x && x <= 1391)
             } // else if (649 <= y && y <= 670 && mStatus != Player.YOU)
             else if (699 <= y && y <= 720 && mStatus != Player.YOU) {
-                if (1110 <= x && x <= 1211) {
+                if (896 <= x && x <= 997) {
                     // Force play, <KEEP> button
-                    mUno.setForcePlay(false);
+                    mUno.setForcePlayRule(0);
                     setStatus(mStatus);
-                } // if (1110 <= x && x <= 1211)
+                } // if (896 <= x && x <= 997)
+                else if (1110 <= x && x <= 1194) {
+                    // Force play, <ASK> button
+                    mUno.setForcePlayRule(1);
+                    setStatus(mStatus);
+                } // else if (1110 <= x && x <= 1194)
                 else if (1290 <= x && x <= 1391) {
                     // Force play, <PLAY> button
-                    mUno.setForcePlay(true);
+                    mUno.setForcePlayRule(2);
                     setStatus(mStatus);
                 } // else if (1290 <= x && x <= 1391)
             } // else if (699 <= y && y <= 720 && mStatus != Player.YOU)
             else if (749 <= y && y <= 770 && mStatus != Player.YOU) {
-                if (1110 <= x && x <= 1194) {
+                if (896 <= x && x <= 980) {
                     // 7-0, <OFF> button
                     mUno.setSevenZeroRule(false);
                     setStatus(mStatus);
-                } // if (1110 <= x && x <= 1194)
-                else if (1290 <= x && x <= 1357) {
+                } // if (896 <= x && x <= 980)
+                else if (1290 <= x && x <= 1391) {
                     // 7-0, <ON> button
                     mUno.setSevenZeroRule(true);
                     setStatus(mStatus);
-                } // else if (1290 <= x && x <= 1357)
+                } // else if (1290 <= x && x <= 1391)
             } // else if (749 <= y && y <= 770 && mStatus != Player.YOU)
             else if (799 <= y && y <= 820 && mStatus != Player.YOU) {
-                if (1110 <= x && x <= 1194) {
+                if (896 <= x && x <= 980) {
                     // stacking, <OFF> button
                     mUno.setStackRule(0);
                     setStatus(mStatus);
-                } // if (1110 <= x && x <= 1194)
-                else if (1290 <= x && x <= 1357) {
+                } // if (896 <= x && x <= 980)
+                else if (1110 <= x && x <= 1177) {
                     // stacking, <+2> button
                     mUno.setStackRule(1);
                     setStatus(mStatus);
-                } // else if (1290 <= x && x <= 1357)
-                else if (860 <= x && x <= 982) {
-                    // stacking, <+2 & +4> button
+                } // else if (1110 <= x && x <= 1177)
+                else if (1290 <= x && x <= 1391) {
+                    // stacking, <+2+4> button
                     mUno.setStackRule(2);
                     setStatus(mStatus);
-                } // else if (860 <= x && x <= 982)
+                } // else if (1290 <= x && x <= 1391)
             } // else if (799 <= y && y <= 820 && mStatus != Player.YOU)
             else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
                 // <OPTIONS> button
@@ -1579,23 +1600,25 @@ public class MainActivity extends AppCompatActivity
                 // [UPDATE] When in welcome screen, change to <LOAD> button
                 new OpenDialog().show(getSupportFragmentManager(), "OpenDialog");
             } // else if (mStatus == STAT_WELCOME)
-            else if (mStatus == STAT_GAME_OVER) {
+            else if (mStatus == STAT_GAME_OVER && !mGameSaved) {
                 // [UPDATE] When game over, change to <SAVE> button
                 String replayName = mUno.save();
 
                 if (!replayName.isEmpty()) {
+                    mGameSaved = true;
                     refreshScreen("Replay file saved as " + replayName);
                 } // if (!replayName.isEmpty())
                 else {
                     refreshScreen("Failed to save replay file");
                 } // else
-            } // else if (mStatus == STAT_GAME_OVER)
+            } // else if (mStatus == STAT_GAME_OVER && !mGameSaved)
         } // else if (859 <= y && y <= 880 && 1450 <= x && x <= 1580)
         else {
             switch (mStatus) {
                 case STAT_WELCOME:
                     if (360 <= y && y <= 540 && 740 <= x && x <= 860) {
                         // UNO button, start a new game
+                        mGameSaved = false;
                         setStatus(STAT_NEW_GAME);
                     } // if (360 <= y && y <= 540 && 740 <= x && x <= 860)
                     else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
@@ -1771,6 +1794,7 @@ public class MainActivity extends AppCompatActivity
                 case STAT_GAME_OVER:
                     if (360 <= y && y <= 540 && 338 <= x && x <= 458) {
                         // Card deck area, start a new game
+                        mGameSaved = false;
                         setStatus(STAT_NEW_GAME);
                     } // if (360 <= y && y <= 540 && 338 <= x && x <= 458)
                     else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
@@ -2026,7 +2050,7 @@ public class MainActivity extends AppCompatActivity
                     .putInt("players", mUno.getPlayers())
                     .putInt("score", Math.max(-999, mScore))
                     .putInt("difficulty", mUno.getDifficulty())
-                    .putBoolean("forcePlay", mUno.isForcePlay())
+                    .putInt("forcePlayRule", mUno.getForcePlayRule())
                     .putBoolean("sevenZero", mUno.isSevenZeroRule())
                     .putInt("stackRule", mUno.getStackRule())
                     .putInt("initialCards", mUno.getInitialCards())
