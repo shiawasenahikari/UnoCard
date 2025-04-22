@@ -16,7 +16,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/releases) page and download the
-   latest version in zip file `(UnoCard-v3.6.zip)`.
+   latest version in zip file `(UnoCard-v3.7.zip)`.
 2. Unzip the downloaded zip file, then execute `UnoCard.exe` and have fun!
 
 Download the source code and compile manually
@@ -100,7 +100,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/releases) page and download the
-   latest version in apk file `(UnoCard-v3.6.apk)`.
+   latest version in apk file `(UnoCard-v3.7.apk)`.
 2. On your Android phone, open [Settings] app, go to [Security] page, then check the [Unknown
    sources] toggle.
 3. Push the downloaded file to your Android phone, then install and launch it to have fun!
@@ -201,8 +201,11 @@ When anyone plays a 0, everyone rotates hands in the direction of play.
 
 Stack
 -----
-+2 cards can be stacked. A player that can't add to the stack must draw the total.
-
++2 and Wild +4 cards can be stacked. A player that can't add to the stack must draw the total.
+If you make Wild +4 cards stackable, Wild +4 cards will become playable at any time, not just
+`when you don't have a card in your hand that matches the color of the previously played card`.
+For balance, Wild +4 cards will lose the `call the next color played` ability under this rule.
+ 
 <a name="chs" />
 
 🔍简介
@@ -217,7 +220,7 @@ Stack
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/releases) 页面下载最新版本的 zip 包
-   `(UnoCard-v3.6.zip)`.
+   `(UnoCard-v3.7.zip)`.
 2. 解压并执行 `UnoCard.exe` 开始游戏。
 
 下载源码并手动编译
@@ -296,7 +299,7 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/releases) 页面下载最新版本的 apk 包
-   `(UnoCard-v3.6.apk)`.
+   `(UnoCard-v3.7.apk)`.
 2. 打开您的 Android 设备中的 [设置] 应用，进入 [安全] 页面，勾选 [未知来源] 复选框。
 3. 将已下载的安装包传到手机中，安装并运行即可开始游戏。
 
@@ -388,7 +391,9 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 
 叠加
 ----
-当一位玩家使用 +2 牌时，下家可以叠加另一张 +2 以免去惩罚。最终无法叠加 +2 的玩家摸取所有的罚牌。
+当一位玩家使用 +2/+4 牌时，下家可以叠加另一张 +2/+4 以免去惩罚。最终无法如此做的玩家摸取所有的罚牌。
+如果您允许叠加 +4 牌，那么 +4 牌不再仅限于 `只有在手中没有与前一张跟牌同色的牌时才能跟这张牌`，
+而是和普通万能牌一样随时可跟。作为平衡，此规则下 +4 牌无法 `指定接下来跟牌的颜色`。
 
 🔗Acknowledgements
 ==================
