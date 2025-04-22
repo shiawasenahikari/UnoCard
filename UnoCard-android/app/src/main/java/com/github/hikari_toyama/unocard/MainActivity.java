@@ -452,7 +452,7 @@ public class MainActivity extends AppCompatActivity
 
         // Message area
         width = mUno.getTextWidth(message);
-        mUno.putText(mScr, message, 800 - width / 2, 670);
+        mUno.putText(mScr, message, 800 - width / 2, 620);
 
         // Left-bottom corner: <OPTIONS> button
         // Shows only when game is not in process
