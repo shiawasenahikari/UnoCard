@@ -181,18 +181,6 @@ public class Player {
                 ? open == (~(0xffffffff << handCards.size()))
                 : 0x01 == (0x01 & (open >> index));
     } // isOpen(int)
-
-    /**
-     * Call this method to rearrange this player's hand cards.
-     * The cards with same color will be arranged together.
-     *
-     * @deprecated Only Uno class is allowed to rearrange hand cards.
-     * Do not call this method in other classes.
-     */
-    @Deprecated
-    public void sort() {
-        throw new RuntimeException("ILLEGAL ACCESS");
-    } // sort()
 } // Player Class
 
 // E.O.F

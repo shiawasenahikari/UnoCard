@@ -769,27 +769,6 @@ public:
     /**
      * @return This value tells that what's the next step
      *         after you drew a playable card in your action.
-     *         When force play is enabled, play the card immediately.
-     *         When force play is disabled, keep the card in your hand.
-     * @deprecated Use <code>getForcePlayRule() != 0</code> instead.
-     */
-    [[deprecated]]
-    inline bool isForcePlay() {
-        return forcePlayRule != 0;
-    } // isForcePlay()
-
-    /**
-     * @param enabled Enable/Disable the force play rule.
-     * @deprecated Use <code>setForcePlayRule(enabled ? 1 : 0)</code> instead.
-     */
-    [[deprecated]]
-    inline void setForcePlay(bool enabled) {
-        forcePlayRule = enabled ? 1 : 0;
-    } // setForcePlay(bool)
-
-    /**
-     * @return This value tells that what's the next step
-     *         after you drew a playable card in your action.
      *         0: When you draw a playable card, you must keep it in hand.
      *         1: When you draw a playable card, choose to play it or not.
      *         2: When you draw a playable card, you must play it.
@@ -825,27 +804,6 @@ public:
     inline void setSevenZeroRule(bool enabled) {
         _2vs2 &= !(sevenZeroRule = enabled);
     } // setSevenZeroRule(bool)
-
-    /**
-     * @return Can or cannot stack +2 cards. If can, when you put down a +2
-     *         card, the next player may transfer the punishment to its next
-     *         player by stacking another +2 card. Finally the first one who
-     *         does not stack a +2 card must draw all of the required cards.
-     * @deprecated Use <code>getStackRule() == 1</code> instead.
-     */
-    [[deprecated]]
-    inline bool isDraw2StackRule() {
-        return stackRule == 1;
-    } // isDraw2StackRule()
-
-    /**
-     * @param enabled Enable/Disable the +2 stacking rule.
-     * @deprecated Use <code>setStackRule(enabled ? 1 : 0)</code> instead.
-     */
-    [[deprecated]]
-    inline void setDraw2StackRule(bool enabled) {
-        stackRule = enabled ? 1 : 0;
-    } // setDraw2StackRule(bool)
 
     /**
      * Can or cannot stack +2/+4 cards. If can, when you put down a +2/+4
@@ -959,42 +917,6 @@ public:
 
         return count;
     } // getUsedCount()
-
-    /**
-     * @return Recent played cards.
-     * @deprecated Call getRecentInfo() instead.
-     */
-    [[deprecated]]
-    inline const std::vector<Card*>& getRecent() {
-        static std::vector<Card*> ret;
-
-        ret.clear();
-        for (int i = 0; i < 4; ++i) {
-            if (recent[i].card != nullptr) {
-                ret.push_back(recent[i].card);
-            } // if (recent[i].card != nullptr)
-        } // for (int i = 0; i < 4; ++i)
-
-        return ret;
-    } // getRecent()
-
-    /**
-     * @return Colors of recent played cards.
-     * @deprecated Call getRecentInfo() instead.
-     */
-    [[deprecated]]
-    inline const std::vector<Color>& getRecentColors() {
-        static std::vector<Color> ret;
-
-        ret.clear();
-        for (int i = 0; i < 4; ++i) {
-            if (recent[i].card != nullptr) {
-                ret.push_back(recent[i].color);
-            } // if (recent[i].card != nullptr)
-        } // for (int i = 0; i < 4; ++i)
-
-        return ret;
-    } // getRecentColors()
 
     /**
      * @return Info of recent played cards. An array of RecentInfo objects

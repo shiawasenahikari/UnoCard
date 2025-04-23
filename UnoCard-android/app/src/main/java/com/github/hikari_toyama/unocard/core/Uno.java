@@ -698,15 +698,6 @@ public class Uno {
     } // getTextWidth(String)
 
     /**
-     * @see Uno#getTextWidth(String)
-     * @deprecated Call getTextWidth(text) instead.
-     */
-    @Deprecated
-    public int getFormatTextWidth(String text) {
-        return getTextWidth(text);
-    } // getFormatTextWidth(String)
-
-    /**
      * Put text on image, using our custom font.
      * Unknown characters will be replaced with the question mark '?'.
      * <p>
@@ -750,28 +741,6 @@ public class Uno {
             } // else
         } // for (i = 0, n = txt.length; i < n; ++i)
     } // putText(Mat, String, int, int)
-
-    /**
-     * @see Uno#putText(Mat, String, int, int)
-     * @deprecated Call putText(m, text, x, y) instead.
-     */
-    @Deprecated
-    public void putText(Mat m, String text, int x, int y, Color color) {
-        if (color == Color.RED) text = "[R]" + text;
-        if (color == Color.BLUE) text = "[B]" + text;
-        if (color == Color.GREEN) text = "[G]" + text;
-        if (color == Color.YELLOW) text = "[Y]" + text;
-        putText(m, text, x, y);
-    } // putText(Mat, String, int, int, Color)
-
-    /**
-     * @see Uno#putText(Mat, String, int, int)
-     * @deprecated Call putText(m, text, x, y) instead.
-     */
-    @Deprecated
-    public void putFormatText(Mat m, String text, int x, int y) {
-        putText(m, text, x, y);
-    } // putFormatText(Mat, String, int, int)
 
     /**
      * @return Player in turn. Must be one of the following:
@@ -948,27 +917,6 @@ public class Uno {
     /**
      * @return This value tells that what's the next step
      * after you drew a playable card in your action.
-     * When force play is enabled, play the card immediately.
-     * When force play is disabled, keep the card in your hand.
-     * @deprecated Use <code>getForcePlayRule() != 0</code> instead.
-     */
-    @Deprecated
-    public boolean isForcePlay() {
-        return forcePlayRule != 0;
-    } // isForcePlay()
-
-    /**
-     * @param enabled Enable/Disable the force play rule.
-     * @deprecated Use <code>setForcePlayRule(enabled ? 1 : 0)</code> instead.
-     */
-    @Deprecated
-    public void setForcePlay(boolean enabled) {
-        forcePlayRule = enabled ? 1 : 0;
-    } // setForcePlay(boolean)
-
-    /**
-     * @return This value tells that what's the next step
-     * after you drew a playable card in your action.
      * 0: When you draw a playable card, you must keep it in hand.
      * 1: When you draw a playable card, choose to play it or not.
      * 2: When you draw a playable card, you must play it.
@@ -1004,27 +952,6 @@ public class Uno {
     public void setSevenZeroRule(boolean enabled) {
         _2vs2 &= !(sevenZeroRule = enabled);
     } // setSevenZeroRule(boolean)
-
-    /**
-     * @return Can or cannot stack +2 cards. If can, when you put down a +2
-     * card, the next player may transfer the punishment to its next
-     * player by stacking another +2 card. Finally the first one who
-     * does not stack a +2 card must draw all of the required cards.
-     * @deprecated Use <code>getStackRule() == 1</code> instead.
-     */
-    @Deprecated
-    public boolean isDraw2StackRule() {
-        return stackRule == 1;
-    } // isDraw2StackRule()
-
-    /**
-     * @param enabled Enable/Disable the +2 stacking rule.
-     * @deprecated Use <code>setStackRule(enabled ? 1 : 0)</code> instead.
-     */
-    @Deprecated
-    public void setDraw2StackRule(boolean enabled) {
-        stackRule = enabled ? 1 : 0;
-    } // setDraw2StackRule(boolean)
 
     /**
      * Can or cannot stack +2/+4 cards. If can, when you put down a +2/+4
@@ -1140,40 +1067,6 @@ public class Uno {
     } // getUsedCount()
 
     /**
-     * @return Recent played cards.
-     * @deprecated Call getRecentInfo() instead.
-     */
-    @Deprecated
-    public List<Card> getRecent() {
-        List<Card> ret = new ArrayList<>();
-
-        for (int i = 0; i < 4; ++i) {
-            if (recent[i].card != null) {
-                ret.add(recent[i].card);
-            } // if (recent[i].card != null)
-        } // for (int i = 0; i < 4; ++i)
-
-        return ret;
-    } // getRecent()
-
-    /**
-     * @return Colors of recent played cards.
-     * @deprecated Call getRecentInfo() instead.
-     */
-    @Deprecated
-    public List<Color> getRecentColors() {
-        List<Color> ret = new ArrayList<>();
-
-        for (int i = 0; i < 4; ++i) {
-            if (recent[i].card != null) {
-                ret.add(recent[i].color);
-            } // if (recent[i].card != null)
-        } // for (int i = 0; i < 4; ++i)
-
-        return ret;
-    } // getRecentColors()
-
-    /**
      * @return Info of recent played cards. An array of RecentInfo objects
      * will be returned. Access getRecentInfo()[3] for the info of
      * the last played card, getRecentInfo()[2] for the info of the
@@ -1263,6 +1156,7 @@ public class Uno {
                     deck.add(card);
                     // fall through
 
+                    // noinspection DefaultNotLastCaseInSwitch
                 default:
                     deck.add(card);
                     // fall through
