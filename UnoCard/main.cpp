@@ -147,6 +147,7 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
                 sSoundPool->setEnabled(dw[6] != 0);
                 sMediaPlay->setVolume(dw[7]);
                 sUno->set2vs2(dw[9] != 0);
+                sSpeed = dw[10] < 2 ? 1 : dw[10] > 2 ? 3 : 2;
                 if (5 <= dw[8] && dw[8] <= 20) {
                     while (sUno->getInitialCards() < dw[8]) {
                         sUno->increaseInitialCards();
@@ -225,7 +226,7 @@ void Main::requestAI() {
 void Main::threadWait(int millis) {
     static QEventLoop loop;
 
-    QTimer::singleShot(millis, &loop, SLOT(quit()));
+    QTimer::singleShot(millis / sSpeed, &loop, SLOT(quit()));
     loop.exec();
 } // threadWait(int)
 
@@ -455,6 +456,21 @@ void Main::refreshScreen(const QString& message) {
             sUno->findCard(GREEN, REV)->darkImg;
         sPainter->drawImage(330, 250, image);
 
+        // Speed
+        sUno->putText(sPainter, i18n->label_speed(), 780, 350);
+        image = sSpeed < 2 ?
+            sUno->findCard(GREEN, NUM1)->image :
+            sUno->findCard(GREEN, NUM1)->darkImg;
+        sPainter->drawImage(930, 250, image);
+        image = sSpeed == 2 ?
+            sUno->findCard(YELLOW, NUM2)->image :
+            sUno->findCard(YELLOW, NUM2)->darkImg;
+        sPainter->drawImage(1110, 250, image);
+        image = sSpeed > 2 ?
+            sUno->findCard(BLUE, NUM3)->image :
+            sUno->findCard(BLUE, NUM3)->darkImg;
+        sPainter->drawImage(1290, 250, image);
+
         if (status != Player::YOU) {
             // [Level] option: easy / hard
             sUno->putText(sPainter, i18n->label_level(), 780, 160);
@@ -469,19 +485,6 @@ void Main::refreshScreen(const QString& message) {
             ); // image = sUno->getLevelImage()
             sPainter->drawImage(1110, 60, image);
 
-            // [Players] option: 3 / 4 / 2vs2
-            sUno->putText(sPainter, i18n->label_players(), 780, 350);
-            image = sUno->getPlayers() == 3 ?
-                sUno->findCard(GREEN, NUM3)->image :
-                sUno->findCard(GREEN, NUM3)->darkImg;
-            sPainter->drawImage(930, 250, image);
-            image = sUno->getPlayers() == 4 && !sUno->is2vs2() ?
-                sUno->findCard(YELLOW, NUM4)->image :
-                sUno->findCard(YELLOW, NUM4)->darkImg;
-            sPainter->drawImage(1110, 250, image);
-            image = sUno->get2vs2Image();
-            sPainter->drawImage(1290, 250, image);
-
             // Rule settings
             // Initial cards
             sUno->putText(sPainter, i18n->label_initialCards(), 60, 670);
@@ -491,23 +494,30 @@ void Main::refreshScreen(const QString& message) {
             sUno->putText(sPainter, info, 1127, 670);
             sUno->putText(sPainter, "+>", 1358, 670);
 
+            // Game Mode
+            sUno->putText(sPainter, i18n->label_gameMode(), 60, 720);
+            active = sUno->getPlayers() == 3;
+            sUno->putText(sPainter, i18n->btn_3p(active), 896, 720);
+            active = sUno->getPlayers() == 4
+                && !sUno->isSevenZeroRule()
+                && !sUno->is2vs2();
+            sUno->putText(sPainter, i18n->btn_4p(active), 1028, 720);
+            active = sUno->isSevenZeroRule();
+            sUno->putText(sPainter, i18n->btn_7_0(active), 1159, 720);
+            active = sUno->is2vs2();
+            sUno->putText(sPainter, i18n->btn_2vs2(active), 1290, 720);
+
             // Force play switch
             i = sUno->getForcePlayRule();
-            sUno->putText(sPainter, i18n->label_forcePlay(), 60, 720);
-            sUno->putText(sPainter, i18n->btn_keep(i == 0), 896, 720);
-            sUno->putText(sPainter, i18n->btn_ask(i == 1), 1110, 720);
-            sUno->putText(sPainter, i18n->btn_play(i == 2), 1290, 720);
-
-            // 7-0
-            active = sUno->isSevenZeroRule();
-            sUno->putText(sPainter, i18n->label_7_0(), 60, 770);
-            sUno->putText(sPainter, i18n->btn_off(!active), 896, 770);
-            sUno->putText(sPainter, i18n->btn_on(active), 1290, 770);
+            sUno->putText(sPainter, i18n->label_forcePlay(), 60, 770);
+            sUno->putText(sPainter, i18n->btn_keep(i == 0), 896, 770);
+            sUno->putText(sPainter, i18n->btn_ask(i == 1), 1110, 770);
+            sUno->putText(sPainter, i18n->btn_play(i == 2), 1290, 770);
 
             // stacking
             i = sUno->getStackRule();
             sUno->putText(sPainter, i18n->label_draw2Stack(), 60, 820);
-            sUno->putText(sPainter, i18n->btn_off(i == 0), 896, 820);
+            sUno->putText(sPainter, i18n->btn_none(i == 0), 896, 820);
             sUno->putText(sPainter, i18n->btn_d2(i == 1), 1110, 820);
             sUno->putText(sPainter, i18n->btn_d4(i == 2), 1290, 820);
         } // if (status != Player::YOU)
@@ -920,6 +930,10 @@ void Main::play(int index, Color color) {
     card = sUno->play(now, index, color);
     sSelectedIdx = -1;
     sSoundPool->play(SoundPool::SND_PLAY);
+    if (size == 2) {
+        sSoundPool->play(SoundPool::SND_UNO);
+    } // if (size == 2)
+
     if (card != nullptr) {
         sLayer[0].elem = card->image;
         switch (now) {
@@ -988,10 +1002,6 @@ void Main::play(int index, Color color) {
         else {
             // When the played card is an action card or a wild card,
             // do the necessary things according to the game rule
-            if (size == 2) {
-                sSoundPool->play(SoundPool::SND_UNO);
-            } // if (size == 2)
-
             switch (card->content) {
             case DRAW2:
                 next = sUno->switchNow();
@@ -1277,7 +1287,6 @@ void Main::onChallenge() {
  * Triggered when a mouse press event occurred. Called by system.
  */
 void Main::mousePressEvent(QMouseEvent* event) {
-    static bool gameSaved = false;
     if (event->button() == Qt::LeftButton) {
         // Only response to left-click events, and ignore the others
         int x = 1600 * event->x() / this->width();
@@ -1318,21 +1327,21 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     sSoundPool->play(SoundPool::SND_PLAY);
                     setStatus(sStatus);
                 } // else if (330 <= x && x <= 450)
-                else if (930 <= x && x <= 1050 && sStatus != Player::YOU) {
-                    // 3 players
-                    sUno->setPlayers(3);
+                else if (930 <= x && x <= 1050) {
+                    // Speed = 1
+                    sSpeed = 1;
                     setStatus(sStatus);
-                } // else if (930 <= x && x <= 1050 && sStatus != Player::YOU)
-                else if (1110 <= x && x <= 1230 && sStatus != Player::YOU) {
-                    // 4 players
-                    sUno->setPlayers(4);
+                } // else if (930 <= x && x <= 1050)
+                else if (1110 <= x && x <= 1230) {
+                    // Speed = 2
+                    sSpeed = 2;
                     setStatus(sStatus);
-                } // else if (1110 <= x && x <= 1230 && sStatus != Player::YOU)
-                else if (1290 <= x && x <= 1410 && sStatus != Player::YOU) {
-                    // 2vs2
-                    sUno->set2vs2(true);
+                } // else if (1110 <= x && x <= 1230)
+                else if (1290 <= x && x <= 1410) {
+                    // Speed = 3
+                    sSpeed = 3;
                     setStatus(sStatus);
-                } // else if (1290 <= x && x <= 1410 && sStatus != Player::YOU)
+                } // else if (1290 <= x && x <= 1410)
             } // else if (270 <= y && y <= 450)
             else if (649 <= y && y <= 670 && sStatus != Player::YOU) {
                 if (896 <= x && x <= 929) {
@@ -1347,6 +1356,28 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 } // else if (1358 <= x && x <= 1391)
             } // else if (649 <= y && y <= 670 && sStatus != Player::YOU)
             else if (699 <= y && y <= 720 && sStatus != Player::YOU) {
+                if (896 <= x && x <= 963) {
+                    // Game mode, <3P> button
+                    sUno->setPlayers(3);
+                    setStatus(sStatus);
+                } // if (896 <= x && x <= 963)
+                else if (1028 <= x && x <= 1095) {
+                    // Game mode, <4P> button
+                    sUno->setPlayers(4);
+                    setStatus(sStatus);
+                } // else if (1028 <= x && x <= 1095)
+                else if (1159 <= x && x <= 1243) {
+                    // Game mode, <7-0> button
+                    sUno->setSevenZeroRule(true);
+                    setStatus(sStatus);
+                } // else if (1159 <= x && x <= 1243)
+                else if (1290 <= x && x <= 1391) {
+                    // Game mode, <2vs2> button
+                    sUno->set2vs2(true);
+                    setStatus(sStatus);
+                } // else if (1290 <= x && x <= 1391)
+            } // else if (699 <= y && y <= 720 && sStatus != Player::YOU)
+            else if (749 <= y && y <= 770 && sStatus != Player::YOU) {
                 if (896 <= x && x <= 997) {
                     // Force play, <KEEP> button
                     sUno->setForcePlayRule(0);
@@ -1362,25 +1393,13 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     sUno->setForcePlayRule(2);
                     setStatus(sStatus);
                 } // else if (1290 <= x && x <= 1391)
-            } // else if (699 <= y && y <= 720 && sStatus != Player::YOU)
-            else if (749 <= y && y <= 770 && sStatus != Player::YOU) {
-                if (896 <= x && x <= 980) {
-                    // 7-0, <OFF> button
-                    sUno->setSevenZeroRule(false);
-                    setStatus(sStatus);
-                } // if (896 <= x && x <= 980)
-                else if (1290 <= x && x <= 1391) {
-                    // 7-0, <ON> button
-                    sUno->setSevenZeroRule(true);
-                    setStatus(sStatus);
-                } // else if (1290 <= x && x <= 1391)
             } // else if (749 <= y && y <= 770 && sStatus != Player::YOU)
             else if (799 <= y && y <= 820 && sStatus != Player::YOU) {
-                if (896 <= x && x <= 980) {
-                    // stacking, <OFF> button
+                if (896 <= x && x <= 997) {
+                    // stacking, <NONE> button
                     sUno->setStackRule(0);
                     setStatus(sStatus);
-                } // if (896 <= x && x <= 980)
+                } // if (896 <= x && x <= 997)
                 else if (1110 <= x && x <= 1177) {
                     // stacking, <+2> button
                     sUno->setStackRule(1);
@@ -1419,24 +1438,24 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     loadReplay(replayName);
                 } // if (!replayName.isNull())
             } // else if (sStatus == STAT_WELCOME)
-            else if (sStatus == STAT_GAME_OVER && !gameSaved) {
+            else if (sStatus == STAT_GAME_OVER && !sGameSaved) {
                 // [UPDATE] When game over, change to <SAVE> button
                 QString replayName = sUno->save();
 
                 if (!replayName.isEmpty()) {
-                    gameSaved = true;
+                    sGameSaved = true;
                     refreshScreen("Replay file saved as " + replayName);
                 } // if (!replayName.isEmpty())
                 else {
                     refreshScreen("Failed to save replay file");
                 } // else
-            } // else if (sStatus == STAT_GAME_OVER && !gameSaved)
+            } // else if (sStatus == STAT_GAME_OVER && !sGameSaved)
         } // else if (859 <= y && y <= 880 && 1450 <= x && x <= 1580)
         else switch (sStatus) {
         case STAT_WELCOME:
             if (360 <= y && y <= 540 && 740 <= x && x <= 860) {
                 // UNO button, start a new game
-                gameSaved = false;
+                sGameSaved = false;
                 setStatus(STAT_NEW_GAME);
             } // if (360 <= y && y <= 540 && 740 <= x && x <= 860)
             else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
@@ -1612,7 +1631,7 @@ void Main::mousePressEvent(QMouseEvent* event) {
         case STAT_GAME_OVER:
             if (360 <= y && y <= 540 && 338 <= x && x <= 458) {
                 // Card deck area, start a new game
-                gameSaved = false;
+                sGameSaved = false;
                 setStatus(STAT_NEW_GAME);
             } // if (360 <= y && y <= 540 && 338 <= x && x <= 458)
             else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
@@ -1846,11 +1865,12 @@ void Main::closeEvent(QCloseEvent*) {
             /* dw[6] = snd switch         */ sSoundPool->isEnabled() ? 1 : 0,
             /* dw[7] = bgm switch         */ sMediaPlay->volume(),
             /* dw[8] = initial cards      */ sUno->getInitialCards(),
-            /* dw[9] = 2vs2 switch        */ sUno->is2vs2() ? 1 : 0
+            /* dw[9] = 2vs2 switch        */ sUno->is2vs2() ? 1 : 0,
+            /* dw[10] = speed             */ sSpeed
         }; // dw[]
 
         // Fill unused bits with 1
-        memset(dw + 10, -1, (63 - 10) * sizeof(int));
+        memset(dw + 11, -1, (63 - 11) * sizeof(int));
 
         // Calculate hash
         for (int i = 0; i < 63; ++i) {

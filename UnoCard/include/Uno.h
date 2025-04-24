@@ -91,11 +91,6 @@ private:
     QImage hardImage, hardImage_d;
 
     /**
-     * 2vs2 button image resources.
-     */
-    QImage light2vs2, dark2vs2;
-
-    /**
      * Custom font image resources.
      */
     QImage fontR, fontB, fontG, fontW, fontY;
@@ -272,10 +267,6 @@ private:
         hardImage_d = load("resource/lv_hard_dark.png", 121, 181);
         done += 4;
         qDebug("Loading... (%d%%)", 100 * done / total);
-
-        // Load 2vs2 image resources
-        dark2vs2 = load("resource/dark_2vs2.png", 121, 181);
-        light2vs2 = load("resource/front_2vs2.png", 121, 181);
 
         // Generate 54 types of cards
         for (i = 0; i < 54; ++i) {
@@ -481,9 +472,12 @@ public:
 
     /**
      * @return 2vs2 image resource.
+     * @deprecated This image resource has been deprecated.
      */
+    [[deprecated]]
     inline const QImage& get2vs2Image() {
-        return _2vs2 ? light2vs2 : dark2vs2;
+        return _2vs2 ? findCard(BLUE, NUM2)->image
+            : findCard(BLUE, NUM2)->darkImg;
     } // get2vs2Image()
 
     /**
@@ -714,7 +708,7 @@ public:
      */
     inline void setPlayers(int players) {
         if (players == 3 || players == 4) {
-            _2vs2 = false;
+            _2vs2 = sevenZeroRule = false;
             this->players = players;
         } // if (players == 3 || players == 4)
     } // setPlayers(int)
@@ -802,7 +796,11 @@ public:
      * @param enabled Enable/Disable the 7-0 rule.
      */
     inline void setSevenZeroRule(bool enabled) {
-        _2vs2 &= !(sevenZeroRule = enabled);
+        sevenZeroRule = enabled;
+        if (enabled) {
+            players = 4;
+            _2vs2 = false;
+        } // if (enabled)
     } // setSevenZeroRule(bool)
 
     /**

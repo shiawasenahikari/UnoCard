@@ -40,6 +40,14 @@ public interface I18N {
 
     String ask_target();
 
+    String btn_2vs2(boolean active);
+
+    String btn_3p(boolean active);
+
+    String btn_4p(boolean active);
+
+    String btn_7_0(boolean active);
+
     String btn_auto();
 
     String btn_ask(boolean active);
@@ -50,8 +58,12 @@ public interface I18N {
 
     String btn_d4(boolean active);
 
+    String btn_none(boolean active);
+
+    @Deprecated
     String btn_off(boolean active);
 
+    @Deprecated
     String btn_on(boolean active);
 
     String btn_play(boolean active);
@@ -94,6 +106,7 @@ public interface I18N {
 
     String info_yourTurn_stackDraw2(int i1, int i2);
 
+    @Deprecated
     String label_7_0();
 
     String label_bgm();
@@ -102,12 +115,15 @@ public interface I18N {
 
     String label_forcePlay();
 
+    String label_gameMode();
+
     String label_initialCards();
 
     String label_level();
 
     String label_no();
 
+    @Deprecated
     String label_players();
 
     String label_remain_used(int i1, int i2);
@@ -115,6 +131,8 @@ public interface I18N {
     String label_score();
 
     String label_snd();
+
+    String label_speed();
 
     String label_yes();
 } // I18N Interface
@@ -208,6 +226,26 @@ class I18N_en_US implements I18N {
     } // btn_ask(boolean)
 
     @Override
+    public String btn_2vs2(boolean active) {
+        return active ? "[G]<2vs2>" : "<2vs2>";
+    } // btn_2vs2(boolean)
+
+    @Override
+    public String btn_3p(boolean active) {
+        return active ? "[R]<3P>" : "<3P>";
+    } // btn_3p(boolean)
+
+    @Override
+    public String btn_4p(boolean active) {
+        return active ? "[Y]<4P>" : "<4P>";
+    } // btn_4p(boolean)
+
+    @Override
+    public String btn_7_0(boolean active) {
+        return active ? "[B]<7-0>" : "<7-0>";
+    } // btn_7_0(boolean)
+
+    @Override
     public String btn_auto() {
         return "<AUTO>";
     } // btn_auto()
@@ -228,11 +266,18 @@ class I18N_en_US implements I18N {
     } // btn_keep(boolean)
 
     @Override
+    public String btn_none(boolean active) {
+        return active ? "[R]<NONE>" : "<NONE>";
+    } // btn_none(boolean)
+
+    @Override
+    @Deprecated
     public String btn_off(boolean active) {
         return active ? "[R]<OFF>" : "<OFF>";
     } // btn_off(boolean)
 
     @Override
+    @Deprecated
     public String btn_on(boolean active) {
         return active ? "[G]< ON >" : "< ON >";
     } // btn_on(boolean)
@@ -338,6 +383,7 @@ class I18N_en_US implements I18N {
     } // info_yourTurn_stackDraw2(int, int)
 
     @Override
+    @Deprecated
     public String label_7_0() {
         return "7 to swap, 0 to rotate:";
     } // label_7_0()
@@ -358,6 +404,11 @@ class I18N_en_US implements I18N {
     } // label_forcePlay()
 
     @Override
+    public String label_gameMode() {
+        return "How to play:";
+    } // label_gameMode()
+
+    @Override
     public String label_initialCards() {
         return "Initial cards:";
     } // label_initialCards()
@@ -373,6 +424,7 @@ class I18N_en_US implements I18N {
     } // label_no()
 
     @Override
+    @Deprecated
     public String label_players() {
         return "PLAYERS";
     } // label_players()
@@ -391,6 +443,11 @@ class I18N_en_US implements I18N {
     public String label_snd() {
         return "SND";
     } // label_snd()
+
+    @Override
+    public String label_speed() {
+        return "SPEED";
+    } // label_speed()
 
     @Override
     public String label_yes() {
@@ -478,6 +535,26 @@ class I18N_zh_CN implements I18N {
     } // ask_target()
 
     @Override
+    public String btn_2vs2(boolean active) {
+        return active ? "[G]<2vs2>" : "<2vs2>";
+    } // btn_2vs2(boolean)
+
+    @Override
+    public String btn_3p(boolean active) {
+        return active ? "[R]<3P>" : "<3P>";
+    } // btn_3p(boolean)
+
+    @Override
+    public String btn_4p(boolean active) {
+        return active ? "[Y]<4P>" : "<4P>";
+    } // btn_4p(boolean)
+
+    @Override
+    public String btn_7_0(boolean active) {
+        return active ? "[B]<7-0>" : "<7-0>";
+    } // btn_7_0(boolean)
+
+    @Override
     public String btn_ask(boolean active) {
         return active ? "[Y]<可选>" : "<可选>";
     } // btn_ask(boolean)
@@ -503,11 +580,18 @@ class I18N_zh_CN implements I18N {
     } // btn_keep(boolean)
 
     @Override
+    public String btn_none(boolean active) {
+        return active ? "[R]<无效>" : "<无效>";
+    } // btn_none(boolean)
+
+    @Override
+    @Deprecated
     public String btn_off(boolean active) {
         return active ? "[R]<无效>" : "<无效>";
     } // btn_off(boolean)
 
     @Override
+    @Deprecated
     public String btn_on(boolean active) {
         return active ? "[G]<有效>" : "<有效>";
     } // btn_on(boolean)
@@ -607,6 +691,7 @@ class I18N_zh_CN implements I18N {
     } // info_yourTurn_stackDraw2(int, int)
 
     @Override
+    @Deprecated
     public String label_7_0() {
         return "7 换牌, 0 传给下家:";
     } // label_7_0()
@@ -627,6 +712,11 @@ class I18N_zh_CN implements I18N {
     } // label_forcePlay()
 
     @Override
+    public String label_gameMode() {
+        return "玩法:";
+    } // label_gameMode()
+
+    @Override
     public String label_initialCards() {
         return "发牌张数:";
     } // label_initialCards()
@@ -642,6 +732,7 @@ class I18N_zh_CN implements I18N {
     } // label_no()
 
     @Override
+    @Deprecated
     public String label_players() {
         return "人数";
     } // label_players()
@@ -660,6 +751,11 @@ class I18N_zh_CN implements I18N {
     public String label_snd() {
         return "音效";
     } // label_snd()
+
+    @Override
+    public String label_speed() {
+        return "速度";
+    } // label_speed()
 
     @Override
     public String label_yes() {

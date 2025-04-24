@@ -53,12 +53,14 @@ private:
     Uno* sUno;
     I18N* i18n;
     bool sAuto;
+    int sSpeed;
     int sStatus;
     int sWinner;
     Ui::Main* ui;
     int sHideFlag;
     QImage sScreen;
     bool sAIRunning;
+    bool sGameSaved;
     int sSelectedIdx;
     int sScore, sDiff;
     QImage sBackup[4];

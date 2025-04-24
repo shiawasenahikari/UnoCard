@@ -29,13 +29,18 @@ public:
     virtual String ask_color() = 0;
     virtual String ask_keep_play() = 0;
     virtual String ask_target() = 0;
+    virtual String btn_2vs2(bool) = 0;
+    virtual String btn_3p(bool) = 0;
+    virtual String btn_4p(bool) = 0;
+    virtual String btn_7_0(bool) = 0;
     virtual String btn_ask(bool) = 0;
     virtual String btn_auto() = 0;
     virtual String btn_d2(bool) = 0;
     virtual String btn_d4(bool) = 0;
     virtual String btn_keep(bool) = 0;
-    virtual String btn_off(bool) = 0;
-    virtual String btn_on(bool) = 0;
+    virtual String btn_none(bool) = 0;
+    [[deprecated]] virtual String btn_off(bool) = 0;
+    [[deprecated]] virtual String btn_on(bool) = 0;
     virtual String btn_play(bool) = 0;
     virtual String btn_settings(bool) = 0;
     virtual String info_0_rotate() = 0;
@@ -54,17 +59,19 @@ public:
     virtual String info_welcome() = 0;
     virtual String info_yourTurn() = 0;
     virtual String info_yourTurn_stackDraw2(int, int = 1) = 0;
-    virtual String label_7_0() = 0;
+    [[deprecated]] virtual String label_7_0() = 0;
     virtual String label_bgm() = 0;
     virtual String label_draw2Stack() = 0;
     virtual String label_forcePlay() = 0;
+    virtual String label_gameMode() = 0;
     virtual String label_initialCards() = 0;
     virtual String label_level() = 0;
     virtual String label_no() = 0;
-    virtual String label_players() = 0;
+    [[deprecated]] virtual String label_players() = 0;
     virtual String label_remain_used(int, int) = 0;
     virtual String label_score() = 0;
     virtual String label_snd() = 0;
+    virtual String label_speed() = 0;
     virtual String label_yes() = 0;
 }; // I18N class
 
@@ -158,6 +165,22 @@ public:
         return "^ Specify the target to swap hand cards with";
     } // ask_target()
 
+    inline String btn_2vs2(bool active) {
+        return active ? "[G]<2vs2>" : "<2vs2>";
+    } // btn_2vs2(bool)
+
+    inline String btn_3p(bool active) {
+        return active ? "[R]<3P>" : "<3P>";
+    } // btn_3p(bool)
+
+    inline String btn_4p(bool active) {
+        return active ? "[Y]<4P>" : "<4P>";
+    } // btn_4p(bool)
+
+    inline String btn_7_0(bool active) {
+        return active ? "[B]<7-0>" : "<7-0>";
+    } // btn_7_0(bool)
+
     inline String btn_ask(bool active) {
         return active ? "[Y]<ASK>" : "<ASK>";
     } // btn_ask(bool)
@@ -178,10 +201,16 @@ public:
         return active ? "[R]<KEEP>" : "<KEEP>";
     } // btn_keep(bool)
 
+    inline String btn_none(bool active) {
+        return active ? "[R]<NONE>" : "<NONE>";
+    } // btn_none(bool)
+
+    [[deprecated]]
     inline String btn_off(bool active) {
         return active ? "[R]<OFF>" : "<OFF>";
     } // btn_off(bool)
 
+    [[deprecated]]
     inline String btn_on(bool active) {
         return active ? "[G]< ON >" : "< ON >";
     } // btn_on(bool)
@@ -276,6 +305,7 @@ public:
         return t;
     } // info_yourTurn_stackDraw2(int, int)
 
+    [[deprecated]]
     inline String label_7_0() {
         return "7 to swap, 0 to rotate:";
     } // label_7_0()
@@ -292,6 +322,10 @@ public:
         return "When you draw a playable card:";
     } // label_forcePlay()
 
+    inline String label_gameMode() {
+        return "How to play:";
+    } // label_gameMode()
+
     inline String label_initialCards() {
         return "Initial cards:";
     } // label_initialCards()
@@ -304,6 +338,7 @@ public:
         return "NO";
     } // label_no()
 
+    [[deprecated]]
     inline String label_players() {
         return "PLAYERS";
     } // label_players()
@@ -320,6 +355,10 @@ public:
     inline String label_snd() {
         return "SND";
     } // label_snd()
+
+    inline String label_speed() {
+        return "SPEED";
+    } // label_speed()
 
     inline String label_yes() {
         return "YES";
@@ -412,6 +451,22 @@ public:
         return "^ 指定换牌目标";
     } // ask_target()
 
+    inline String btn_2vs2(bool active) {
+        return active ? "[G]<2vs2>" : "<2vs2>";
+    } // btn_2vs2(bool)
+
+    inline String btn_3p(bool active) {
+        return active ? "[R]<3P>" : "<3P>";
+    } // btn_3p(bool)
+
+    inline String btn_4p(bool active) {
+        return active ? "[Y]<4P>" : "<4P>";
+    } // btn_4p(bool)
+
+    inline String btn_7_0(bool active) {
+        return active ? "[B]<7-0>" : "<7-0>";
+    } // btn_7_0(bool)
+
     inline String btn_ask(bool active) {
         return active ? "[Y]<可选>" : "<可选>";
     } // btn_ask(bool)
@@ -432,10 +487,16 @@ public:
         return active ? "[R]<保留>" : "<保留>";
     } // btn_keep(bool)
 
+    inline String btn_none(bool active) {
+        return active ? "[R]<无效>" : "<无效>";
+    } // btn_none(bool)
+
+    [[deprecated]]
     inline String btn_off(bool active) {
         return active ? "[R]<无效>" : "<无效>";
     } // btn_off(bool)
 
+    [[deprecated]]
     inline String btn_on(bool active) {
         return active ? "[G]<有效>" : "<有效>";
     } // btn_on(bool)
@@ -526,6 +587,7 @@ public:
         return t;
     } // info_yourTurn_stackDraw2(int, int)
 
+    [[deprecated]]
     inline String label_7_0() {
         return "7 换牌, 0 传给下家:";
     } // label_7_0()
@@ -542,6 +604,10 @@ public:
         return "摸到可出的牌时, 是否打出:";
     } // label_forcePlay()
 
+    inline String label_gameMode() {
+        return "玩法:";
+    } // label_gameMode()
+
     inline String label_initialCards() {
         return "发牌张数:";
     } // label_initialCards()
@@ -554,6 +620,7 @@ public:
         return "否";
     } // label_no()
 
+    [[deprecated]]
     inline String label_players() {
         return "人数";
     } // label_players()
@@ -570,6 +637,10 @@ public:
     inline String label_snd() {
         return "音效";
     } // label_snd()
+
+    inline String label_speed() {
+        return "速度";
+    } // label_speed()
 
     inline String label_yes() {
         return "是";

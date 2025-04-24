@@ -178,11 +178,6 @@ public class Uno {
     Mat hardImage, hardImage_d;
 
     /**
-     * 2vs2 button image resources.
-     */
-    Mat light2vs2, dark2vs2;
-
-    /**
      * Font image.
      */
     Mat font;
@@ -330,14 +325,6 @@ public class Uno {
         Imgproc.cvtColor(easyImage_d, easyImage_d, Imgproc.COLOR_BGR2RGB);
         Imgproc.cvtColor(hardImage_d, hardImage_d, Imgproc.COLOR_BGR2RGB);
         loaded += 4;
-        Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
-
-        // Load 2vs2 image resources
-        dark2vs2 = Utils.loadResource(c, R.raw.dark_2vs2);
-        light2vs2 = Utils.loadResource(c, R.raw.front_2vs2);
-        Imgproc.cvtColor(dark2vs2, dark2vs2, Imgproc.COLOR_BGR2RGB);
-        Imgproc.cvtColor(light2vs2, light2vs2, Imgproc.COLOR_BGR2RGB);
-        loaded += 2;
         Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
 
         // Load cards' front image resources
@@ -626,9 +613,12 @@ public class Uno {
 
     /**
      * @return 2vs2 image resource.
+     * @deprecated This image resource has been deprecated.
      */
+    @Deprecated
     public Mat get2vs2Image() {
-        return _2vs2 ? light2vs2 : dark2vs2;
+        return _2vs2 ? findCard(Color.BLUE, Content.NUM2).image
+                : findCard(Color.BLUE, Content.NUM2).darkImg;
     } // get2vs2Image()
 
     /**
@@ -862,7 +852,7 @@ public class Uno {
      */
     public void setPlayers(int players) {
         if (players == 3 || players == 4) {
-            _2vs2 = false;
+            _2vs2 = sevenZeroRule = false;
             this.players = players;
         } // if (players == 3 || players == 4)
     } // setPlayers(int)
@@ -950,7 +940,11 @@ public class Uno {
      * @param enabled Enable/Disable the 7-0 rule.
      */
     public void setSevenZeroRule(boolean enabled) {
-        _2vs2 &= !(sevenZeroRule = enabled);
+        sevenZeroRule = enabled;
+        if (enabled) {
+            players = 4;
+            _2vs2 = false;
+        } // if (enabled)
     } // setSevenZeroRule(boolean)
 
     /**
