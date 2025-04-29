@@ -10,6 +10,7 @@
 #ifndef __MAIN_H_494649FDFA62B3C015120BCB9BE17613__
 #define __MAIN_H_494649FDFA62B3C015120BCB9BE17613__
 
+#include <QFont>
 #include <QImage>
 #include <QString>
 #include <QWidget>
@@ -56,6 +57,7 @@ private:
     int sSpeed;
     int sStatus;
     int sWinner;
+    QFont sFont;
     Ui::Main* ui;
     int sHideFlag;
     QImage sScreen;
@@ -79,8 +81,10 @@ private:
     void swapWith(int whom);
     void setStatus(int status);
     void threadWait(int millis);
+    int getTextWidth(const QString& text);
     void play(int index, Color color = NONE);
     void draw(int count = 1, bool force = false);
+    void putText(const QString& text, int x, int y);
     void refreshScreen(const QString& message = "");
     void loadReplay(const QString& replayName = "");
     void animate(int layerCount, AnimateLayer layer[]);

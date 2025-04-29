@@ -16,14 +16,15 @@ import static com.github.hikari_toyama.unocard.core.Content.WILD;
 import static com.github.hikari_toyama.unocard.core.Content.WILD_DRAW4;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.util.Log;
 
 import com.github.hikari_toyama.unocard.R;
 
 import org.opencv.android.Utils;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
@@ -36,9 +37,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
-import java.util.TreeMap;
 
 /**
  * Uno Runtime Class (Singleton).
@@ -78,39 +77,6 @@ public class Uno {
      * Tag name for Android Logcat.
      */
     static final String TAG = "Uno";
-
-    /**
-     * Our custom font's character-to-position map.
-     */
-    static final Map<Character, Integer> CHAR_MAP = new TreeMap<>();
-
-    static {
-        char[] hanZi = new char[]{
-                '一', '上', '下', '东', '为', '乐', '人', '仍',
-                '从', '令', '以', '传', '余', '你', '保', '再',
-                '准', '出', '击', '分', '则', '到', '剩', '功',
-                '加', '北', '南', '发', '变', '叠', '可', '合',
-                '向', '否', '和', '回', '堆', '备', '多', '失',
-                '始', '定', '家', '将', '已', '度', '开', '张',
-                '戏', '成', '或', '战', '所', '打', '托', '择',
-                '指', '挑', '换', '接', '摸', '改', '效', '数',
-                '新', '方', '无', '时', '是', '最', '有', '来',
-                '标', '次', '欢', '法', '游', '点', '牌', '留',
-                '的', '目', '管', '红', '给', '绿', '置', '色',
-                '蓝', '被', '西', '规', '认', '设', '败', '跳',
-                '过', '迎', '选', '重', '难', '音', '颜', '黄'
-        }; // new char[]{}
-
-        for (int i = 0x20; i <= 0x7f; ++i) {
-            int r = (i >>> 4) - 2, c = i & 0x0f;
-            CHAR_MAP.put((char) i, (r << 4) | c);
-        } // for (int i = 0x20; i <= 0x7f; ++i)
-
-        for (int i = 0; i < hanZi.length; ++i) {
-            int r = (i >>> 3) + 6, c = i & 0x07;
-            CHAR_MAP.put(hanZi[i], (r << 4) | c);
-        } // for (int i = 0; i < hanZi.length; ++i)
-    } // static
 
     /**
      * Card deck (ready to use).
@@ -176,16 +142,6 @@ public class Uno {
      * Difficulty button image resources (HARD).
      */
     Mat hardImage, hardImage_d;
-
-    /**
-     * Font image.
-     */
-    Mat font;
-
-    /**
-     * Color blocks. Used for drawing characters.
-     */
-    Mat[] blk_r, blk_b, blk_g, blk_y, blk_w;
 
     /**
      * Player in turn. Must be one of the following:
@@ -292,26 +248,25 @@ public class Uno {
     Uno(Context c) throws IOException {
         Mat[] br, dk;
         int i, loaded, total;
-        Scalar rgb_red, rgb_blue, rgb_green, rgb_white, rgb_yellow;
 
         // Preparations
         loaded = 0;
-        total = 127;
+        total = 124;
         Log.i(TAG, "Loading... (0%)");
 
         // Load background image resources
         bgWelcome = Utils.loadResource(c, R.raw.bg_welcome);
         bgCounter = Utils.loadResource(c, R.raw.bg_counter);
         bgClockwise = Utils.loadResource(c, R.raw.bg_clockwise);
-        Imgproc.cvtColor(bgWelcome, bgWelcome, Imgproc.COLOR_BGR2RGB);
-        Imgproc.cvtColor(bgCounter, bgCounter, Imgproc.COLOR_BGR2RGB);
-        Imgproc.cvtColor(bgClockwise, bgClockwise, Imgproc.COLOR_BGR2RGB);
+        Imgproc.cvtColor(bgWelcome, bgWelcome, Imgproc.COLOR_BGRA2RGBA);
+        Imgproc.cvtColor(bgCounter, bgCounter, Imgproc.COLOR_BGRA2RGBA);
+        Imgproc.cvtColor(bgClockwise, bgClockwise, Imgproc.COLOR_BGRA2RGBA);
         loaded += 3;
         Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
 
         // Load card back image resource
         backImage = Utils.loadResource(c, R.raw.back);
-        Imgproc.cvtColor(backImage, backImage, Imgproc.COLOR_BGR2RGB);
+        Imgproc.cvtColor(backImage, backImage, Imgproc.COLOR_BGRA2RGBA);
         ++loaded;
         Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
 
@@ -320,10 +275,10 @@ public class Uno {
         hardImage = Utils.loadResource(c, R.raw.lv_hard);
         easyImage_d = Utils.loadResource(c, R.raw.lv_easy_dark);
         hardImage_d = Utils.loadResource(c, R.raw.lv_hard_dark);
-        Imgproc.cvtColor(easyImage, easyImage, Imgproc.COLOR_BGR2RGB);
-        Imgproc.cvtColor(hardImage, hardImage, Imgproc.COLOR_BGR2RGB);
-        Imgproc.cvtColor(easyImage_d, easyImage_d, Imgproc.COLOR_BGR2RGB);
-        Imgproc.cvtColor(hardImage_d, hardImage_d, Imgproc.COLOR_BGR2RGB);
+        Imgproc.cvtColor(easyImage, easyImage, Imgproc.COLOR_BGRA2RGBA);
+        Imgproc.cvtColor(hardImage, hardImage, Imgproc.COLOR_BGRA2RGBA);
+        Imgproc.cvtColor(easyImage_d, easyImage_d, Imgproc.COLOR_BGRA2RGBA);
+        Imgproc.cvtColor(hardImage_d, hardImage_d, Imgproc.COLOR_BGRA2RGBA);
         loaded += 4;
         Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
 
@@ -441,8 +396,8 @@ public class Uno {
                 Utils.loadResource(c, R.raw.dark_kw4)
         }; // dk = new Mat[]{}
         for (i = 0; i < 54; ++i) {
-            Imgproc.cvtColor(br[i], br[i], Imgproc.COLOR_BGR2RGB);
-            Imgproc.cvtColor(dk[i], dk[i], Imgproc.COLOR_BGR2RGB);
+            Imgproc.cvtColor(br[i], br[i], Imgproc.COLOR_BGRA2RGBA);
+            Imgproc.cvtColor(dk[i], dk[i], Imgproc.COLOR_BGRA2RGBA);
             loaded += 2;
             Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
         } // for (i = 0; i < 54; ++i)
@@ -463,44 +418,11 @@ public class Uno {
                 Utils.loadResource(c, R.raw.front_yw4)
         }; // w4Image = new Mat[]{}
         for (i = 1; i < 5; ++i) {
-            Imgproc.cvtColor(wImage[i], wImage[i], Imgproc.COLOR_BGR2RGB);
-            Imgproc.cvtColor(w4Image[i], w4Image[i], Imgproc.COLOR_BGR2RGB);
+            Imgproc.cvtColor(wImage[i], wImage[i], Imgproc.COLOR_BGRA2RGBA);
+            Imgproc.cvtColor(w4Image[i], w4Image[i], Imgproc.COLOR_BGRA2RGBA);
             loaded += 2;
             Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
         } // for (i = 1; i < 5; ++i)
-
-        // Load font image
-        font = Utils.loadResource(c, R.raw.font_w);
-        Imgproc.cvtColor(font, font, Imgproc.COLOR_BGR2RGB);
-        ++loaded;
-        Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
-
-        // Generate color blocks
-        rgb_red = new Scalar(0xFF, 0x77, 0x77);
-        rgb_blue = new Scalar(0x77, 0x77, 0xFF);
-        rgb_green = new Scalar(0x77, 0xCC, 0x77);
-        rgb_white = new Scalar(0xCC, 0xCC, 0xCC);
-        rgb_yellow = new Scalar(0xFF, 0xCC, 0x11);
-        blk_r = new Mat[]{
-                new Mat(48, 17, CvType.CV_8UC3, rgb_red),    // for ASCII
-                new Mat(48, 33, CvType.CV_8UC3, rgb_red)     // for CJK
-        }; // blk_r = new Mat[]{}
-        blk_b = new Mat[]{
-                new Mat(48, 17, CvType.CV_8UC3, rgb_blue),   // for ASCII
-                new Mat(48, 33, CvType.CV_8UC3, rgb_blue)    // for CJK
-        }; // blk_b = new Mat[]{}
-        blk_g = new Mat[]{
-                new Mat(48, 17, CvType.CV_8UC3, rgb_green),  // for ASCII
-                new Mat(48, 33, CvType.CV_8UC3, rgb_green)   // for CJK
-        }; // blk_g = new Mat[]{}
-        blk_w = new Mat[]{
-                new Mat(48, 17, CvType.CV_8UC3, rgb_white),  // for ASCII
-                new Mat(48, 33, CvType.CV_8UC3, rgb_white)   // for CJK
-        }; // blk_w = new Mat[]{}
-        blk_y = new Mat[]{
-                new Mat(48, 17, CvType.CV_8UC3, rgb_yellow), // for ASCII
-                new Mat(48, 33, CvType.CV_8UC3, rgb_yellow)  // for CJK
-        }; // blk_y = new Mat[]{}
 
         // Generate 54 types of cards
         table = new Card[54];
@@ -665,24 +587,21 @@ public class Uno {
      *
      * @param text Measure which text's width.
      * @return Width of the provided text (unit: pixels).
+     * @deprecated This API has been moved into MainActivity class.
      */
+    @Deprecated
     public int getTextWidth(String text) {
-        char[] txt;
-        Integer position;
-        int i, n, r, width;
+        int width = 0;
+        char[] txt = text.toCharArray();
 
-        txt = text.toCharArray();
-        for (i = width = 0, n = txt.length; i < n; ++i) {
+        for (int i = 0, n = txt.length; i < n; ++i) {
             if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']') {
                 i += 2;
             } // if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']')
             else {
-                position = CHAR_MAP.get(txt[i]);
-                if (position == null) position = 0x1f;
-                r = position >>> 4;
-                width += r < 6 ? 17 : 33;
+                width += ' ' <= txt[i] && txt[i] <= '~' ? 17 : 33;
             } // else
-        } // for (i = width = 0, n = txt.length; i < n; ++i)
+        } // for (int i = 0, n = txt.length; i < n; ++i)
 
         return width;
     } // getTextWidth(String)
@@ -698,38 +617,41 @@ public class Uno {
      * @param text Put which text.
      * @param x    Put on where (x coordinate).
      * @param y    Put on where (y coordinate).
+     * @deprecated This API has been moved into MainActivity class.
      */
+    @Deprecated
     public void putText(Mat m, String text, int x, int y) {
-        Mat mask;
-        Mat[] blk;
-        char[] txt;
-        Integer position;
-        int i, n, r, c, w;
+        Paint pen = new Paint();
+        int pen_red = 0xffff7777;
+        int pen_blue = 0xff7777ff;
+        int pen_green = 0xff77cc77;
+        int pen_white = 0xffcccccc;
+        int pen_yellow = 0xffffcc11;
+        char[] txt = text.toCharArray();
+        Mat mat = m.submat(y - 36, y + 12, 0, m.cols());
+        Bitmap bmp = Bitmap.createBitmap(m.cols(), 48, Bitmap.Config.ARGB_8888);
+        Canvas cvs = new Canvas(bmp);
 
-        y -= 36;
-        blk = blk_w;
-        txt = text.toCharArray();
-        for (i = 0, n = txt.length; i < n; ++i) {
+        pen.setColor(pen_white);
+        Utils.matToBitmap(mat, bmp);
+        for (int i = 0, n = txt.length; i < n; ++i) {
             if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']') {
                 ++i;
-                if (txt[i] == 'R') blk = blk_r;
-                if (txt[i] == 'B') blk = blk_b;
-                if (txt[i] == 'G') blk = blk_g;
-                if (txt[i] == 'W') blk = blk_w;
-                if (txt[i] == 'Y') blk = blk_y;
+                if (txt[i] == 'R') pen.setColor(pen_red);
+                if (txt[i] == 'B') pen.setColor(pen_blue);
+                if (txt[i] == 'G') pen.setColor(pen_green);
+                if (txt[i] == 'W') pen.setColor(pen_white);
+                if (txt[i] == 'Y') pen.setColor(pen_yellow);
                 ++i;
             } // if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']')
             else {
-                position = CHAR_MAP.get(txt[i]);
-                if (position == null) position = 0x1f;
-                r = position >>> 4;
-                c = position & 0x0f;
-                w = r < 6 ? 17 : 33;
-                mask = font.submat(48 * r, 48 + 48 * r, w * c, w + w * c);
-                blk[r < 6 ? 0 : 1].copyTo(m.submat(y, y + 48, x, x + w), mask);
-                x += w;
+                cvs.drawText(txt, i, 1, x, 36, pen);
+                x += ' ' <= txt[i] && txt[i] <= '~' ? 17 : 33;
             } // else
-        } // for (i = 0, n = txt.length; i < n; ++i)
+        } // for (int i = 0, n = txt.length; i < n; ++i)
+
+        Utils.bitmapToMat(bmp, mat);
+        bmp.recycle();
     } // putText(Mat, String, int, int)
 
     /**

@@ -14,6 +14,8 @@ public interface I18N {
 
     I18N ZH_CN = new I18N_zh_CN();
 
+    I18N JA_JP = new I18N_ja_JP();
+
     String act_drawCard(int i, String s);
 
     String act_drawCardCount(int i1, int i2);
@@ -48,15 +50,15 @@ public interface I18N {
 
     String btn_7_0(boolean active);
 
-    String btn_auto();
-
     String btn_ask(boolean active);
 
-    String btn_keep(boolean active);
+    String btn_auto();
 
     String btn_d2(boolean active);
 
     String btn_d4(boolean active);
+
+    String btn_keep(boolean active);
 
     String btn_none(boolean active);
 
@@ -221,11 +223,6 @@ class I18N_en_US implements I18N {
     } // ask_target()
 
     @Override
-    public String btn_ask(boolean active) {
-        return active ? "[Y]<ASK>" : "<ASK>";
-    } // btn_ask(boolean)
-
-    @Override
     public String btn_2vs2(boolean active) {
         return active ? "[G]<2vs2>" : "<2vs2>";
     } // btn_2vs2(boolean)
@@ -244,6 +241,11 @@ class I18N_en_US implements I18N {
     public String btn_7_0(boolean active) {
         return active ? "[B]<7-0>" : "<7-0>";
     } // btn_7_0(boolean)
+
+    @Override
+    public String btn_ask(boolean active) {
+        return active ? "[Y]<ASK>" : "<ASK>";
+    } // btn_ask(boolean)
 
     @Override
     public String btn_auto() {
@@ -762,5 +764,313 @@ class I18N_zh_CN implements I18N {
         return "是";
     } // label_yes()
 } // I18N_zh_CN Class
+
+class I18N_ja_JP implements I18N {
+    static final String[] P = {"あなた", "西", "北", "東"};
+    static final String[] C = {
+            "無色", "[R]赤色", "[B]青色", "[G]緑色", "[Y]黄色"
+    }; // C[]
+
+    String c(int i) {
+        return 0 <= i && i <= 4 ? C[i] : "????";
+    } // c(int)
+
+    String p(int i) {
+        return 0 <= i && i <= 3 ? P[i] : "????";
+    } // p(int)
+
+    @Override
+    public String act_drawCard(int i, String s) {
+        return p(i) + ": " + s + "[W] を引く";
+    } // act_drawCard(int, String)
+
+    @Override
+    public String act_drawCardCount(int i1, int i2) {
+        return p(i1) + ": 手札を " + i2 + " 枚引く";
+    } // act_drawCardCount(int, int)
+
+    @Override
+    public String act_pass(int i) {
+        return p(i) + ": パス";
+    } // act_pass(int)
+
+    @Override
+    public String act_playCard(int i, String s) {
+        return p(i) + ": " + s;
+    } // act_playCard(int, String)
+
+    @Override
+    public String act_playDraw2(int i1, int i2, int i3) {
+        return p(i1) + ": " + p(i2) + "に手札を " + i3 + " 枚引かせる";
+    } // act_playDraw2(int, int, int)
+
+    @Override
+    public String act_playRev(int i) {
+        return p(i) + ": 方向を変える";
+    } // act_playRev(int)
+
+    @Override
+    public String act_playSkip(int i1, int i2) {
+        return p(i1) + ": " + p(i2) + "の番をスキップ";
+    } // act_playSkip(int, int)
+
+    @Override
+    public String act_playWild(int i1, int i2) {
+        return p(i1) + ": 次の色を" + c(i2) + "[W]に変える";
+    } // act_playWild(int, int)
+
+    @Override
+    public String act_playWildDraw4(int i1, int i2) {
+        return p(i1) + ": 色を変更 & " + p(i2) + "に手札を 4 枚引かせる";
+    } // act_playWildDraw4(int, int)
+
+    @Override
+    public String ask_challenge(int i) {
+        return "^ 前の方はまだ" + c(i) + "の手札[W]を持っていると思いますか?";
+    } // ask_challenge(int)
+
+    @Override
+    public String ask_color() {
+        return "^ 次の色を指定してください";
+    } // ask_color()
+
+    @Override
+    public String ask_keep_play() {
+        return "^ 引いたカードすぐを出しますか?";
+    } // ask_keep_play()
+
+    @Override
+    public String ask_target() {
+        return "^ 手札を交換する相手を指定してください";
+    } // ask_target()
+
+    @Override
+    public String btn_2vs2(boolean active) {
+        return active ? "[G]<2vs2>" : "<2vs2>";
+    } // btn_2vs2(boolean)
+
+    @Override
+    public String btn_3p(boolean active) {
+        return active ? "[R]<3P>" : "<3P>";
+    } // btn_3p(boolean)
+
+    @Override
+    public String btn_4p(boolean active) {
+        return active ? "[Y]<4P>" : "<4P>";
+    } // btn_4p(boolean)
+
+    @Override
+    public String btn_7_0(boolean active) {
+        return active ? "[B]<7-0>" : "<7-0>";
+    } // btn_7_0(boolean)
+
+    @Override
+    public String btn_ask(boolean active) {
+        return active ? "[Y]<任意>" : "<任意>";
+    } // btn_ask(boolean)
+
+    @Override
+    public String btn_auto() {
+        return "<オート>";
+    } // btn_auto()
+
+    @Override
+    public String btn_d2(boolean active) {
+        return active ? "[Y]<+2>" : "<+2>";
+    } // btn_d2(boolean)
+
+    @Override
+    public String btn_d4(boolean active) {
+        return active ? "[G]<+2+4>" : "<+2+4>";
+    } // btn_d4(boolean)
+
+    @Override
+    public String btn_keep(boolean active) {
+        return active ? "[R]<保留>" : "<保留>";
+    } // btn_keep(boolean)
+
+    @Override
+    public String btn_none(boolean active) {
+        return active ? "[R]<無効>" : "<無効>";
+    } // btn_none(boolean)
+
+    @Override
+    @Deprecated
+    public String btn_off(boolean active) {
+        return active ? "[R]<無効>" : "<無効>";
+    } // btn_off(boolean)
+
+    @Override
+    @Deprecated
+    public String btn_on(boolean active) {
+        return active ? "[G]<有効>" : "<有効>";
+    } // btn_on(boolean)
+
+    @Override
+    public String btn_play(boolean active) {
+        return active ? "[G]<出す>" : "<出す>";
+    } // btn_play(boolean)
+
+    @Override
+    public String btn_settings(boolean active) {
+        return active ? "[Y]<設定>" : "<設定>";
+    } // btn_settings(boolean)
+
+    @Override
+    public String info_0_rotate() {
+        return "手札を次の方に転送しました";
+    } // info_0_rotate()
+
+    @Override
+    public String info_7_swap(int i1, int i2) {
+        return p(i1) + "は" + p(i2) + "と手札を交換しました";
+    } // info_7_swap(int, int)
+
+    @Override
+    public String info_cannotDraw(int i1, int i2) {
+        return p(i1) + "は手札を " + i2 + " 枚以上持てません";
+    } // info_cannotDraw(int, int)
+
+    @Override
+    public String info_cannotPlay(String s) {
+        return s + "[W] を出せません";
+    } // info_cannotPlay(String)
+
+    @Override
+    public String info_challenge(int i1, int i2, int i3) {
+        return p(i1) + "は" + p(i2) + "が" + c(i3) + "の手札[W]を持っていると思う";
+    } // info_challenge(int, int, int)
+
+    @Override
+    public String info_challengeFailure(int i) {
+        return "チャレンジ失敗、" + p(i) + "は手札を 6 枚引く";
+    } // info_challengeFailure(int)
+
+    @Override
+    public String info_challengeSuccess(int i) {
+        return "チャレンジ成功、" + p(i) + "は手札を 4 枚引く";
+    } // info_challengeSuccess(int)
+
+    @Override
+    public String info_clickAgainToPlay(String s) {
+        return "もう一度クリックして " + s + "[W] を出す";
+    } // info_clickAgainToPlay(String)
+
+    @Override
+    public String info_dirChanged() {
+        return "方向が変わりました";
+    } // info_dirChanged()
+
+    @Override
+    public String info_gameOver(int i1, int i2) {
+        return i2 < 0
+                ? "スコア: " + i1 + "[R](" + i2 + ")[W]. UNO をクリックして再開"
+                : "スコア: " + i1 + "[G](+" + i2 + ")[W]. UNO をクリックして再開";
+    } // info_gameOver(int, int)
+
+    @Override
+    public String info_ready() {
+        return "準備完了";
+    } // info_ready()
+
+    @Override
+    public String info_ruleSettings() {
+        return "ルール設定";
+    } // info_ruleSettings()
+
+    @Override
+    public String info_skipped(int i) {
+        return p(i) + "の番はスキップされました";
+    } // info_skipped(int)
+
+    @Override
+    public String info_welcome() {
+        return "UNO へようこそ! UNO をクリックしてゲームスタート";
+    } // info_welcome()
+
+    @Override
+    public String info_yourTurn() {
+        return "手札を一枚出すか、デッキから手札を一枚引く";
+    } // info_yourTurn()
+
+    @Override
+    public String info_yourTurn_stackDraw2(int i1, int i2) {
+        return i2 == 1
+                ? "+2 を一枚重ねるか、デッキから手札を " + i1 + " 枚引く"
+                : "+2/+4 を一枚重ねるか、デッキから手札を " + i1 + " 枚引く";
+    } // info_yourTurn_stackDraw2(int, int)
+
+    @Override
+    @Deprecated
+    public String label_7_0() {
+        return "7 交換、0 転送:";
+    } // label_7_0()
+
+    @Override
+    public String label_bgm() {
+        return "音楽";
+    } // label_bgm()
+
+    @Override
+    public String label_draw2Stack() {
+        return "積み重ね可能の手札:";
+    } // label_draw2Stack()
+
+    @Override
+    public String label_forcePlay() {
+        return "出せる手札を引いた時:";
+    } // label_forcePlay()
+
+    @Override
+    public String label_gameMode() {
+        return "遊び方:";
+    } // label_gameMode()
+
+    @Override
+    public String label_initialCards() {
+        return "最初の手札数:";
+    } // label_initialCards()
+
+    @Override
+    public String label_level() {
+        return "難易度";
+    } // label_level()
+
+    @Override
+    public String label_no() {
+        return "いいえ";
+    } // label_no()
+
+    @Override
+    @Deprecated
+    public String label_players() {
+        return "人数";
+    } // label_players()
+
+    @Override
+    public String label_remain_used(int i1, int i2) {
+        return "残り/使用済: " + i1 + "/" + i2;
+    } // label_remain_used(int, int)
+
+    @Override
+    public String label_score() {
+        return "スコア";
+    } // label_score()
+
+    @Override
+    public String label_snd() {
+        return "音声";
+    } // label_snd()
+
+    @Override
+    public String label_speed() {
+        return "速さ";
+    } // label_speed()
+
+    @Override
+    public String label_yes() {
+        return "はい";
+    } // label_yes()
+} // I18N_ja_JP Class
 
 // E.O.F

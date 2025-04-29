@@ -647,6 +647,288 @@ public:
     } // label_yes()
 }; // I18N_zh_CN class
 
+class I18N_ja_JP : public I18N {
+private:
+    char t[128];
+
+    inline static String c(int i) {
+        static String UNKNOWN = "????";
+        static String S[] = {
+            "無色", "[R]赤色", "[B]青色", "[G]緑色", "[Y]黄色"
+        }; // S[]
+        return 0 <= i && i <= 4 ? S[i] : UNKNOWN;
+    } // c(int)
+
+    inline static String p(int i) {
+        static String UNKNOWN = "????";
+        static String S[] = { "あなた", "西", "北", "東" };
+        return 0 <= i && i <= 3 ? S[i] : UNKNOWN;
+    } // p(int)
+
+public:
+    static inline I18N_ja_JP* getInstance() {
+        static I18N_ja_JP instance;
+        return &instance;
+    } // getInstance()
+
+    inline String act_drawCard(int i, String s) {
+        sprintf(t, "%s: %s[W] を引く", p(i), s);
+        return t;
+    } // act_drawCard(int, String)
+
+    inline String act_drawCardCount(int i1, int i2) {
+        sprintf(t, "%s: 手札を %d 枚引く", p(i1), i2);
+        return t;
+    } // act_drawCardCount(int, int)
+
+    inline String act_pass(int i) {
+        sprintf(t, "%s: パス", p(i));
+        return t;
+    } // act_pass(int)
+
+    inline String act_playCard(int i, String s) {
+        sprintf(t, "%s: %s", p(i), s);
+        return t;
+    } // act_playCard(int, String)
+
+    inline String act_playDraw2(int i1, int i2, int i3) {
+        sprintf(t, "%s: %sに手札を %d 枚引かせる", p(i1), p(i2), i3);
+        return t;
+    } // act_playDraw2(int, int, int)
+
+    inline String act_playRev(int i) {
+        sprintf(t, "%s: 方向を変える", p(i));
+        return t;
+    } // act_playRev(int)
+
+    inline String act_playSkip(int i1, int i2) {
+        sprintf(t, "%s: %sの番をスキップ", p(i1), p(i2));
+        return t;
+    } // act_playSkip(int, int)
+
+    inline String act_playWild(int i1, int i2) {
+        sprintf(t, "%s: 次の色を%s[W]に変える", p(i1), c(i2));
+        return t;
+    } // act_playWild(int, int)
+
+    inline String act_playWildDraw4(int i1, int i2) {
+        sprintf(t, "%s: 色を変更 & %sに手札を 4 枚引かせる", p(i1), p(i2));
+        return t;
+    } // act_playWildDraw4(int, int)
+
+    inline String ask_challenge(int i) {
+        sprintf(t, "^ 前の方はまだ%sの手札[W]を持っていると思いますか?", c(i));
+        return t;
+    } // ask_challenge(int)
+
+    inline String ask_color() {
+        return "^ 次の色を指定してください";
+    } // ask_color()
+
+    inline String ask_keep_play() {
+        return "^ 引いたカードすぐを出しますか?";
+    } // ask_keep_play()
+
+    inline String ask_target() {
+        return "^ 手札を交換する相手を指定してください";
+    } // ask_target()
+
+    inline String btn_2vs2(bool active) {
+        return active ? "[G]<2vs2>" : "<2vs2>";
+    } // btn_2vs2(bool)
+
+    inline String btn_3p(bool active) {
+        return active ? "[R]<3P>" : "<3P>";
+    } // btn_3p(bool)
+
+    inline String btn_4p(bool active) {
+        return active ? "[Y]<4P>" : "<4P>";
+    } // btn_4p(bool)
+
+    inline String btn_7_0(bool active) {
+        return active ? "[B]<7-0>" : "<7-0>";
+    } // btn_7_0(bool)
+
+    inline String btn_ask(bool active) {
+        return active ? "[Y]<任意>" : "<任意>";
+    } // btn_ask(bool)
+
+    inline String btn_auto() {
+        return "<オート>";
+    } // btn_auto()
+
+    inline String btn_d2(bool active) {
+        return active ? "[Y]<+2>" : "<+2>";
+    } // btn_d2(bool)
+
+    inline String btn_d4(bool active) {
+        return active ? "[G]<+2+4>" : "<+2+4>";
+    } // btn_d4(bool)
+
+    inline String btn_keep(bool active) {
+        return active ? "[R]<保留>" : "<保留>";
+    } // btn_keep(bool)
+
+    inline String btn_none(bool active) {
+        return active ? "[R]<無効>" : "<無効>";
+    } // btn_none(bool)
+
+    [[deprecated]]
+    inline String btn_off(bool active) {
+        return active ? "[R]<無効>" : "<無効>";
+    } // btn_off(bool)
+
+    [[deprecated]]
+    inline String btn_on(bool active) {
+        return active ? "[G]<有効>" : "<有効>";
+    } // btn_on(bool)
+
+    inline String btn_play(bool active) {
+        return active ? "[G]<出す>" : "<出す>";
+    } // btn_play(bool)
+
+    inline String btn_settings(bool active) {
+        return active ? "[Y]<設定>" : "<設定>";
+    } // btn_settings(bool)
+
+    inline String info_0_rotate() {
+        return "手札を次の方に転送しました";
+    } // info_0_rotate()
+
+    inline String info_7_swap(int i1, int i2) {
+        sprintf(t, "%sは%sと手札を交換しました", p(i1), p(i2));
+        return t;
+    } // info_7_swap(int, int)
+
+    inline String info_cannotDraw(int i1, int i2) {
+        sprintf(t, "%sは手札を %d 枚以上持てません", p(i1), i2);
+        return t;
+    } // info_cannotDraw(int, int)
+
+    inline String info_cannotPlay(String s) {
+        sprintf(t, "%s[W] を出せません", s);
+        return t;
+    } // info_cannotPlay(String)
+
+    inline String info_challenge(int i1, int i2, int i3) {
+        sprintf(t, "%sは%sが%sの手札[W]を持っていると思う", p(i1), p(i2), c(i3));
+        return t;
+    } // info_challenge(int, int, int)
+
+    inline String info_challengeFailure(int i) {
+        sprintf(t, "チャレンジ失敗、%sは手札を 6 枚引く", p(i));
+        return t;
+    } // info_challengeFailure(int)
+
+    inline String info_challengeSuccess(int i) {
+        sprintf(t, "チャレンジ成功、%sは手札を 4 枚引く", p(i));
+        return t;
+    } // info_challengeSuccess(int)
+
+    inline String info_clickAgainToPlay(String s) {
+        sprintf(t, "もう一度クリックして %s[W] を出す", s);
+        return t;
+    } // info_clickAgainToPlay(String)
+
+    inline String info_dirChanged() {
+        return "方向が変わりました";
+    } // info_dirChanged()
+
+    inline String info_gameOver(int i1, int i2) {
+        i2 < 0
+            ? sprintf(t, "スコア: %d[R](%d)[W]. UNO をクリックして再開", i1, i2)
+            : sprintf(t, "スコア: %d[G](%+d)[W]. UNO をクリックして再開", i1, i2);
+        return t;
+    } // info_gameOver(int, int)
+
+    inline String info_ready() {
+        return "準備完了";
+    } // info_ready()
+
+    inline String info_ruleSettings() {
+        return "ルール設定";
+    } // info_ruleSettings()
+
+    inline String info_skipped(int i) {
+        sprintf(t, "%sの番はスキップされました", p(i));
+        return t;
+    } // info_skipped(int)
+
+    inline String info_welcome() {
+        return "UNO へようこそ! UNO をクリックしてゲームスタート";
+    } // info_welcome()
+
+    inline String info_yourTurn() {
+        return "手札を一枚出すか、デッキから手札を一枚引く";
+    } // info_yourTurn()
+
+    inline String info_yourTurn_stackDraw2(int i1, int i2) {
+        i2 == 1
+            ? sprintf(t, "+2 を一枚重ねるか、デッキから手札を %d 枚引く", i1)
+            : sprintf(t, "+2/+4 を一枚重ねるか、デッキから手札を %d 枚引く", i1);
+        return t;
+    } // info_yourTurn_stackDraw2(int, int)
+
+    [[deprecated]]
+    inline String label_7_0() {
+        return "7 交換、0 転送:";
+    } // label_7_0()
+
+    inline String label_bgm() {
+        return "音楽";
+    } // label_bgm()
+
+    inline String label_draw2Stack() {
+        return "積み重ね可能の手札:";
+    } // label_draw2Stack()
+
+    inline String label_forcePlay() {
+        return "出せる手札を引いた時:";
+    } // label_forcePlay()
+
+    inline String label_gameMode() {
+        return "遊び方:";
+    } // label_gameMode()
+
+    inline String label_initialCards() {
+        return "最初の手札数:";
+    } // label_initialCards()
+
+    inline String label_level() {
+        return "難易度";
+    } // label_level()
+
+    inline String label_no() {
+        return "いいえ";
+    } // label_no()
+
+    [[deprecated]]
+    inline String label_players() {
+        return "人数";
+    } // label_players()
+
+    inline String label_remain_used(int i1, int i2) {
+        sprintf(t, "残り/使用済: %d/%d", i1, i2);
+        return t;
+    } // label_remain_used(int, int)
+
+    inline String label_score() {
+        return "スコア";
+    } // label_score()
+
+    inline String label_snd() {
+        return "音声";
+    } // label_snd()
+
+    inline String label_speed() {
+        return "速さ";
+    } // label_speed()
+
+    inline String label_yes() {
+        return "はい";
+    } // label_yes()
+}; // I18N_ja_JP class
+
 #endif // __I18N_H_494649FDFA62B3C015120BCB9BE17613__
 
 // E.O.F
