@@ -9,11 +9,7 @@
 
 package com.github.hikari_toyama.unocard.core;
 
-import static com.github.hikari_toyama.unocard.core.Color.BLUE;
-import static com.github.hikari_toyama.unocard.core.Color.GREEN;
 import static com.github.hikari_toyama.unocard.core.Color.NONE;
-import static com.github.hikari_toyama.unocard.core.Color.RED;
-import static com.github.hikari_toyama.unocard.core.Color.YELLOW;
 import static com.github.hikari_toyama.unocard.core.Content.NUM0;
 import static com.github.hikari_toyama.unocard.core.Content.NUM7;
 import static com.github.hikari_toyama.unocard.core.Content.WILD;
@@ -110,21 +106,11 @@ public class AI {
             } // for (Card card : uno.getCurrPlayer().getHandCards())
 
             // Calculate the best color
-            if (score[RED.ordinal()] > score[bestColor.ordinal()]) {
-                bestColor = RED;
-            } // if (score[RED.ordinal()] > score[bestColor.ordinal()])
-
-            if (score[BLUE.ordinal()] > score[bestColor.ordinal()]) {
-                bestColor = BLUE;
-            } // if (score[BLUE.ordinal()] > score[bestColor.ordinal()])
-
-            if (score[GREEN.ordinal()] > score[bestColor.ordinal()]) {
-                bestColor = GREEN;
-            } // if (score[GREEN.ordinal()] > score[bestColor.ordinal()])
-
-            if (score[YELLOW.ordinal()] > score[bestColor.ordinal()]) {
-                bestColor = YELLOW;
-            } // if (score[YELLOW.ordinal()] > score[bestColor.ordinal()])
+            for (int i = 1; i < 5; ++i) {
+                if (score[i] > score[bestColor.ordinal()]) {
+                    bestColor = Color.values()[i];
+                } // if (score[i] > score[bestColor.ordinal()])
+            } // for (int i = 1; i < 5; ++i)
 
             if (bestColor == NONE) {
                 // Only wild cards in hand
@@ -132,7 +118,7 @@ public class AI {
                 bestColor
                         = prevWeak != NONE ? prevWeak
                         : oppoWeak != NONE && !uno.is2vs2() ? oppoWeak
-                        : nextWeak != NONE ? nextWeak : RED;
+                        : nextWeak != NONE ? nextWeak : Color.RED;
             } // if (bestColor == NONE)
         } // else
 

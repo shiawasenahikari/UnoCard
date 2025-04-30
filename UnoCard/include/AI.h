@@ -114,21 +114,11 @@ public:
             } // for (Card* card : uno->getCurrPlayer()->getHandCards())
 
             // Calculate the best color
-            if (score[RED] > score[bestColor]) {
-                bestColor = RED;
-            } // if (score[RED] > score[bestColor])
-
-            if (score[BLUE] > score[bestColor]) {
-                bestColor = BLUE;
-            } // if (score[BLUE] > score[bestColor]
-
-            if (score[GREEN] > score[bestColor]) {
-                bestColor = GREEN;
-            } // if (score[GREEN] > score[bestColor])
-
-            if (score[YELLOW] > score[bestColor]) {
-                bestColor = YELLOW;
-            } // if (score[YELLOW] > score[bestColor])
+            for (int i = 1; i < 5; ++i) {
+                if (score[i] > score[bestColor]) {
+                    bestColor = Color(i);
+                } // if (score[i] > score[bestColor])
+            } // for (int i = 1; i < 5; ++i)
 
             if (bestColor == NONE) {
                 // Only wild cards in hand
