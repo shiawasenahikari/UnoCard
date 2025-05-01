@@ -484,31 +484,34 @@ public class MainActivity extends AppCompatActivity
         int pen_white = 0xffcccccc;
         int pen_yellow = 0xffffcc11;
         int width = getTextWidth(text);
-        char[] txt = text.toCharArray();
-        Mat mat = mScr.submat(y - 36, y + 12, x, x + width);
-        Bitmap bmp = Bitmap.createBitmap(width, 48, Bitmap.Config.ARGB_8888);
-        Canvas cvs = new Canvas(bmp);
 
-        mPen.setColor(pen_white);
-        Utils.matToBitmap(mat, bmp);
-        for (int i = x = 0, n = txt.length; i < n; ++i) {
-            if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']') {
-                ++i;
-                if (txt[i] == 'R') mPen.setColor(pen_red);
-                if (txt[i] == 'B') mPen.setColor(pen_blue);
-                if (txt[i] == 'G') mPen.setColor(pen_green);
-                if (txt[i] == 'W') mPen.setColor(pen_white);
-                if (txt[i] == 'Y') mPen.setColor(pen_yellow);
-                ++i;
-            } // if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']')
-            else {
-                cvs.drawText(txt, i, 1, x, 36, mPen);
-                x += ' ' <= txt[i] && txt[i] <= '~' ? 17 : 33;
-            } // else
-        } // for (int i = x = 0, n = txt.length; i < n; ++i)
+        if (width > 0) {
+            char[] txt = text.toCharArray();
+            Mat mat = mScr.submat(y - 36, y + 12, x, x + width);
+            Bitmap bmp = Bitmap.createBitmap(width, 48, mBmp.getConfig());
+            Canvas cvs = new Canvas(bmp);
 
-        Utils.bitmapToMat(bmp, mat);
-        bmp.recycle();
+            mPen.setColor(pen_white);
+            Utils.matToBitmap(mat, bmp);
+            for (int i = x = 0, n = txt.length; i < n; ++i) {
+                if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']') {
+                    ++i;
+                    if (txt[i] == 'R') mPen.setColor(pen_red);
+                    if (txt[i] == 'B') mPen.setColor(pen_blue);
+                    if (txt[i] == 'G') mPen.setColor(pen_green);
+                    if (txt[i] == 'W') mPen.setColor(pen_white);
+                    if (txt[i] == 'Y') mPen.setColor(pen_yellow);
+                    ++i;
+                } // if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']')
+                else {
+                    cvs.drawText(txt, i, 1, x, 36, mPen);
+                    x += ' ' <= txt[i] && txt[i] <= '~' ? 17 : 33;
+                } // else
+            } // for (int i = x = 0, n = txt.length; i < n; ++i)
+
+            Utils.bitmapToMat(bmp, mat);
+            bmp.recycle();
+        } // if (width > 0)
     } // putText(String, int, int)
 
     /**

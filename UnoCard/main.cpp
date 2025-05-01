@@ -52,11 +52,6 @@ static const int STAT_WILD_COLOR = 0x5555;
 static const int STAT_DOUBT_WILD4 = 0x6666;
 static const int STAT_SEVEN_TARGET = 0x7777;
 static const int STAT_ASK_KEEP_PLAY = 0x8888;
-static const QPen PEN_RED(QColor(0xFF, 0x77, 0x77));
-static const QPen PEN_BLUE(QColor(0x77, 0x77, 0xFF));
-static const QPen PEN_GREEN(QColor(0x77, 0xCC, 0x77));
-static const QPen PEN_WHITE(QColor(0xCC, 0xCC, 0xCC));
-static const QPen PEN_YELLOW(QColor(0xFF, 0xCC, 0x11));
 static const QBrush BRUSH_RED(QColor(0xFF, 0x55, 0x55));
 static const QBrush BRUSH_BLUE(QColor(0x55, 0x55, 0xFF));
 static const QBrush BRUSH_GREEN(QColor(0x55, 0xAA, 0x55));
@@ -438,15 +433,21 @@ int Main::getTextWidth(const QString& text) {
  * @param y    Put on where (y coordinate).
  */
 void Main::putText(const QString& text, int x, int y) {
-    sPainter->setPen(PEN_WHITE);
+    static const QPen pen_red(QColor(0xFF, 0x77, 0x77));
+    static const QPen pen_blue(QColor(0x77, 0x77, 0xFF));
+    static const QPen pen_green(QColor(0x77, 0xCC, 0x77));
+    static const QPen pen_white(QColor(0xCC, 0xCC, 0xCC));
+    static const QPen pen_yellow(QColor(0xFF, 0xCC, 0x11));
+
+    sPainter->setPen(pen_white);
     for (int i = 0, n = text.length(); i < n; ++i) {
         if ('[' == text[i] && i + 2 < n && text[i + 2] == ']') {
             ++i;
-            if (text[i] == 'R') sPainter->setPen(PEN_RED);
-            if (text[i] == 'B') sPainter->setPen(PEN_BLUE);
-            if (text[i] == 'G') sPainter->setPen(PEN_GREEN);
-            if (text[i] == 'W') sPainter->setPen(PEN_WHITE);
-            if (text[i] == 'Y') sPainter->setPen(PEN_YELLOW);
+            if (text[i] == 'R') sPainter->setPen(pen_red);
+            if (text[i] == 'B') sPainter->setPen(pen_blue);
+            if (text[i] == 'G') sPainter->setPen(pen_green);
+            if (text[i] == 'W') sPainter->setPen(pen_white);
+            if (text[i] == 'Y') sPainter->setPen(pen_yellow);
             ++i;
         } // if ('[' == text[i] && i + 2 < n && text[i + 2] == ']')
         else {
