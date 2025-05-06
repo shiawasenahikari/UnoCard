@@ -344,7 +344,7 @@ public:
     } // label_players()
 
     inline String label_remain_used(int i1, int i2) {
-        sprintf(t, "Remain/Used: %d/%d", i1, i2);
+        sprintf(t, "[Y]R%d[W]/[G]U%d", i1, i2);
         return t;
     } // label_remain_used(int, int)
 
@@ -626,7 +626,7 @@ public:
     } // label_players()
 
     inline String label_remain_used(int i1, int i2) {
-        sprintf(t, "剩余/已出: %d/%d", i1, i2);
+        sprintf(t, "[Y]剩%d[G]用%d", i1, i2);
         return t;
     } // label_remain_used(int, int)
 
@@ -908,7 +908,7 @@ public:
     } // label_players()
 
     inline String label_remain_used(int i1, int i2) {
-        sprintf(t, "残り/使用済: %d/%d", i1, i2);
+        sprintf(t, "[Y]残%d[G]使%d", i1, i2);
         return t;
     } // label_remain_used(int, int)
 

@@ -278,7 +278,7 @@ void Main::setStatus(int status) {
 
         case SKIP:
             // If starting with a [skip], skip dealer's turn.
-            refreshScreen(i18n->info_skipped(sUno->getNow()));
+            refreshScreen(i18n->info_skipped(sUno->getNow()), 0x00);
             threadWait(1500);
             setStatus(sUno->switchNow());
             break; // case SKIP
@@ -341,7 +341,7 @@ void Main::setStatus(int status) {
     case STAT_DOUBT_WILD4:
         if (sUno->getNext() == Player::YOU && !sAuto) {
             // Challenge or not is decided by you
-            refreshScreen(i18n->ask_challenge(sUno->next2lastColor()));
+            refreshScreen(i18n->ask_challenge(sUno->next2lastColor()), 0x00);
         } // if (sUno->getNext() == Player::YOU && !sAuto)
         else if (sAI->needToChallenge()) {
             // Challenge or not is decided by AI
@@ -362,7 +362,7 @@ void Main::setStatus(int status) {
         } // if (sAuto || sUno->getNow() != Player::YOU)
         else {
             // Seven-card is played by you. Select target manually.
-            refreshScreen(i18n->ask_target());
+            refreshScreen(i18n->ask_target(), 0x00);
         } // else
         break; // case STAT_SEVEN_TARGET
 
@@ -371,7 +371,7 @@ void Main::setStatus(int status) {
             play(sSelectedIdx, sAI->calcBestColor4NowPlayer());
         } // if (sAuto)
         else {
-            refreshScreen(i18n->ask_keep_play());
+            refreshScreen(i18n->ask_keep_play(), 0x01);
         } // else
         break; // case STAT_ASK_KEEP_PLAY
 
@@ -464,8 +464,18 @@ void Main::putText(const QString& text, int x, int y) {
  * will be changed after calling this function.
  *
  * @param message Extra message to show.
+ * @param area    Refresh which area. Use | to select multiple areas.
+ *                0x01 = Your hand card area
+ *                0x02 = WEST's hand card area
+ *                0x04 = NORTH's hand card area
+ *                0x08 = EAST's hand card area
+ *                0x10 = (Reversed bit, not used yet)
+ *                0x20 = (Reversed bit, not used yet)
+ *                0x40 = Center deck area
+ *                0x80 = Recent card area
+ *                0xff = Full screen (default)
  */
-void Main::refreshScreen(const QString& message) {
+void Main::refreshScreen(const QString& message, int area) {
     static bool active;
     static QImage image;
     static QString info;
@@ -476,7 +486,13 @@ void Main::refreshScreen(const QString& message) {
     status = sStatus;
 
     // Clear
-    sPainter->drawImage(0, 0, sUno->getBackground());
+    if ((area &= 0xff) == 0xff) {
+        sPainter->drawImage(0, 0, sUno->getBackground());
+    } // if ((area &= 0xff) == 0xff)
+    else {
+        image = sUno->getBackground();
+        sPainter->drawImage(200, 584, image, 200, 584, 1200, 48);
+    } // else
 
     // Message area
     width = getTextWidth(message);
@@ -624,33 +640,53 @@ void Main::refreshScreen(const QString& message) {
     } // else if (status == STAT_WELCOME)
     else {
         // Center: card deck & recent played card
-        recent = sUno->getRecentInfo();
-        image = sUno->getBackImage();
-        sPainter->drawImage(338, 360, image);
-        for (i = 0, x = 986; i < 4; ++i, x += 44) {
-            if (recent[i].card == nullptr) {
-                continue;
-            } // if (recent[i].card == nullptr)
-            else if (recent[i].card->content == WILD) {
-                image = sUno->getColoredWildImage(recent[i].color);
-            } // else if (recent[i].card->content == WILD)
-            else if (recent[i].card->content == WILD_DRAW4) {
-                image = sUno->getColoredWildDraw4Image(recent[i].color);
-            } // else if (recent[i].card->content == WILD_DRAW4)
-            else {
-                image = recent[i].card->image;
-            } // else
+        if ((area & 0x40) != 0x00) {
+            if (area != 0xff) {
+                image = sUno->getBackground();
+                sPainter->drawImage(270, 270, image, 270, 270, 271, 271);
+            } // if (area != 0xff)
 
-            sPainter->drawImage(x, 360, image);
-        } // for (i = 0, x = 986; i < 4; ++i, x += 44)
+            image = sUno->getBackImage();
+            sPainter->drawImage(338, 360, image);
+        } // if ((area & 0x40) != 0x00)
+
+        if ((area & 0x80) != 0x00) {
+            recent = sUno->getRecentInfo();
+            for (i = 0, x = 986; i < 4; ++i, x += 44) {
+                if (recent[i].card == nullptr) {
+                    continue;
+                } // if (recent[i].card == nullptr)
+                else if (recent[i].card->content == WILD) {
+                    image = sUno->getColoredWildImage(recent[i].color);
+                } // else if (recent[i].card->content == WILD)
+                else if (recent[i].card->content == WILD_DRAW4) {
+                    image = sUno->getColoredWildDraw4Image(recent[i].color);
+                } // else if (recent[i].card->content == WILD_DRAW4)
+                else {
+                    image = recent[i].card->image;
+                } // else
+
+                sPainter->drawImage(x, 360, image);
+            } // for (i = 0, x = 986; i < 4; ++i, x += 44)
+        } // if ((area & 0x80) != 0x00)
 
         // Left-top corner: remain / used
+        if (area != 0xff) {
+            image = sUno->getBackground();
+            sPainter->drawImage(20, 6, image, 20, 6, 170, 48);
+        } // if (area != 0xff)
+
         remain = sUno->getDeckCount();
         used = sUno->getUsedCount();
         info = i18n->label_remain_used(remain, used);
         putText(info, 20, 42);
 
         // Right-top corner: lacks
+        if (area != 0xff) {
+            image = sUno->getBackground();
+            sPainter->drawImage(1410, 6, image, 1410, 6, 170, 48);
+        } // if (area != 0xff)
+
         if (sUno->getPlayer(Player::COM2)->getWeakColor() == RED)
             info = "LACK: [R]N";
         else if (sUno->getPlayer(Player::COM2)->getWeakColor() == BLUE)
@@ -695,123 +731,151 @@ void Main::refreshScreen(const QString& message) {
         putText(info, 1580 - width, 42);
 
         // Left-center: Hand cards of Player West (COM1)
-        if (status == STAT_GAME_OVER && sWinner == Player::COM1) {
-            // Played all hand cards, it's winner
-            width = getTextWidth("WIN");
-            putText("[G]WIN", 80 - width / 2, 461);
-        } // if (status == STAT_GAME_OVER && sWinner == Player::COM1)
-        else if (((sHideFlag >> 1) & 0x01) == 0x00) {
-            Player* p = sUno->getPlayer(Player::COM1);
-            auto hand = p->getHandCards();
+        if ((area & 0x02) != 0x00) {
+            if (area != 0xff) {
+                image = sUno->getBackground();
+                sPainter->drawImage(20, 96, image, 20, 96, 165, 709);
+            } // if (area != 0xff)
 
-            size = int(hand.size());
-            width = 44 * qMin(size, 13) + 136;
-            for (i = 0; i < size; ++i) {
-                image = p->isOpen(i) ? hand[i]->image : sUno->getBackImage();
-                sPainter->drawImage(
-                    /* x     */ 20 + i / 13 * 44,
-                    /* y     */ 450 - width / 2 + i % 13 * 44,
-                    /* image */ image
-                ); // drawImage(int, int, QImage&)
-            } // for (i = 0; i < size; ++i)
+            if (status == STAT_GAME_OVER && sWinner == Player::COM1) {
+                // Played all hand cards, it's winner
+                width = getTextWidth("WIN");
+                putText("[G]WIN", 80 - width / 2, 461);
+            } // if (status == STAT_GAME_OVER && sWinner == Player::COM1)
+            else if (((sHideFlag >> 1) & 0x01) == 0x00) {
+                Player* p = sUno->getPlayer(Player::COM1);
+                auto hand = p->getHandCards();
 
-            if (size == 1) {
-                // Show "UNO" warning when only one card in hand
-                width = getTextWidth("UNO");
-                putText("[Y]UNO", 80 - width / 2, 584);
-            } // if (size == 1)
-        } // else if (((sHideFlag >> 1) & 0x01) == 0x00)
+                size = int(hand.size());
+                width = 44 * qMin(size, 13) + 136;
+                for (i = 0; i < size; ++i) {
+                    image = p->isOpen(i) ? hand[i]->image : sUno->getBackImage();
+                    sPainter->drawImage(
+                        /* x     */ 20 + i / 13 * 44,
+                        /* y     */ 450 - width / 2 + i % 13 * 44,
+                        /* image */ image
+                    ); // drawImage(int, int, QImage&)
+                } // for (i = 0; i < size; ++i)
+
+                if (size == 1) {
+                    // Show "UNO" warning when only one card in hand
+                    width = getTextWidth("UNO");
+                    putText("[Y]UNO", 80 - width / 2, 584);
+                } // if (size == 1)
+            } // else if (((sHideFlag >> 1) & 0x01) == 0x00)
+        } // if ((area & 0x02) != 0x00)
 
         // Top-center: Hand cards of Player North (COM2)
-        if (status == STAT_GAME_OVER && sWinner == Player::COM2) {
-            // Played all hand cards, it's winner
-            width = getTextWidth("WIN");
-            putText("[G]WIN", 800 - width / 2, 121);
-        } // if (status == STAT_GAME_OVER && sWinner == Player::COM2)
-        else if (((sHideFlag >> 2) & 0x01) == 0x00) {
-            Player* p = sUno->getPlayer(Player::COM2);
-            auto hand = p->getHandCards();
+        if ((area & 0x04) != 0x00) {
+            if (area != 0xff) {
+                image = sUno->getBackground();
+                sPainter->drawImage(190, 20, image, 190, 20, 1221, 181);
+            } // if (area != 0xff)
 
-            size = int(hand.size());
-            width = 44 * size + 76;
-            for (i = 0; i < size; ++i) {
-                image = p->isOpen(i) ? hand[i]->image : sUno->getBackImage();
-                sPainter->drawImage(800 - width / 2 + 44 * i, 20, image);
-            } // for (i = 0; i < size; ++i)
+            if (status == STAT_GAME_OVER && sWinner == Player::COM2) {
+                // Played all hand cards, it's winner
+                width = getTextWidth("WIN");
+                putText("[G]WIN", 800 - width / 2, 121);
+            } // if (status == STAT_GAME_OVER && sWinner == Player::COM2)
+            else if (((sHideFlag >> 2) & 0x01) == 0x00) {
+                Player* p = sUno->getPlayer(Player::COM2);
+                auto hand = p->getHandCards();
 
-            if (size == 1) {
-                // Show "UNO" warning when only one card in hand
-                width = getTextWidth("UNO");
-                putText("[Y]UNO", 720 - width, 121);
-            } // if (size == 1)
-        } // else if (((sHideFlag >> 2) & 0x01) == 0x00)
+                size = int(hand.size());
+                width = 44 * size + 76;
+                for (i = 0; i < size; ++i) {
+                    image = p->isOpen(i) ? hand[i]->image : sUno->getBackImage();
+                    sPainter->drawImage(800 - width / 2 + 44 * i, 20, image);
+                } // for (i = 0; i < size; ++i)
+
+                if (size == 1) {
+                    // Show "UNO" warning when only one card in hand
+                    width = getTextWidth("UNO");
+                    putText("[Y]UNO", 720 - width, 121);
+                } // if (size == 1)
+            } // else if (((sHideFlag >> 2) & 0x01) == 0x00)
+        } // if ((area & 0x04) != 0x00)
 
         // Right-center: Hand cards of Player East (COM3)
-        if (status == STAT_GAME_OVER && sWinner == Player::COM3) {
-            // Played all hand cards, it's winner
-            width = getTextWidth("WIN");
-            putText("[G]WIN", 1520 - width / 2, 461);
-        } // if (status == STAT_GAME_OVER && sWinner == Player::COM3)
-        else if (((sHideFlag >> 3) & 0x01) == 0x00) {
-            Player* p = sUno->getPlayer(Player::COM3);
-            auto hand = p->getHandCards();
+        if ((area & 0x08) != 0x00) {
+            if (area != 0xff) {
+                image = sUno->getBackground();
+                sPainter->drawImage(1416, 96, image, 1416, 96, 165, 709);
+            } // if (area != 0xff)
 
-            size = int(hand.size());
-            width = 44 * qMin(size, 13) + 136;
-            for (i = 13; i < size; ++i) {
-                image = p->isOpen(i) ? hand[i]->image : sUno->getBackImage();
-                sPainter->drawImage(
-                    /* x     */ 1416,
-                    /* y     */ 450 - width / 2 + (i - 13) * 44,
-                    /* image */ image
-                ); // drawImage(int, int, QImage&)
-            } // for (i = 13; i < size; ++i)
+            if (status == STAT_GAME_OVER && sWinner == Player::COM3) {
+                // Played all hand cards, it's winner
+                width = getTextWidth("WIN");
+                putText("[G]WIN", 1520 - width / 2, 461);
+            } // if (status == STAT_GAME_OVER && sWinner == Player::COM3)
+            else if (((sHideFlag >> 3) & 0x01) == 0x00) {
+                Player* p = sUno->getPlayer(Player::COM3);
+                auto hand = p->getHandCards();
 
-            for (i = 0; i < 13 && i < size; ++i) {
-                image = p->isOpen(i) ? hand[i]->image : sUno->getBackImage();
-                sPainter->drawImage(
-                    /* x     */ 1460,
-                    /* y     */ 450 - width / 2 + i * 44,
-                    /* image */ image
-                ); // drawImage(int, int, QImage&)
-            } // for (i = 0; i < 13 && i < size; ++i)
+                size = int(hand.size());
+                width = 44 * qMin(size, 13) + 136;
+                for (i = 13; i < size; ++i) {
+                    image = p->isOpen(i) ? hand[i]->image : sUno->getBackImage();
+                    sPainter->drawImage(
+                        /* x     */ 1416,
+                        /* y     */ 450 - width / 2 + (i - 13) * 44,
+                        /* image */ image
+                    ); // drawImage(int, int, QImage&)
+                } // for (i = 13; i < size; ++i)
 
-            if (size == 1) {
-                // Show "UNO" warning when only one card in hand
-                width = getTextWidth("UNO");
-                putText("[Y]UNO", 1520 - width / 2, 584);
-            } // if (size == 1)
-        } // else if (((sHideFlag >> 3) & 0x01) == 0x00)
+                for (i = 0; i < 13 && i < size; ++i) {
+                    image = p->isOpen(i) ? hand[i]->image : sUno->getBackImage();
+                    sPainter->drawImage(
+                        /* x     */ 1460,
+                        /* y     */ 450 - width / 2 + i * 44,
+                        /* image */ image
+                    ); // drawImage(int, int, QImage&)
+                } // for (i = 0; i < 13 && i < size; ++i)
+
+                if (size == 1) {
+                    // Show "UNO" warning when only one card in hand
+                    width = getTextWidth("UNO");
+                    putText("[Y]UNO", 1520 - width / 2, 584);
+                } // if (size == 1)
+            } // else if (((sHideFlag >> 3) & 0x01) == 0x00)
+        } // if ((area & 0x08) != 0x00)
 
         // Bottom: Your hand cards
-        if (status == STAT_GAME_OVER && sWinner == Player::YOU) {
-            // Played all hand cards, it's winner
-            width = getTextWidth("WIN");
-            putText("[G]WIN", 800 - width / 2, 801);
-        } // if (status == STAT_GAME_OVER && sWinner == Player::YOU)
-        else if ((sHideFlag & 0x01) == 0x00) {
-            // Show your all hand cards
-            auto hand = sUno->getHandCardsOf(Player::YOU);
+        if ((area & 0x01) != 0x00) {
+            if (area != 0xff) {
+                image = sUno->getBackground();
+                sPainter->drawImage(190, 680, image, 190, 680, 1221, 201);
+            } // if (area != 0xff)
 
-            size = int(hand.size());
-            width = 44 * size + 76;
-            for (i = 0; i < size; ++i) {
-                image = status == STAT_GAME_OVER
-                    || (status == Player::YOU && sUno->isLegalToPlay(hand[i]))
-                    || (status == STAT_ASK_KEEP_PLAY && i == sSelectedIdx)
-                    ? hand[i]->image : hand[i]->darkImg;
-                sPainter->drawImage(
-                    /* x     */ 800 - width / 2 + 44 * i,
-                    /* y     */ i == sSelectedIdx ? 680 : 700,
-                    /* image */ image
-                ); // drawImage(int, int, QImage&)
-            } // for (i = 0; i < size; ++i)
+            if (status == STAT_GAME_OVER && sWinner == Player::YOU) {
+                // Played all hand cards, it's winner
+                width = getTextWidth("WIN");
+                putText("[G]WIN", 800 - width / 2, 801);
+            } // if (status == STAT_GAME_OVER && sWinner == Player::YOU)
+            else if ((sHideFlag & 0x01) == 0x00) {
+                // Show your all hand cards
+                auto hand = sUno->getHandCardsOf(Player::YOU);
 
-            if (size == 1) {
-                // Show "UNO" warning when only one card in hand
-                putText("[Y]UNO", 880, 801);
-            } // if (size == 1)
-        } // else if ((sHideFlag & 0x01) == 0x00)
+                size = int(hand.size());
+                width = 44 * size + 76;
+                for (i = 0; i < size; ++i) {
+                    image = status == STAT_GAME_OVER
+                        || (status == Player::YOU && sUno->isLegalToPlay(hand[i]))
+                        || (status == STAT_ASK_KEEP_PLAY && i == sSelectedIdx)
+                        ? hand[i]->image : hand[i]->darkImg;
+                    sPainter->drawImage(
+                        /* x     */ 800 - width / 2 + 44 * i,
+                        /* y     */ i == sSelectedIdx ? 680 : 700,
+                        /* image */ image
+                    ); // drawImage(int, int, QImage&)
+                } // for (i = 0; i < size; ++i)
+
+                if (size == 1) {
+                    // Show "UNO" warning when only one card in hand
+                    putText("[Y]UNO", 880, 801);
+                } // if (size == 1)
+            } // else if ((sHideFlag & 0x01) == 0x00)
+        } // if ((area & 0x01) != 0x00)
 
         // Extra sectors in special status
         switch (status) {
@@ -879,7 +943,7 @@ void Main::refreshScreen(const QString& message) {
 
     // Show screen
     update();
-} // refreshScreen(const QString&)
+} // refreshScreen(const QString&, int)
 
 /**
  * Draw [sScreen] on the window. Called by system.
@@ -906,7 +970,7 @@ void Main::cycle() {
 
     setStatus(STAT_IDLE);
     sHideFlag = 0x0f;
-    refreshScreen(i18n->info_0_rotate());
+    refreshScreen(i18n->info_0_rotate(), 0x0f);
     curr = sUno->getNow();
     next = sUno->getNext();
     oppo = sUno->getOppo();
@@ -945,7 +1009,7 @@ void Main::cycle() {
 
     sHideFlag = 0x00;
     sUno->cycle();
-    refreshScreen(i18n->info_0_rotate());
+    refreshScreen(i18n->info_0_rotate(), 0x0f);
     threadWait(1500);
     setStatus(sUno->switchNow());
 } // cycle()
@@ -959,12 +1023,15 @@ void Main::cycle() {
 void Main::swapWith(int whom) {
     static int x[] = { 740, 160, 740, 1320 };
     static int y[] = { 670, 360, 50, 360 };
-    int curr;
+    int curr, flag;
 
     setStatus(STAT_IDLE);
     curr = sUno->getNow();
     sHideFlag = (1 << curr) | (1 << whom);
-    refreshScreen(i18n->info_7_swap(curr, whom));
+    flag = curr == Player::YOU
+        ? (1 << curr) | (1 << whom) | 0x40
+        : (1 << curr) | (1 << whom);
+    refreshScreen(i18n->info_7_swap(curr, whom), flag);
     sLayer[0].elem = sLayer[1].elem = sUno->getBackImage();
     sLayer[0].startLeft = x[curr];
     sLayer[0].startTop = y[curr];
@@ -977,7 +1044,7 @@ void Main::swapWith(int whom) {
     animate(2, sLayer);
     sHideFlag = 0x00;
     sUno->swap(curr, whom);
-    refreshScreen(i18n->info_7_swap(curr, whom));
+    refreshScreen(i18n->info_7_swap(curr, whom), flag & ~0x40);
     threadWait(1500);
     setStatus(sUno->switchNow());
 } // swapWith(int)
@@ -992,7 +1059,7 @@ void Main::swapWith(int whom) {
  */
 void Main::play(int index, Color color) {
     Card* card;
-    int c, now, size, width, next;
+    int c, now, size, width, next, flag;
 
     setStatus(STAT_IDLE); // block mouse click events when idle
     now = sUno->getNow();
@@ -1077,17 +1144,18 @@ void Main::play(int index, Color color) {
         else {
             // When the played card is an action card or a wild card,
             // do the necessary things according to the game rule
+            flag = now == Player::YOU ? 0xff : (1 << now) | 0x80;
             switch (card->content) {
             case DRAW2:
                 next = sUno->switchNow();
                 if (sUno->getStackRule() != 0) {
                     c = sUno->getDraw2StackCount();
-                    refreshScreen(i18n->act_playDraw2(now, next, c));
+                    refreshScreen(i18n->act_playDraw2(now, next, c), flag);
                     threadWait(1500);
                     setStatus(next);
                 } // if (sUno->getStackRule() != 0)
                 else {
-                    refreshScreen(i18n->act_playDraw2(now, next, 2));
+                    refreshScreen(i18n->act_playDraw2(now, next, 2), flag);
                     threadWait(1500);
                     draw(2, /* force */ true);
                 } // else
@@ -1095,7 +1163,7 @@ void Main::play(int index, Color color) {
 
             case SKIP:
                 next = sUno->switchNow();
-                refreshScreen(i18n->act_playSkip(now, next));
+                refreshScreen(i18n->act_playSkip(now, next), flag);
                 threadWait(1500);
                 setStatus(sUno->switchNow());
                 break; // case SKIP
@@ -1108,7 +1176,7 @@ void Main::play(int index, Color color) {
                 break; // case REV
 
             case WILD:
-                refreshScreen(i18n->act_playWild(now, color));
+                refreshScreen(i18n->act_playWild(now, color), flag);
                 threadWait(1500);
                 setStatus(sUno->switchNow());
                 break; // case WILD
@@ -1117,13 +1185,13 @@ void Main::play(int index, Color color) {
                 if (sUno->getStackRule() == 2) {
                     next = sUno->switchNow();
                     c = sUno->getDraw2StackCount();
-                    refreshScreen(i18n->act_playDraw2(now, next, c));
+                    refreshScreen(i18n->act_playDraw2(now, next, c), flag);
                     threadWait(1500);
                     setStatus(next);
                 } // if (sUno->getStackRule() == 2)
                 else {
                     next = sUno->getNext();
-                    refreshScreen(i18n->act_playWildDraw4(now, next));
+                    refreshScreen(i18n->act_playWildDraw4(now, next), flag);
                     threadWait(1500);
                     setStatus(STAT_DOUBT_WILD4);
                 } // else
@@ -1131,7 +1199,7 @@ void Main::play(int index, Color color) {
 
             case NUM7:
                 if (sUno->isSevenZeroRule()) {
-                    refreshScreen(i18n->act_playCard(now, card->name));
+                    refreshScreen(i18n->act_playCard(now, card->name), flag);
                     threadWait(750);
                     setStatus(STAT_SEVEN_TARGET);
                     break; // case NUM7
@@ -1140,7 +1208,7 @@ void Main::play(int index, Color color) {
 
             case NUM0:
                 if (sUno->isSevenZeroRule()) {
-                    refreshScreen(i18n->act_playCard(now, card->name));
+                    refreshScreen(i18n->act_playCard(now, card->name), flag);
                     threadWait(750);
                     cycle();
                     break; // case NUM0
@@ -1148,7 +1216,7 @@ void Main::play(int index, Color color) {
                 // else fall through
 
             default:
-                refreshScreen(i18n->act_playCard(now, card->name));
+                refreshScreen(i18n->act_playCard(now, card->name), flag);
                 threadWait(1500);
                 setStatus(sUno->switchNow());
                 break; // default
@@ -1169,7 +1237,7 @@ void Main::play(int index, Color color) {
 void Main::draw(int count, bool force) {
     Card* drawn;
     QString message;
-    int i, index, c, now, size, width;
+    int i, index, c, now, size, width, flag;
 
     setStatus(STAT_IDLE); // block mouse click events when idle
     c = sUno->getDraw2StackCount();
@@ -1181,6 +1249,7 @@ void Main::draw(int count, bool force) {
     index = -1;
     drawn = nullptr;
     now = sUno->getNow();
+    flag = now == Player::YOU ? 0xff : 1 << now;
     sSelectedIdx = -1;
     for (i = 0; i < count; ++i) {
         index = sUno->draw(now, force);
@@ -1225,12 +1294,12 @@ void Main::draw(int count, bool force) {
 
             sSoundPool->play(SoundPool::SND_DRAW);
             animate(1, sLayer);
-            refreshScreen(message);
+            refreshScreen(message, flag);
             threadWait(300);
         } // if (index >= 0)
         else {
             message = i18n->info_cannotDraw(now, Uno::MAX_HOLD_CARDS);
-            refreshScreen(message);
+            refreshScreen(message, flag);
             break;
         } // else
     } // for (i = 0; i < count; ++i)
@@ -1267,7 +1336,7 @@ void Main::draw(int count, bool force) {
         } // else
     } // if (count == 1 && ...)
     else {
-        refreshScreen(i18n->act_pass(now));
+        refreshScreen(i18n->act_pass(now), 0x00);
         threadWait(750);
         setStatus(sUno->switchNow());
     } // else
@@ -1340,18 +1409,18 @@ void Main::onChallenge() {
     now = sUno->getNow();
     challenger = sUno->getNext();
     challengeSuccess = sUno->challenge(now);
-    refreshScreen(i18n->info_challenge(
-        challenger, now, sUno->next2lastColor()));
+    refreshScreen(i18n->info_challenge(challenger, now,
+        sUno->next2lastColor()), (1 << now) | 0x40);
     threadWait(1500);
     if (challengeSuccess) {
         // Challenge success, who played [wild +4] draws 4 cards
-        refreshScreen(i18n->info_challengeSuccess(now));
+        refreshScreen(i18n->info_challengeSuccess(now), 0x00);
         threadWait(1500);
         draw(4, /* force */ true);
     } // if (challengeSuccess)
     else {
         // Challenge failure, challenger draws 6 cards
-        refreshScreen(i18n->info_challengeFailure(challenger));
+        refreshScreen(i18n->info_challengeFailure(challenger), 0x00);
         threadWait(1500);
         sUno->switchNow();
         draw(6, /* force */ true);

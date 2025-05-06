@@ -321,7 +321,7 @@ public class MainActivity extends AppCompatActivity
 
                     case SKIP:
                         // If starting with a [skip], skip dealer's turn.
-                        refreshScreen(i18n.info_skipped(mUno.getNow()));
+                        refreshScreen(i18n.info_skipped(mUno.getNow()), 0x00);
                         threadWait(1500);
                         setStatus(mUno.switchNow());
                         break; // case SKIP
@@ -385,7 +385,7 @@ public class MainActivity extends AppCompatActivity
                 if (mUno.getNext() == Player.YOU && !mAuto) {
                     // Challenge or not is decided by you
                     refreshScreen(i18n.ask_challenge(
-                            mUno.next2lastColor().ordinal()));
+                            mUno.next2lastColor().ordinal()), 0x00);
                 } // if (mUno.getNext() == Player.YOU && !mAuto)
                 else if (mAI.needToChallenge()) {
                     // Challenge or not is decided by AI
@@ -406,7 +406,7 @@ public class MainActivity extends AppCompatActivity
                 } // if (mAuto || mUno.getNow() != Player.YOU)
                 else {
                     // Seven-card is played by you. Select target manually.
-                    refreshScreen(i18n.ask_target());
+                    refreshScreen(i18n.ask_target(), 0x00);
                 } // else
                 break; // case STAT_SEVEN_TARGET
 
@@ -415,7 +415,7 @@ public class MainActivity extends AppCompatActivity
                     play(mSelectedIdx, mAI.calcBestColor4NowPlayer());
                 } // if (mAuto)
                 else {
-                    refreshScreen(i18n.ask_keep_play());
+                    refreshScreen(i18n.ask_keep_play(), 0x01);
                 } // else
                 break; // case STAT_ASK_KEEP_PLAY
 
@@ -521,6 +521,26 @@ public class MainActivity extends AppCompatActivity
      */
     @WorkerThread
     private void refreshScreen(String message) {
+        refreshScreen(message, /* area */ 0xff);
+    } // refreshScreen(String)
+
+    /**
+     * Refresh the screen display.
+     *
+     * @param message Extra message to show.
+     * @param area    Refresh which area. Use | to select multiple areas.
+     *                0x01 = Your hand card area
+     *                0x02 = WEST's hand card area
+     *                0x04 = NORTH's hand card area
+     *                0x08 = EAST's hand card area
+     *                0x10 = (Reversed bit, not used yet)
+     *                0x20 = (Reversed bit, not used yet)
+     *                0x40 = Center deck area
+     *                0x80 = Recent card area
+     *                0xff = Full screen (default)
+     */
+    @WorkerThread
+    private void refreshScreen(String message, int area) {
         Mat image;
         Size axes;
         String info;
@@ -533,7 +553,13 @@ public class MainActivity extends AppCompatActivity
         status = mStatus;
 
         // Clear
-        mUno.getBackground().copyTo(mScr);
+        if ((area &= 0xff) == 0xff) {
+            mUno.getBackground().copyTo(mScr);
+        } // if ((area &= 0xff) == 0xff)
+        else {
+            image = mUno.getBackground().submat(584, 632, 200, 1400);
+            image.copyTo(mScr.submat(584, 632, 200, 1400));
+        } // else
 
         // Message area
         width = getTextWidth(message);
@@ -692,33 +718,53 @@ public class MainActivity extends AppCompatActivity
         } // if (status == STAT_WELCOME)
 
         // Center: card deck & recent played card
-        image = mUno.getBackImage();
-        image.copyTo(mScr.submat(360, 541, 338, 459), image);
-        recent = mUno.getRecentInfo();
-        for (i = 0, x = 986; i < 4; ++i, x += 44) {
-            if (recent[i].card == null) {
-                continue;
-            } // if (recent[i].card == null)
-            else if (recent[i].card.content == Content.WILD) {
-                image = mUno.getColoredWildImage(recent[i].color);
-            } // else if (recent[i].card.content == Content.WILD)
-            else if (recent[i].card.content == Content.WILD_DRAW4) {
-                image = mUno.getColoredWildDraw4Image(recent[i].color);
-            } // else if (recent[i].card.content == Content.WILD_DRAW4)
-            else {
-                image = recent[i].card.image;
-            } // else
+        if ((area & 0x40) != 0x00) {
+            if (area != 0xff) {
+                image = mUno.getBackground().submat(270, 541, 270, 541);
+                image.copyTo(mScr.submat(270, 541, 270, 541));
+            } // if (area != 0xff)
 
-            image.copyTo(mScr.submat(360, 541, x, x + 121), image);
-        } // for (i = 0, x = 986; i < 4; ++i, x += 44)
+            image = mUno.getBackImage();
+            image.copyTo(mScr.submat(360, 541, 338, 459), image);
+        } // if ((area & 0x40) != 0x00)
+
+        if ((area & 0x80) != 0x00) {
+            recent = mUno.getRecentInfo();
+            for (i = 0, x = 986; i < 4; ++i, x += 44) {
+                if (recent[i].card == null) {
+                    continue;
+                } // if (recent[i].card == null)
+                else if (recent[i].card.content == Content.WILD) {
+                    image = mUno.getColoredWildImage(recent[i].color);
+                } // else if (recent[i].card.content == Content.WILD)
+                else if (recent[i].card.content == Content.WILD_DRAW4) {
+                    image = mUno.getColoredWildDraw4Image(recent[i].color);
+                } // else if (recent[i].card.content == Content.WILD_DRAW4)
+                else {
+                    image = recent[i].card.image;
+                } // else
+
+                image.copyTo(mScr.submat(360, 541, x, x + 121), image);
+            } // for (i = 0, x = 986; i < 4; ++i, x += 44)
+        } // if ((area & 0x80) != 0x00)
 
         // Left-top corner: remain / used
+        if (area != 0xff) {
+            image = mUno.getBackground().submat(6, 54, 20, 190);
+            image.copyTo(mScr.submat(6, 54, 20, 190));
+        } // if (area != 0xff)
+
         remain = mUno.getDeckCount();
         used = mUno.getUsedCount();
         info = i18n.label_remain_used(remain, used);
         putText(info, 20, 42);
 
         // Right-top corner: lacks
+        if (area != 0xff) {
+            image = mUno.getBackground().submat(6, 54, 1410, 1580);
+            image.copyTo(mScr.submat(6, 54, 1410, 1580));
+        } // if (area != 0xff)
+
         if (mUno.getPlayer(Player.COM2).getWeakColor() == Color.RED)
             info = "LACK: [R]N";
         else if (mUno.getPlayer(Player.COM2).getWeakColor() == Color.BLUE)
@@ -763,114 +809,142 @@ public class MainActivity extends AppCompatActivity
         putText(info, 1580 - width, 42);
 
         // Left-center: Hand cards of Player West (COM1)
-        if (status == STAT_GAME_OVER && mWinner == Player.COM1) {
-            // Played all hand cards, it's winner
-            width = getTextWidth("WIN");
-            putText("[G]WIN", 80 - width / 2, 461);
-        } // if (status == STAT_GAME_OVER && mWinner == Player.COM1)
-        else if (((mHideFlag >> 1) & 0x01) == 0x00) {
-            Player p = mUno.getPlayer(Player.COM1);
-            List<Card> hand = p.getHandCards();
+        if ((area & 0x02) != 0x00) {
+            if (area != 0xff) {
+                image = mUno.getBackground().submat(96, 805, 20, 185);
+                image.copyTo(mScr.submat(96, 805, 20, 185));
+            } // if (area != 0xff)
 
-            size = hand.size();
-            width = 44 * Math.min(size, 13) + 136;
-            for (i = 0; i < size; ++i) {
-                x = 20 + i / 13 * 44;
-                y = 450 - width / 2 + i % 13 * 44;
-                image = p.isOpen(i) ? hand.get(i).image : mUno.getBackImage();
-                image.copyTo(mScr.submat(y, y + 181, x, x + 121), image);
-            } // for (i = 0; i < size; ++i)
+            if (status == STAT_GAME_OVER && mWinner == Player.COM1) {
+                // Played all hand cards, it's winner
+                width = getTextWidth("WIN");
+                putText("[G]WIN", 80 - width / 2, 461);
+            } // if (status == STAT_GAME_OVER && mWinner == Player.COM1)
+            else if (((mHideFlag >> 1) & 0x01) == 0x00) {
+                Player p = mUno.getPlayer(Player.COM1);
+                List<Card> hand = p.getHandCards();
 
-            if (size == 1) {
-                // Show "UNO" warning when only one card in hand
-                width = getTextWidth("UNO");
-                putText("[Y]UNO", 80 - width / 2, 584);
-            } // if (size == 1)
-        } // else if (((mHideFlag >> 1) & 0x01) == 0x00)
+                size = hand.size();
+                width = 44 * Math.min(size, 13) + 136;
+                for (i = 0; i < size; ++i) {
+                    x = 20 + i / 13 * 44;
+                    y = 450 - width / 2 + i % 13 * 44;
+                    image = p.isOpen(i) ? hand.get(i).image : mUno.getBackImage();
+                    image.copyTo(mScr.submat(y, y + 181, x, x + 121), image);
+                } // for (i = 0; i < size; ++i)
+
+                if (size == 1) {
+                    // Show "UNO" warning when only one card in hand
+                    width = getTextWidth("UNO");
+                    putText("[Y]UNO", 80 - width / 2, 584);
+                } // if (size == 1)
+            } // else if (((mHideFlag >> 1) & 0x01) == 0x00)
+        } // if ((area & 0x02) != 0x00)
 
         // Top-center: Hand cards of Player North (COM2)
-        if (status == STAT_GAME_OVER && mWinner == Player.COM2) {
-            // Played all hand cards, it's winner
-            width = getTextWidth("WIN");
-            putText("[G]WIN", 800 - width / 2, 121);
-        } // if (status == STAT_GAME_OVER && mWinner == Player.COM2)
-        else if (((mHideFlag >> 2) & 0x01) == 0x00) {
-            Player p = mUno.getPlayer(Player.COM2);
-            List<Card> hand = p.getHandCards();
+        if ((area & 0x04) != 0x00) {
+            if (area != 0xff) {
+                image = mUno.getBackground().submat(20, 201, 190, 1411);
+                image.copyTo(mScr.submat(20, 201, 190, 1411));
+            } // if (area != 0xff)
 
-            size = hand.size();
-            width = 44 * size + 76;
-            for (i = 0, x = 800 - width / 2; i < size; ++i, x += 44) {
-                image = p.isOpen(i) ? hand.get(i).image : mUno.getBackImage();
-                image.copyTo(mScr.submat(20, 201, x, x + 121), image);
-            } // for (i = 0, x = 800 - width / 2; i < size; ++i, x += 44)
+            if (status == STAT_GAME_OVER && mWinner == Player.COM2) {
+                // Played all hand cards, it's winner
+                width = getTextWidth("WIN");
+                putText("[G]WIN", 800 - width / 2, 121);
+            } // if (status == STAT_GAME_OVER && mWinner == Player.COM2)
+            else if (((mHideFlag >> 2) & 0x01) == 0x00) {
+                Player p = mUno.getPlayer(Player.COM2);
+                List<Card> hand = p.getHandCards();
 
-            if (size == 1) {
-                // Show "UNO" warning when only one card in hand
-                width = getTextWidth("UNO");
-                putText("[Y]UNO", 720 - width, 121);
-            } // if (size == 1)
-        } // else if (((mHideFlag >> 2) & 0x01) == 0x00)
+                size = hand.size();
+                width = 44 * size + 76;
+                for (i = 0, x = 800 - width / 2; i < size; ++i, x += 44) {
+                    image = p.isOpen(i) ? hand.get(i).image : mUno.getBackImage();
+                    image.copyTo(mScr.submat(20, 201, x, x + 121), image);
+                } // for (i = 0, x = 800 - width / 2; i < size; ++i, x += 44)
+
+                if (size == 1) {
+                    // Show "UNO" warning when only one card in hand
+                    width = getTextWidth("UNO");
+                    putText("[Y]UNO", 720 - width, 121);
+                } // if (size == 1)
+            } // else if (((mHideFlag >> 2) & 0x01) == 0x00)
+        } // if ((area & 0x04) != 0x00)
 
         // Right-center: Hand cards of Player East (COM3)
-        if (status == STAT_GAME_OVER && mWinner == Player.COM3) {
-            // Played all hand cards, it's winner
-            width = getTextWidth("WIN");
-            putText("[G]WIN", 1520 - width / 2, 461);
-        } // if (status == STAT_GAME_OVER && mWinner == Player.COM3)
-        else if (((mHideFlag >> 3) & 0x01) == 0x00) {
-            Player p = mUno.getPlayer(Player.COM3);
-            List<Card> hand = p.getHandCards();
+        if ((area & 0x08) != 0x00) {
+            if (area != 0xff) {
+                image = mUno.getBackground().submat(96, 805, 1416, 1581);
+                image.copyTo(mScr.submat(96, 805, 1416, 1581));
+            } // if (area != 0xff)
 
-            size = hand.size();
-            width = 44 * Math.min(size, 13) + 136;
-            for (i = 13; i < size; ++i) {
-                x = 1416;
-                y = 450 - width / 2 + (i - 13) * 44;
-                image = p.isOpen(i) ? hand.get(i).image : mUno.getBackImage();
-                image.copyTo(mScr.submat(y, y + 181, x, x + 121), image);
-            } // for (i = 13; i < size; ++i)
+            if (status == STAT_GAME_OVER && mWinner == Player.COM3) {
+                // Played all hand cards, it's winner
+                width = getTextWidth("WIN");
+                putText("[G]WIN", 1520 - width / 2, 461);
+            } // if (status == STAT_GAME_OVER && mWinner == Player.COM3)
+            else if (((mHideFlag >> 3) & 0x01) == 0x00) {
+                Player p = mUno.getPlayer(Player.COM3);
+                List<Card> hand = p.getHandCards();
 
-            for (i = 0; i < 13 && i < size; ++i) {
-                x = 1460;
-                y = 450 - width / 2 + i * 44;
-                image = p.isOpen(i) ? hand.get(i).image : mUno.getBackImage();
-                image.copyTo(mScr.submat(y, y + 181, x, x + 121), image);
-            } // for (i = 0; i < 13 && i < size; ++i)
+                size = hand.size();
+                width = 44 * Math.min(size, 13) + 136;
+                for (i = 13; i < size; ++i) {
+                    x = 1416;
+                    y = 450 - width / 2 + (i - 13) * 44;
+                    image = p.isOpen(i) ? hand.get(i).image : mUno.getBackImage();
+                    image.copyTo(mScr.submat(y, y + 181, x, x + 121), image);
+                } // for (i = 13; i < size; ++i)
 
-            if (size == 1) {
-                // Show "UNO" warning when only one card in hand
-                width = getTextWidth("UNO");
-                putText("[Y]UNO", 1520 - width / 2, 584);
-            } // if (size == 1)
-        } // else if (((mHideFlag >> 3) & 0x01) == 0x00)
+                for (i = 0; i < 13 && i < size; ++i) {
+                    x = 1460;
+                    y = 450 - width / 2 + i * 44;
+                    image = p.isOpen(i) ? hand.get(i).image : mUno.getBackImage();
+                    image.copyTo(mScr.submat(y, y + 181, x, x + 121), image);
+                } // for (i = 0; i < 13 && i < size; ++i)
+
+                if (size == 1) {
+                    // Show "UNO" warning when only one card in hand
+                    width = getTextWidth("UNO");
+                    putText("[Y]UNO", 1520 - width / 2, 584);
+                } // if (size == 1)
+            } // else if (((mHideFlag >> 3) & 0x01) == 0x00)
+        } // if ((area & 0x08) != 0x00)
 
         // Bottom: Your hand cards
-        if (status == STAT_GAME_OVER && mWinner == Player.YOU) {
-            // Played all hand cards, it's winner
-            width = getTextWidth("WIN");
-            putText("[G]WIN", 800 - width / 2, 801);
-        } // if (status == STAT_GAME_OVER && mWinner == Player.YOU)
-        else if ((mHideFlag & 0x01) == 0x00) {
-            // Show your all hand cards
-            List<Card> hand = mUno.getHandCardsOf(Player.YOU);
+        if ((area & 0x01) != 0x00) {
+            if (area != 0xff) {
+                image = mUno.getBackground().submat(680, 881, 190, 1411);
+                image.copyTo(mScr.submat(680, 881, 190, 1411));
+            } // if (area != 0xff)
 
-            size = hand.size();
-            width = 44 * size + 76;
-            for (i = 0, x = 800 - width / 2; i < size; ++i, x += 44) {
-                image = status == STAT_GAME_OVER
-                        || (status == Player.YOU && mUno.isLegalToPlay(hand.get(i)))
-                        || (status == STAT_ASK_KEEP_PLAY && i == mSelectedIdx)
-                        ? hand.get(i).image : hand.get(i).darkImg;
-                y = i == mSelectedIdx ? 680 : 700;
-                image.copyTo(mScr.submat(y, y + 181, x, x + 121), image);
-            } // for (i = 0, x = 800 - width / 2; i < size; ++i, x += 44)
+            if (status == STAT_GAME_OVER && mWinner == Player.YOU) {
+                // Played all hand cards, it's winner
+                width = getTextWidth("WIN");
+                putText("[G]WIN", 800 - width / 2, 801);
+            } // if (status == STAT_GAME_OVER && mWinner == Player.YOU)
+            else if ((mHideFlag & 0x01) == 0x00) {
+                // Show your all hand cards
+                List<Card> hand = mUno.getHandCardsOf(Player.YOU);
 
-            if (size == 1) {
-                // Show "UNO" warning when only one card in hand
-                putText("[Y]UNO", 880, 801);
-            } // if (size == 1)
-        } // else if ((mHideFlag & 0x01) == 0x00)
+                size = hand.size();
+                width = 44 * size + 76;
+                for (i = 0, x = 800 - width / 2; i < size; ++i, x += 44) {
+                    image = status == STAT_GAME_OVER
+                            || (status == Player.YOU && mUno.isLegalToPlay(hand.get(i)))
+                            || (status == STAT_ASK_KEEP_PLAY && i == mSelectedIdx)
+                            ? hand.get(i).image : hand.get(i).darkImg;
+                    y = i == mSelectedIdx ? 680 : 700;
+                    image.copyTo(mScr.submat(y, y + 181, x, x + 121), image);
+                } // for (i = 0, x = 800 - width / 2; i < size; ++i, x += 44)
+
+                if (size == 1) {
+                    // Show "UNO" warning when only one card in hand
+                    putText("[Y]UNO", 880, 801);
+                } // if (size == 1)
+            } // else if ((mHideFlag & 0x01) == 0x00)
+        } // if ((area & 0x01) != 0x00)
 
         // Extra sectors in special status
         switch (status) {
@@ -1028,7 +1102,7 @@ public class MainActivity extends AppCompatActivity
         // Show screen
         Utils.matToBitmap(mScr, mBmp);
         mUIHandler.sendEmptyMessage(0); // -> handleMessage()
-    } // refreshScreen(String)
+    } // refreshScreen(String, int)
 
     /**
      * Draw [mBmp] on the screen. Called by system.
@@ -1052,7 +1126,7 @@ public class MainActivity extends AppCompatActivity
 
         setStatus(STAT_IDLE);
         mHideFlag = 0x0f;
-        refreshScreen(i18n.info_0_rotate());
+        refreshScreen(i18n.info_0_rotate(), 0x0f);
         curr = mUno.getNow();
         next = mUno.getNext();
         oppo = mUno.getOppo();
@@ -1091,7 +1165,7 @@ public class MainActivity extends AppCompatActivity
 
         mHideFlag = 0x00;
         mUno.cycle();
-        refreshScreen(i18n.info_0_rotate());
+        refreshScreen(i18n.info_0_rotate(), 0x0f);
         threadWait(1500);
         setStatus(mUno.switchNow());
     } // cycle()
@@ -1106,12 +1180,15 @@ public class MainActivity extends AppCompatActivity
     private void swapWith(int whom) {
         final int[] x = {740, 160, 740, 1320};
         final int[] y = {670, 360, 50, 360};
-        int curr;
+        int curr, flag;
 
         setStatus(STAT_IDLE);
         curr = mUno.getNow();
         mHideFlag = (1 << curr) | (1 << whom);
-        refreshScreen(i18n.info_7_swap(curr, whom));
+        flag = curr == Player.YOU || whom == Player.YOU
+                ? (1 << curr) | (1 << whom) | 0x40
+                : (1 << curr) | (1 << whom);
+        refreshScreen(i18n.info_7_swap(curr, whom), flag);
         mLayer[0].elem = mLayer[1].elem = mUno.getBackImage();
         mLayer[0].startLeft = x[curr];
         mLayer[0].startTop = y[curr];
@@ -1124,7 +1201,7 @@ public class MainActivity extends AppCompatActivity
         animate(2, mLayer);
         mHideFlag = 0x00;
         mUno.swap(curr, whom);
-        refreshScreen(i18n.info_7_swap(curr, whom));
+        refreshScreen(i18n.info_7_swap(curr, whom), flag & ~0x40);
         threadWait(1500);
         setStatus(mUno.switchNow());
     } // swapWith(int)
@@ -1140,7 +1217,7 @@ public class MainActivity extends AppCompatActivity
     @WorkerThread
     private void play(int index, Color color) {
         Card card;
-        int c, now, size, width, next;
+        int c, now, size, width, next, flag;
 
         setStatus(STAT_IDLE); // block tap down events when idle
         now = mUno.getNow();
@@ -1225,17 +1302,18 @@ public class MainActivity extends AppCompatActivity
             else {
                 // When the played card is an action card or a wild card,
                 // do the necessary things according to the game rule
+                flag = now == Player.YOU ? 0xff : (1 << now) | 0x80;
                 switch (card.content) {
                     case DRAW2:
                         next = mUno.switchNow();
                         if (mUno.getStackRule() != 0) {
                             c = mUno.getDraw2StackCount();
-                            refreshScreen(i18n.act_playDraw2(now, next, c));
+                            refreshScreen(i18n.act_playDraw2(now, next, c), flag);
                             threadWait(1500);
                             setStatus(next);
                         } // if (mUno.getStackRule() != 0)
                         else {
-                            refreshScreen(i18n.act_playDraw2(now, next, 2));
+                            refreshScreen(i18n.act_playDraw2(now, next, 2), flag);
                             threadWait(1500);
                             draw(2, /* force */ true);
                         } // else
@@ -1243,7 +1321,7 @@ public class MainActivity extends AppCompatActivity
 
                     case SKIP:
                         next = mUno.switchNow();
-                        refreshScreen(i18n.act_playSkip(now, next));
+                        refreshScreen(i18n.act_playSkip(now, next), flag);
                         threadWait(1500);
                         setStatus(mUno.switchNow());
                         break; // case SKIP
@@ -1256,7 +1334,7 @@ public class MainActivity extends AppCompatActivity
                         break; // case REV
 
                     case WILD:
-                        refreshScreen(i18n.act_playWild(now, color.ordinal()));
+                        refreshScreen(i18n.act_playWild(now, color.ordinal()), flag);
                         threadWait(1500);
                         setStatus(mUno.switchNow());
                         break; // case WILD
@@ -1265,13 +1343,13 @@ public class MainActivity extends AppCompatActivity
                         if (mUno.getStackRule() == 2) {
                             next = mUno.switchNow();
                             c = mUno.getDraw2StackCount();
-                            refreshScreen(i18n.act_playDraw2(now, next, c));
+                            refreshScreen(i18n.act_playDraw2(now, next, c), flag);
                             threadWait(1500);
                             setStatus(next);
                         } // if (mUno.getStackRule() == 2)
                         else {
                             next = mUno.getNext();
-                            refreshScreen(i18n.act_playWildDraw4(now, next));
+                            refreshScreen(i18n.act_playWildDraw4(now, next), flag);
                             threadWait(1500);
                             setStatus(STAT_DOUBT_WILD4);
                         } // else
@@ -1279,7 +1357,7 @@ public class MainActivity extends AppCompatActivity
 
                     case NUM7:
                         if (mUno.isSevenZeroRule()) {
-                            refreshScreen(i18n.act_playCard(now, card.name));
+                            refreshScreen(i18n.act_playCard(now, card.name), flag);
                             threadWait(750);
                             setStatus(STAT_SEVEN_TARGET);
                             break; // case NUM7
@@ -1288,7 +1366,7 @@ public class MainActivity extends AppCompatActivity
 
                     case NUM0:
                         if (mUno.isSevenZeroRule()) {
-                            refreshScreen(i18n.act_playCard(now, card.name));
+                            refreshScreen(i18n.act_playCard(now, card.name), flag);
                             threadWait(750);
                             cycle();
                             break; // case NUM0
@@ -1296,7 +1374,7 @@ public class MainActivity extends AppCompatActivity
                         // else fall through
 
                     default:
-                        refreshScreen(i18n.act_playCard(now, card.name));
+                        refreshScreen(i18n.act_playCard(now, card.name), flag);
                         threadWait(1500);
                         setStatus(mUno.switchNow());
                         break; // default
@@ -1318,7 +1396,7 @@ public class MainActivity extends AppCompatActivity
     private void draw(int count, boolean force) {
         Card drawn;
         String message;
-        int i, index, c, now, size, width;
+        int i, index, c, now, size, width, flag;
 
         setStatus(STAT_IDLE); // block tap down events when idle
         c = mUno.getDraw2StackCount();
@@ -1330,6 +1408,7 @@ public class MainActivity extends AppCompatActivity
         index = -1;
         drawn = null;
         now = mUno.getNow();
+        flag = now == Player.YOU ? 0xff : 1 << now;
         mSelectedIdx = -1;
         for (i = 0; i < count; ++i) {
             index = mUno.draw(now, force);
@@ -1375,12 +1454,12 @@ public class MainActivity extends AppCompatActivity
                 // Animation
                 mSoundPool.play(sndDraw, mSndVol, mSndVol, 1, 0, 1.0f);
                 animate(1, mLayer);
-                refreshScreen(message);
+                refreshScreen(message, flag);
                 threadWait(300);
             } // if (index >= 0)
             else {
                 message = i18n.info_cannotDraw(now, Uno.MAX_HOLD_CARDS);
-                refreshScreen(message);
+                refreshScreen(message, flag);
                 break;
             } // else
         } // for (i = 0; i < count; ++i)
@@ -1417,7 +1496,7 @@ public class MainActivity extends AppCompatActivity
             } // else
         } // if (count == 1 && ...)
         else {
-            refreshScreen(i18n.act_pass(now));
+            refreshScreen(i18n.act_pass(now), 0x00);
             threadWait(750);
             setStatus(mUno.switchNow());
         } // else
@@ -1494,18 +1573,18 @@ public class MainActivity extends AppCompatActivity
         now = mUno.getNow();
         challenger = mUno.getNext();
         challengeSuccess = mUno.challenge(now);
-        refreshScreen(i18n.info_challenge(
-                challenger, now, mUno.next2lastColor().ordinal()));
+        refreshScreen(i18n.info_challenge(challenger, now,
+                mUno.next2lastColor().ordinal()), (1 << now) | 0x40);
         threadWait(1500);
         if (challengeSuccess) {
             // Challenge success, who played [wild +4] draws 4 cards
-            refreshScreen(i18n.info_challengeSuccess(now));
+            refreshScreen(i18n.info_challengeSuccess(now), 0x00);
             threadWait(1500);
             draw(4, /* force */ true);
         } // if (challengeSuccess)
         else {
             // Challenge failure, challenger draws 6 cards
-            refreshScreen(i18n.info_challengeFailure(challenger));
+            refreshScreen(i18n.info_challengeFailure(challenger), 0x00);
             threadWait(1500);
             mUno.switchNow();
             draw(6, /* force */ true);

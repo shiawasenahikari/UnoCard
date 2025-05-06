@@ -433,7 +433,7 @@ class I18N_en_US implements I18N {
 
     @Override
     public String label_remain_used(int i1, int i2) {
-        return "Remain/Used: " + i1 + "/" + i2;
+        return "[Y]R" + i1 + "[W]/[G]U" + i2;
     } // label_remain_used(int, int)
 
     @Override
@@ -741,7 +741,7 @@ class I18N_zh_CN implements I18N {
 
     @Override
     public String label_remain_used(int i1, int i2) {
-        return "剩余/已出: " + i1 + "/" + i2;
+        return "[Y]剩" + i1 + "[G]用" + i2;
     } // label_remain_used(int, int)
 
     @Override
@@ -1049,7 +1049,7 @@ class I18N_ja_JP implements I18N {
 
     @Override
     public String label_remain_used(int i1, int i2) {
-        return "残り/使用済: " + i1 + "/" + i2;
+        return "[Y]残" + i1 + "[G]使" + i2;
     } // label_remain_used(int, int)
 
     @Override

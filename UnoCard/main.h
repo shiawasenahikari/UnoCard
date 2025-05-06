@@ -54,12 +54,12 @@ private:
     Uno* sUno;
     I18N* i18n;
     bool sAuto;
-    int sSpeed;
     int sStatus;
     int sWinner;
     QFont sFont;
     Ui::Main* ui;
     int sHideFlag;
+    int sSpeed = 1;
     QImage sScreen;
     bool sAIRunning;
     bool sGameSaved;
@@ -85,9 +85,9 @@ private:
     void play(int index, Color color = NONE);
     void draw(int count = 1, bool force = false);
     void putText(const QString& text, int x, int y);
-    void refreshScreen(const QString& message = "");
     void loadReplay(const QString& replayName = "");
     void animate(int layerCount, AnimateLayer layer[]);
+    void refreshScreen(const QString& message = "", int area = 0xff);
 
 protected:
     // Implemented Listeners
