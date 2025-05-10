@@ -566,8 +566,7 @@ public class AI {
                 if (iBest < 0 && iRV >= 0 && prevSize >= 4 &&
                         hand.get(iRV).color != nextStrong)
                     iBest = iRV;
-                if (iBest < 0 && iSK >= 0 &&
-                        hand.get(iSK).color != nextStrong)
+                if (iBest < 0 && iSK >= 0 && hand.get(iSK).color != nextStrong)
                     iBest = iSK;
             } // else if (nextStrong != NONE)
             else {
@@ -626,13 +625,15 @@ public class AI {
                 // 2: Draw one because it's not necessary to use other cards
                 if (iRV >= 0 && hand.get(iRV).color != prevStrong)
                     iBest = iRV;
-                if (iBest < 0) for (int can : candidates.keySet()) {
-                    i = -can % 100;
-                    if (hand.get(i).color != prevStrong) {
-                        iBest = i;
-                        break;
-                    } // if (hand.get(i).color != prevStrong)
-                } // if (iBest < 0) for (int can : candidates.keySet())
+                if (iBest < 0) {
+                    for (int can : candidates.keySet()) {
+                        i = -can % 100;
+                        if (hand.get(i).color != prevStrong) {
+                            iBest = i;
+                            break;
+                        } // if (hand.get(i).color != prevStrong)
+                    } // for (int can : candidates.keySet())
+                } // if (iBest < 0)
             } // else if (prevStrong != NONE)
             else {
                 // Priority when prev called Uno & prevStrong is unknown:
@@ -677,14 +678,11 @@ public class AI {
                         break;
                     } // if (hand.get(i).color != oppoStrong)
                 } // for (int can : candidates.keySet())
-                if (iBest < 0 && iRV >= 0 &&
-                        hand.get(iRV).color != oppoStrong)
+                if (iBest < 0 && iRV >= 0 && hand.get(iRV).color != oppoStrong)
                     iBest = iRV;
-                if (iBest < 0 && iSK >= 0 &&
-                        hand.get(iSK).color != oppoStrong)
+                if (iBest < 0 && iSK >= 0 && hand.get(iSK).color != oppoStrong)
                     iBest = iSK;
-                if (iBest < 0 && iDW >= 0 &&
-                        hand.get(iDW).color != oppoStrong)
+                if (iBest < 0 && iDW >= 0 && hand.get(iDW).color != oppoStrong)
                     iBest = iDW;
                 if (iBest < 0 && iWD >= 0)
                     iBest = iWD;
@@ -710,14 +708,11 @@ public class AI {
                         break;
                     } // if (hand.get(i).color != oppoStrong)
                 } // for (int can : candidates.keySet())
-                if (iBest < 0 && iRV >= 0 &&
-                        hand.get(iRV).color != oppoStrong)
+                if (iBest < 0 && iRV >= 0 && hand.get(iRV).color != oppoStrong)
                     iBest = iRV;
-                if (iBest < 0 && iSK >= 0 &&
-                        hand.get(iSK).color != oppoStrong)
+                if (iBest < 0 && iSK >= 0 && hand.get(iSK).color != oppoStrong)
                     iBest = iSK;
-                if (iBest < 0 && iDW >= 0 &&
-                        hand.get(iDW).color != oppoStrong)
+                if (iBest < 0 && iDW >= 0 && hand.get(iDW).color != oppoStrong)
                     iBest = iDW;
             } // else if (oppoStrong != NONE)
             else {
@@ -761,17 +756,19 @@ public class AI {
             // 4: +2 cards, in your best color
             if (iRV >= 0 && prevSize > nextSize)
                 iBest = iRV;
-            if (iBest < 0) for (int can : candidates.keySet()) {
-                i = -can % 100;
-                if (hand.get(i).color == nextWeak) {
-                    iBest = i;
-                    break;
-                } // if (hand.get(i).color == nextWeak)
-            } // if (iBest < 0) for (int can : candidates.keySet())
+            if (iBest < 0) {
+                for (int can : candidates.keySet()) {
+                    i = -can % 100;
+                    if (hand.get(i).color == nextWeak) {
+                        iBest = i;
+                        break;
+                    } // if (hand.get(i).color == nextWeak)
+                } // for (int can : candidates.keySet())
+            } // if (iBest < 0)
             if (iBest < 0 && !candidates.isEmpty())
                 iBest = -candidates.firstKey() % 100;
-            if (iBest < 0 && iRV >= 0 &&
-                    (prevSize >= 4 || prev.getRecent() == null))
+            if (iBest < 0 && iRV >= 0 && (prevSize >= 4
+                    || prev.getRecent() == null))
                 iBest = iRV;
             if (iBest < 0 && iSK >= 0 && oppoSize >= 3 &&
                     hand.get(iSK).color == bestColor)
@@ -794,11 +791,10 @@ public class AI {
             // 7: Wild +4 cards, switch to your best color, when nextSize <= 4
             // 8: Wild +4 cards, when yourSize == 2 && prevSize <= 3 (UNO dash!)
             // 9: Wild cards, when yourSize == 2 && prevSize <= 3 (UNO dash!)
-            if (iDW + iSK > -2 &&
-                    nextSize <= 4 && nextSize - oppoSize <= 1)
+            if (iDW + iSK > -2 && nextSize <= 4 && nextSize - oppoSize <= 1)
                 iBest = Math.max(iDW, iSK);
-            if (iBest < 0 && iRV >= 0 &&
-                    (prevSize > nextSize || prev.getRecent() == null))
+            if (iBest < 0 && iRV >= 0 && (prevSize > nextSize
+                    || prev.getRecent() == null))
                 iBest = iRV;
             if (iBest < 0 && !candidates.isEmpty())
                 iBest = -candidates.firstKey() % 100;
@@ -955,13 +951,15 @@ public class AI {
                 iBest = iWD;
             if (iBest < 0 && iWD4 >= 0 && lastColor != bestColor)
                 iBest = iWD4;
-            if (iBest < 0) for (int can : candidates.keySet()) {
-                i = -can % 100;
-                if (hand.get(i).color != nextStrong) {
-                    iBest = i;
-                    break;
-                } // if (hand.get(i).color != nextStrong)
-            } // if (iBest < 0) for (int can : candidates.keySet())
+            if (iBest < 0) {
+                for (int can : candidates.keySet()) {
+                    i = -can % 100;
+                    if (hand.get(i).color != nextStrong) {
+                        iBest = i;
+                        break;
+                    } // if (hand.get(i).color != nextStrong)
+                } // for (int can : candidates.keySet())
+            } // if (iBest < 0)
             if (iBest < 0 && iWD >= 0)
                 iBest = iWD;
         } // if (nextSize == 1)
@@ -995,15 +993,17 @@ public class AI {
                 iBest = iWD4;
             if (iBest < 0 && iRV >= 0 && hand.get(iRV).color == oppoStrong)
                 iBest = iRV;
-            if (iBest < 0) for (int can : candidates.keySet()) {
-                i = -can % 100;
-                if (hand.get(i).color == oppoStrong) {
-                    iBest = i;
-                    break;
-                } // if (hand.get(i).color == oppoStrong)
-            } // if (iBest < 0) for (int can : candidates.keySet())
-            if (iBest < 0 && iWD >= 0 && oppoStrong != NONE
-                    && lastColor != oppoStrong)
+            if (iBest < 0) {
+                for (int can : candidates.keySet()) {
+                    i = -can % 100;
+                    if (hand.get(i).color == oppoStrong) {
+                        iBest = i;
+                        break;
+                    } // if (hand.get(i).color == oppoStrong)
+                } // for (int can : candidates.keySet())
+            } // if (iBest < 0)
+            if (iBest < 0 && iWD >= 0 && oppoStrong != NONE &&
+                    lastColor != oppoStrong)
                 iBest = iWD;
             if (iBest < 0 && iRV >= 0 && prevSize < nextSize)
                 iBest = iRV;
@@ -1180,13 +1180,15 @@ public class AI {
                 iBest = iWD;
             if (iBest < 0 && iWD4 >= 0 && lastColor != bestColor)
                 iBest = iWD4;
-            if (iBest < 0) for (int can : candidates.keySet()) {
-                i = -can % 100;
-                if (hand.get(i).color != nextStrong) {
-                    iBest = i;
-                    break;
-                } // if (hand.get(i).color != nextStrong)
-            } // if (iBest < 0) for (int can : candidates.keySet())
+            if (iBest < 0) {
+                for (int can : candidates.keySet()) {
+                    i = -can % 100;
+                    if (hand.get(i).color != nextStrong) {
+                        iBest = i;
+                        break;
+                    } // if (hand.get(i).color != nextStrong)
+                } // for (int can : candidates.keySet())
+            } // if (iBest < 0)
             if (iBest < 0 && iWD >= 0 && i7 + i0 > -2)
                 iBest = iWD;
         } // if (nextSize == 1)
@@ -1197,13 +1199,15 @@ public class AI {
                 iBest = i0;
             if (iBest < 0 && i7 >= 0)
                 iBest = i7;
-            if (iBest < 0) for (int can : candidates.keySet()) {
-                i = -can % 100;
-                if (hand.get(i).color != prevStrong) {
-                    iBest = i;
-                    break;
-                } // if (hand.get(i).color != prevStrong)
-            } // if (iBest < 0) for (int can : candidates.keySet())
+            if (iBest < 0) {
+                for (int can : candidates.keySet()) {
+                    i = -can % 100;
+                    if (hand.get(i).color != prevStrong) {
+                        iBest = i;
+                        break;
+                    } // if (hand.get(i).color != prevStrong)
+                } // for (int can : candidates.keySet())
+            } // if (iBest < 0)
             if (iBest < 0 && iSK >= 0 && hand.get(iSK).color != prevStrong)
                 iBest = iSK;
             if (iBest < 0 && iDW >= 0 && hand.get(iDW).color != prevStrong)
@@ -1222,13 +1226,15 @@ public class AI {
                 iBest = i7;
             if (iBest < 0 && i0 >= 0)
                 iBest = i0;
-            if (iBest < 0) for (int can : candidates.keySet()) {
-                i = -can % 100;
-                if (hand.get(i).color != oppoStrong) {
-                    iBest = i;
-                    break;
-                } // if (hand.get(i).color != oppoStrong)
-            } // if (iBest < 0) for (int can : candidates.keySet())
+            if (iBest < 0) {
+                for (int can : candidates.keySet()) {
+                    i = -can % 100;
+                    if (hand.get(i).color != oppoStrong) {
+                        iBest = i;
+                        break;
+                    } // if (hand.get(i).color != oppoStrong)
+                } // for (int can : candidates.keySet())
+            } // if (iBest < 0)
             if (iBest < 0 && iRV >= 0 && prevSize > nextSize)
                 iBest = iRV;
             if (iBest < 0 && iSK >= 0 && hand.get(iSK).color != oppoStrong)

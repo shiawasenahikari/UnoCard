@@ -73,8 +73,8 @@ static const char FILE_HEADER[] = {
 Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
     int i, hash;
     QString bgmPath;
-    int dw[64] = {0};
-    char header[9] = {0};
+    int dw[64] = { 0 };
+    char header[9] = { 0 };
     QFile reader("UnoCard.stat");
 
     // Preparations
@@ -126,8 +126,10 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
 
             if (strcmp(header, FILE_HEADER) == 0 && hash == dw[8]) {
                 // File verification success
-                if (dw[0] > 9999) dw[0] = 9999;
-                else if (dw[0] < -999) dw[0] = -999;
+                if (dw[0] > 9999)
+                    dw[0] = 9999;
+                else if (dw[0] < -999)
+                    dw[0] = -999;
                 sScore = dw[0];
                 sUno->setPlayers(dw[1]);
                 sUno->setDifficulty(dw[2]);
@@ -148,8 +150,10 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
 
             if (strcmp(header, FILE_HEADER) == 0 && hash == dw[63]) {
                 // File verification success
-                if (dw[0] > 9999) dw[0] = 9999;
-                else if (dw[0] < -999) dw[0] = -999;
+                if (dw[0] > 9999)
+                    dw[0] = 9999;
+                else if (dw[0] < -999)
+                    dw[0] = -999;
                 sScore = dw[0];
                 sUno->setPlayers(dw[1]);
                 sUno->setDifficulty(dw[2]);
@@ -205,10 +209,10 @@ void Main::requestAI() {
 
     if (!sAIRunning) {
         sAIRunning = true;
-        while (sStatus == Player::COM1
+        while ((sStatus == Player::YOU && sAuto)
+            || sStatus == Player::COM1
             || sStatus == Player::COM2
-            || sStatus == Player::COM3
-            || (sStatus == Player::YOU && sAuto)) {
+            || sStatus == Player::COM3) {
             setStatus(STAT_IDLE); // block mouse click events when idle
             idxBest = sUno->getDifficulty() == Uno::LV_EASY
                 ? sAI->easyAI_bestCardIndex4NowPlayer(bestColor)
@@ -225,7 +229,7 @@ void Main::requestAI() {
                 // No appropriate cards to play, or no card to play
                 draw();
             } // else
-        } // while (sStatus == Player::COM1 || ...)
+        } // while ((sStatus == Player::YOU && sAuto) || ...)
 
         sAIRunning = false;
     } // if (!sAIRunning)
@@ -443,11 +447,16 @@ void Main::putText(const QString& text, int x, int y) {
     for (int i = 0, n = text.length(); i < n; ++i) {
         if ('[' == text[i] && i + 2 < n && text[i + 2] == ']') {
             ++i;
-            if (text[i] == 'R') sPainter->setPen(pen_red);
-            if (text[i] == 'B') sPainter->setPen(pen_blue);
-            if (text[i] == 'G') sPainter->setPen(pen_green);
-            if (text[i] == 'W') sPainter->setPen(pen_white);
-            if (text[i] == 'Y') sPainter->setPen(pen_yellow);
+            if (text[i] == 'R')
+                sPainter->setPen(pen_red);
+            if (text[i] == 'B')
+                sPainter->setPen(pen_blue);
+            if (text[i] == 'G')
+                sPainter->setPen(pen_green);
+            if (text[i] == 'W')
+                sPainter->setPen(pen_white);
+            if (text[i] == 'Y')
+                sPainter->setPen(pen_yellow);
             ++i;
         } // if ('[' == text[i] && i + 2 < n && text[i + 2] == ']')
         else {
@@ -527,39 +536,39 @@ void Main::refreshScreen(const QString& message, int area) {
         // Show special screen when configuring game options
         // BGM switch
         putText(i18n->label_bgm(), 60, 160);
-        image = sMediaPlay->volume() > 0 ?
-            sUno->findCard(RED, SKIP)->darkImg :
-            sUno->findCard(RED, SKIP)->image;
+        image = sMediaPlay->volume() > 0
+            ? sUno->findCard(RED, SKIP)->darkImg
+            : sUno->findCard(RED, SKIP)->image;
         sPainter->drawImage(150, 60, image);
-        image = sMediaPlay->volume() > 0 ?
-            sUno->findCard(GREEN, REV)->image :
-            sUno->findCard(GREEN, REV)->darkImg;
+        image = sMediaPlay->volume() > 0
+            ? sUno->findCard(GREEN, REV)->image
+            : sUno->findCard(GREEN, REV)->darkImg;
         sPainter->drawImage(330, 60, image);
 
         // Sound effect switch
         putText(i18n->label_snd(), 60, 350);
-        image = sSoundPool->isEnabled() ?
-            sUno->findCard(RED, SKIP)->darkImg :
-            sUno->findCard(RED, SKIP)->image;
+        image = sSoundPool->isEnabled()
+            ? sUno->findCard(RED, SKIP)->darkImg
+            : sUno->findCard(RED, SKIP)->image;
         sPainter->drawImage(150, 250, image);
-        image = sSoundPool->isEnabled() ?
-            sUno->findCard(GREEN, REV)->image :
-            sUno->findCard(GREEN, REV)->darkImg;
+        image = sSoundPool->isEnabled()
+            ? sUno->findCard(GREEN, REV)->image
+            : sUno->findCard(GREEN, REV)->darkImg;
         sPainter->drawImage(330, 250, image);
 
         // Speed
         putText(i18n->label_speed(), 780, 350);
-        image = sSpeed < 2 ?
-            sUno->findCard(GREEN, NUM1)->image :
-            sUno->findCard(GREEN, NUM1)->darkImg;
+        image = sSpeed < 2
+            ? sUno->findCard(GREEN, NUM1)->image
+            : sUno->findCard(GREEN, NUM1)->darkImg;
         sPainter->drawImage(930, 250, image);
-        image = sSpeed == 2 ?
-            sUno->findCard(YELLOW, NUM2)->image :
-            sUno->findCard(YELLOW, NUM2)->darkImg;
+        image = sSpeed == 2
+            ? sUno->findCard(YELLOW, NUM2)->image
+            : sUno->findCard(YELLOW, NUM2)->darkImg;
         sPainter->drawImage(1110, 250, image);
-        image = sSpeed > 2 ?
-            sUno->findCard(BLUE, NUM3)->image :
-            sUno->findCard(BLUE, NUM3)->darkImg;
+        image = sSpeed > 2
+            ? sUno->findCard(BLUE, NUM3)->image
+            : sUno->findCard(BLUE, NUM3)->darkImg;
         sPainter->drawImage(1290, 250, image);
 
         if (status != Player::YOU) {
@@ -862,7 +871,8 @@ void Main::refreshScreen(const QString& message, int area) {
                     image = status == STAT_GAME_OVER
                         || (status == Player::YOU && sUno->isLegalToPlay(hand[i]))
                         || (status == STAT_ASK_KEEP_PLAY && i == sSelectedIdx)
-                        ? hand[i]->image : hand[i]->darkImg;
+                        ? hand[i]->image
+                        : hand[i]->darkImg;
                     sPainter->drawImage(
                         /* x     */ 800 - width / 2 + 44 * i,
                         /* y     */ i == sSelectedIdx ? 680 : 700,
@@ -1028,9 +1038,7 @@ void Main::swapWith(int whom) {
     setStatus(STAT_IDLE);
     curr = sUno->getNow();
     sHideFlag = (1 << curr) | (1 << whom);
-    flag = curr == Player::YOU
-        ? (1 << curr) | (1 << whom) | 0x40
-        : (1 << curr) | (1 << whom);
+    flag = (1 << curr) | (1 << whom) | (curr == Player::YOU ? 0x40 : 0x00);
     refreshScreen(i18n->info_7_swap(curr, whom), flag);
     sLayer[0].elem = sLayer[1].elem = sUno->getBackImage();
     sLayer[0].startLeft = x[curr];

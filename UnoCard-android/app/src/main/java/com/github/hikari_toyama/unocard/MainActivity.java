@@ -259,10 +259,10 @@ public class MainActivity extends AppCompatActivity
 
         if (!mAIRunning) {
             mAIRunning = true;
-            while (mStatus == Player.COM1
-                    || mStatus == Player.COM2
-                    || mStatus == Player.COM3
-                    || (mStatus == Player.YOU && mAuto)) {
+            while ((mStatus == Player.YOU && mAuto) ||
+                    mStatus == Player.COM1 ||
+                    mStatus == Player.COM2 ||
+                    mStatus == Player.COM3) {
                 setStatus(STAT_IDLE); // block tap down events when idle
                 idxBest = mUno.getDifficulty() == Uno.LV_EASY
                         ? mAI.easyAI_bestCardIndex4NowPlayer(mBestColor)
@@ -279,7 +279,7 @@ public class MainActivity extends AppCompatActivity
                     // No appropriate cards to play, or no card to play
                     draw(1, /* force */ false);
                 } // else
-            } // while (mStatus == Player.COM1 || ...)
+            } // while ((mStatus == Player.YOU && mAuto) || ...)
 
             mAIRunning = false;
         } // if (!mAIRunning)
@@ -496,11 +496,16 @@ public class MainActivity extends AppCompatActivity
             for (int i = x = 0, n = txt.length; i < n; ++i) {
                 if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']') {
                     ++i;
-                    if (txt[i] == 'R') mPen.setColor(pen_red);
-                    if (txt[i] == 'B') mPen.setColor(pen_blue);
-                    if (txt[i] == 'G') mPen.setColor(pen_green);
-                    if (txt[i] == 'W') mPen.setColor(pen_white);
-                    if (txt[i] == 'Y') mPen.setColor(pen_yellow);
+                    if (txt[i] == 'R')
+                        mPen.setColor(pen_red);
+                    if (txt[i] == 'B')
+                        mPen.setColor(pen_blue);
+                    if (txt[i] == 'G')
+                        mPen.setColor(pen_green);
+                    if (txt[i] == 'W')
+                        mPen.setColor(pen_white);
+                    if (txt[i] == 'Y')
+                        mPen.setColor(pen_yellow);
                     ++i;
                 } // if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']')
                 else {
@@ -594,39 +599,39 @@ public class MainActivity extends AppCompatActivity
             // Show special screen when configuring game options
             // BGM switch
             putText(i18n.label_bgm(), 60, 160);
-            image = mBgmVol > 0.0f ?
-                    mUno.findCard(Color.RED, Content.SKIP).darkImg :
-                    mUno.findCard(Color.RED, Content.SKIP).image;
+            image = mBgmVol > 0.0f
+                    ? mUno.findCard(Color.RED, Content.SKIP).darkImg
+                    : mUno.findCard(Color.RED, Content.SKIP).image;
             image.copyTo(mScr.submat(60, 241, 150, 271), image);
-            image = mBgmVol > 0.0f ?
-                    mUno.findCard(Color.GREEN, Content.REV).image :
-                    mUno.findCard(Color.GREEN, Content.REV).darkImg;
+            image = mBgmVol > 0.0f
+                    ? mUno.findCard(Color.GREEN, Content.REV).image
+                    : mUno.findCard(Color.GREEN, Content.REV).darkImg;
             image.copyTo(mScr.submat(60, 241, 330, 451), image);
 
             // Sound effect switch
             putText(i18n.label_snd(), 60, 350);
-            image = mSndVol > 0.0f ?
-                    mUno.findCard(Color.RED, Content.SKIP).darkImg :
-                    mUno.findCard(Color.RED, Content.SKIP).image;
+            image = mSndVol > 0.0f
+                    ? mUno.findCard(Color.RED, Content.SKIP).darkImg
+                    : mUno.findCard(Color.RED, Content.SKIP).image;
             image.copyTo(mScr.submat(250, 431, 150, 271), image);
-            image = mSndVol > 0.0f ?
-                    mUno.findCard(Color.GREEN, Content.REV).image :
-                    mUno.findCard(Color.GREEN, Content.REV).darkImg;
+            image = mSndVol > 0.0f
+                    ? mUno.findCard(Color.GREEN, Content.REV).image
+                    : mUno.findCard(Color.GREEN, Content.REV).darkImg;
             image.copyTo(mScr.submat(250, 431, 330, 451), image);
 
             // Speed
             putText(i18n.label_speed(), 780, 350);
-            image = mSpeed < 2 ?
-                    mUno.findCard(Color.GREEN, Content.NUM1).image :
-                    mUno.findCard(Color.GREEN, Content.NUM1).darkImg;
+            image = mSpeed < 2
+                    ? mUno.findCard(Color.GREEN, Content.NUM1).image
+                    : mUno.findCard(Color.GREEN, Content.NUM1).darkImg;
             image.copyTo(mScr.submat(250, 431, 930, 1051), image);
-            image = mSpeed == 2 ?
-                    mUno.findCard(Color.YELLOW, Content.NUM2).image :
-                    mUno.findCard(Color.YELLOW, Content.NUM2).darkImg;
+            image = mSpeed == 2
+                    ? mUno.findCard(Color.YELLOW, Content.NUM2).image
+                    : mUno.findCard(Color.YELLOW, Content.NUM2).darkImg;
             image.copyTo(mScr.submat(250, 431, 1110, 1231), image);
-            image = mSpeed > 2 ?
-                    mUno.findCard(Color.BLUE, Content.NUM3).image :
-                    mUno.findCard(Color.BLUE, Content.NUM3).darkImg;
+            image = mSpeed > 2
+                    ? mUno.findCard(Color.BLUE, Content.NUM3).image
+                    : mUno.findCard(Color.BLUE, Content.NUM3).darkImg;
             image.copyTo(mScr.submat(250, 431, 1290, 1411), image);
 
             if (status != Player.YOU) {
@@ -934,7 +939,8 @@ public class MainActivity extends AppCompatActivity
                     image = status == STAT_GAME_OVER
                             || (status == Player.YOU && mUno.isLegalToPlay(hand.get(i)))
                             || (status == STAT_ASK_KEEP_PLAY && i == mSelectedIdx)
-                            ? hand.get(i).image : hand.get(i).darkImg;
+                            ? hand.get(i).image
+                            : hand.get(i).darkImg;
                     y = i == mSelectedIdx ? 680 : 700;
                     image.copyTo(mScr.submat(y, y + 181, x, x + 121), image);
                 } // for (i = 0, x = 800 - width / 2; i < size; ++i, x += 44)
@@ -1185,9 +1191,7 @@ public class MainActivity extends AppCompatActivity
         setStatus(STAT_IDLE);
         curr = mUno.getNow();
         mHideFlag = (1 << curr) | (1 << whom);
-        flag = curr == Player.YOU || whom == Player.YOU
-                ? (1 << curr) | (1 << whom) | 0x40
-                : (1 << curr) | (1 << whom);
+        flag = (1 << curr) | (1 << whom) | (curr == Player.YOU ? 0x40 : 0x00);
         refreshScreen(i18n.info_7_swap(curr, whom), flag);
         mLayer[0].elem = mLayer[1].elem = mUno.getBackImage();
         mLayer[0].startLeft = x[curr];
