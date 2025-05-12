@@ -61,7 +61,6 @@ private:
     int sHideFlag;
     int sSpeed = 1;
     QImage sScreen;
-    bool sAIRunning;
     bool sGameSaved;
     int sSelectedIdx;
     int sScore, sDiff;
@@ -76,7 +75,6 @@ private:
 
     // Functions
     void cycle();
-    void requestAI();
     void onChallenge();
     void swapWith(int whom);
     void setStatus(int status);
@@ -88,6 +86,12 @@ private:
     void loadReplay(const QString& replayName = "");
     void animate(int layerCount, AnimateLayer layer[]);
     void refreshScreen(const QString& message = "", int area = 0xff);
+
+signals:
+    void signal_requestAI();
+
+private slots:
+    void requestAI();
 
 protected:
     // Implemented Listeners

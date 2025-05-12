@@ -96,7 +96,6 @@ public class MainActivity extends AppCompatActivity
     private Handler mUIHandler;
     private Color[] mBestColor;
     private boolean mGameSaved;
-    private boolean mAIRunning;
     private int mScore, mDiff;
     private int mSelectedIdx;
     private boolean mAuto;
@@ -177,7 +176,6 @@ public class MainActivity extends AppCompatActivity
             mBestColor = new Color[1];
             mAdjustOptions = false;
             mWinner = Player.YOU;
-            mAIRunning = false;
             mSelectedIdx = -1;
             mHideFlag = 0x00;
             mAuto = false;
@@ -257,32 +255,22 @@ public class MainActivity extends AppCompatActivity
     private void requestAI() {
         int idxBest;
 
-        if (!mAIRunning) {
-            mAIRunning = true;
-            while ((mStatus == Player.YOU && mAuto) ||
-                    mStatus == Player.COM1 ||
-                    mStatus == Player.COM2 ||
-                    mStatus == Player.COM3) {
-                setStatus(STAT_IDLE); // block tap down events when idle
-                idxBest = mUno.getDifficulty() == Uno.LV_EASY
-                        ? mAI.easyAI_bestCardIndex4NowPlayer(mBestColor)
-                        : mUno.isSevenZeroRule()
-                        ? mAI.sevenZeroAI_bestCardIndex4NowPlayer(mBestColor)
-                        : mUno.is2vs2()
-                        ? mAI.teamAI_bestCardIndex4NowPlayer(mBestColor)
-                        : mAI.hardAI_bestCardIndex4NowPlayer(mBestColor);
-                if (idxBest >= 0) {
-                    // Found an appropriate card to play
-                    play(idxBest, mBestColor[0]);
-                } // if (idxBest >= 0)
-                else {
-                    // No appropriate cards to play, or no card to play
-                    draw(1, /* force */ false);
-                } // else
-            } // while ((mStatus == Player.YOU && mAuto) || ...)
-
-            mAIRunning = false;
-        } // if (!mAIRunning)
+        setStatus(STAT_IDLE); // block tap down events when idle
+        idxBest = mUno.getDifficulty() == Uno.LV_EASY
+                ? mAI.easyAI_bestCardIndex4NowPlayer(mBestColor)
+                : mUno.isSevenZeroRule()
+                ? mAI.sevenZeroAI_bestCardIndex4NowPlayer(mBestColor)
+                : mUno.is2vs2()
+                ? mAI.teamAI_bestCardIndex4NowPlayer(mBestColor)
+                : mAI.hardAI_bestCardIndex4NowPlayer(mBestColor);
+        if (idxBest >= 0) {
+            // Found an appropriate card to play
+            play(idxBest, mBestColor[0]);
+        } // if (idxBest >= 0)
+        else {
+            // No appropriate cards to play, or no card to play
+            draw(1, /* force */ false);
+        } // else
     } // requestAI()
 
     /**
@@ -345,7 +333,7 @@ public class MainActivity extends AppCompatActivity
             case Player.YOU:
                 // Your turn, select a hand card to play, or draw a card
                 if (mAuto) {
-                    requestAI();
+                    mSubHandler.sendEmptyMessage(2);
                 } // if (mAuto)
                 else if (mAdjustOptions) {
                     refreshScreen("");
@@ -423,7 +411,7 @@ public class MainActivity extends AppCompatActivity
             case Player.COM2:
             case Player.COM3:
                 // AI players' turn
-                requestAI();
+                mSubHandler.sendEmptyMessage(2);
                 break; // case Player.COM1, Player.COM2, Player.COM3
 
             case STAT_GAME_OVER:
@@ -1632,11 +1620,15 @@ public class MainActivity extends AppCompatActivity
     private boolean handleMessage2(Message message) {
         int x = message.arg1, y = message.arg2;
 
-        if (message.what == 1) {
+        if (message.what == 2) {
+            // Request AI when message.what == 2
+            requestAI();
+        } // if (message.what == 2)
+        else if (message.what == 1) {
             // When message.what == 1
             // load the replay file named [message.obj]
             loadReplay((String) message.obj);
-        } // if (message.what == 1)
+        } // else if (message.what == 1)
         else if (mAdjustOptions) {
             // Do special behaviors when configuring game options
             if (60 <= y && y <= 240) {

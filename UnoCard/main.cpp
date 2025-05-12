@@ -182,9 +182,9 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
     sAuto = false;
     sHideFlag = 0x00;
     sSelectedIdx = -1;
-    sAIRunning = false;
     sWinner = Player::YOU;
     sAdjustOptions = false;
+    connect(this, SIGNAL(signal_requestAI()), this, SLOT(requestAI()));
     for (i = 0; i <= 3; ++i) {
         sBackup[i] = QImage(1600, 900, QImage::Format_RGB888);
         sBkPainter[i] = new QPainter(&sBackup[i]);
@@ -207,32 +207,22 @@ void Main::requestAI() {
     int idxBest;
     Color bestColor[1];
 
-    if (!sAIRunning) {
-        sAIRunning = true;
-        while ((sStatus == Player::YOU && sAuto)
-            || sStatus == Player::COM1
-            || sStatus == Player::COM2
-            || sStatus == Player::COM3) {
-            setStatus(STAT_IDLE); // block mouse click events when idle
-            idxBest = sUno->getDifficulty() == Uno::LV_EASY
-                ? sAI->easyAI_bestCardIndex4NowPlayer(bestColor)
-                : sUno->isSevenZeroRule()
-                ? sAI->sevenZeroAI_bestCardIndex4NowPlayer(bestColor)
-                : sUno->is2vs2()
-                ? sAI->teamAI_bestCardIndex4NowPlayer(bestColor)
-                : sAI->hardAI_bestCardIndex4NowPlayer(bestColor);
-            if (idxBest >= 0) {
-                // Found an appropriate card to play
-                play(idxBest, bestColor[0]);
-            } // if (idxBest >= 0)
-            else {
-                // No appropriate cards to play, or no card to play
-                draw();
-            } // else
-        } // while ((sStatus == Player::YOU && sAuto) || ...)
-
-        sAIRunning = false;
-    } // if (!sAIRunning)
+    setStatus(STAT_IDLE); // block mouse click events when idle
+    idxBest = sUno->getDifficulty() == Uno::LV_EASY
+        ? sAI->easyAI_bestCardIndex4NowPlayer(bestColor)
+        : sUno->isSevenZeroRule()
+        ? sAI->sevenZeroAI_bestCardIndex4NowPlayer(bestColor)
+        : sUno->is2vs2()
+        ? sAI->teamAI_bestCardIndex4NowPlayer(bestColor)
+        : sAI->hardAI_bestCardIndex4NowPlayer(bestColor);
+    if (idxBest >= 0) {
+        // Found an appropriate card to play
+        play(idxBest, bestColor[0]);
+    } // if (idxBest >= 0)
+    else {
+        // No appropriate cards to play, or no card to play
+        draw();
+    } // else
 } // requestAI()
 
 /**
@@ -306,7 +296,7 @@ void Main::setStatus(int status) {
     case Player::YOU:
         // Your turn, select a hand card to play, or draw a card
         if (sAuto) {
-            requestAI();
+            emit signal_requestAI();
         } // if (sAuto)
         else if (sAdjustOptions) {
             refreshScreen();
@@ -383,7 +373,7 @@ void Main::setStatus(int status) {
     case Player::COM2:
     case Player::COM3:
         // AI players' turn
-        requestAI();
+        emit signal_requestAI();
         break; // case Player::COM1, Player::COM2, Player::COM3
 
     case STAT_GAME_OVER:
