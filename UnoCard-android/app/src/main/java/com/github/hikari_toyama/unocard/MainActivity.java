@@ -366,7 +366,7 @@ public class MainActivity extends AppCompatActivity
             case STAT_WILD_COLOR:
                 // Need to specify the following legal color after played a
                 // wild card. Draw color sectors in the center of screen
-                refreshScreen(i18n.ask_color());
+                refreshScreen(i18n.ask_color(), 0x21);
                 break; // case STAT_WILD_COLOR
 
             case STAT_DOUBT_WILD4:
@@ -527,7 +527,7 @@ public class MainActivity extends AppCompatActivity
      *                0x04 = NORTH's hand card area
      *                0x08 = EAST's hand card area
      *                0x10 = (Reversed bit, not used yet)
-     *                0x20 = (Reversed bit, not used yet)
+     *                0x20 = Left-bottom & Right-bottom corner
      *                0x40 = Center deck area
      *                0x80 = Recent card area
      *                0xff = Full screen (default)
@@ -558,30 +558,40 @@ public class MainActivity extends AppCompatActivity
         width = getTextWidth(message);
         putText(message, 800 - width / 2, 620);
 
-        // Left-bottom corner: <OPTIONS> button
-        // Shows only when game is not in process
-        if (status == Player.YOU ||
-                status == STAT_WELCOME ||
-                status == STAT_GAME_OVER) {
-            active = mAdjustOptions;
-            putText(i18n.btn_settings(active), 20, 880);
-        } // if (status == Player.YOU || ...)
+        // Left-bottom & Right-bottom corner
+        if ((area & 0x20) != 0x00) {
+            if (area != 0xff) {
+                image = mUno.getBackground().submat(844, 892, 20, 190);
+                image.copyTo(mScr.submat(844, 892, 20, 190));
+                image = mUno.getBackground().submat(844, 892, 1427, 1580);
+                image.copyTo(mScr.submat(844, 892, 1427, 1580));
+            } // if (area != 0xff)
 
-        // Right-bottom corner: <AUTO> button
-        if (status == Player.YOU && !mAuto && !mAdjustOptions) {
-            width = getTextWidth(i18n.btn_auto());
-            putText(i18n.btn_auto(), 1580 - width, 880);
-        } // if (status == Player.YOU && !mAuto && !mAdjustOptions)
-        else if (status == STAT_WELCOME && !mAdjustOptions) {
-            // [UPDATE] When in welcome screen, change to <LOAD> button
-            width = getTextWidth("[G]<LOAD>");
-            putText("[G]<LOAD>", 1580 - width, 880);
-        } // else if (status == STAT_WELCOME && !mAdjustOptions)
-        else if (status == STAT_GAME_OVER && !mAdjustOptions) {
-            // [UPDATE] When game over, change to <SAVE> button
-            width = getTextWidth("[B]<SAVE>");
-            putText("[B]<SAVE>", 1580 - width, 880);
-        } // else if (status == STAT_GAME_OVER && !mAdjustOptions)
+            // Left-bottom corner: <OPTIONS> button
+            // Shows only when game is not in process
+            if (status == Player.YOU ||
+                    status == STAT_WELCOME ||
+                    status == STAT_GAME_OVER) {
+                active = mAdjustOptions;
+                putText(i18n.btn_settings(active), 20, 880);
+            } // if (status == Player.YOU || ...)
+
+            // Right-bottom corner: <AUTO> / <LOAD> / <SAVE>
+            if (!mAdjustOptions) {
+                if (status == Player.YOU && !mAuto) {
+                    width = getTextWidth(i18n.btn_auto());
+                    putText(i18n.btn_auto(), 1580 - width, 880);
+                } // if (status == Player.YOU && !mAuto)
+                else if (status == STAT_WELCOME) {
+                    width = getTextWidth(i18n.btn_load());
+                    putText(i18n.btn_load(), 1580 - width, 880);
+                } // else if (status == STAT_WELCOME)
+                else if (status == STAT_GAME_OVER && !mGameSaved) {
+                    width = getTextWidth(i18n.btn_save());
+                    putText(i18n.btn_save(), 1580 - width, 880);
+                } // else if (status == STAT_GAME_OVER && !mGameSaved)
+            } // if (!mAdjustOptions)
+        } // if ((area & 0x20) != 0x00)
 
         if (mAdjustOptions) {
             // Show special screen when configuring game options
@@ -754,50 +764,15 @@ public class MainActivity extends AppCompatActivity
 
         // Right-top corner: lacks
         if (area != 0xff) {
-            image = mUno.getBackground().submat(6, 54, 1410, 1580);
-            image.copyTo(mScr.submat(6, 54, 1410, 1580));
+            image = mUno.getBackground().submat(6, 54, 1427, 1580);
+            image.copyTo(mScr.submat(6, 54, 1427, 1580));
         } // if (area != 0xff)
 
-        if (mUno.getPlayer(Player.COM2).getWeakColor() == Color.RED)
-            info = "LACK: [R]N";
-        else if (mUno.getPlayer(Player.COM2).getWeakColor() == Color.BLUE)
-            info = "LACK: [B]N";
-        else if (mUno.getPlayer(Player.COM2).getWeakColor() == Color.GREEN)
-            info = "LACK: [G]N";
-        else if (mUno.getPlayer(Player.COM2).getWeakColor() == Color.YELLOW)
-            info = "LACK: [Y]N";
-        else
-            info = "LACK: N";
-        if (mUno.getPlayer(Player.COM3).getWeakColor() == Color.RED)
-            info += "[R]E";
-        else if (mUno.getPlayer(Player.COM3).getWeakColor() == Color.BLUE)
-            info += "[B]E";
-        else if (mUno.getPlayer(Player.COM3).getWeakColor() == Color.GREEN)
-            info += "[G]E";
-        else if (mUno.getPlayer(Player.COM3).getWeakColor() == Color.YELLOW)
-            info += "[Y]E";
-        else
-            info += "[W]E";
-        if (mUno.getPlayer(Player.COM1).getWeakColor() == Color.RED)
-            info += "[R]W";
-        else if (mUno.getPlayer(Player.COM1).getWeakColor() == Color.BLUE)
-            info += "[B]W";
-        else if (mUno.getPlayer(Player.COM1).getWeakColor() == Color.GREEN)
-            info += "[G]W";
-        else if (mUno.getPlayer(Player.COM1).getWeakColor() == Color.YELLOW)
-            info += "[Y]W";
-        else
-            info += "[W]W";
-        if (mUno.getPlayer(Player.YOU).getWeakColor() == Color.RED)
-            info += "[R]S";
-        else if (mUno.getPlayer(Player.YOU).getWeakColor() == Color.BLUE)
-            info += "[B]S";
-        else if (mUno.getPlayer(Player.YOU).getWeakColor() == Color.GREEN)
-            info += "[G]S";
-        else if (mUno.getPlayer(Player.YOU).getWeakColor() == Color.YELLOW)
-            info += "[Y]S";
-        else
-            info += "[W]S";
+        info = i18n.label_lacks(
+                mUno.getPlayer(Player.COM2).getWeakColor().ordinal(),
+                mUno.getPlayer(Player.COM3).getWeakColor().ordinal(),
+                mUno.getPlayer(Player.COM1).getWeakColor().ordinal(),
+                mUno.getPlayer(Player.YOU).getWeakColor().ordinal());
         width = getTextWidth(info);
         putText(info, 1580 - width, 42);
 
@@ -1294,7 +1269,7 @@ public class MainActivity extends AppCompatActivity
             else {
                 // When the played card is an action card or a wild card,
                 // do the necessary things according to the game rule
-                flag = now == Player.YOU ? 0xff : (1 << now) | 0x80;
+                flag = now == Player.YOU ? 0xe1 : (1 << now) | 0x80;
                 switch (card.content) {
                     case DRAW2:
                         next = mUno.switchNow();
@@ -1773,13 +1748,8 @@ public class MainActivity extends AppCompatActivity
                 // [UPDATE] When game over, change to <SAVE> button
                 String replayName = mUno.save();
 
-                if (!replayName.isEmpty()) {
-                    mGameSaved = true;
-                    refreshScreen("Replay file saved as " + replayName);
-                } // if (!replayName.isEmpty())
-                else {
-                    refreshScreen("Failed to save replay file");
-                } // else
+                mGameSaved = !replayName.isEmpty();
+                refreshScreen(i18n.info_save(replayName), 0x20);
             } // else if (mStatus == STAT_GAME_OVER && !mGameSaved)
         } // else if (859 <= y && y <= 880 && 1450 <= x && x <= 1580)
         else {

@@ -329,7 +329,7 @@ void Main::setStatus(int status) {
     case STAT_WILD_COLOR:
         // Need to specify the following legal color after played a
         // wild card. Draw color sectors in the center of screen
-        refreshScreen(i18n->ask_color());
+        refreshScreen(i18n->ask_color(), 0x21);
         break; // case STAT_WILD_COLOR
 
     case STAT_DOUBT_WILD4:
@@ -469,7 +469,7 @@ void Main::putText(const QString& text, int x, int y) {
  *                0x04 = NORTH's hand card area
  *                0x08 = EAST's hand card area
  *                0x10 = (Reversed bit, not used yet)
- *                0x20 = (Reversed bit, not used yet)
+ *                0x20 = Left-bottom & Right-bottom corner
  *                0x40 = Center deck area
  *                0x80 = Recent card area
  *                0xff = Full screen (default)
@@ -497,30 +497,40 @@ void Main::refreshScreen(const QString& message, int area) {
     width = getTextWidth(message);
     putText(message, 800 - width / 2, 620);
 
-    // Left-bottom corner: <OPTIONS> button
-    // Shows only when game is not in process
-    if (status == Player::YOU ||
-        status == STAT_WELCOME ||
-        status == STAT_GAME_OVER) {
-        active = sAdjustOptions;
-        putText(i18n->btn_settings(active), 20, 880);
-    } // if (status == Player::YOU || ...)
+    // Left-bottom & Right-bottom corner
+    if ((area & 0x20) != 0x00) {
+        if (area != 0xff) {
+            image = sUno->getBackground();
+            sPainter->drawImage(20, 844, image, 20, 844, 170, 48);
+            image = sUno->getBackground();
+            sPainter->drawImage(1427, 844, image, 1427, 844, 153, 48);
+        } // if (area != 0xff)
 
-    // Right-bottom corner: <AUTO> button
-    if (status == Player::YOU && !sAuto && !sAdjustOptions) {
-        width = getTextWidth(i18n->btn_auto());
-        putText(i18n->btn_auto(), 1580 - width, 880);
-    } // if (status == Player::YOU && !sAuto && !sAdjustOptions)
-    else if (status == STAT_WELCOME && !sAdjustOptions) {
-        // [UPDATE] When in welcome screen, change to <LOAD> button
-        width = getTextWidth("[G]<LOAD>");
-        putText("[G]<LOAD>", 1580 - width, 880);
-    } // else if (status == STAT_WELCOME && !sAdjustOptions)
-    else if (status == STAT_GAME_OVER && !sAdjustOptions) {
-        // [UPDATE] When game over, change to <SAVE> button
-        width = getTextWidth("[B]<SAVE>");
-        putText("[B]<SAVE>", 1580 - width, 880);
-    } // else if (status == STAT_GAME_OVER && !sAdjustOptions)
+        // Left-bottom corner: <OPTIONS> button
+        // Shows only when game is not in process
+        if (status == Player::YOU ||
+            status == STAT_WELCOME ||
+            status == STAT_GAME_OVER) {
+            active = sAdjustOptions;
+            putText(i18n->btn_settings(active), 20, 880);
+        } // if (status == Player::YOU || ...)
+
+        // Right-bottom corner: <AUTO> / <LOAD> / <SAVE>
+        if (!sAdjustOptions) {
+            if (status == Player::YOU && !sAuto) {
+                width = getTextWidth(i18n->btn_auto());
+                putText(i18n->btn_auto(), 1580 - width, 880);
+            } // if (status == Player::YOU && !sAuto)
+            else if (status == STAT_WELCOME) {
+                width = getTextWidth(i18n->btn_load());
+                putText(i18n->btn_load(), 1580 - width, 880);
+            } // else if (status == STAT_WELCOME)
+            else if (status == STAT_GAME_OVER && !sGameSaved) {
+                width = getTextWidth(i18n->btn_save());
+                putText(i18n->btn_save(), 1580 - width, 880);
+            } // else if (status == STAT_GAME_OVER && !sGameSaved)
+        } // if (!sAdjustOptions)
+    } // if ((area & 0x20) != 0x00)
 
     if (sAdjustOptions) {
         // Show special screen when configuring game options
@@ -683,49 +693,14 @@ void Main::refreshScreen(const QString& message, int area) {
         // Right-top corner: lacks
         if (area != 0xff) {
             image = sUno->getBackground();
-            sPainter->drawImage(1410, 6, image, 1410, 6, 170, 48);
+            sPainter->drawImage(1427, 6, image, 1410, 6, 153, 48);
         } // if (area != 0xff)
 
-        if (sUno->getPlayer(Player::COM2)->getWeakColor() == RED)
-            info = "LACK: [R]N";
-        else if (sUno->getPlayer(Player::COM2)->getWeakColor() == BLUE)
-            info = "LACK: [B]N";
-        else if (sUno->getPlayer(Player::COM2)->getWeakColor() == GREEN)
-            info = "LACK: [G]N";
-        else if (sUno->getPlayer(Player::COM2)->getWeakColor() == YELLOW)
-            info = "LACK: [Y]N";
-        else
-            info = "LACK: N";
-        if (sUno->getPlayer(Player::COM3)->getWeakColor() == RED)
-            info += "[R]E";
-        else if (sUno->getPlayer(Player::COM3)->getWeakColor() == BLUE)
-            info += "[B]E";
-        else if (sUno->getPlayer(Player::COM3)->getWeakColor() == GREEN)
-            info += "[G]E";
-        else if (sUno->getPlayer(Player::COM3)->getWeakColor() == YELLOW)
-            info += "[Y]E";
-        else
-            info += "[W]E";
-        if (sUno->getPlayer(Player::COM1)->getWeakColor() == RED)
-            info += "[R]W";
-        else if (sUno->getPlayer(Player::COM1)->getWeakColor() == BLUE)
-            info += "[B]W";
-        else if (sUno->getPlayer(Player::COM1)->getWeakColor() == GREEN)
-            info += "[G]W";
-        else if (sUno->getPlayer(Player::COM1)->getWeakColor() == YELLOW)
-            info += "[Y]W";
-        else
-            info += "[W]W";
-        if (sUno->getPlayer(Player::YOU)->getWeakColor() == RED)
-            info += "[R]S";
-        else if (sUno->getPlayer(Player::YOU)->getWeakColor() == BLUE)
-            info += "[B]S";
-        else if (sUno->getPlayer(Player::YOU)->getWeakColor() == GREEN)
-            info += "[G]S";
-        else if (sUno->getPlayer(Player::YOU)->getWeakColor() == YELLOW)
-            info += "[Y]S";
-        else
-            info += "[W]S";
+        info = i18n->label_lacks(
+            sUno->getPlayer(Player::COM2)->getWeakColor(),
+            sUno->getPlayer(Player::COM3)->getWeakColor(),
+            sUno->getPlayer(Player::COM1)->getWeakColor(),
+            sUno->getPlayer(Player::YOU)->getWeakColor());
         width = getTextWidth(info);
         putText(info, 1580 - width, 42);
 
@@ -1142,7 +1117,7 @@ void Main::play(int index, Color color) {
         else {
             // When the played card is an action card or a wild card,
             // do the necessary things according to the game rule
-            flag = now == Player::YOU ? 0xff : (1 << now) | 0x80;
+            flag = now == Player::YOU ? 0xe1 : (1 << now) | 0x80;
             switch (card->content) {
             case DRAW2:
                 next = sUno->switchNow();
@@ -1584,13 +1559,8 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 // [UPDATE] When game over, change to <SAVE> button
                 QString replayName = sUno->save();
 
-                if (!replayName.isEmpty()) {
-                    sGameSaved = true;
-                    refreshScreen("Replay file saved as " + replayName);
-                } // if (!replayName.isEmpty())
-                else {
-                    refreshScreen("Failed to save replay file");
-                } // else
+                sGameSaved = !replayName.isEmpty();
+                refreshScreen(i18n->info_save(replayName.toLatin1()), 0x20);
             } // else if (sStatus == STAT_GAME_OVER && !sGameSaved)
         } // else if (859 <= y && y <= 880 && 1450 <= x && x <= 1580)
         else switch (sStatus) {

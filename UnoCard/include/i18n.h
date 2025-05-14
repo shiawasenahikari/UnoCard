@@ -38,10 +38,12 @@ public:
     virtual String btn_d2(bool) = 0;
     virtual String btn_d4(bool) = 0;
     virtual String btn_keep(bool) = 0;
+    virtual String btn_load() = 0;
     virtual String btn_none(bool) = 0;
     [[deprecated]] virtual String btn_off(bool) = 0;
     [[deprecated]] virtual String btn_on(bool) = 0;
     virtual String btn_play(bool) = 0;
+    virtual String btn_save() = 0;
     virtual String btn_settings(bool) = 0;
     virtual String info_0_rotate() = 0;
     virtual String info_7_swap(int, int) = 0;
@@ -55,6 +57,7 @@ public:
     virtual String info_gameOver(int, int) = 0;
     virtual String info_ready() = 0;
     virtual String info_ruleSettings() = 0;
+    virtual String info_save(String) = 0;
     virtual String info_skipped(int) = 0;
     virtual String info_welcome() = 0;
     virtual String info_yourTurn() = 0;
@@ -65,6 +68,7 @@ public:
     virtual String label_forcePlay() = 0;
     virtual String label_gameMode() = 0;
     virtual String label_initialCards() = 0;
+    virtual String label_lacks(int, int, int, int) = 0;
     virtual String label_level() = 0;
     virtual String label_no() = 0;
     [[deprecated]] virtual String label_players() = 0;
@@ -201,6 +205,10 @@ public:
         return active ? "[R]<KEEP>" : "<KEEP>";
     } // btn_keep(bool)
 
+    inline String btn_load() {
+        return "[G]<LOAD>";
+    } // btn_load()
+
     inline String btn_none(bool active) {
         return active ? "[R]<NONE>" : "<NONE>";
     } // btn_none(bool)
@@ -218,6 +226,10 @@ public:
     inline String btn_play(bool active) {
         return active ? "[G]<PLAY>" : "<PLAY>";
     } // btn_play(bool)
+
+    inline String btn_save() {
+        return "[B]<SAVE>";
+    } // btn_save()
 
     inline String btn_settings(bool active) {
         return active ? "[Y]<SETTINGS>" : "<SETTINGS>";
@@ -285,6 +297,12 @@ public:
         return "RULE SETTINGS";
     } // info_ruleSettings()
 
+    inline String info_save(String s) {
+        return s == nullptr || s[0] == '\0'
+            ? "Failed to save your game replay"
+            : (sprintf(t, "Replay file saved as %s", s), t);
+    } // info_save(String)
+
     inline String info_skipped(int i) {
         sprintf(t, "%s: Skipped", p(i));
         return t;
@@ -329,6 +347,16 @@ public:
     inline String label_initialCards() {
         return "Initial cards:";
     } // label_initialCards()
+
+    inline String label_lacks(int n, int e, int w, int s) {
+        String mark = "WRBGY";
+        sprintf(t, "LACK:[%c]N[%c]E[%c]W[%c]S",
+            (0 <= n && n <= 4 ? mark[n] : 'W'),
+            (0 <= e && e <= 4 ? mark[e] : 'W'),
+            (0 <= w && w <= 4 ? mark[w] : 'W'),
+            (0 <= s && s <= 4 ? mark[s] : 'W'));
+        return t;
+    } // label_lacks(int, int, int, int)
 
     inline String label_level() {
         return "LEVEL";
@@ -487,6 +515,10 @@ public:
         return active ? "[R]<保留>" : "<保留>";
     } // btn_keep(bool)
 
+    inline String btn_load() {
+        return "[G]<读取>";
+    } // btn_load()
+
     inline String btn_none(bool active) {
         return active ? "[R]<无效>" : "<无效>";
     } // btn_none(bool)
@@ -504,6 +536,10 @@ public:
     inline String btn_play(bool active) {
         return active ? "[G]<打出>" : "<打出>";
     } // btn_play(bool)
+
+    inline String btn_save() {
+        return "[B]<保存>";
+    } // btn_save()
 
     inline String btn_settings(bool active) {
         return active ? "[Y]<设置>" : "<设置>";
@@ -567,6 +603,12 @@ public:
         return "规则设置";
     } // info_ruleSettings()
 
+    inline String info_save(String s) {
+        return s == nullptr || s[0] == '\0'
+            ? "回放文件保存失败"
+            : (sprintf(t, "回放文件已保存为 %s", s), t);
+    } // info_save(String)
+
     inline String info_skipped(int i) {
         sprintf(t, "%s: 被跳过", p(i));
         return t;
@@ -611,6 +653,16 @@ public:
     inline String label_initialCards() {
         return "发牌张数:";
     } // label_initialCards()
+
+    inline String label_lacks(int n, int e, int w, int s) {
+        String mark = "WRBGY";
+        sprintf(t, "缺色:[%c]N[%c]E[%c]W[%c]S",
+            (0 <= n && n <= 4 ? mark[n] : 'W'),
+            (0 <= e && e <= 4 ? mark[e] : 'W'),
+            (0 <= w && w <= 4 ? mark[w] : 'W'),
+            (0 <= s && s <= 4 ? mark[s] : 'W'));
+        return t;
+    } // label_lacks(int, int, int, int)
 
     inline String label_level() {
         return "难度";
@@ -769,6 +821,10 @@ public:
         return active ? "[R]<保留>" : "<保留>";
     } // btn_keep(bool)
 
+    inline String btn_load() {
+        return "[G]<読取>";
+    } // btn_load()
+
     inline String btn_none(bool active) {
         return active ? "[R]<無効>" : "<無効>";
     } // btn_none(bool)
@@ -786,6 +842,10 @@ public:
     inline String btn_play(bool active) {
         return active ? "[G]<出す>" : "<出す>";
     } // btn_play(bool)
+
+    inline String btn_save() {
+        return "[B]<保存>";
+    } // btn_save()
 
     inline String btn_settings(bool active) {
         return active ? "[Y]<設定>" : "<設定>";
@@ -849,6 +909,12 @@ public:
         return "ルール設定";
     } // info_ruleSettings()
 
+    inline String info_save(String s) {
+        return s == nullptr || s[0] == '\0'
+            ? "リプレイファイルは保存できませんでした"
+            : (sprintf(t, "リプレイファイルは %s として保存しました", s), t);
+    } // info_save(String)
+
     inline String info_skipped(int i) {
         sprintf(t, "%sの番はスキップされました", p(i));
         return t;
@@ -893,6 +959,16 @@ public:
     inline String label_initialCards() {
         return "最初の手札数:";
     } // label_initialCards()
+
+    inline String label_lacks(int n, int e, int w, int s) {
+        String mark = "WRBGY";
+        sprintf(t, "欠色:[%c]N[%c]E[%c]W[%c]S",
+            (0 <= n && n <= 4 ? mark[n] : 'W'),
+            (0 <= e && e <= 4 ? mark[e] : 'W'),
+            (0 <= w && w <= 4 ? mark[w] : 'W'),
+            (0 <= s && s <= 4 ? mark[s] : 'W'));
+        return t;
+    } // label_lacks(int, int, int, int)
 
     inline String label_level() {
         return "難易度";

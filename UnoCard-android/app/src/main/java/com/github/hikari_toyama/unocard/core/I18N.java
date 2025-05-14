@@ -60,6 +60,8 @@ public interface I18N {
 
     String btn_keep(boolean active);
 
+    String btn_load();
+
     String btn_none(boolean active);
 
     @Deprecated
@@ -69,6 +71,8 @@ public interface I18N {
     String btn_on(boolean active);
 
     String btn_play(boolean active);
+
+    String btn_save();
 
     String btn_settings(boolean active);
 
@@ -96,6 +100,8 @@ public interface I18N {
 
     String info_ruleSettings();
 
+    String info_save(String s);
+
     String info_skipped(int i);
 
     String info_welcome();
@@ -120,6 +126,8 @@ public interface I18N {
     String label_gameMode();
 
     String label_initialCards();
+
+    String label_lacks(int n, int e, int w, int s);
 
     String label_level();
 
@@ -268,6 +276,11 @@ class I18N_en_US implements I18N {
     } // btn_keep(boolean)
 
     @Override
+    public String btn_load() {
+        return "[G]<LOAD>";
+    } // btn_load()
+
+    @Override
     public String btn_none(boolean active) {
         return active ? "[R]<NONE>" : "<NONE>";
     } // btn_none(boolean)
@@ -288,6 +301,11 @@ class I18N_en_US implements I18N {
     public String btn_play(boolean active) {
         return active ? "[G]<PLAY>" : "<PLAY>";
     } // btn_play(boolean)
+
+    @Override
+    public String btn_save() {
+        return "[B]<SAVE>";
+    } // btn_save()
 
     @Override
     public String btn_settings(boolean active) {
@@ -363,6 +381,13 @@ class I18N_en_US implements I18N {
     } // info_ruleSettings()
 
     @Override
+    public String info_save(String s) {
+        return s == null || s.isEmpty()
+                ? "Failed to save your game replay"
+                : "Replay file saved as " + s;
+    } // info_save(String)
+
+    @Override
     public String info_skipped(int i) {
         return p(i) + ": Skipped";
     } // info_skipped(int)
@@ -414,6 +439,15 @@ class I18N_en_US implements I18N {
     public String label_initialCards() {
         return "Initial cards:";
     } // label_initialCards()
+
+    @Override
+    public String label_lacks(int n, int e, int w, int s) {
+        return "LACK:[" +
+                (0 <= n && n <= 4 ? "WRBGY".charAt(n) : 'W') + "]N[" +
+                (0 <= e && e <= 4 ? "WRBGY".charAt(e) : 'W') + "]E[" +
+                (0 <= w && w <= 4 ? "WRBGY".charAt(w) : 'W') + "]W[" +
+                (0 <= s && s <= 4 ? "WRBGY".charAt(s) : 'W') + "]S";
+    } // label_lacks(int, int, int, int)
 
     @Override
     public String label_level() {
@@ -582,6 +616,11 @@ class I18N_zh_CN implements I18N {
     } // btn_keep(boolean)
 
     @Override
+    public String btn_load() {
+        return "[G]<读取>";
+    } // btn_load()
+
+    @Override
     public String btn_none(boolean active) {
         return active ? "[R]<无效>" : "<无效>";
     } // btn_none(boolean)
@@ -602,6 +641,11 @@ class I18N_zh_CN implements I18N {
     public String btn_play(boolean active) {
         return active ? "[G]<打出>" : "<打出>";
     } // btn_play(boolean)
+
+    @Override
+    public String btn_save() {
+        return "[B]<保存>";
+    } // btn_save()
 
     @Override
     public String btn_settings(boolean active) {
@@ -671,6 +715,13 @@ class I18N_zh_CN implements I18N {
     } // info_ruleSettings()
 
     @Override
+    public String info_save(String s) {
+        return s == null || s.isEmpty()
+                ? "回放文件保存失败"
+                : "回放文件已保存为 " + s;
+    } // info_save(String)
+
+    @Override
     public String info_skipped(int i) {
         return p(i) + ": 被跳过";
     } // info_skipped(int)
@@ -722,6 +773,15 @@ class I18N_zh_CN implements I18N {
     public String label_initialCards() {
         return "发牌张数:";
     } // label_initialCards()
+
+    @Override
+    public String label_lacks(int n, int e, int w, int s) {
+        return "缺色:[" +
+                (0 <= n && n <= 4 ? "WRBGY".charAt(n) : 'W') + "]N[" +
+                (0 <= e && e <= 4 ? "WRBGY".charAt(e) : 'W') + "]E[" +
+                (0 <= w && w <= 4 ? "WRBGY".charAt(w) : 'W') + "]W[" +
+                (0 <= s && s <= 4 ? "WRBGY".charAt(s) : 'W') + "]S";
+    } // label_lacks(int, int, int, int)
 
     @Override
     public String label_level() {
@@ -890,6 +950,11 @@ class I18N_ja_JP implements I18N {
     } // btn_keep(boolean)
 
     @Override
+    public String btn_load() {
+        return "[G]<読取>";
+    } // btn_load()
+
+    @Override
     public String btn_none(boolean active) {
         return active ? "[R]<無効>" : "<無効>";
     } // btn_none(boolean)
@@ -910,6 +975,11 @@ class I18N_ja_JP implements I18N {
     public String btn_play(boolean active) {
         return active ? "[G]<出す>" : "<出す>";
     } // btn_play(boolean)
+
+    @Override
+    public String btn_save() {
+        return "[B]<保存>";
+    } // btn_save()
 
     @Override
     public String btn_settings(boolean active) {
@@ -979,6 +1049,13 @@ class I18N_ja_JP implements I18N {
     } // info_ruleSettings()
 
     @Override
+    public String info_save(String s) {
+        return s == null || s.isEmpty()
+                ? "リプレイファイルは保存できませんでした"
+                : "リプレイファイルは " + s + " として保存しました";
+    } // info_save(String)
+
+    @Override
     public String info_skipped(int i) {
         return p(i) + "の番はスキップされました";
     } // info_skipped(int)
@@ -1030,6 +1107,15 @@ class I18N_ja_JP implements I18N {
     public String label_initialCards() {
         return "最初の手札数:";
     } // label_initialCards()
+
+    @Override
+    public String label_lacks(int n, int e, int w, int s) {
+        return "欠色:[" +
+                (0 <= n && n <= 4 ? "WRBGY".charAt(n) : 'W') + "]N[" +
+                (0 <= e && e <= 4 ? "WRBGY".charAt(e) : 'W') + "]E[" +
+                (0 <= w && w <= 4 ? "WRBGY".charAt(w) : 'W') + "]W[" +
+                (0 <= s && s <= 4 ? "WRBGY".charAt(s) : 'W') + "]S";
+    } // label_lacks(int, int, int, int)
 
     @Override
     public String label_level() {
