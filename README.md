@@ -1,4 +1,5 @@
 * [English](#enu)
+* [日本語](#jpn)
 * [简体中文](#chs)
 ***
 
@@ -16,7 +17,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/releases) page and download the
-   latest version in zip file `(UnoCard-v3.7.zip)`.
+   latest version in zip file `(UnoCard-v3.8.zip)`.
 2. Unzip the downloaded zip file, then execute `UnoCard.exe` and have fun!
 
 Download the source code and compile manually
@@ -100,7 +101,7 @@ Download the binary release
 ---------------------------
 
 1. Go to [release](https://github.com/shiawasenahikari/UnoCard/releases) page and download the
-   latest version in apk file `(UnoCard-v3.7.apk)`.
+   latest version in apk file `(UnoCard-v3.8.apk)`.
 2. On your Android phone, open [Settings] app, go to [Security] page, then check the [Unknown
    sources] toggle.
 3. Push the downloaded file to your Android phone, then install and launch it to have fun!
@@ -118,8 +119,7 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 3. You may need to install missing components during the project building procedure, such as Android
    SDK 30, and Android Build Tools 30.0.3.
 4. Enable USB debugging function on your Android phone, connect your phone to computer, then execute
-   [Run]->[Run 'app'] menu command to run this application on your phone. (NOTE: You cannot run this
-   app via x86 simulators, since this app does not support devices based on x86 architecture.)
+   [Run]->[Run 'app'] menu command to run this application on your phone.
 
 🎴How to play
 =============
@@ -205,7 +205,221 @@ Stack
 If you make Wild +4 cards stackable, Wild +4 cards will become playable at any time, not just
 `when you don't have a card in your hand that matches the color of the previously played card`.
 For balance, Wild +4 cards will lose the `call the next color played` ability under this rule.
- 
+
+<a name="jpn" />
+
+🔍簡単な紹介
+============
+
+UnoCard は、PC および Android デバイスで実行される簡易な UNO カードゲームです。
+
+💻Windows x64 PC デバイスで実行する
+===================================
+
+バイナリリリースのダウンロード
+------------------------------
+
+1. [release](https://github.com/shiawasenahikari/UnoCard/releases) ページに入って、
+   最新版の zip ファイルをダウンロードします `(UnoCard-v3.8.zip)`。
+2. ダウンロードした zip ファイルを解凍し、`UnoCard.exe` を実行します。
+
+手動でソースコードをコンパイル
+------------------------------
+
+1. 続行する前に、既に `Qt 5.12.12 MinGW 64-bit` と `Visual Studio Code`
+   がインストールされているかを確認します。
+   Qt 5.12 のオフラインインストーラーは次のページでダウンロードできます：
+   [Download Offline Installers](https://www.qt.io/offline-installers)
+   Visual Studio Code のインストーラーは次のページでダウンロードできます：
+   [Visual Studio Code - Code Editing. Redefined](https://code.visualstudio.com)
+   インストールディレクトリは既定のままで、変更しないでください。
+2. 次のディレクトリを `PATH` 環境変数に追加します：
+   `C:\Qt\Qt5.12.12\5.12.12\mingw73_64\bin`
+3. Windows ターミナルまたは Git Bash で次のコマンドを実行し、リポジトリをクローンします。
+   `<proj_root>` を、リポジトリの保存したいパスに置き換えてください。
+```Bash
+git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
+```
+4. Visual Studio Code で `<proj_root>\UnoCard` ディレクトリを開きます。
+5. [実行]->[デバッグなしで実行] メニューコマンドを選択し（または Ctrl+F5 を押し）、
+   プログラムを実行します。
+
+💻MAC OS X PC デバイスで実行する
+================================
+
+1. 既に Qt Toolkit がインストールされているかを確認します。
+   未インストールの場合は、ターミナルで次のコマンドを実行し、インストールします：
+```Bash
+brew install qt5
+brew link --force qt5
+```
+2. Visual Studio Code がインストールされているかを確認してください。
+   未インストールの場合は、次のページへアクセスし、インストーラーを取得します：
+   [Visual Studio Code - Code Editing. Redefined](https://code.visualstudio.com)。
+3. Bash で次のコマンドを実行し、リポジトリをクローンします。
+   `<proj_root>` を、リポジトリの保存したいパスに置き換えてください。
+```Bash
+git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
+```
+4. Visual Studio Code で `<proj_root>\UnoCard` ディレクトリを開きます。
+5. [実行]->[デバッグなしで実行] メニューコマンドを選択し（または Ctrl+F5 を押し）、
+   プログラムを実行します。
+
+💻Linux x86_64 PC デバイスで実行する
+====================================
+
+1. 既に Qt Toolkit がインストールされているかを確認します。
+   未インストールの場合は、ターミナルで次のコマンドを実行し、インストールします：
+```Bash
+# Ubuntu/Debian のユーザーはこちら：
+sudo apt install qt5-default qtmultimedia5-dev
+
+# Fedora/CentOS/RHEL のユーザーはこちら：
+sudo yum install epel-release && sudo yum install qt5*
+```
+2. 既に GStreamer がインストールされているかを確認します。
+   未インストールの場合は、ターミナルで次のコマンドを実行し、インストールします：
+```Bash
+# Ubuntu/Debian のユーザーはこちら：
+sudo apt install libgstreamer1.0-dev
+sudo apt install libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev
+sudo apt install gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad
+sudo apt install gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools
+sudo apt install gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5
+sudo apt install gstreamer1.0-pulseaudio
+
+# Fedora/CentOS/RHEL のユーザーはこちら：
+sudo yum install epel-release && sudo yum install gstreamer*
+```
+3. Visual Studio Code がインストールされているかを確認してください。
+   未インストールの場合は、次のページへアクセスし、インストーラーを取得します：
+   [Visual Studio Code - Code Editing. Redefined](https://code.visualstudio.com).
+4. Bash で次のコマンドを実行し、リポジトリをクローンします。
+   `<proj_root>` を、リポジトリの保存したいパスに置き換えてください。
+```Bash
+git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
+```
+5. Visual Studio Code で `<proj_root>\UnoCard` ディレクトリを開きます。
+6. [実行]->[デバッグなしで実行] メニューコマンドを選択し（または Ctrl+F5 を押し）、
+   プログラムを実行します。
+
+📱Android スマホで実行する
+==========================
+
+バイナリリリースのダウンロード
+------------------------------
+
+1. [release](https://github.com/shiawasenahikari/UnoCard/releases) ページに入って、
+   最新版の apk ファイルをダウンロードします `(UnoCard-v3.8.apk)`。
+2. Android スマホで「設定」アプリを開いて、「セキュリティ」ページに入って、
+   スイッチ「不明なソースからアプリをインストールする」をオンにします。
+3. ダウンロードしたファイルをスマホに転送し、インストールし、実行します。
+
+手動でソースコードをコンパイル
+------------------------------
+
+1. Windows ターミナルまたは Git Bash で次のコマンドを実行し、リポジトリをクローンします。
+   `<proj_root>` を、リポジトリの保存したいパスに置き換えてください。
+```Bash
+git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
+```
+2. Android Studio IDE を開き(バージョン 4.3 以上)、[Open an existing Android Studio project]
+   をクリックし、`<proj_root>\UnoCard-android` ディレクトリを選んだら [OK] をクリックします。
+3. プロジェクトをビルドしている途中に、Android SDK 30 や Android Build Tools 30.0.3
+   などのコンポーネントをインストールする必要がある場合があります。
+4. Android スマホの USB デバッグ機能を有効にし、コンピュータに接続し、[Run]->[Run 'app']
+   メニューコマンドを選択し、アプリを実行します。
+
+🎴遊び方
+========
+
+1. 親は、各プレイヤーに７枚ずつカードを伏せて配ります。親の左隣の人が最初のプレイヤーです。
+   時計回り（あなた→西→北→東）にカードを捨てていきます。
+
+2. 順番になったら、カードを１枚、引き札の山からカードを１枚捨てます。
+   それから前の捨てたカードと同じ色、または同じ内容のカードを捨てます。
+   例えば、前の捨てたカードが緑７（図 1）の場合は、任意の緑のカード（図 2）、
+   または別の色の７カード（図 3）が捨てられます。
+   それ以外に、ワイルド（図 4）とワイルド +4（図 5）も捨てられます。
+   マッチするカードがない、または何も捨てたくない時は、引き札の山からカードを１枚引きます。
+   引いてきたカードがマッチするカードの場合は、そのカードをすぐに捨てることができます。
+   カードを捨てるか、１枚引くと、次の人に順番が移ります。
+
+<p align="center">
+<img src="https://github.com/shiawasenahikari/UnoCard/blob/master/UnoCard/resource/front_g7.png" />
+<img src="https://github.com/shiawasenahikari/UnoCard/blob/master/UnoCard/resource/front_g9.png" />
+<img src="https://github.com/shiawasenahikari/UnoCard/blob/master/UnoCard/resource/front_b7.png" />
+<img src="https://github.com/shiawasenahikari/UnoCard/blob/master/UnoCard/resource/front_kw.png" />
+<img src="https://github.com/shiawasenahikari/UnoCard/blob/master/UnoCard/resource/front_kw+.png" />
+</p>
+
+3. +2（ドロー２）カードを捨てると、次の番の人は引き札の山からカードを２枚引かなければなりません。
+   カードは捨てられず、次の人に順番が移ります。
+
+<p align="center">
+<img src="https://github.com/shiawasenahikari/UnoCard/blob/master/UnoCard/resource/front_r+.png" />
+</p>
+
+4. 🔄（リバース）カードを捨てると、順番の移る方向が逆になります。
+   左回りだったのが右回りに、右回りだったのが左回りになるわけです。
+
+<p align="center">
+<img src="https://github.com/shiawasenahikari/UnoCard/blob/master/UnoCard/resource/front_y$.png" />
+</p>
+
+5. 🚫（スキップ）カードを捨てると、次の番の人が一回抜かされます。
+
+<p align="center">
+<img src="https://github.com/shiawasenahikari/UnoCard/blob/master/UnoCard/resource/front_b@.png" />
+</p>
+
+6. ⊕（ワイルド）カードは、場のカードが何であっても捨てることができます。
+   このカードを出す人は、好きな色を宣言します。
+
+<p align="center">
+<img src="https://github.com/shiawasenahikari/UnoCard/blob/master/UnoCard/resource/front_kw.png" />
+</p>
+
+7. +4（ワイルドドロー４）カードは、場のカードが何であっても捨てることができます。
+   このカードを出す人は、好きな色を宣言します。
+   他に使える同色のカードを持っている時は、このカードは使えません。
+   ずるをして使うと罰則がありますが、反則してだますこともできます。
+   次の人には２つの選択肢があります。
+   ひとつは、４枚カードを引いて手持ちのカードを捨てられず、その次の人に順番が移ります。
+   または、ワイルドドロー４が反則で使われていると思った時は、「チャレンジ」をコールします。
+   疑われた人は、手持ちのカードをコールした人にだけ見せなければなりません。
+   反則していなかった場合は、チャレンジをコールした人が罰を受けます。
+   ワイルドドロー４の指示に従って４枚引くだけでなく、罰としてさらに２枚引かなければなりません。
+   本当に反則だった場合は、罰としてカードを４枚引きます。
+
+<p align="center">
+<img src="https://github.com/shiawasenahikari/UnoCard/blob/master/UnoCard/resource/front_kw+.png" />
+</p>
+
+8. 手持ちのカードが２枚になってそのうちの１枚を捨てるとき、
+   その人はみんなに向かって「ウノ」と宣言しなければなりません。
+   このアプリは自動的に「ウノ」を宣言します。最後の１枚のカードを捨てられた人が勝ちです。
+
+💡特殊ルール
+============
+
+有効にする方法
+--------------
+左下隅の `<OPTIONS>` ボタンをクリックし、好きな特殊ルールを有効にします。
+
+7-0
+---
+７のカードを出すと、誰か一人とカードを全て入れ替える。
+０を出すとゲームと同じ回転向きで手札を入れ替える。
+
+スタッキング
+------------
++2 と +4 のカードが重ねられます。
++2 か +4 を重ねられないプレイヤーは全ての罰を受けます。
++4 カードが積み重ね可能に設定している場合は、+4 カードは
+`他に使える同色のカードを持っている時は、このカードは使えません` の制限が解除され、
+いつでも使えるようになります。バランスのため、`好きな色を宣言します` の能力が失います。
+
 <a name="chs" />
 
 🔍简介
@@ -220,7 +434,7 @@ For balance, Wild +4 cards will lose the `call the next color played` ability un
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/releases) 页面下载最新版本的 zip 包
-   `(UnoCard-v3.7.zip)`.
+   `(UnoCard-v3.8.zip)`.
 2. 解压并执行 `UnoCard.exe` 开始游戏。
 
 下载源码并手动编译
@@ -299,7 +513,7 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 ---------------------------
 
 1. 进入 [release](https://github.com/shiawasenahikari/UnoCard/releases) 页面下载最新版本的 apk 包
-   `(UnoCard-v3.7.apk)`.
+   `(UnoCard-v3.8.apk)`.
 2. 打开您的 Android 设备中的 [设置] 应用，进入 [安全] 页面，勾选 [未知来源] 复选框。
 3. 将已下载的安装包传到手机中，安装并运行即可开始游戏。
 
@@ -316,7 +530,6 @@ git clone https://github.com/shiawasenahikari/UnoCard.git <proj_root>
 3. 在项目生成过程中，您可能需要安装缺失的组件，诸如 Android SDK 30 以及 Android Build Tools 30.0.3。
 4. 打开您 Android 设备中的 USB 调试功能，然后将您的 Android 设备连接到电脑，执行 [Run]->[Run 'app']
    菜单命令以便在您的 Android 设备上运行此应用。
-   注意：您不能在 x86 模拟器上运行此应用。我们的应用不支持基于 x86 架构的设备。
 
 🎴玩法说明
 ==========
