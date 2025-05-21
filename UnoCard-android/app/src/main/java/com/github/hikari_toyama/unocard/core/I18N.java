@@ -64,12 +64,6 @@ public interface I18N {
 
     String btn_none(boolean active);
 
-    @Deprecated
-    String btn_off(boolean active);
-
-    @Deprecated
-    String btn_on(boolean active);
-
     String btn_play(boolean active);
 
     String btn_save();
@@ -114,9 +108,6 @@ public interface I18N {
 
     String info_yourTurn_stackDraw2(int i1, int i2);
 
-    @Deprecated
-    String label_7_0();
-
     String label_bgm();
 
     String label_draw2Stack();
@@ -132,9 +123,6 @@ public interface I18N {
     String label_level();
 
     String label_no();
-
-    @Deprecated
-    String label_players();
 
     String label_remain_used(int i1, int i2);
 
@@ -286,18 +274,6 @@ class I18N_en_US implements I18N {
     } // btn_none(boolean)
 
     @Override
-    @Deprecated
-    public String btn_off(boolean active) {
-        return active ? "[R]<OFF>" : "<OFF>";
-    } // btn_off(boolean)
-
-    @Override
-    @Deprecated
-    public String btn_on(boolean active) {
-        return active ? "[G]< ON >" : "< ON >";
-    } // btn_on(boolean)
-
-    @Override
     public String btn_play(boolean active) {
         return active ? "[G]<PLAY>" : "<PLAY>";
     } // btn_play(boolean)
@@ -410,12 +386,6 @@ class I18N_en_US implements I18N {
     } // info_yourTurn_stackDraw2(int, int)
 
     @Override
-    @Deprecated
-    public String label_7_0() {
-        return "7 to swap, 0 to rotate:";
-    } // label_7_0()
-
-    @Override
     public String label_bgm() {
         return "BGM";
     } // label_bgm()
@@ -458,12 +428,6 @@ class I18N_en_US implements I18N {
     public String label_no() {
         return "NO";
     } // label_no()
-
-    @Override
-    @Deprecated
-    public String label_players() {
-        return "PLAYERS";
-    } // label_players()
 
     @Override
     public String label_remain_used(int i1, int i2) {
@@ -626,18 +590,6 @@ class I18N_zh_CN implements I18N {
     } // btn_none(boolean)
 
     @Override
-    @Deprecated
-    public String btn_off(boolean active) {
-        return active ? "[R]<无效>" : "<无效>";
-    } // btn_off(boolean)
-
-    @Override
-    @Deprecated
-    public String btn_on(boolean active) {
-        return active ? "[G]<有效>" : "<有效>";
-    } // btn_on(boolean)
-
-    @Override
     public String btn_play(boolean active) {
         return active ? "[G]<打出>" : "<打出>";
     } // btn_play(boolean)
@@ -744,12 +696,6 @@ class I18N_zh_CN implements I18N {
     } // info_yourTurn_stackDraw2(int, int)
 
     @Override
-    @Deprecated
-    public String label_7_0() {
-        return "7 换牌, 0 传给下家:";
-    } // label_7_0()
-
-    @Override
     public String label_bgm() {
         return "音乐";
     } // label_bgm()
@@ -792,12 +738,6 @@ class I18N_zh_CN implements I18N {
     public String label_no() {
         return "否";
     } // label_no()
-
-    @Override
-    @Deprecated
-    public String label_players() {
-        return "人数";
-    } // label_players()
 
     @Override
     public String label_remain_used(int i1, int i2) {
@@ -960,18 +900,6 @@ class I18N_ja_JP implements I18N {
     } // btn_none(boolean)
 
     @Override
-    @Deprecated
-    public String btn_off(boolean active) {
-        return active ? "[R]<無効>" : "<無効>";
-    } // btn_off(boolean)
-
-    @Override
-    @Deprecated
-    public String btn_on(boolean active) {
-        return active ? "[G]<有効>" : "<有効>";
-    } // btn_on(boolean)
-
-    @Override
     public String btn_play(boolean active) {
         return active ? "[G]<出す>" : "<出す>";
     } // btn_play(boolean)
@@ -1078,12 +1006,6 @@ class I18N_ja_JP implements I18N {
     } // info_yourTurn_stackDraw2(int, int)
 
     @Override
-    @Deprecated
-    public String label_7_0() {
-        return "7 交換、0 転送:";
-    } // label_7_0()
-
-    @Override
     public String label_bgm() {
         return "音楽";
     } // label_bgm()
@@ -1126,12 +1048,6 @@ class I18N_ja_JP implements I18N {
     public String label_no() {
         return "いいえ";
     } // label_no()
-
-    @Override
-    @Deprecated
-    public String label_players() {
-        return "人数";
-    } // label_players()
 
     @Override
     public String label_remain_used(int i1, int i2) {

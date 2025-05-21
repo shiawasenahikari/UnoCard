@@ -10,16 +10,13 @@
 #ifndef __UNO_H_494649FDFA62B3C015120BCB9BE17613__
 #define __UNO_H_494649FDFA62B3C015120BCB9BE17613__
 
-#include <QPen>
 #include <ctime>
 #include <QFile>
-#include <QColor>
 #include <QDebug>
 #include <QImage>
 #include <vector>
 #include <cstdlib>
 #include <QString>
-#include <QPainter>
 #include <QIODevice>
 #include <QStringList>
 #include "include/Card.h"
@@ -409,16 +406,6 @@ public:
     } // getLevelImage(int, bool)
 
     /**
-     * @return 2vs2 image resource.
-     * @deprecated This image resource has been deprecated.
-     */
-    [[deprecated]]
-    inline const QImage& get2vs2Image() {
-        return _2vs2 ? findCard(BLUE, NUM2)->image
-            : findCard(BLUE, NUM2)->darkImg;
-    } // get2vs2Image()
-
-    /**
      * @return Background image resource in current direction.
      */
     inline const QImage& getBackground() {
@@ -452,73 +439,6 @@ public:
     inline const QImage& getColoredWildDraw4Image(Color color) {
         return wildDraw4Image[color];
     } // getColoredWildDraw4Image(Color)
-
-    /**
-     * Measure the text width, using our custom font.
-     * <p>
-     * SPECIAL: In the text string, you can use color marks ([R], [B],
-     * [G], [W] and [Y]) to control the color of the remaining text.
-     * COLOR MARKS SHOULD NOT BE TREATED AS PRINTABLE CHARACTERS.
-     *
-     * @param text Measure which text's width.
-     * @return Width of the provided text (unit: pixels).
-     * @deprecated This API has been moved into Main class.
-     */
-    [[deprecated]]
-    inline int getTextWidth(const QString& text) {
-        int i, n, width;
-
-        for (i = width = 0, n = text.length(); i < n; ++i) {
-            if ('[' == text[i] && i + 2 < n && text[i + 2] == ']') {
-                i += 2;
-            } // if ('[' == text[i] && i + 2 < n && text[i + 2] == ']')
-            else {
-                width += ' ' <= text[i] && text[i] <= '~' ? 17 : 33;
-            } // else
-        } // for (i = width = 0, n = text.length(); i < n; ++i)
-
-        return width;
-    } // getTextWidth(const QString&)
-
-    /**
-     * Put text on image, using our custom font.
-     * Unknown characters will be replaced with the question mark '?'.
-     * <p>
-     * SPECIAL: In the text string, you can use color marks ([R], [B],
-     * [G], [W] and [Y]) to control the color of the remaining text.
-     *
-     * @param painter Use which painter.
-     * @param text    Put which text.
-     * @param x       Put on where (x coordinate).
-     * @param y       Put on where (y coordinate).
-     * @deprecated This API has been moved into Main class.
-     */
-    [[deprecated]]
-    inline void putText(QPainter* painter, const QString& text, int x, int y) {
-        int i, n;
-        static QPen pen_red(QColor(0xFF, 0x77, 0x77));
-        static QPen pen_blue(QColor(0x77, 0x77, 0xFF));
-        static QPen pen_green(QColor(0x77, 0xCC, 0x77));
-        static QPen pen_white(QColor(0xCC, 0xCC, 0xCC));
-        static QPen pen_yellow(QColor(0xFF, 0xCC, 0x11));
-
-        painter->setPen(pen_white);
-        for (i = 0, n = text.length(); i < n; ++i) {
-            if ('[' == text[i] && i + 2 < n && text[i + 2] == ']') {
-                ++i;
-                if (text[i] == 'R') painter->setPen(pen_red);
-                if (text[i] == 'B') painter->setPen(pen_blue);
-                if (text[i] == 'G') painter->setPen(pen_green);
-                if (text[i] == 'W') painter->setPen(pen_white);
-                if (text[i] == 'Y') painter->setPen(pen_yellow);
-                ++i;
-            } // if ('[' == text[i] && i + 2 < n && text[i + 2] == ']')
-            else {
-                painter->drawText(x, y, text[i]);
-                x += ' ' <= text[i] && text[i] <= '~' ? 17 : 33;
-            } // else
-        } // for (i = 0, n = text.length(); i < n; ++i)
-    } // putText(QPainter*, const QString&, int, int)
 
     /**
      * @return Player in turn. Must be one of the following:

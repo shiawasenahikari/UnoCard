@@ -40,8 +40,6 @@ public:
     virtual String btn_keep(bool) = 0;
     virtual String btn_load() = 0;
     virtual String btn_none(bool) = 0;
-    [[deprecated]] virtual String btn_off(bool) = 0;
-    [[deprecated]] virtual String btn_on(bool) = 0;
     virtual String btn_play(bool) = 0;
     virtual String btn_save() = 0;
     virtual String btn_settings(bool) = 0;
@@ -62,7 +60,6 @@ public:
     virtual String info_welcome() = 0;
     virtual String info_yourTurn() = 0;
     virtual String info_yourTurn_stackDraw2(int, int = 1) = 0;
-    [[deprecated]] virtual String label_7_0() = 0;
     virtual String label_bgm() = 0;
     virtual String label_draw2Stack() = 0;
     virtual String label_forcePlay() = 0;
@@ -71,7 +68,6 @@ public:
     virtual String label_lacks(int, int, int, int) = 0;
     virtual String label_level() = 0;
     virtual String label_no() = 0;
-    [[deprecated]] virtual String label_players() = 0;
     virtual String label_remain_used(int, int) = 0;
     virtual String label_score() = 0;
     virtual String label_snd() = 0;
@@ -213,16 +209,6 @@ public:
         return active ? "[R]<NONE>" : "<NONE>";
     } // btn_none(bool)
 
-    [[deprecated]]
-    inline String btn_off(bool active) {
-        return active ? "[R]<OFF>" : "<OFF>";
-    } // btn_off(bool)
-
-    [[deprecated]]
-    inline String btn_on(bool active) {
-        return active ? "[G]< ON >" : "< ON >";
-    } // btn_on(bool)
-
     inline String btn_play(bool active) {
         return active ? "[G]<PLAY>" : "<PLAY>";
     } // btn_play(bool)
@@ -323,11 +309,6 @@ public:
         return t;
     } // info_yourTurn_stackDraw2(int, int)
 
-    [[deprecated]]
-    inline String label_7_0() {
-        return "7 to swap, 0 to rotate:";
-    } // label_7_0()
-
     inline String label_bgm() {
         return "BGM";
     } // label_bgm()
@@ -365,11 +346,6 @@ public:
     inline String label_no() {
         return "NO";
     } // label_no()
-
-    [[deprecated]]
-    inline String label_players() {
-        return "PLAYERS";
-    } // label_players()
 
     inline String label_remain_used(int i1, int i2) {
         sprintf(t, "[Y]R%d[W]/[G]U%d", i1, i2);
@@ -523,16 +499,6 @@ public:
         return active ? "[R]<无效>" : "<无效>";
     } // btn_none(bool)
 
-    [[deprecated]]
-    inline String btn_off(bool active) {
-        return active ? "[R]<无效>" : "<无效>";
-    } // btn_off(bool)
-
-    [[deprecated]]
-    inline String btn_on(bool active) {
-        return active ? "[G]<有效>" : "<有效>";
-    } // btn_on(bool)
-
     inline String btn_play(bool active) {
         return active ? "[G]<打出>" : "<打出>";
     } // btn_play(bool)
@@ -629,11 +595,6 @@ public:
         return t;
     } // info_yourTurn_stackDraw2(int, int)
 
-    [[deprecated]]
-    inline String label_7_0() {
-        return "7 换牌, 0 传给下家:";
-    } // label_7_0()
-
     inline String label_bgm() {
         return "音乐";
     } // label_bgm()
@@ -671,11 +632,6 @@ public:
     inline String label_no() {
         return "否";
     } // label_no()
-
-    [[deprecated]]
-    inline String label_players() {
-        return "人数";
-    } // label_players()
 
     inline String label_remain_used(int i1, int i2) {
         sprintf(t, "[Y]剩%d[G]用%d", i1, i2);
@@ -829,16 +785,6 @@ public:
         return active ? "[R]<無効>" : "<無効>";
     } // btn_none(bool)
 
-    [[deprecated]]
-    inline String btn_off(bool active) {
-        return active ? "[R]<無効>" : "<無効>";
-    } // btn_off(bool)
-
-    [[deprecated]]
-    inline String btn_on(bool active) {
-        return active ? "[G]<有効>" : "<有効>";
-    } // btn_on(bool)
-
     inline String btn_play(bool active) {
         return active ? "[G]<出す>" : "<出す>";
     } // btn_play(bool)
@@ -935,11 +881,6 @@ public:
         return t;
     } // info_yourTurn_stackDraw2(int, int)
 
-    [[deprecated]]
-    inline String label_7_0() {
-        return "7 交換、0 転送:";
-    } // label_7_0()
-
     inline String label_bgm() {
         return "音楽";
     } // label_bgm()
@@ -977,11 +918,6 @@ public:
     inline String label_no() {
         return "いいえ";
     } // label_no()
-
-    [[deprecated]]
-    inline String label_players() {
-        return "人数";
-    } // label_players()
 
     inline String label_remain_used(int i1, int i2) {
         sprintf(t, "[Y]残%d[G]使%d", i1, i2);

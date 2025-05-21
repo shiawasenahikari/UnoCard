@@ -16,9 +16,6 @@ import static com.github.hikari_toyama.unocard.core.Content.WILD;
 import static com.github.hikari_toyama.unocard.core.Content.WILD_DRAW4;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.util.Log;
 
 import com.github.hikari_toyama.unocard.R;
@@ -91,12 +88,7 @@ public class Uno {
     /**
      * Recent played cards.
      */
-    RecentInfo[] recent;
-
-    /**
-     * Recent played cards (read-only version, provide for external accesses).
-     */
-    RecentInfo[] constRecent;
+    RecentInfo[] recent, constRecent;
 
     /**
      * Card map. table[i] stores the card instance of id number i.
@@ -534,16 +526,6 @@ public class Uno {
     } // getLevelImage(int, boolean)
 
     /**
-     * @return 2vs2 image resource.
-     * @deprecated This image resource has been deprecated.
-     */
-    @Deprecated
-    public Mat get2vs2Image() {
-        return _2vs2 ? findCard(Color.BLUE, Content.NUM2).image
-                : findCard(Color.BLUE, Content.NUM2).darkImg;
-    } // get2vs2Image()
-
-    /**
      * @return Background image resource in current direction.
      */
     public Mat getBackground() {
@@ -577,82 +559,6 @@ public class Uno {
     public Mat getColoredWildDraw4Image(Color color) {
         return w4Image[color.ordinal()];
     } // getColoredWildDraw4Image(Color)
-
-    /**
-     * Measure the text width, using our custom font.
-     * <p>
-     * SPECIAL: In the text string, you can use color marks ([R], [B],
-     * [G], [W] and [Y]) to control the color of the remaining text.
-     * COLOR MARKS SHOULD NOT BE TREATED AS PRINTABLE CHARACTERS.
-     *
-     * @param text Measure which text's width.
-     * @return Width of the provided text (unit: pixels).
-     * @deprecated This API has been moved into MainActivity class.
-     */
-    @Deprecated
-    public int getTextWidth(String text) {
-        int width = 0;
-        char[] txt = text.toCharArray();
-
-        for (int i = 0, n = txt.length; i < n; ++i) {
-            if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']') {
-                i += 2;
-            } // if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']')
-            else {
-                width += ' ' <= txt[i] && txt[i] <= '~' ? 17 : 33;
-            } // else
-        } // for (int i = 0, n = txt.length; i < n; ++i)
-
-        return width;
-    } // getTextWidth(String)
-
-    /**
-     * Put text on image, using our custom font.
-     * Unknown characters will be replaced with the question mark '?'.
-     * <p>
-     * SPECIAL: In the text string, you can use color marks ([R], [B],
-     * [G], [W] and [Y]) to control the color of the remaining text.
-     *
-     * @param m    Put on which image.
-     * @param text Put which text.
-     * @param x    Put on where (x coordinate).
-     * @param y    Put on where (y coordinate).
-     * @deprecated This API has been moved into MainActivity class.
-     */
-    @Deprecated
-    public void putText(Mat m, String text, int x, int y) {
-        Paint pen = new Paint();
-        int pen_red = 0xffff7777;
-        int pen_blue = 0xff7777ff;
-        int pen_green = 0xff77cc77;
-        int pen_white = 0xffcccccc;
-        int pen_yellow = 0xffffcc11;
-        char[] txt = text.toCharArray();
-        Mat mat = m.submat(y - 36, y + 12, 0, m.cols());
-        Bitmap bmp = Bitmap.createBitmap(m.cols(), 48, Bitmap.Config.ARGB_8888);
-        Canvas cvs = new Canvas(bmp);
-
-        pen.setColor(pen_white);
-        Utils.matToBitmap(mat, bmp);
-        for (int i = 0, n = txt.length; i < n; ++i) {
-            if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']') {
-                ++i;
-                if (txt[i] == 'R') pen.setColor(pen_red);
-                if (txt[i] == 'B') pen.setColor(pen_blue);
-                if (txt[i] == 'G') pen.setColor(pen_green);
-                if (txt[i] == 'W') pen.setColor(pen_white);
-                if (txt[i] == 'Y') pen.setColor(pen_yellow);
-                ++i;
-            } // if ('[' == txt[i] && i + 2 < n && txt[i + 2] == ']')
-            else {
-                cvs.drawText(txt, i, 1, x, 36, pen);
-                x += ' ' <= txt[i] && txt[i] <= '~' ? 17 : 33;
-            } // else
-        } // for (int i = 0, n = txt.length; i < n; ++i)
-
-        Utils.bitmapToMat(bmp, mat);
-        bmp.recycle();
-    } // putText(Mat, String, int, int)
 
     /**
      * @return Player in turn. Must be one of the following:
