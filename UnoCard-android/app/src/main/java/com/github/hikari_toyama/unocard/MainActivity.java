@@ -249,31 +249,6 @@ public class MainActivity extends AppCompatActivity
     } // threadWait(long)
 
     /**
-     * The unique AI entry point.
-     */
-    @WorkerThread
-    private void requestAI() {
-        int idxBest;
-
-        setStatus(STAT_IDLE); // block tap down events when idle
-        idxBest = mUno.getDifficulty() == Uno.LV_EASY
-                ? mAI.easyAI_bestCardIndex4NowPlayer(mBestColor)
-                : mUno.isSevenZeroRule()
-                ? mAI.sevenZeroAI_bestCardIndex4NowPlayer(mBestColor)
-                : mUno.is2vs2()
-                ? mAI.teamAI_bestCardIndex4NowPlayer(mBestColor)
-                : mAI.hardAI_bestCardIndex4NowPlayer(mBestColor);
-        if (idxBest >= 0) {
-            // Found an appropriate card to play
-            play(idxBest, mBestColor[0]);
-        } // if (idxBest >= 0)
-        else {
-            // No appropriate cards to play, or no card to play
-            draw(1, /* force */ false);
-        } // else
-    } // requestAI()
-
-    /**
      * Change the value of global variable [mStatus]
      * and do the following operations when necessary.
      *
@@ -1084,481 +1059,6 @@ public class MainActivity extends AppCompatActivity
     } // handleMessage(@NonNull Message)
 
     /**
-     * In 7-0 rule, when a zero card is put down, everyone need to pass
-     * the hand cards to the next player.
-     */
-    @WorkerThread
-    private void cycle() {
-        final int[] x = {740, 160, 740, 1320};
-        final int[] y = {670, 360, 50, 360};
-        int curr, next, oppo, prev;
-
-        setStatus(STAT_IDLE);
-        mHideFlag = 0x0f;
-        refreshScreen(i18n.info_0_rotate(), 0x0f);
-        curr = mUno.getNow();
-        next = mUno.getNext();
-        oppo = mUno.getOppo();
-        prev = mUno.getPrev();
-        mLayer[0].elem = mUno.getBackImage();
-        mLayer[0].startLeft = x[curr];
-        mLayer[0].startTop = y[curr];
-        mLayer[0].endLeft = x[next];
-        mLayer[0].endTop = y[next];
-        mLayer[1].elem = mUno.getBackImage();
-        mLayer[1].startLeft = x[next];
-        mLayer[1].startTop = y[next];
-        mLayer[1].endLeft = x[oppo];
-        mLayer[1].endTop = y[oppo];
-        if (mUno.getPlayers() == 3) {
-            mLayer[2].elem = mUno.getBackImage();
-            mLayer[2].startLeft = x[oppo];
-            mLayer[2].startTop = y[oppo];
-            mLayer[2].endLeft = x[curr];
-            mLayer[2].endTop = y[curr];
-            animate(3, mLayer);
-        } // if (mUno.getPlayers() == 3)
-        else {
-            mLayer[2].elem = mUno.getBackImage();
-            mLayer[2].startLeft = x[oppo];
-            mLayer[2].startTop = y[oppo];
-            mLayer[2].endLeft = x[prev];
-            mLayer[2].endTop = y[prev];
-            mLayer[3].elem = mUno.getBackImage();
-            mLayer[3].startLeft = x[prev];
-            mLayer[3].startTop = y[prev];
-            mLayer[3].endLeft = x[curr];
-            mLayer[3].endTop = y[curr];
-            animate(4, mLayer);
-        } // else
-
-        mHideFlag = 0x00;
-        mUno.cycle();
-        refreshScreen(i18n.info_0_rotate(), 0x0f);
-        threadWait(1500);
-        setStatus(mUno.switchNow());
-    } // cycle()
-
-    /**
-     * The player in action swap hand cards with another player.
-     *
-     * @param whom Swap with whom. Must be one of the following:
-     *             Player.YOU, Player.COM1, Player.COM2, Player.COM3
-     */
-    @WorkerThread
-    private void swapWith(int whom) {
-        final int[] x = {740, 160, 740, 1320};
-        final int[] y = {670, 360, 50, 360};
-        int curr, flag;
-
-        setStatus(STAT_IDLE);
-        curr = mUno.getNow();
-        mHideFlag = (1 << curr) | (1 << whom);
-        flag = (1 << curr) | (1 << whom) | (curr == Player.YOU ? 0x40 : 0x00);
-        refreshScreen(i18n.info_7_swap(curr, whom), flag);
-        mLayer[0].elem = mLayer[1].elem = mUno.getBackImage();
-        mLayer[0].startLeft = x[curr];
-        mLayer[0].startTop = y[curr];
-        mLayer[0].endLeft = x[whom];
-        mLayer[0].endTop = y[whom];
-        mLayer[1].startLeft = x[whom];
-        mLayer[1].startTop = y[whom];
-        mLayer[1].endLeft = x[curr];
-        mLayer[1].endTop = y[curr];
-        animate(2, mLayer);
-        mHideFlag = 0x00;
-        mUno.swap(curr, whom);
-        refreshScreen(i18n.info_7_swap(curr, whom), flag & ~0x40);
-        threadWait(1500);
-        setStatus(mUno.switchNow());
-    } // swapWith(int)
-
-    /**
-     * The player in action play a card.
-     *
-     * @param index Play which card. Pass the corresponding card's index of the
-     *              player's hand cards.
-     * @param color Optional, available when the card to play is a wild card.
-     *              Pass the specified following legal color.
-     */
-    @WorkerThread
-    private void play(int index, Color color) {
-        Card card;
-        int c, now, size, width, next, flag;
-
-        setStatus(STAT_IDLE); // block tap down events when idle
-        now = mUno.getNow();
-        size = mUno.getCurrPlayer().getHandSize();
-        if (mUno.getStackRule() == 2 && mUno.getCurrPlayer()
-                .getHandCards().get(index).content == Content.WILD_DRAW4) {
-            color = mUno.lastColor();
-        } // if (mUno.getStackRule() == 2 && ...)
-
-        card = mUno.play(now, index, color);
-        mSelectedIdx = -1;
-        mSoundPool.play(sndPlay, mSndVol, mSndVol, 1, 0, 1.0f);
-        if (size == 2) {
-            mSoundPool.play(sndUno, mSndVol, mSndVol, 1, 0, 1.0f);
-        } // if (size == 2)
-
-        if (card != null) {
-            mLayer[0].elem = card.image;
-            switch (now) {
-                case Player.COM1:
-                    width = 44 * Math.min(size, 13) + 136;
-                    mLayer[0].startLeft = 160 + index / 13 * 44;
-                    mLayer[0].startTop = 450 - width / 2 + index % 13 * 44;
-                    break; // case Player.COM1
-
-                case Player.COM2:
-                    width = 44 * size + 76;
-                    mLayer[0].startLeft = 800 - width / 2 + 44 * index;
-                    mLayer[0].startTop = 50;
-                    break; // case Player.COM2
-
-                case Player.COM3:
-                    width = 44 * Math.min(size, 13) + 136;
-                    mLayer[0].startLeft = 1320 - index / 13 * 44;
-                    mLayer[0].startTop = 450 - width / 2 + index % 13 * 44;
-                    break; // case Player.COM3
-
-                default:
-                    width = 44 * size + 76;
-                    mLayer[0].startLeft = 800 - width / 2 + 44 * index;
-                    mLayer[0].startTop = 680;
-                    break; // default
-            } // switch (now)
-
-            mLayer[0].endLeft = 1118;
-            mLayer[0].endTop = 360;
-            animate(1, mLayer);
-            if (size == 1) {
-                // The player in action becomes winner when it played the
-                // final card in its hand successfully
-                if (mUno.is2vs2()) {
-                    if (now == Player.YOU || now == Player.COM2) {
-                        mDiff = 2 * (mUno.getPlayer(Player.COM1).getHandScore()
-                                + mUno.getPlayer(Player.COM3).getHandScore());
-                        mScore = Math.min(9999, 200 + mScore + mDiff);
-                        mSoundPool.play(sndWin, mSndVol, mSndVol, 1, 0, 1.0f);
-                    } // if (now == Player.YOU || now == Player.COM2)
-                    else {
-                        mDiff = -2 * (mUno.getPlayer(Player.YOU).getHandScore()
-                                + mUno.getPlayer(Player.COM2).getHandScore());
-                        mScore = Math.max(-999, 200 + mScore + mDiff);
-                        mSoundPool.play(sndLose, mSndVol, mSndVol, 1, 0, 1.0f);
-                    } // else
-                } // if (mUno.is2vs2())
-                else if (now == Player.YOU) {
-                    mDiff = mUno.getPlayer(Player.COM1).getHandScore() +
-                            mUno.getPlayer(Player.COM2).getHandScore() +
-                            mUno.getPlayer(Player.COM3).getHandScore();
-                    mScore = Math.min(9999, 200 + mScore + mDiff);
-                    mSoundPool.play(sndWin, mSndVol, mSndVol, 1, 0, 1.0f);
-                } // else if (now == Player.YOU)
-                else {
-                    mDiff = -mUno.getPlayer(Player.YOU).getHandScore();
-                    mScore = Math.max(-999, 200 + mScore + mDiff);
-                    mSoundPool.play(sndLose, mSndVol, mSndVol, 1, 0, 1.0f);
-                } // else
-
-                mAuto = false; // Force disable the AUTO switch
-                mWinner = now;
-                setStatus(STAT_GAME_OVER);
-            } // if (size == 1)
-            else {
-                // When the played card is an action card or a wild card,
-                // do the necessary things according to the game rule
-                flag = now == Player.YOU ? 0xe1 : (1 << now) | 0x80;
-                switch (card.content) {
-                    case DRAW2:
-                        next = mUno.switchNow();
-                        if (mUno.getStackRule() != 0) {
-                            c = mUno.getDraw2StackCount();
-                            refreshScreen(i18n.act_playDraw2(now, next, c), flag);
-                            threadWait(1500);
-                            setStatus(next);
-                        } // if (mUno.getStackRule() != 0)
-                        else {
-                            refreshScreen(i18n.act_playDraw2(now, next, 2), flag);
-                            threadWait(1500);
-                            draw(2, /* force */ true);
-                        } // else
-                        break; // case DRAW2
-
-                    case SKIP:
-                        next = mUno.switchNow();
-                        refreshScreen(i18n.act_playSkip(now, next), flag);
-                        threadWait(1500);
-                        setStatus(mUno.switchNow());
-                        break; // case SKIP
-
-                    case REV:
-                        mUno.switchDirection();
-                        refreshScreen(i18n.act_playRev(now));
-                        threadWait(1500);
-                        setStatus(mUno.switchNow());
-                        break; // case REV
-
-                    case WILD:
-                        refreshScreen(i18n.act_playWild(now, color.ordinal()), flag);
-                        threadWait(1500);
-                        setStatus(mUno.switchNow());
-                        break; // case WILD
-
-                    case WILD_DRAW4:
-                        if (mUno.getStackRule() == 2) {
-                            next = mUno.switchNow();
-                            c = mUno.getDraw2StackCount();
-                            refreshScreen(i18n.act_playDraw2(now, next, c), flag);
-                            threadWait(1500);
-                            setStatus(next);
-                        } // if (mUno.getStackRule() == 2)
-                        else {
-                            next = mUno.getNext();
-                            refreshScreen(i18n.act_playWildDraw4(now, next), flag);
-                            threadWait(1500);
-                            setStatus(STAT_DOUBT_WILD4);
-                        } // else
-                        break; // case WILD_DRAW4
-
-                    case NUM7:
-                        if (mUno.isSevenZeroRule()) {
-                            refreshScreen(i18n.act_playCard(now, card.name), flag);
-                            threadWait(750);
-                            setStatus(STAT_SEVEN_TARGET);
-                            break; // case NUM7
-                        } // if (mUno.isSevenZeroRule())
-                        // else fall through
-
-                    case NUM0:
-                        if (mUno.isSevenZeroRule()) {
-                            refreshScreen(i18n.act_playCard(now, card.name), flag);
-                            threadWait(750);
-                            cycle();
-                            break; // case NUM0
-                        } // if (mUno.isSevenZeroRule())
-                        // else fall through
-
-                    default:
-                        refreshScreen(i18n.act_playCard(now, card.name), flag);
-                        threadWait(1500);
-                        setStatus(mUno.switchNow());
-                        break; // default
-                } // switch (card.content)
-            } // else
-        } // if (card != null)
-    } // play(int, Color)
-
-    /**
-     * The player in action draw one or more cards.
-     *
-     * @param count How many cards to draw.
-     * @param force Pass true if the specified player is required to draw cards,
-     *              i.e. previous player played a [+2] or [wild +4] to let this
-     *              player draw cards. Or false if the specified player draws a
-     *              card by itself in its action.
-     */
-    @WorkerThread
-    private void draw(int count, boolean force) {
-        Card drawn;
-        String message;
-        int i, index, c, now, size, width, flag;
-
-        setStatus(STAT_IDLE); // block tap down events when idle
-        c = mUno.getDraw2StackCount();
-        if (c > 0) {
-            count = c;
-            force = true;
-        } // if (c > 0)
-
-        index = -1;
-        drawn = null;
-        now = mUno.getNow();
-        flag = now == Player.YOU ? 0xff : 1 << now;
-        mSelectedIdx = -1;
-        for (i = 0; i < count; ++i) {
-            index = mUno.draw(now, force);
-            if (index >= 0) {
-                drawn = mUno.getCurrPlayer().getHandCards().get(index);
-                size = mUno.getCurrPlayer().getHandSize();
-                mLayer[0].startLeft = 338;
-                mLayer[0].startTop = 360;
-                switch (now) {
-                    case Player.COM1:
-                        width = 44 * Math.min(size, 13) + 136;
-                        mLayer[0].elem = mUno.getBackImage();
-                        mLayer[0].endLeft = 20 + index / 13 * 44;
-                        mLayer[0].endTop = 450 - width / 2 + index % 13 * 44;
-                        message = i18n.act_drawCardCount(now, count);
-                        break; // case Player.COM1
-
-                    case Player.COM2:
-                        width = 44 * size + 76;
-                        mLayer[0].elem = mUno.getBackImage();
-                        mLayer[0].endLeft = 800 - width / 2 + 44 * index;
-                        mLayer[0].endTop = 20;
-                        message = i18n.act_drawCardCount(now, count);
-                        break; // case Player.COM2
-
-                    case Player.COM3:
-                        width = 44 * Math.min(size, 13) + 136;
-                        mLayer[0].elem = mUno.getBackImage();
-                        mLayer[0].endLeft = 1460 - index / 13 * 44;
-                        mLayer[0].endTop = 450 - width / 2 + index % 13 * 44;
-                        message = i18n.act_drawCardCount(now, count);
-                        break; // case Player.COM3
-
-                    default:
-                        width = 44 * size + 76;
-                        mLayer[0].elem = drawn.image;
-                        mLayer[0].endLeft = 800 - width / 2 + 44 * index;
-                        mLayer[0].endTop = 700;
-                        message = i18n.act_drawCard(now, drawn.name);
-                        break; // default
-                } // switch (now)
-
-                // Animation
-                mSoundPool.play(sndDraw, mSndVol, mSndVol, 1, 0, 1.0f);
-                animate(1, mLayer);
-                refreshScreen(message, flag);
-                threadWait(300);
-            } // if (index >= 0)
-            else {
-                message = i18n.info_cannotDraw(now, Uno.MAX_HOLD_CARDS);
-                refreshScreen(message, flag);
-                break;
-            } // else
-        } // for (i = 0; i < count; ++i)
-
-        threadWait(750);
-        if (count == 1 &&
-                drawn != null &&
-                mUno.getForcePlayRule() != 0 &&
-                mUno.isLegalToPlay(drawn)) {
-            // Player drew one card by itself, the drawn card
-            // can be played immediately if it's legal to play
-            if (mAuto || now != Player.YOU) {
-                play(index, mAI.calcBestColor4NowPlayer());
-            } // if (mAuto || now != Player.YOU)
-            else if (mUno.getForcePlayRule() == 1) {
-                // Store index value as global value. This value
-                // will be used after the wild color determined.
-                mSelectedIdx = index;
-                setStatus(STAT_ASK_KEEP_PLAY);
-            } // else if (mUno.getForcePlayRule() == 1)
-            else if (!drawn.isWild()) {
-                // Force play a non-wild card
-                play(index, drawn.color);
-            } // else if (!drawn.isWild())
-            else if (mUno.getStackRule() == 2 &&
-                    drawn.content == Content.WILD_DRAW4) {
-                // Force play a Wild +4 card, but do not change the next color
-                play(index, mUno.lastColor());
-            } // else if (mUno.getStackRule() == 2 && ...)
-            else {
-                // Force play a Wild / Wild +4 card, and change the next color
-                mSelectedIdx = index;
-                setStatus(STAT_WILD_COLOR);
-            } // else
-        } // if (count == 1 && ...)
-        else {
-            refreshScreen(i18n.act_pass(now), 0x00);
-            threadWait(750);
-            setStatus(mUno.switchNow());
-        } // else
-    } // draw(int, boolean)
-
-    /**
-     * Do uniform motion for objects from somewhere to somewhere.
-     * NOTE: This method does not draw the last frame. After animation,
-     * you need to call refreshScreen() method to draw the last frame.
-     *
-     * @param layerCount Move how many objects at the same time.
-     * @param layer      Describe your movements by AnimateLayer objects.
-     *                   Specifying parameters in AnimateLayer object to
-     *                   describe your expected movements, such as:
-     *                   [elem]      Move which object.
-     *                   [startLeft] The object's start X coordinate.
-     *                   [startTop]  The object's start Y coordinate.
-     *                   [endLeft]   The object's end X coordinate.
-     *                   [endTop]    The object's end Y coordinate.
-     */
-    @WorkerThread
-    private void animate(int layerCount, AnimateLayer[] layer) {
-        for (int i = 0; i < 10; ++i) {
-            for (int j = 0; j < layerCount; ++j) {
-                AnimateLayer l = layer[j];
-                int x1 = l.startLeft + (l.endLeft - l.startLeft) * i / 10;
-                int y1 = l.startTop + (l.endTop - l.startTop) * i / 10;
-                int x2 = x1 + l.elem.cols();
-                int y2 = y1 + l.elem.rows();
-                Mat roi1 = mScr.submat(y1, y2, x1, x2);
-                Mat roi2 = mBackup[j].submat(y1, y2, x1, x2);
-                roi1.copyTo(roi2);
-            } // for (int j = 0; j < layerCount; ++j)
-
-            for (int j = 0; j < layerCount; ++j) {
-                AnimateLayer l = layer[j];
-                int x1 = l.startLeft + (l.endLeft - l.startLeft) * i / 10;
-                int y1 = l.startTop + (l.endTop - l.startTop) * i / 10;
-                int x2 = x1 + l.elem.cols();
-                int y2 = y1 + l.elem.rows();
-                l.elem.copyTo(mScr.submat(y1, y2, x1, x2), l.elem);
-            } // for (int j = 0; j < layerCount; ++j)
-
-            Utils.matToBitmap(mScr, mBmp);
-            mUIHandler.sendEmptyMessage(0); // -> handleMessage()
-            threadWait(15);
-            for (int j = 0; j < layerCount; ++j) {
-                AnimateLayer l = layer[j];
-                int x1 = l.startLeft + (l.endLeft - l.startLeft) * i / 10;
-                int y1 = l.startTop + (l.endTop - l.startTop) * i / 10;
-                int x2 = x1 + l.elem.cols();
-                int y2 = y1 + l.elem.rows();
-                Mat roi1 = mScr.submat(y1, y2, x1, x2);
-                Mat roi2 = mBackup[j].submat(y1, y2, x1, x2);
-                roi2.copyTo(roi1);
-            } // for (int j = 0; j < layerCount; ++j)
-        } // for (int i = 0; i < 10; ++i)
-    } // animate(int, AnimateLayer[])
-
-    /**
-     * Triggered on challenge chance. When a player played a [wild +4], the next
-     * player can challenge its legality. Only when you have no cards that match
-     * the previous played card's color, you can play a [wild +4].
-     * Next player does not challenge: next player draw 4 cards;
-     * Challenge success: current player draw 4 cards;
-     * Challenge failure: next player draw 6 cards.
-     */
-    @WorkerThread
-    private void onChallenge() {
-        int now, challenger;
-        boolean challengeSuccess;
-
-        setStatus(STAT_IDLE); // block tap down events when idle
-        now = mUno.getNow();
-        challenger = mUno.getNext();
-        challengeSuccess = mUno.challenge(now);
-        refreshScreen(i18n.info_challenge(challenger, now,
-                mUno.next2lastColor().ordinal()), (1 << now) | 0x40);
-        threadWait(1500);
-        if (challengeSuccess) {
-            // Challenge success, who played [wild +4] draws 4 cards
-            refreshScreen(i18n.info_challengeSuccess(now), 0x00);
-            threadWait(1500);
-            draw(4, /* force */ true);
-        } // if (challengeSuccess)
-        else {
-            // Challenge failure, challenger draws 6 cards
-            refreshScreen(i18n.info_challengeFailure(challenger), 0x00);
-            threadWait(1500);
-            mUno.switchNow();
-            draw(6, /* force */ true);
-        } // else
-    } // onChallenge()
-
-    /**
      * Triggered when a touch event occurred.
      *
      * @param v     Touch event occurred on which view object.
@@ -1952,6 +1452,506 @@ public class MainActivity extends AppCompatActivity
     } // handleMessage2(Message)
 
     /**
+     * The unique AI entry point.
+     */
+    @WorkerThread
+    private void requestAI() {
+        int idxBest;
+
+        setStatus(STAT_IDLE); // block tap down events when idle
+        idxBest = mUno.getDifficulty() == Uno.LV_EASY
+                ? mAI.easyAI_bestCardIndex4NowPlayer(mBestColor)
+                : mUno.isSevenZeroRule()
+                ? mAI.sevenZeroAI_bestCardIndex4NowPlayer(mBestColor)
+                : mUno.is2vs2()
+                ? mAI.teamAI_bestCardIndex4NowPlayer(mBestColor)
+                : mAI.hardAI_bestCardIndex4NowPlayer(mBestColor);
+        if (idxBest >= 0) {
+            // Found an appropriate card to play
+            play(idxBest, mBestColor[0]);
+        } // if (idxBest >= 0)
+        else {
+            // No appropriate cards to play, or no card to play
+            draw(1, /* force */ false);
+        } // else
+    } // requestAI()
+
+    /**
+     * The player in action draw one or more cards.
+     *
+     * @param count How many cards to draw.
+     * @param force Pass true if the specified player is required to draw cards,
+     *              i.e. previous player played a [+2] or [wild +4] to let this
+     *              player draw cards. Or false if the specified player draws a
+     *              card by itself in its action.
+     */
+    @WorkerThread
+    private void draw(int count, boolean force) {
+        Card drawn;
+        String message;
+        int i, index, c, now, size, width, flag;
+
+        setStatus(STAT_IDLE); // block tap down events when idle
+        c = mUno.getDraw2StackCount();
+        if (c > 0) {
+            count = c;
+            force = true;
+        } // if (c > 0)
+
+        index = -1;
+        drawn = null;
+        now = mUno.getNow();
+        flag = now == Player.YOU ? 0xff : 1 << now;
+        mSelectedIdx = -1;
+        for (i = 0; i < count; ++i) {
+            index = mUno.draw(now, force);
+            if (index >= 0) {
+                drawn = mUno.getCurrPlayer().getHandCards().get(index);
+                size = mUno.getCurrPlayer().getHandSize();
+                mLayer[0].startLeft = 338;
+                mLayer[0].startTop = 360;
+                switch (now) {
+                    case Player.COM1:
+                        width = 44 * Math.min(size, 13) + 136;
+                        mLayer[0].elem = mUno.getBackImage();
+                        mLayer[0].endLeft = 20 + index / 13 * 44;
+                        mLayer[0].endTop = 450 - width / 2 + index % 13 * 44;
+                        message = i18n.act_drawCardCount(now, count);
+                        break; // case Player.COM1
+
+                    case Player.COM2:
+                        width = 44 * size + 76;
+                        mLayer[0].elem = mUno.getBackImage();
+                        mLayer[0].endLeft = 800 - width / 2 + 44 * index;
+                        mLayer[0].endTop = 20;
+                        message = i18n.act_drawCardCount(now, count);
+                        break; // case Player.COM2
+
+                    case Player.COM3:
+                        width = 44 * Math.min(size, 13) + 136;
+                        mLayer[0].elem = mUno.getBackImage();
+                        mLayer[0].endLeft = 1460 - index / 13 * 44;
+                        mLayer[0].endTop = 450 - width / 2 + index % 13 * 44;
+                        message = i18n.act_drawCardCount(now, count);
+                        break; // case Player.COM3
+
+                    default:
+                        width = 44 * size + 76;
+                        mLayer[0].elem = drawn.image;
+                        mLayer[0].endLeft = 800 - width / 2 + 44 * index;
+                        mLayer[0].endTop = 700;
+                        message = i18n.act_drawCard(now, drawn.name);
+                        break; // default
+                } // switch (now)
+
+                // Animation
+                mSoundPool.play(sndDraw, mSndVol, mSndVol, 1, 0, 1.0f);
+                animate(1, mLayer);
+                refreshScreen(message, flag);
+                threadWait(300);
+            } // if (index >= 0)
+            else {
+                message = i18n.info_cannotDraw(now, Uno.MAX_HOLD_CARDS);
+                refreshScreen(message, flag);
+                break;
+            } // else
+        } // for (i = 0; i < count; ++i)
+
+        threadWait(750);
+        if (count == 1 &&
+                drawn != null &&
+                mUno.getForcePlayRule() != 0 &&
+                mUno.isLegalToPlay(drawn)) {
+            // Player drew one card by itself, the drawn card
+            // can be played immediately if it's legal to play
+            if (mAuto || now != Player.YOU) {
+                play(index, mAI.calcBestColor4NowPlayer());
+            } // if (mAuto || now != Player.YOU)
+            else if (mUno.getForcePlayRule() == 1) {
+                // Store index value as global value. This value
+                // will be used after the wild color determined.
+                mSelectedIdx = index;
+                setStatus(STAT_ASK_KEEP_PLAY);
+            } // else if (mUno.getForcePlayRule() == 1)
+            else if (!drawn.isWild()) {
+                // Force play a non-wild card
+                play(index, drawn.color);
+            } // else if (!drawn.isWild())
+            else if (mUno.getStackRule() == 2 &&
+                    drawn.content == Content.WILD_DRAW4) {
+                // Force play a Wild +4 card, but do not change the next color
+                play(index, mUno.lastColor());
+            } // else if (mUno.getStackRule() == 2 && ...)
+            else {
+                // Force play a Wild / Wild +4 card, and change the next color
+                mSelectedIdx = index;
+                setStatus(STAT_WILD_COLOR);
+            } // else
+        } // if (count == 1 && ...)
+        else {
+            refreshScreen(i18n.act_pass(now), 0x00);
+            threadWait(750);
+            setStatus(mUno.switchNow());
+        } // else
+    } // draw(int, boolean)
+
+    /**
+     * The player in action play a card.
+     *
+     * @param index Play which card. Pass the corresponding card's index of the
+     *              player's hand cards.
+     * @param color Optional, available when the card to play is a wild card.
+     *              Pass the specified following legal color.
+     */
+    @WorkerThread
+    private void play(int index, Color color) {
+        Card card;
+        int c, now, size, width, next, flag;
+
+        setStatus(STAT_IDLE); // block tap down events when idle
+        now = mUno.getNow();
+        size = mUno.getCurrPlayer().getHandSize();
+        if (mUno.getStackRule() == 2 && mUno.getCurrPlayer()
+                .getHandCards().get(index).content == Content.WILD_DRAW4) {
+            color = mUno.lastColor();
+        } // if (mUno.getStackRule() == 2 && ...)
+
+        card = mUno.play(now, index, color);
+        mSelectedIdx = -1;
+        mSoundPool.play(sndPlay, mSndVol, mSndVol, 1, 0, 1.0f);
+        if (size == 2) {
+            mSoundPool.play(sndUno, mSndVol, mSndVol, 1, 0, 1.0f);
+        } // if (size == 2)
+
+        if (card != null) {
+            mLayer[0].elem = card.image;
+            switch (now) {
+                case Player.COM1:
+                    width = 44 * Math.min(size, 13) + 136;
+                    mLayer[0].startLeft = 160 + index / 13 * 44;
+                    mLayer[0].startTop = 450 - width / 2 + index % 13 * 44;
+                    break; // case Player.COM1
+
+                case Player.COM2:
+                    width = 44 * size + 76;
+                    mLayer[0].startLeft = 800 - width / 2 + 44 * index;
+                    mLayer[0].startTop = 50;
+                    break; // case Player.COM2
+
+                case Player.COM3:
+                    width = 44 * Math.min(size, 13) + 136;
+                    mLayer[0].startLeft = 1320 - index / 13 * 44;
+                    mLayer[0].startTop = 450 - width / 2 + index % 13 * 44;
+                    break; // case Player.COM3
+
+                default:
+                    width = 44 * size + 76;
+                    mLayer[0].startLeft = 800 - width / 2 + 44 * index;
+                    mLayer[0].startTop = 680;
+                    break; // default
+            } // switch (now)
+
+            mLayer[0].endLeft = 1118;
+            mLayer[0].endTop = 360;
+            animate(1, mLayer);
+            if (size == 1) {
+                // The player in action becomes winner when it played the
+                // final card in its hand successfully
+                if (mUno.is2vs2()) {
+                    if (now == Player.YOU || now == Player.COM2) {
+                        mDiff = 2 * (mUno.getPlayer(Player.COM1).getHandScore()
+                                + mUno.getPlayer(Player.COM3).getHandScore());
+                        mScore = Math.min(9999, 200 + mScore + mDiff);
+                        mSoundPool.play(sndWin, mSndVol, mSndVol, 1, 0, 1.0f);
+                    } // if (now == Player.YOU || now == Player.COM2)
+                    else {
+                        mDiff = -2 * (mUno.getPlayer(Player.YOU).getHandScore()
+                                + mUno.getPlayer(Player.COM2).getHandScore());
+                        mScore = Math.max(-999, 200 + mScore + mDiff);
+                        mSoundPool.play(sndLose, mSndVol, mSndVol, 1, 0, 1.0f);
+                    } // else
+                } // if (mUno.is2vs2())
+                else if (now == Player.YOU) {
+                    mDiff = mUno.getPlayer(Player.COM1).getHandScore() +
+                            mUno.getPlayer(Player.COM2).getHandScore() +
+                            mUno.getPlayer(Player.COM3).getHandScore();
+                    mScore = Math.min(9999, 200 + mScore + mDiff);
+                    mSoundPool.play(sndWin, mSndVol, mSndVol, 1, 0, 1.0f);
+                } // else if (now == Player.YOU)
+                else {
+                    mDiff = -mUno.getPlayer(Player.YOU).getHandScore();
+                    mScore = Math.max(-999, 200 + mScore + mDiff);
+                    mSoundPool.play(sndLose, mSndVol, mSndVol, 1, 0, 1.0f);
+                } // else
+
+                mAuto = false; // Force disable the AUTO switch
+                mWinner = now;
+                setStatus(STAT_GAME_OVER);
+            } // if (size == 1)
+            else {
+                // When the played card is an action card or a wild card,
+                // do the necessary things according to the game rule
+                flag = now == Player.YOU ? 0xe1 : (1 << now) | 0x80;
+                switch (card.content) {
+                    case DRAW2:
+                        next = mUno.switchNow();
+                        if (mUno.getStackRule() != 0) {
+                            c = mUno.getDraw2StackCount();
+                            refreshScreen(i18n.act_playDraw2(now, next, c), flag);
+                            threadWait(1500);
+                            setStatus(next);
+                        } // if (mUno.getStackRule() != 0)
+                        else {
+                            refreshScreen(i18n.act_playDraw2(now, next, 2), flag);
+                            threadWait(1500);
+                            draw(2, /* force */ true);
+                        } // else
+                        break; // case DRAW2
+
+                    case SKIP:
+                        next = mUno.switchNow();
+                        refreshScreen(i18n.act_playSkip(now, next), flag);
+                        threadWait(1500);
+                        setStatus(mUno.switchNow());
+                        break; // case SKIP
+
+                    case REV:
+                        mUno.switchDirection();
+                        refreshScreen(i18n.act_playRev(now));
+                        threadWait(1500);
+                        setStatus(mUno.switchNow());
+                        break; // case REV
+
+                    case WILD:
+                        refreshScreen(i18n.act_playWild(now, color.ordinal()), flag);
+                        threadWait(1500);
+                        setStatus(mUno.switchNow());
+                        break; // case WILD
+
+                    case WILD_DRAW4:
+                        if (mUno.getStackRule() == 2) {
+                            next = mUno.switchNow();
+                            c = mUno.getDraw2StackCount();
+                            refreshScreen(i18n.act_playDraw2(now, next, c), flag);
+                            threadWait(1500);
+                            setStatus(next);
+                        } // if (mUno.getStackRule() == 2)
+                        else {
+                            next = mUno.getNext();
+                            refreshScreen(i18n.act_playWildDraw4(now, next), flag);
+                            threadWait(1500);
+                            setStatus(STAT_DOUBT_WILD4);
+                        } // else
+                        break; // case WILD_DRAW4
+
+                    case NUM7:
+                        if (mUno.isSevenZeroRule()) {
+                            refreshScreen(i18n.act_playCard(now, card.name), flag);
+                            threadWait(750);
+                            setStatus(STAT_SEVEN_TARGET);
+                            break; // case NUM7
+                        } // if (mUno.isSevenZeroRule())
+                        // else fall through
+
+                    case NUM0:
+                        if (mUno.isSevenZeroRule()) {
+                            refreshScreen(i18n.act_playCard(now, card.name), flag);
+                            threadWait(750);
+                            cycle();
+                            break; // case NUM0
+                        } // if (mUno.isSevenZeroRule())
+                        // else fall through
+
+                    default:
+                        refreshScreen(i18n.act_playCard(now, card.name), flag);
+                        threadWait(1500);
+                        setStatus(mUno.switchNow());
+                        break; // default
+                } // switch (card.content)
+            } // else
+        } // if (card != null)
+    } // play(int, Color)
+
+    /**
+     * Triggered on challenge chance. When a player played a [wild +4], the next
+     * player can challenge its legality. Only when you have no cards that match
+     * the previous played card's color, you can play a [wild +4].
+     * Next player does not challenge: next player draw 4 cards;
+     * Challenge success: current player draw 4 cards;
+     * Challenge failure: next player draw 6 cards.
+     */
+    @WorkerThread
+    private void onChallenge() {
+        int now, challenger;
+        boolean challengeSuccess;
+
+        setStatus(STAT_IDLE); // block tap down events when idle
+        now = mUno.getNow();
+        challenger = mUno.getNext();
+        challengeSuccess = mUno.challenge(now);
+        refreshScreen(i18n.info_challenge(challenger, now,
+                mUno.next2lastColor().ordinal()), (1 << now) | 0x40);
+        threadWait(1500);
+        if (challengeSuccess) {
+            // Challenge success, who played [wild +4] draws 4 cards
+            refreshScreen(i18n.info_challengeSuccess(now), 0x00);
+            threadWait(1500);
+            draw(4, /* force */ true);
+        } // if (challengeSuccess)
+        else {
+            // Challenge failure, challenger draws 6 cards
+            refreshScreen(i18n.info_challengeFailure(challenger), 0x00);
+            threadWait(1500);
+            mUno.switchNow();
+            draw(6, /* force */ true);
+        } // else
+    } // onChallenge()
+
+    /**
+     * The player in action swap hand cards with another player.
+     *
+     * @param whom Swap with whom. Must be one of the following:
+     *             Player.YOU, Player.COM1, Player.COM2, Player.COM3
+     */
+    @WorkerThread
+    private void swapWith(int whom) {
+        final int[] x = {740, 160, 740, 1320};
+        final int[] y = {670, 360, 50, 360};
+        int curr, flag;
+
+        setStatus(STAT_IDLE);
+        curr = mUno.getNow();
+        mHideFlag = (1 << curr) | (1 << whom);
+        flag = (1 << curr) | (1 << whom) | (curr == Player.YOU ? 0x40 : 0x00);
+        refreshScreen(i18n.info_7_swap(curr, whom), flag);
+        mLayer[0].elem = mLayer[1].elem = mUno.getBackImage();
+        mLayer[0].startLeft = x[curr];
+        mLayer[0].startTop = y[curr];
+        mLayer[0].endLeft = x[whom];
+        mLayer[0].endTop = y[whom];
+        mLayer[1].startLeft = x[whom];
+        mLayer[1].startTop = y[whom];
+        mLayer[1].endLeft = x[curr];
+        mLayer[1].endTop = y[curr];
+        animate(2, mLayer);
+        mHideFlag = 0x00;
+        mUno.swap(curr, whom);
+        refreshScreen(i18n.info_7_swap(curr, whom), flag & ~0x40);
+        threadWait(1500);
+        setStatus(mUno.switchNow());
+    } // swapWith(int)
+
+    /**
+     * In 7-0 rule, when a zero card is put down, everyone need to pass
+     * the hand cards to the next player.
+     */
+    @WorkerThread
+    private void cycle() {
+        final int[] x = {740, 160, 740, 1320};
+        final int[] y = {670, 360, 50, 360};
+        int curr, next, oppo, prev;
+
+        setStatus(STAT_IDLE);
+        mHideFlag = 0x0f;
+        refreshScreen(i18n.info_0_rotate(), 0x0f);
+        curr = mUno.getNow();
+        next = mUno.getNext();
+        oppo = mUno.getOppo();
+        prev = mUno.getPrev();
+        mLayer[0].elem = mUno.getBackImage();
+        mLayer[0].startLeft = x[curr];
+        mLayer[0].startTop = y[curr];
+        mLayer[0].endLeft = x[next];
+        mLayer[0].endTop = y[next];
+        mLayer[1].elem = mUno.getBackImage();
+        mLayer[1].startLeft = x[next];
+        mLayer[1].startTop = y[next];
+        mLayer[1].endLeft = x[oppo];
+        mLayer[1].endTop = y[oppo];
+        if (mUno.getPlayers() == 3) {
+            mLayer[2].elem = mUno.getBackImage();
+            mLayer[2].startLeft = x[oppo];
+            mLayer[2].startTop = y[oppo];
+            mLayer[2].endLeft = x[curr];
+            mLayer[2].endTop = y[curr];
+            animate(3, mLayer);
+        } // if (mUno.getPlayers() == 3)
+        else {
+            mLayer[2].elem = mUno.getBackImage();
+            mLayer[2].startLeft = x[oppo];
+            mLayer[2].startTop = y[oppo];
+            mLayer[2].endLeft = x[prev];
+            mLayer[2].endTop = y[prev];
+            mLayer[3].elem = mUno.getBackImage();
+            mLayer[3].startLeft = x[prev];
+            mLayer[3].startTop = y[prev];
+            mLayer[3].endLeft = x[curr];
+            mLayer[3].endTop = y[curr];
+            animate(4, mLayer);
+        } // else
+
+        mHideFlag = 0x00;
+        mUno.cycle();
+        refreshScreen(i18n.info_0_rotate(), 0x0f);
+        threadWait(1500);
+        setStatus(mUno.switchNow());
+    } // cycle()
+
+    /**
+     * Do uniform motion for objects from somewhere to somewhere.
+     * NOTE: This method does not draw the last frame. After animation,
+     * you need to call refreshScreen() method to draw the last frame.
+     *
+     * @param layerCount Move how many objects at the same time.
+     * @param layer      Describe your movements by AnimateLayer objects.
+     *                   Specifying parameters in AnimateLayer object to
+     *                   describe your expected movements, such as:
+     *                   [elem]      Move which object.
+     *                   [startLeft] The object's start X coordinate.
+     *                   [startTop]  The object's start Y coordinate.
+     *                   [endLeft]   The object's end X coordinate.
+     *                   [endTop]    The object's end Y coordinate.
+     */
+    @WorkerThread
+    private void animate(int layerCount, AnimateLayer[] layer) {
+        for (int i = 0; i < 10; ++i) {
+            for (int j = 0; j < layerCount; ++j) {
+                AnimateLayer l = layer[j];
+                int x1 = l.startLeft + (l.endLeft - l.startLeft) * i / 10;
+                int y1 = l.startTop + (l.endTop - l.startTop) * i / 10;
+                int x2 = x1 + l.elem.cols();
+                int y2 = y1 + l.elem.rows();
+                Mat roi1 = mScr.submat(y1, y2, x1, x2);
+                Mat roi2 = mBackup[j].submat(y1, y2, x1, x2);
+                roi1.copyTo(roi2);
+            } // for (int j = 0; j < layerCount; ++j)
+
+            for (int j = 0; j < layerCount; ++j) {
+                AnimateLayer l = layer[j];
+                int x1 = l.startLeft + (l.endLeft - l.startLeft) * i / 10;
+                int y1 = l.startTop + (l.endTop - l.startTop) * i / 10;
+                int x2 = x1 + l.elem.cols();
+                int y2 = y1 + l.elem.rows();
+                l.elem.copyTo(mScr.submat(y1, y2, x1, x2), l.elem);
+            } // for (int j = 0; j < layerCount; ++j)
+
+            Utils.matToBitmap(mScr, mBmp);
+            mUIHandler.sendEmptyMessage(0); // -> handleMessage()
+            threadWait(15);
+            for (int j = 0; j < layerCount; ++j) {
+                AnimateLayer l = layer[j];
+                int x1 = l.startLeft + (l.endLeft - l.startLeft) * i / 10;
+                int y1 = l.startTop + (l.endTop - l.startTop) * i / 10;
+                int x2 = x1 + l.elem.cols();
+                int y2 = y1 + l.elem.rows();
+                Mat roi1 = mScr.submat(y1, y2, x1, x2);
+                Mat roi2 = mBackup[j].submat(y1, y2, x1, x2);
+                roi2.copyTo(roi1);
+            } // for (int j = 0; j < layerCount; ++j)
+        } // for (int i = 0; i < 10; ++i)
+    } // animate(int, AnimateLayer[])
+
+    /**
      * Load a existed replay file.
      *
      * @param replayName Provide the file name of your replay.
@@ -2137,14 +2137,12 @@ public class MainActivity extends AppCompatActivity
                 } // else
             } // while (true)
 
-            if ((mUno.is2vs2() && mUno.getHandCardsOf(Player.COM2).isEmpty()) ||
-                    mUno.getHandCardsOf(Player.YOU).isEmpty()) {
-                mSoundPool.play(sndWin, mSndVol, mSndVol, 1, 0, 1.0f);
-            } // if ((mUno.is2vs2() && ...)
-            else {
-                mSoundPool.play(sndLose, mSndVol, mSndVol, 1, 0, 1.0f);
-            } // else
-
+            params[0] = (mUno.is2vs2()
+                    && mUno.getHandCardsOf(Player.COM2).isEmpty())
+                    || mUno.getHandCardsOf(Player.YOU).isEmpty()
+                    ? sndWin
+                    : sndLose;
+            mSoundPool.play(params[0], mSndVol, mSndVol, 1, 0, 1.0f);
             threadWait(3000);
             setStatus(STAT_WELCOME);
         } // if (mUno.loadReplay(replayName))

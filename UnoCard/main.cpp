@@ -10,6 +10,7 @@
 #include <QPen>
 #include <QUrl>
 #include <QFile>
+#include <QFont>
 #include <QIcon>
 #include <QRect>
 #include <QBrush>
@@ -71,6 +72,7 @@ static const char FILE_HEADER[] = {
  * Triggered when application starts.
  */
 Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
+    QFont font;
     int i, hash;
     QString bgmPath;
     int dw[64] = { 0 };
@@ -80,18 +82,18 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
     // Preparations
     QFontDatabase::addApplicationFont("resource/noto.ttc");
     if (strstr(argv[0], "zh") != nullptr) {
-        sFont.setFamily("Noto Sans Mono CJK SC");
-        sFont.setPixelSize(34);
+        font.setFamily("Noto Sans Mono CJK SC");
+        font.setPixelSize(34);
         i18n = new I18N_zh_CN;
     } // if (strstr(argv[0], "zh") != nullptr)
     else if (strstr(argv[0], "ja") != nullptr) {
-        sFont.setFamily("Noto Sans Mono CJK JP");
-        sFont.setPixelSize(34);
+        font.setFamily("Noto Sans Mono CJK JP");
+        font.setPixelSize(34);
         i18n = new I18N_ja_JP;
     } // else if (strstr(argv[0], "ja") != nullptr)
     else {
-        sFont.setFamily("Noto Sans Mono CJK JP");
-        sFont.setPixelSize(34);
+        font.setFamily("Noto Sans Mono CJK JP");
+        font.setPixelSize(34);
         i18n = new I18N_en_US;
     } // else
 
@@ -193,37 +195,12 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
     sScreen = QImage(1600, 900, QImage::Format_RGB888);
     sPainter = new QPainter(&sScreen);
     sPainter->setPen(Qt::NoPen);
-    sPainter->setFont(sFont);
+    sPainter->setFont(font);
     ui = new Ui::Main;
     ui->setupUi(this);
     sMediaPlay->play();
     setStatus(STAT_WELCOME);
 } // Main(int, char*[], QWidget*) (Class Constructor)
-
-/**
- * The unique AI entry point.
- */
-void Main::requestAI() {
-    int idxBest;
-    Color bestColor[1];
-
-    setStatus(STAT_IDLE); // block mouse click events when idle
-    idxBest = sUno->getDifficulty() == Uno::LV_EASY
-        ? sAI->easyAI_bestCardIndex4NowPlayer(bestColor)
-        : sUno->isSevenZeroRule()
-        ? sAI->sevenZeroAI_bestCardIndex4NowPlayer(bestColor)
-        : sUno->is2vs2()
-        ? sAI->teamAI_bestCardIndex4NowPlayer(bestColor)
-        : sAI->hardAI_bestCardIndex4NowPlayer(bestColor);
-    if (idxBest >= 0) {
-        // Found an appropriate card to play
-        play(idxBest, bestColor[0]);
-    } // if (idxBest >= 0)
-    else {
-        // No appropriate cards to play, or no card to play
-        draw();
-    } // else
-} // requestAI()
 
 /**
  * Let our UI wait the number of specified milli seconds.
@@ -935,472 +912,6 @@ void Main::paintEvent(QPaintEvent*) {
 } // paintEvent(QPaintEvent*)
 
 /**
- * In 7-0 rule, when a zero card is put down, everyone need to pass
- * the hand cards to the next player.
- */
-void Main::cycle() {
-    static int x[] = { 740, 160, 740, 1320 };
-    static int y[] = { 670, 360, 50, 360 };
-    int curr, next, oppo, prev;
-
-    setStatus(STAT_IDLE);
-    sHideFlag = 0x0f;
-    refreshScreen(i18n->info_0_rotate(), 0x0f);
-    curr = sUno->getNow();
-    next = sUno->getNext();
-    oppo = sUno->getOppo();
-    prev = sUno->getPrev();
-    sLayer[0].elem = sUno->getBackImage();
-    sLayer[0].startLeft = x[curr];
-    sLayer[0].startTop = y[curr];
-    sLayer[0].endLeft = x[next];
-    sLayer[0].endTop = y[next];
-    sLayer[1].elem = sUno->getBackImage();
-    sLayer[1].startLeft = x[next];
-    sLayer[1].startTop = y[next];
-    sLayer[1].endLeft = x[oppo];
-    sLayer[1].endTop = y[oppo];
-    if (sUno->getPlayers() == 3) {
-        sLayer[2].elem = sUno->getBackImage();
-        sLayer[2].startLeft = x[oppo];
-        sLayer[2].startTop = y[oppo];
-        sLayer[2].endLeft = x[curr];
-        sLayer[2].endTop = y[curr];
-        animate(3, sLayer);
-    } // if (sUno->getPlayers() == 3)
-    else {
-        sLayer[2].elem = sUno->getBackImage();
-        sLayer[2].startLeft = x[oppo];
-        sLayer[2].startTop = y[oppo];
-        sLayer[2].endLeft = x[prev];
-        sLayer[2].endTop = y[prev];
-        sLayer[3].elem = sUno->getBackImage();
-        sLayer[3].startLeft = x[prev];
-        sLayer[3].startTop = y[prev];
-        sLayer[3].endLeft = x[curr];
-        sLayer[3].endTop = y[curr];
-        animate(4, sLayer);
-    } // else
-
-    sHideFlag = 0x00;
-    sUno->cycle();
-    refreshScreen(i18n->info_0_rotate(), 0x0f);
-    threadWait(1500);
-    setStatus(sUno->switchNow());
-} // cycle()
-
-/**
- * The player in action swap hand cards with another player.
- *
- * @param whom Swap with whom. Must be one of the following:
- *             Player::YOU, Player::COM1, Player::COM2, Player::COM3
- */
-void Main::swapWith(int whom) {
-    static int x[] = { 740, 160, 740, 1320 };
-    static int y[] = { 670, 360, 50, 360 };
-    int curr, flag;
-
-    setStatus(STAT_IDLE);
-    curr = sUno->getNow();
-    sHideFlag = (1 << curr) | (1 << whom);
-    flag = (1 << curr) | (1 << whom) | (curr == Player::YOU ? 0x40 : 0x00);
-    refreshScreen(i18n->info_7_swap(curr, whom), flag);
-    sLayer[0].elem = sLayer[1].elem = sUno->getBackImage();
-    sLayer[0].startLeft = x[curr];
-    sLayer[0].startTop = y[curr];
-    sLayer[0].endLeft = x[whom];
-    sLayer[0].endTop = y[whom];
-    sLayer[1].startLeft = x[whom];
-    sLayer[1].startTop = y[whom];
-    sLayer[1].endLeft = x[curr];
-    sLayer[1].endTop = y[curr];
-    animate(2, sLayer);
-    sHideFlag = 0x00;
-    sUno->swap(curr, whom);
-    refreshScreen(i18n->info_7_swap(curr, whom), flag & ~0x40);
-    threadWait(1500);
-    setStatus(sUno->switchNow());
-} // swapWith(int)
-
-/**
- * The player in action play a card.
- *
- * @param index Play which card. Pass the corresponding card's index of the
- *              player's hand cards.
- * @param color Optional, available when the card to play is a wild card.
- *              Pass the specified following legal color.
- */
-void Main::play(int index, Color color) {
-    Card* card;
-    int c, now, size, width, next, flag;
-
-    setStatus(STAT_IDLE); // block mouse click events when idle
-    now = sUno->getNow();
-    size = sUno->getCurrPlayer()->getHandSize();
-    if (sUno->getStackRule() == 2 && sUno->getCurrPlayer()
-        ->getHandCards()[index]->content == WILD_DRAW4) {
-        color = sUno->lastColor();
-    } // if (sUno->getStackRule() == 2 && ...)
-
-    card = sUno->play(now, index, color);
-    sSelectedIdx = -1;
-    sSoundPool->play(SoundPool::SND_PLAY);
-    if (size == 2) {
-        sSoundPool->play(SoundPool::SND_UNO);
-    } // if (size == 2)
-
-    if (card != nullptr) {
-        sLayer[0].elem = card->image;
-        switch (now) {
-        case Player::COM1:
-            width = 44 * qMin(size, 13) + 136;
-            sLayer[0].startLeft = 160 + index / 13 * 44;
-            sLayer[0].startTop = 450 - width / 2 + index % 13 * 44;
-            break; // case Player::COM1
-
-        case Player::COM2:
-            width = 44 * size + 76;
-            sLayer[0].startLeft = 800 - width / 2 + 44 * index;
-            sLayer[0].startTop = 50;
-            break; // case Player::COM2
-
-        case Player::COM3:
-            width = 44 * qMin(size, 13) + 136;
-            sLayer[0].startLeft = 1320 - index / 13 * 44;
-            sLayer[0].startTop = 450 - width / 2 + index % 13 * 44;
-            break; // case Player::COM3
-
-        default:
-            width = 44 * size + 76;
-            sLayer[0].startLeft = 800 - width / 2 + 44 * index;
-            sLayer[0].startTop = 680;
-            break; // default
-        } // switch (now)
-
-        sLayer[0].endLeft = 1118;
-        sLayer[0].endTop = 360;
-        animate(1, sLayer);
-        if (size == 1) {
-            // The player in action becomes winner when it played the
-            // final card in its hand successfully
-            if (sUno->is2vs2()) {
-                if (now == Player::YOU || now == Player::COM2) {
-                    sDiff = 2 * (sUno->getPlayer(Player::COM1)->getHandScore()
-                        + sUno->getPlayer(Player::COM3)->getHandScore());
-                    sScore = qMin(9999, 200 + sScore + sDiff);
-                    sSoundPool->play(SoundPool::SND_WIN);
-                } // if (now == Player::YOU || now == Player::COM2)
-                else {
-                    sDiff = -2 * (sUno->getPlayer(Player::YOU)->getHandScore()
-                        + sUno->getPlayer(Player::COM2)->getHandScore());
-                    sScore = qMax(-999, 200 + sScore + sDiff);
-                    sSoundPool->play(SoundPool::SND_LOSE);
-                } // else
-            } // if (sUno->is2vs2())
-            else if (now == Player::YOU) {
-                sDiff = sUno->getPlayer(Player::COM1)->getHandScore()
-                    + sUno->getPlayer(Player::COM2)->getHandScore()
-                    + sUno->getPlayer(Player::COM3)->getHandScore();
-                sScore = qMin(9999, 200 + sScore + sDiff);
-                sSoundPool->play(SoundPool::SND_WIN);
-            } // else if (now == Player::YOU)
-            else {
-                sDiff = -sUno->getPlayer(Player::YOU)->getHandScore();
-                sScore = qMax(-999, 200 + sScore + sDiff);
-                sSoundPool->play(SoundPool::SND_LOSE);
-            } // else
-
-            sAuto = false; // Force disable the AUTO switch
-            sWinner = now;
-            setStatus(STAT_GAME_OVER);
-        } // if (size == 1)
-        else {
-            // When the played card is an action card or a wild card,
-            // do the necessary things according to the game rule
-            flag = now == Player::YOU ? 0xe1 : (1 << now) | 0x80;
-            switch (card->content) {
-            case DRAW2:
-                next = sUno->switchNow();
-                if (sUno->getStackRule() != 0) {
-                    c = sUno->getDraw2StackCount();
-                    refreshScreen(i18n->act_playDraw2(now, next, c), flag);
-                    threadWait(1500);
-                    setStatus(next);
-                } // if (sUno->getStackRule() != 0)
-                else {
-                    refreshScreen(i18n->act_playDraw2(now, next, 2), flag);
-                    threadWait(1500);
-                    draw(2, /* force */ true);
-                } // else
-                break; // case DRAW2
-
-            case SKIP:
-                next = sUno->switchNow();
-                refreshScreen(i18n->act_playSkip(now, next), flag);
-                threadWait(1500);
-                setStatus(sUno->switchNow());
-                break; // case SKIP
-
-            case REV:
-                sUno->switchDirection();
-                refreshScreen(i18n->act_playRev(now));
-                threadWait(1500);
-                setStatus(sUno->switchNow());
-                break; // case REV
-
-            case WILD:
-                refreshScreen(i18n->act_playWild(now, color), flag);
-                threadWait(1500);
-                setStatus(sUno->switchNow());
-                break; // case WILD
-
-            case WILD_DRAW4:
-                if (sUno->getStackRule() == 2) {
-                    next = sUno->switchNow();
-                    c = sUno->getDraw2StackCount();
-                    refreshScreen(i18n->act_playDraw2(now, next, c), flag);
-                    threadWait(1500);
-                    setStatus(next);
-                } // if (sUno->getStackRule() == 2)
-                else {
-                    next = sUno->getNext();
-                    refreshScreen(i18n->act_playWildDraw4(now, next), flag);
-                    threadWait(1500);
-                    setStatus(STAT_DOUBT_WILD4);
-                } // else
-                break; // case WILD_DRAW4
-
-            case NUM7:
-                if (sUno->isSevenZeroRule()) {
-                    refreshScreen(i18n->act_playCard(now, card->name), flag);
-                    threadWait(750);
-                    setStatus(STAT_SEVEN_TARGET);
-                    break; // case NUM7
-                } // if (sUno->isSevenZeroRule())
-                // else fall through
-
-            case NUM0:
-                if (sUno->isSevenZeroRule()) {
-                    refreshScreen(i18n->act_playCard(now, card->name), flag);
-                    threadWait(750);
-                    cycle();
-                    break; // case NUM0
-                } // if (sUno->isSevenZeroRule())
-                // else fall through
-
-            default:
-                refreshScreen(i18n->act_playCard(now, card->name), flag);
-                threadWait(1500);
-                setStatus(sUno->switchNow());
-                break; // default
-            } // switch (card->content)
-        } // else
-    } // if (card != nullptr)
-} // play(int, Color)
-
-/**
- * The player in action draw one or more cards.
- *
- * @param count How many cards to draw.
- * @param force Pass true if the specified player is required to draw cards,
- *              i.e. previous player played a [+2] or [wild +4] to let this
- *              player draw cards. Or false if the specified player draws a
- *              card by itself in its action.
- */
-void Main::draw(int count, bool force) {
-    Card* drawn;
-    QString message;
-    int i, index, c, now, size, width, flag;
-
-    setStatus(STAT_IDLE); // block mouse click events when idle
-    c = sUno->getDraw2StackCount();
-    if (c > 0) {
-        count = c;
-        force = true;
-    } // if (c > 0)
-
-    index = -1;
-    drawn = nullptr;
-    now = sUno->getNow();
-    flag = now == Player::YOU ? 0xff : 1 << now;
-    sSelectedIdx = -1;
-    for (i = 0; i < count; ++i) {
-        index = sUno->draw(now, force);
-        if (index >= 0) {
-            drawn = sUno->getCurrPlayer()->getHandCards()[index];
-            size = sUno->getCurrPlayer()->getHandSize();
-            sLayer[0].startLeft = 338;
-            sLayer[0].startTop = 360;
-            switch (now) {
-            case Player::COM1:
-                width = 44 * qMin(size, 13) + 136;
-                sLayer[0].elem = sUno->getBackImage();
-                sLayer[0].endLeft = 20 + index / 13 * 44;
-                sLayer[0].endTop = 450 - width / 2 + index % 13 * 44;
-                message = i18n->act_drawCardCount(now, count);
-                break; // case Player::COM1
-
-            case Player::COM2:
-                width = 44 * size + 76;
-                sLayer[0].elem = sUno->getBackImage();
-                sLayer[0].endLeft = 800 - width / 2 + 44 * index;
-                sLayer[0].endTop = 20;
-                message = i18n->act_drawCardCount(now, count);
-                break; // case Player::COM2
-
-            case Player::COM3:
-                width = 44 * qMin(size, 13) + 136;
-                sLayer[0].elem = sUno->getBackImage();
-                sLayer[0].endLeft = 1460 - index / 13 * 44;
-                sLayer[0].endTop = 450 - width / 2 + index % 13 * 44;
-                message = i18n->act_drawCardCount(now, count);
-                break; // case Player::COM3
-
-            default:
-                width = 44 * size + 76;
-                sLayer[0].elem = drawn->image;
-                sLayer[0].endLeft = 800 - width / 2 + 44 * index;
-                sLayer[0].endTop = 700;
-                message = i18n->act_drawCard(now, drawn->name);
-                break; // default
-            } // switch (now)
-
-            sSoundPool->play(SoundPool::SND_DRAW);
-            animate(1, sLayer);
-            refreshScreen(message, flag);
-            threadWait(300);
-        } // if (index >= 0)
-        else {
-            message = i18n->info_cannotDraw(now, Uno::MAX_HOLD_CARDS);
-            refreshScreen(message, flag);
-            break;
-        } // else
-    } // for (i = 0; i < count; ++i)
-
-    threadWait(750);
-    if (count == 1 &&
-        drawn != nullptr &&
-        sUno->getForcePlayRule() != 0 &&
-        sUno->isLegalToPlay(drawn)) {
-        // Player drew one card by itself, the drawn card
-        // can be played immediately if it's legal to play
-        if (sAuto || now != Player::YOU) {
-            play(index, sAI->calcBestColor4NowPlayer());
-        } // if (sAuto || now != Player::YOU)
-        else if (sUno->getForcePlayRule() == 1) {
-            // Store index value as global value. This value
-            // will be used after the wild color determined.
-            sSelectedIdx = index;
-            setStatus(STAT_ASK_KEEP_PLAY);
-        } // else if (sUno->getForcePlayRule() == 1)
-        else if (!drawn->isWild()) {
-            // Force play a non-wild card
-            play(index, drawn->color);
-        } // else if (!drawn->isWild())
-        else if (sUno->getStackRule() == 2 &&
-            drawn->content == WILD_DRAW4) {
-            // Force play a Wild +4 card, but do not change the next color
-            play(index, sUno->lastColor());
-        } // else if (sUno->getStackRule() == 2 && ...)
-        else {
-            // Force play a Wild / Wild +4 card, and change the next color
-            sSelectedIdx = index;
-            setStatus(STAT_WILD_COLOR);
-        } // else
-    } // if (count == 1 && ...)
-    else {
-        refreshScreen(i18n->act_pass(now), 0x00);
-        threadWait(750);
-        setStatus(sUno->switchNow());
-    } // else
-} // draw(int, bool)
-
-/**
- * Do uniform motion for objects from somewhere to somewhere.
- * NOTE: This function does not draw the last frame. After animation,
- * you need to call refreshScreen() function to draw the last frame.
- *
- * @param layerCount Move how many objects at the same time.
- * @param layer      Describe your movements by AnimateLayer objects.
- *                   Specifying parameters in AnimateLayer object to
- *                   describe your expected movements, such as:
- *                   [elem]      Move which object.
- *                   [startLeft] The object's start X coordinate.
- *                   [startTop]  The object's start Y coordinate.
- *                   [endLeft]   The object's end X coordinate.
- *                   [endTop]    The object's end Y coordinate.
- */
-void Main::animate(int layerCount, AnimateLayer layer[]) {
-    int i, j;
-    static QRect roi;
-
-    for (i = 0; i < 10; ++i) {
-        for (j = 0; j < layerCount; ++j) {
-            AnimateLayer& l = layer[j];
-            roi.setX(l.startLeft + (l.endLeft - l.startLeft) * i / 10);
-            roi.setY(l.startTop + (l.endTop - l.startTop) * i / 10);
-            roi.setWidth(l.elem.width());
-            roi.setHeight(l.elem.height());
-            sBkPainter[j]->drawImage(roi, sScreen, roi);
-        } // for (j = 0; j < layerCount; ++j)
-
-        for (j = 0; j < layerCount; ++j) {
-            AnimateLayer& l = layer[j];
-            sPainter->drawImage(
-                /* x     */ l.startLeft + (l.endLeft - l.startLeft) * i / 10,
-                /* y     */ l.startTop + (l.endTop - l.startTop) * i / 10,
-                /* image */ l.elem
-            ); // drawImage(int, int, QImage&)
-        } // for (j = 0; j < layerCount; ++j)
-
-        update();
-        threadWait(15);
-        for (j = 0; j < layerCount; ++j) {
-            AnimateLayer& l = layer[j];
-            roi.setX(l.startLeft + (l.endLeft - l.startLeft) * i / 10);
-            roi.setY(l.startTop + (l.endTop - l.startTop) * i / 10);
-            roi.setWidth(l.elem.width());
-            roi.setHeight(l.elem.height());
-            sPainter->drawImage(roi, sBackup[j], roi);
-        } // for (j = 0; j < layerCount; ++j)
-    } // for (i = 0; i < 10; ++i)
-} // animate(int, AnimateLayer[])
-
-/**
- * Triggered on challenge chance. When a player played a [wild +4], the next
- * player can challenge its legality. Only when you have no cards that match
- * the previous played card's color, you can play a [wild +4].
- * Next player does not challenge: next player draw 4 cards;
- * Challenge success: current player draw 4 cards;
- * Challenge failure: next player draw 6 cards.
- */
-void Main::onChallenge() {
-    int now, challenger;
-    bool challengeSuccess;
-
-    setStatus(STAT_IDLE); // block mouse click events when idle
-    now = sUno->getNow();
-    challenger = sUno->getNext();
-    challengeSuccess = sUno->challenge(now);
-    refreshScreen(i18n->info_challenge(challenger, now,
-        sUno->next2lastColor()), (1 << now) | 0x40);
-    threadWait(1500);
-    if (challengeSuccess) {
-        // Challenge success, who played [wild +4] draws 4 cards
-        refreshScreen(i18n->info_challengeSuccess(now), 0x00);
-        threadWait(1500);
-        draw(4, /* force */ true);
-    } // if (challengeSuccess)
-    else {
-        // Challenge failure, challenger draws 6 cards
-        refreshScreen(i18n->info_challengeFailure(challenger), 0x00);
-        threadWait(1500);
-        sUno->switchNow();
-        draw(6, /* force */ true);
-    } // else
-} // onChallenge()
-
-/**
  * Triggered when a mouse press event occurred. Called by system.
  */
 void Main::mousePressEvent(QMouseEvent* event) {
@@ -1760,6 +1271,497 @@ void Main::mousePressEvent(QMouseEvent* event) {
 } // mousePressEvent(QMouseEvent*)
 
 /**
+ * The unique AI entry point.
+ */
+void Main::requestAI() {
+    int idxBest;
+    Color bestColor[1];
+
+    setStatus(STAT_IDLE); // block mouse click events when idle
+    idxBest = sUno->getDifficulty() == Uno::LV_EASY
+        ? sAI->easyAI_bestCardIndex4NowPlayer(bestColor)
+        : sUno->isSevenZeroRule()
+        ? sAI->sevenZeroAI_bestCardIndex4NowPlayer(bestColor)
+        : sUno->is2vs2()
+        ? sAI->teamAI_bestCardIndex4NowPlayer(bestColor)
+        : sAI->hardAI_bestCardIndex4NowPlayer(bestColor);
+    if (idxBest >= 0) {
+        // Found an appropriate card to play
+        play(idxBest, bestColor[0]);
+    } // if (idxBest >= 0)
+    else {
+        // No appropriate cards to play, or no card to play
+        draw();
+    } // else
+} // requestAI()
+
+/**
+ * The player in action draw one or more cards.
+ *
+ * @param count How many cards to draw.
+ * @param force Pass true if the specified player is required to draw cards,
+ *              i.e. previous player played a [+2] or [wild +4] to let this
+ *              player draw cards. Or false if the specified player draws a
+ *              card by itself in its action.
+ */
+void Main::draw(int count, bool force) {
+    Card* drawn;
+    QString message;
+    int i, index, c, now, size, width, flag;
+
+    setStatus(STAT_IDLE); // block mouse click events when idle
+    c = sUno->getDraw2StackCount();
+    if (c > 0) {
+        count = c;
+        force = true;
+    } // if (c > 0)
+
+    index = -1;
+    drawn = nullptr;
+    now = sUno->getNow();
+    flag = now == Player::YOU ? 0xff : 1 << now;
+    sSelectedIdx = -1;
+    for (i = 0; i < count; ++i) {
+        index = sUno->draw(now, force);
+        if (index >= 0) {
+            drawn = sUno->getCurrPlayer()->getHandCards()[index];
+            size = sUno->getCurrPlayer()->getHandSize();
+            sLayer[0].startLeft = 338;
+            sLayer[0].startTop = 360;
+            switch (now) {
+            case Player::COM1:
+                width = 44 * qMin(size, 13) + 136;
+                sLayer[0].elem = sUno->getBackImage();
+                sLayer[0].endLeft = 20 + index / 13 * 44;
+                sLayer[0].endTop = 450 - width / 2 + index % 13 * 44;
+                message = i18n->act_drawCardCount(now, count);
+                break; // case Player::COM1
+
+            case Player::COM2:
+                width = 44 * size + 76;
+                sLayer[0].elem = sUno->getBackImage();
+                sLayer[0].endLeft = 800 - width / 2 + 44 * index;
+                sLayer[0].endTop = 20;
+                message = i18n->act_drawCardCount(now, count);
+                break; // case Player::COM2
+
+            case Player::COM3:
+                width = 44 * qMin(size, 13) + 136;
+                sLayer[0].elem = sUno->getBackImage();
+                sLayer[0].endLeft = 1460 - index / 13 * 44;
+                sLayer[0].endTop = 450 - width / 2 + index % 13 * 44;
+                message = i18n->act_drawCardCount(now, count);
+                break; // case Player::COM3
+
+            default:
+                width = 44 * size + 76;
+                sLayer[0].elem = drawn->image;
+                sLayer[0].endLeft = 800 - width / 2 + 44 * index;
+                sLayer[0].endTop = 700;
+                message = i18n->act_drawCard(now, drawn->name);
+                break; // default
+            } // switch (now)
+
+            sSoundPool->play(SoundPool::SND_DRAW);
+            animate(1, sLayer);
+            refreshScreen(message, flag);
+            threadWait(300);
+        } // if (index >= 0)
+        else {
+            message = i18n->info_cannotDraw(now, Uno::MAX_HOLD_CARDS);
+            refreshScreen(message, flag);
+            break;
+        } // else
+    } // for (i = 0; i < count; ++i)
+
+    threadWait(750);
+    if (count == 1 &&
+        drawn != nullptr &&
+        sUno->getForcePlayRule() != 0 &&
+        sUno->isLegalToPlay(drawn)) {
+        // Player drew one card by itself, the drawn card
+        // can be played immediately if it's legal to play
+        if (sAuto || now != Player::YOU) {
+            play(index, sAI->calcBestColor4NowPlayer());
+        } // if (sAuto || now != Player::YOU)
+        else if (sUno->getForcePlayRule() == 1) {
+            // Store index value as global value. This value
+            // will be used after the wild color determined.
+            sSelectedIdx = index;
+            setStatus(STAT_ASK_KEEP_PLAY);
+        } // else if (sUno->getForcePlayRule() == 1)
+        else if (!drawn->isWild()) {
+            // Force play a non-wild card
+            play(index, drawn->color);
+        } // else if (!drawn->isWild())
+        else if (sUno->getStackRule() == 2 &&
+            drawn->content == WILD_DRAW4) {
+            // Force play a Wild +4 card, but do not change the next color
+            play(index, sUno->lastColor());
+        } // else if (sUno->getStackRule() == 2 && ...)
+        else {
+            // Force play a Wild / Wild +4 card, and change the next color
+            sSelectedIdx = index;
+            setStatus(STAT_WILD_COLOR);
+        } // else
+    } // if (count == 1 && ...)
+    else {
+        refreshScreen(i18n->act_pass(now), 0x00);
+        threadWait(750);
+        setStatus(sUno->switchNow());
+    } // else
+} // draw(int, bool)
+
+/**
+ * The player in action play a card.
+ *
+ * @param index Play which card. Pass the corresponding card's index of the
+ *              player's hand cards.
+ * @param color Optional, available when the card to play is a wild card.
+ *              Pass the specified following legal color.
+ */
+void Main::play(int index, Color color) {
+    Card* card;
+    int c, now, size, width, next, flag;
+
+    setStatus(STAT_IDLE); // block mouse click events when idle
+    now = sUno->getNow();
+    size = sUno->getCurrPlayer()->getHandSize();
+    if (sUno->getStackRule() == 2 && sUno->getCurrPlayer()
+        ->getHandCards()[index]->content == WILD_DRAW4) {
+        color = sUno->lastColor();
+    } // if (sUno->getStackRule() == 2 && ...)
+
+    card = sUno->play(now, index, color);
+    sSelectedIdx = -1;
+    sSoundPool->play(SoundPool::SND_PLAY);
+    if (size == 2) {
+        sSoundPool->play(SoundPool::SND_UNO);
+    } // if (size == 2)
+
+    if (card != nullptr) {
+        sLayer[0].elem = card->image;
+        switch (now) {
+        case Player::COM1:
+            width = 44 * qMin(size, 13) + 136;
+            sLayer[0].startLeft = 160 + index / 13 * 44;
+            sLayer[0].startTop = 450 - width / 2 + index % 13 * 44;
+            break; // case Player::COM1
+
+        case Player::COM2:
+            width = 44 * size + 76;
+            sLayer[0].startLeft = 800 - width / 2 + 44 * index;
+            sLayer[0].startTop = 50;
+            break; // case Player::COM2
+
+        case Player::COM3:
+            width = 44 * qMin(size, 13) + 136;
+            sLayer[0].startLeft = 1320 - index / 13 * 44;
+            sLayer[0].startTop = 450 - width / 2 + index % 13 * 44;
+            break; // case Player::COM3
+
+        default:
+            width = 44 * size + 76;
+            sLayer[0].startLeft = 800 - width / 2 + 44 * index;
+            sLayer[0].startTop = 680;
+            break; // default
+        } // switch (now)
+
+        sLayer[0].endLeft = 1118;
+        sLayer[0].endTop = 360;
+        animate(1, sLayer);
+        if (size == 1) {
+            // The player in action becomes winner when it played the
+            // final card in its hand successfully
+            if (sUno->is2vs2()) {
+                if (now == Player::YOU || now == Player::COM2) {
+                    sDiff = 2 * (sUno->getPlayer(Player::COM1)->getHandScore()
+                        + sUno->getPlayer(Player::COM3)->getHandScore());
+                    sScore = qMin(9999, 200 + sScore + sDiff);
+                    sSoundPool->play(SoundPool::SND_WIN);
+                } // if (now == Player::YOU || now == Player::COM2)
+                else {
+                    sDiff = -2 * (sUno->getPlayer(Player::YOU)->getHandScore()
+                        + sUno->getPlayer(Player::COM2)->getHandScore());
+                    sScore = qMax(-999, 200 + sScore + sDiff);
+                    sSoundPool->play(SoundPool::SND_LOSE);
+                } // else
+            } // if (sUno->is2vs2())
+            else if (now == Player::YOU) {
+                sDiff = sUno->getPlayer(Player::COM1)->getHandScore()
+                    + sUno->getPlayer(Player::COM2)->getHandScore()
+                    + sUno->getPlayer(Player::COM3)->getHandScore();
+                sScore = qMin(9999, 200 + sScore + sDiff);
+                sSoundPool->play(SoundPool::SND_WIN);
+            } // else if (now == Player::YOU)
+            else {
+                sDiff = -sUno->getPlayer(Player::YOU)->getHandScore();
+                sScore = qMax(-999, 200 + sScore + sDiff);
+                sSoundPool->play(SoundPool::SND_LOSE);
+            } // else
+
+            sAuto = false; // Force disable the AUTO switch
+            sWinner = now;
+            setStatus(STAT_GAME_OVER);
+        } // if (size == 1)
+        else {
+            // When the played card is an action card or a wild card,
+            // do the necessary things according to the game rule
+            flag = now == Player::YOU ? 0xe1 : (1 << now) | 0x80;
+            switch (card->content) {
+            case DRAW2:
+                next = sUno->switchNow();
+                if (sUno->getStackRule() != 0) {
+                    c = sUno->getDraw2StackCount();
+                    refreshScreen(i18n->act_playDraw2(now, next, c), flag);
+                    threadWait(1500);
+                    setStatus(next);
+                } // if (sUno->getStackRule() != 0)
+                else {
+                    refreshScreen(i18n->act_playDraw2(now, next, 2), flag);
+                    threadWait(1500);
+                    draw(2, /* force */ true);
+                } // else
+                break; // case DRAW2
+
+            case SKIP:
+                next = sUno->switchNow();
+                refreshScreen(i18n->act_playSkip(now, next), flag);
+                threadWait(1500);
+                setStatus(sUno->switchNow());
+                break; // case SKIP
+
+            case REV:
+                sUno->switchDirection();
+                refreshScreen(i18n->act_playRev(now));
+                threadWait(1500);
+                setStatus(sUno->switchNow());
+                break; // case REV
+
+            case WILD:
+                refreshScreen(i18n->act_playWild(now, color), flag);
+                threadWait(1500);
+                setStatus(sUno->switchNow());
+                break; // case WILD
+
+            case WILD_DRAW4:
+                if (sUno->getStackRule() == 2) {
+                    next = sUno->switchNow();
+                    c = sUno->getDraw2StackCount();
+                    refreshScreen(i18n->act_playDraw2(now, next, c), flag);
+                    threadWait(1500);
+                    setStatus(next);
+                } // if (sUno->getStackRule() == 2)
+                else {
+                    next = sUno->getNext();
+                    refreshScreen(i18n->act_playWildDraw4(now, next), flag);
+                    threadWait(1500);
+                    setStatus(STAT_DOUBT_WILD4);
+                } // else
+                break; // case WILD_DRAW4
+
+            case NUM7:
+                if (sUno->isSevenZeroRule()) {
+                    refreshScreen(i18n->act_playCard(now, card->name), flag);
+                    threadWait(750);
+                    setStatus(STAT_SEVEN_TARGET);
+                    break; // case NUM7
+                } // if (sUno->isSevenZeroRule())
+                // else fall through
+
+            case NUM0:
+                if (sUno->isSevenZeroRule()) {
+                    refreshScreen(i18n->act_playCard(now, card->name), flag);
+                    threadWait(750);
+                    cycle();
+                    break; // case NUM0
+                } // if (sUno->isSevenZeroRule())
+                // else fall through
+
+            default:
+                refreshScreen(i18n->act_playCard(now, card->name), flag);
+                threadWait(1500);
+                setStatus(sUno->switchNow());
+                break; // default
+            } // switch (card->content)
+        } // else
+    } // if (card != nullptr)
+} // play(int, Color)
+
+/**
+ * Triggered on challenge chance. When a player played a [wild +4], the next
+ * player can challenge its legality. Only when you have no cards that match
+ * the previous played card's color, you can play a [wild +4].
+ * Next player does not challenge: next player draw 4 cards;
+ * Challenge success: current player draw 4 cards;
+ * Challenge failure: next player draw 6 cards.
+ */
+void Main::onChallenge() {
+    int now, challenger;
+    bool challengeSuccess;
+
+    setStatus(STAT_IDLE); // block mouse click events when idle
+    now = sUno->getNow();
+    challenger = sUno->getNext();
+    challengeSuccess = sUno->challenge(now);
+    refreshScreen(i18n->info_challenge(challenger, now,
+        sUno->next2lastColor()), (1 << now) | 0x40);
+    threadWait(1500);
+    if (challengeSuccess) {
+        // Challenge success, who played [wild +4] draws 4 cards
+        refreshScreen(i18n->info_challengeSuccess(now), 0x00);
+        threadWait(1500);
+        draw(4, /* force */ true);
+    } // if (challengeSuccess)
+    else {
+        // Challenge failure, challenger draws 6 cards
+        refreshScreen(i18n->info_challengeFailure(challenger), 0x00);
+        threadWait(1500);
+        sUno->switchNow();
+        draw(6, /* force */ true);
+    } // else
+} // onChallenge()
+
+/**
+ * The player in action swap hand cards with another player.
+ *
+ * @param whom Swap with whom. Must be one of the following:
+ *             Player::YOU, Player::COM1, Player::COM2, Player::COM3
+ */
+void Main::swapWith(int whom) {
+    static int x[] = { 740, 160, 740, 1320 };
+    static int y[] = { 670, 360, 50, 360 };
+    int curr, flag;
+
+    setStatus(STAT_IDLE);
+    curr = sUno->getNow();
+    sHideFlag = (1 << curr) | (1 << whom);
+    flag = (1 << curr) | (1 << whom) | (curr == Player::YOU ? 0x40 : 0x00);
+    refreshScreen(i18n->info_7_swap(curr, whom), flag);
+    sLayer[0].elem = sLayer[1].elem = sUno->getBackImage();
+    sLayer[0].startLeft = x[curr];
+    sLayer[0].startTop = y[curr];
+    sLayer[0].endLeft = x[whom];
+    sLayer[0].endTop = y[whom];
+    sLayer[1].startLeft = x[whom];
+    sLayer[1].startTop = y[whom];
+    sLayer[1].endLeft = x[curr];
+    sLayer[1].endTop = y[curr];
+    animate(2, sLayer);
+    sHideFlag = 0x00;
+    sUno->swap(curr, whom);
+    refreshScreen(i18n->info_7_swap(curr, whom), flag & ~0x40);
+    threadWait(1500);
+    setStatus(sUno->switchNow());
+} // swapWith(int)
+
+/**
+ * In 7-0 rule, when a zero card is put down, everyone need to pass
+ * the hand cards to the next player.
+ */
+void Main::cycle() {
+    static int x[] = { 740, 160, 740, 1320 };
+    static int y[] = { 670, 360, 50, 360 };
+    int curr, next, oppo, prev;
+
+    setStatus(STAT_IDLE);
+    sHideFlag = 0x0f;
+    refreshScreen(i18n->info_0_rotate(), 0x0f);
+    curr = sUno->getNow();
+    next = sUno->getNext();
+    oppo = sUno->getOppo();
+    prev = sUno->getPrev();
+    sLayer[0].elem = sUno->getBackImage();
+    sLayer[0].startLeft = x[curr];
+    sLayer[0].startTop = y[curr];
+    sLayer[0].endLeft = x[next];
+    sLayer[0].endTop = y[next];
+    sLayer[1].elem = sUno->getBackImage();
+    sLayer[1].startLeft = x[next];
+    sLayer[1].startTop = y[next];
+    sLayer[1].endLeft = x[oppo];
+    sLayer[1].endTop = y[oppo];
+    if (sUno->getPlayers() == 3) {
+        sLayer[2].elem = sUno->getBackImage();
+        sLayer[2].startLeft = x[oppo];
+        sLayer[2].startTop = y[oppo];
+        sLayer[2].endLeft = x[curr];
+        sLayer[2].endTop = y[curr];
+        animate(3, sLayer);
+    } // if (sUno->getPlayers() == 3)
+    else {
+        sLayer[2].elem = sUno->getBackImage();
+        sLayer[2].startLeft = x[oppo];
+        sLayer[2].startTop = y[oppo];
+        sLayer[2].endLeft = x[prev];
+        sLayer[2].endTop = y[prev];
+        sLayer[3].elem = sUno->getBackImage();
+        sLayer[3].startLeft = x[prev];
+        sLayer[3].startTop = y[prev];
+        sLayer[3].endLeft = x[curr];
+        sLayer[3].endTop = y[curr];
+        animate(4, sLayer);
+    } // else
+
+    sHideFlag = 0x00;
+    sUno->cycle();
+    refreshScreen(i18n->info_0_rotate(), 0x0f);
+    threadWait(1500);
+    setStatus(sUno->switchNow());
+} // cycle()
+
+/**
+ * Do uniform motion for objects from somewhere to somewhere.
+ * NOTE: This function does not draw the last frame. After animation,
+ * you need to call refreshScreen() function to draw the last frame.
+ *
+ * @param layerCount Move how many objects at the same time.
+ * @param layer      Describe your movements by AnimateLayer objects.
+ *                   Specifying parameters in AnimateLayer object to
+ *                   describe your expected movements, such as:
+ *                   [elem]      Move which object.
+ *                   [startLeft] The object's start X coordinate.
+ *                   [startTop]  The object's start Y coordinate.
+ *                   [endLeft]   The object's end X coordinate.
+ *                   [endTop]    The object's end Y coordinate.
+ */
+void Main::animate(int layerCount, AnimateLayer layer[]) {
+    int i, j;
+    static QRect roi;
+
+    for (i = 0; i < 10; ++i) {
+        for (j = 0; j < layerCount; ++j) {
+            AnimateLayer& l = layer[j];
+            roi.setX(l.startLeft + (l.endLeft - l.startLeft) * i / 10);
+            roi.setY(l.startTop + (l.endTop - l.startTop) * i / 10);
+            roi.setWidth(l.elem.width());
+            roi.setHeight(l.elem.height());
+            sBkPainter[j]->drawImage(roi, sScreen, roi);
+        } // for (j = 0; j < layerCount; ++j)
+
+        for (j = 0; j < layerCount; ++j) {
+            AnimateLayer& l = layer[j];
+            sPainter->drawImage(
+                /* x     */ l.startLeft + (l.endLeft - l.startLeft) * i / 10,
+                /* y     */ l.startTop + (l.endTop - l.startTop) * i / 10,
+                /* image */ l.elem
+            ); // drawImage(int, int, QImage&)
+        } // for (j = 0; j < layerCount; ++j)
+
+        update();
+        threadWait(15);
+        for (j = 0; j < layerCount; ++j) {
+            AnimateLayer& l = layer[j];
+            roi.setX(l.startLeft + (l.endLeft - l.startLeft) * i / 10);
+            roi.setY(l.startTop + (l.endTop - l.startTop) * i / 10);
+            roi.setWidth(l.elem.width());
+            roi.setHeight(l.elem.height());
+            sPainter->drawImage(roi, sBackup[j], roi);
+        } // for (j = 0; j < layerCount; ++j)
+    } // for (i = 0; i < 10; ++i)
+} // animate(int, AnimateLayer[])
+
+/**
  * Load a existed replay file.
  *
  * @param replayName Provide the file name of your replay.
@@ -1943,14 +1945,12 @@ void Main::loadReplay(const QString& replayName) {
             } // else
         } // while (true)
 
-        if ((sUno->is2vs2() && sUno->getHandCardsOf(Player::COM2).empty()) ||
-            sUno->getHandCardsOf(Player::YOU).empty()) {
-            sSoundPool->play(SoundPool::SND_WIN);
-        } // if ((sUno->is2vs2() && ...)
-        else {
-            sSoundPool->play(SoundPool::SND_LOSE);
-        } // else
-
+        params[0] = (sUno->is2vs2()
+            && sUno->getHandCardsOf(Player::COM2).empty())
+            || sUno->getHandCardsOf(Player::YOU).empty()
+            ? SoundPool::SND_WIN
+            : SoundPool::SND_LOSE;
+        sSoundPool->play(params[0]);
         threadWait(3000);
         setStatus(STAT_WELCOME);
     } // if (sUno->loadReplay(replayName))

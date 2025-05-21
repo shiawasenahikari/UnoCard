@@ -10,7 +10,6 @@
 #ifndef __MAIN_H_494649FDFA62B3C015120BCB9BE17613__
 #define __MAIN_H_494649FDFA62B3C015120BCB9BE17613__
 
-#include <QFont>
 #include <QImage>
 #include <QString>
 #include <QWidget>
@@ -56,7 +55,6 @@ private:
     bool sAuto;
     int sStatus;
     int sWinner;
-    QFont sFont;
     Ui::Main* ui;
     int sHideFlag;
     int sSpeed = 1;
