@@ -29,17 +29,17 @@ public:
     virtual String ask_color() = 0;
     virtual String ask_keep_play() = 0;
     virtual String ask_target() = 0;
-    virtual String btn_2vs2(bool) = 0;
-    virtual String btn_3p(bool) = 0;
-    virtual String btn_4p(bool) = 0;
-    virtual String btn_7_0(bool) = 0;
+    [[deprecated]] virtual String btn_2vs2(bool) = 0;
+    [[deprecated]] virtual String btn_3p(bool) = 0;
+    [[deprecated]] virtual String btn_4p(bool) = 0;
+    [[deprecated]] virtual String btn_7_0(bool) = 0;
     virtual String btn_ask(bool) = 0;
     virtual String btn_auto() = 0;
-    virtual String btn_d2(bool) = 0;
-    virtual String btn_d4(bool) = 0;
+    [[deprecated]] virtual String btn_d2(bool) = 0;
+    [[deprecated]] virtual String btn_d4(bool) = 0;
     virtual String btn_keep(bool) = 0;
     virtual String btn_load() = 0;
-    virtual String btn_none(bool) = 0;
+    [[deprecated]] virtual String btn_none(bool) = 0;
     virtual String btn_play(bool) = 0;
     virtual String btn_save() = 0;
     virtual String btn_settings(bool) = 0;
@@ -61,17 +61,23 @@ public:
     virtual String info_yourTurn() = 0;
     virtual String info_yourTurn_stackDraw2(int, int = 1) = 0;
     virtual String label_bgm() = 0;
-    virtual String label_draw2Stack() = 0;
+    [[deprecated]] virtual String label_draw2Stack() = 0;
     virtual String label_forcePlay() = 0;
-    virtual String label_gameMode() = 0;
-    virtual String label_initialCards() = 0;
+    [[deprecated]] virtual String label_gameMode() = 0;
+    virtual String label_gameMode(int) = 0;
+    [[deprecated]] virtual String label_initialCards() = 0;
+    virtual String label_initialCards(int) = 0;
     virtual String label_lacks(int, int, int, int) = 0;
-    virtual String label_level() = 0;
+    virtual String label_leftArrow() = 0;
+    [[deprecated]] virtual String label_level() = 0;
+    virtual String label_level(int) = 0;
     virtual String label_no() = 0;
     virtual String label_remain_used(int, int) = 0;
+    virtual String label_rightArrow() = 0;
     virtual String label_score() = 0;
     virtual String label_snd() = 0;
     virtual String label_speed() = 0;
+    virtual String label_stackRule(int) = 0;
     virtual String label_yes() = 0;
 }; // I18N class
 
@@ -165,18 +171,22 @@ public:
         return "^ Specify the target to swap hand cards with";
     } // ask_target()
 
+    [[deprecated]]
     inline String btn_2vs2(bool active) {
         return active ? "[G]<2vs2>" : "<2vs2>";
     } // btn_2vs2(bool)
 
+    [[deprecated]]
     inline String btn_3p(bool active) {
         return active ? "[R]<3P>" : "<3P>";
     } // btn_3p(bool)
 
+    [[deprecated]]
     inline String btn_4p(bool active) {
         return active ? "[Y]<4P>" : "<4P>";
     } // btn_4p(bool)
 
+    [[deprecated]]
     inline String btn_7_0(bool active) {
         return active ? "[B]<7-0>" : "<7-0>";
     } // btn_7_0(bool)
@@ -189,10 +199,12 @@ public:
         return "<AUTO>";
     } // btn_auto()
 
+    [[deprecated]]
     inline String btn_d2(bool active) {
         return active ? "[Y]<+2>" : "<+2>";
     } // btn_d2(bool)
 
+    [[deprecated]]
     inline String btn_d4(bool active) {
         return active ? "[G]<+2+4>" : "<+2+4>";
     } // btn_d4(bool)
@@ -205,6 +217,7 @@ public:
         return "[G]<LOAD>";
     } // btn_load()
 
+    [[deprecated]]
     inline String btn_none(bool active) {
         return active ? "[R]<NONE>" : "<NONE>";
     } // btn_none(bool)
@@ -313,6 +326,7 @@ public:
         return "BGM";
     } // label_bgm()
 
+    [[deprecated]]
     inline String label_draw2Stack() {
         return "Stackable cards:";
     } // label_draw2Stack()
@@ -321,13 +335,30 @@ public:
         return "When you draw a playable card:";
     } // label_forcePlay()
 
+    [[deprecated]]
     inline String label_gameMode() {
         return "How to play:";
     } // label_gameMode()
 
+    inline String label_gameMode(int i) {
+        return i == 1
+            ? "How to play:  7-0"
+            : i == 2
+            ? "How to play: 2vs2"
+            : i == 3
+            ? "How to play:   3P"
+            : "How to play:   4P";
+    } // label_gameMode(int)
+
+    [[deprecated]]
     inline String label_initialCards() {
         return "Initial cards:";
     } // label_initialCards()
+
+    inline String label_initialCards(int i) {
+        sprintf(t, "Initial cards: %02d", i);
+        return t;
+    } // label_initialCards(int)
 
     inline String label_lacks(int n, int e, int w, int s) {
         String mark = "WRBGY";
@@ -339,9 +370,18 @@ public:
         return t;
     } // label_lacks(int, int, int, int)
 
+    inline String label_leftArrow() {
+        return "[Y]＜－";
+    } // label_leftArrow()
+
+    [[deprecated]]
     inline String label_level() {
         return "LEVEL";
     } // label_level()
+
+    inline String label_level(int i) {
+        return i == 0 ? "Level: EASY" : "Level: HARD";
+    } // label_level(int)
 
     inline String label_no() {
         return "NO";
@@ -351,6 +391,10 @@ public:
         sprintf(t, "[Y]R%d[W]/[G]U%d", i1, i2);
         return t;
     } // label_remain_used(int, int)
+
+    inline String label_rightArrow() {
+        return "[Y]＋＞";
+    } // label_rightArrow()
 
     inline String label_score() {
         return "SCORE";
@@ -363,6 +407,14 @@ public:
     inline String label_speed() {
         return "SPEED";
     } // label_speed()
+
+    inline String label_stackRule(int i) {
+        return i == 0
+            ? "Stackable cards: NONE"
+            : i == 1
+            ? "Stackable cards:   +2"
+            : "Stackable cards: +2+4";
+    } // label_stackRule(int)
 
     inline String label_yes() {
         return "YES";
@@ -455,18 +507,22 @@ public:
         return "^ 指定换牌目标";
     } // ask_target()
 
+    [[deprecated]]
     inline String btn_2vs2(bool active) {
         return active ? "[G]<2vs2>" : "<2vs2>";
     } // btn_2vs2(bool)
 
+    [[deprecated]]
     inline String btn_3p(bool active) {
         return active ? "[R]<3P>" : "<3P>";
     } // btn_3p(bool)
 
+    [[deprecated]]
     inline String btn_4p(bool active) {
         return active ? "[Y]<4P>" : "<4P>";
     } // btn_4p(bool)
 
+    [[deprecated]]
     inline String btn_7_0(bool active) {
         return active ? "[B]<7-0>" : "<7-0>";
     } // btn_7_0(bool)
@@ -479,10 +535,12 @@ public:
         return "<托管>";
     } // btn_auto()
 
+    [[deprecated]]
     inline String btn_d2(bool active) {
         return active ? "[Y]<+2>" : "<+2>";
     } // btn_d2(bool)
 
+    [[deprecated]]
     inline String btn_d4(bool active) {
         return active ? "[G]<+2+4>" : "<+2+4>";
     } // btn_d4(bool)
@@ -495,6 +553,7 @@ public:
         return "[G]<读取>";
     } // btn_load()
 
+    [[deprecated]]
     inline String btn_none(bool active) {
         return active ? "[R]<无效>" : "<无效>";
     } // btn_none(bool)
@@ -599,6 +658,7 @@ public:
         return "音乐";
     } // label_bgm()
 
+    [[deprecated]]
     inline String label_draw2Stack() {
         return "叠牌:";
     } // label_draw2Stack()
@@ -607,13 +667,30 @@ public:
         return "摸到可出的牌时, 是否打出:";
     } // label_forcePlay()
 
+    [[deprecated]]
     inline String label_gameMode() {
         return "玩法:";
     } // label_gameMode()
 
+    inline String label_gameMode(int i) {
+        return i == 1
+            ? "玩法:  7-0"
+            : i == 2
+            ? "玩法: 2vs2"
+            : i == 3
+            ? "玩法:   3P"
+            : "玩法:   4P";
+    } // label_gameMode(int)
+
+    [[deprecated]]
     inline String label_initialCards() {
         return "发牌张数:";
     } // label_initialCards()
+
+    inline String label_initialCards(int i) {
+        sprintf(t, "发牌张数: %02d", i);
+        return t;
+    } // label_initialCards(int)
 
     inline String label_lacks(int n, int e, int w, int s) {
         String mark = "WRBGY";
@@ -625,9 +702,18 @@ public:
         return t;
     } // label_lacks(int, int, int, int)
 
+    inline String label_leftArrow() {
+        return "[Y]＜－";
+    } // label_leftArrow()
+
+    [[deprecated]]
     inline String label_level() {
         return "难度";
     } // label_level()
+
+    inline String label_level(int i) {
+        return i == 0 ? "难度: 简单" : "难度: 困难";
+    } // label_level(int)
 
     inline String label_no() {
         return "否";
@@ -637,6 +723,10 @@ public:
         sprintf(t, "[Y]剩%d[G]用%d", i1, i2);
         return t;
     } // label_remain_used(int, int)
+
+    inline String label_rightArrow() {
+        return "[Y]＋＞";
+    } // label_rightArrow()
 
     inline String label_score() {
         return "分数";
@@ -649,6 +739,14 @@ public:
     inline String label_speed() {
         return "速度";
     } // label_speed()
+
+    inline String label_stackRule(int i) {
+        return i == 0
+            ? "叠牌: 无效"
+            : i == 1
+            ? "叠牌: 仅+2"
+            : "叠牌: +2+4";
+    } // label_stackRule(int)
 
     inline String label_yes() {
         return "是";
@@ -741,18 +839,22 @@ public:
         return "^ 手札を交換する相手を指定してください";
     } // ask_target()
 
+    [[deprecated]]
     inline String btn_2vs2(bool active) {
         return active ? "[G]<2vs2>" : "<2vs2>";
     } // btn_2vs2(bool)
 
+    [[deprecated]]
     inline String btn_3p(bool active) {
         return active ? "[R]<3P>" : "<3P>";
     } // btn_3p(bool)
 
+    [[deprecated]]
     inline String btn_4p(bool active) {
         return active ? "[Y]<4P>" : "<4P>";
     } // btn_4p(bool)
 
+    [[deprecated]]
     inline String btn_7_0(bool active) {
         return active ? "[B]<7-0>" : "<7-0>";
     } // btn_7_0(bool)
@@ -765,10 +867,12 @@ public:
         return "<オート>";
     } // btn_auto()
 
+    [[deprecated]]
     inline String btn_d2(bool active) {
         return active ? "[Y]<+2>" : "<+2>";
     } // btn_d2(bool)
 
+    [[deprecated]]
     inline String btn_d4(bool active) {
         return active ? "[G]<+2+4>" : "<+2+4>";
     } // btn_d4(bool)
@@ -781,6 +885,7 @@ public:
         return "[G]<読取>";
     } // btn_load()
 
+    [[deprecated]]
     inline String btn_none(bool active) {
         return active ? "[R]<無効>" : "<無効>";
     } // btn_none(bool)
@@ -885,6 +990,7 @@ public:
         return "音楽";
     } // label_bgm()
 
+    [[deprecated]]
     inline String label_draw2Stack() {
         return "積み重ね可能の手札:";
     } // label_draw2Stack()
@@ -893,13 +999,30 @@ public:
         return "出せる手札を引いた時:";
     } // label_forcePlay()
 
+    [[deprecated]]
     inline String label_gameMode() {
         return "遊び方:";
     } // label_gameMode()
 
+    inline String label_gameMode(int i) {
+        return i == 1
+            ? "遊び方:  7-0"
+            : i == 2
+            ? "遊び方: 2vs2"
+            : i == 3
+            ? "遊び方:   3P"
+            : "遊び方:   4P";
+    } // label_gameMode(int)
+
+    [[deprecated]]
     inline String label_initialCards() {
         return "最初の手札数:";
     } // label_initialCards()
+
+    inline String label_initialCards(int i) {
+        sprintf(t, "最初の手札数: %02d", i);
+        return t;
+    } // label_initialCards(int)
 
     inline String label_lacks(int n, int e, int w, int s) {
         String mark = "WRBGY";
@@ -911,9 +1034,18 @@ public:
         return t;
     } // label_lacks(int, int, int, int)
 
+    inline String label_leftArrow() {
+        return "[Y]＜－";
+    } // label_leftArrow()
+
+    [[deprecated]]
     inline String label_level() {
         return "難易度";
     } // label_level()
+
+    inline String label_level(int i) {
+        return i == 0 ? "難易度: 簡　単" : "難易度：難しい";
+    } // label_level(int)
 
     inline String label_no() {
         return "いいえ";
@@ -923,6 +1055,10 @@ public:
         sprintf(t, "[Y]残%d[G]使%d", i1, i2);
         return t;
     } // label_remain_used(int, int)
+
+    inline String label_rightArrow() {
+        return "[Y]＋＞";
+    } // label_rightArrow()
 
     inline String label_score() {
         return "スコア";
@@ -935,6 +1071,14 @@ public:
     inline String label_speed() {
         return "速さ";
     } // label_speed()
+
+    inline String label_stackRule(int i) {
+        return i == 0
+            ? "積み重ね可能の手札:なし"
+            : i == 1
+            ? "積み重ね可能の手札:  +2"
+            : "積み重ね可能の手札:+2+4";
+    } // label_stackRule(int)
 
     inline String label_yes() {
         return "はい";

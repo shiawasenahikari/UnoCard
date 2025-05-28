@@ -42,26 +42,33 @@ public interface I18N {
 
     String ask_target();
 
+    @Deprecated
     String btn_2vs2(boolean active);
 
+    @Deprecated
     String btn_3p(boolean active);
 
+    @Deprecated
     String btn_4p(boolean active);
 
+    @Deprecated
     String btn_7_0(boolean active);
 
     String btn_ask(boolean active);
 
     String btn_auto();
 
+    @Deprecated
     String btn_d2(boolean active);
 
+    @Deprecated
     String btn_d4(boolean active);
 
     String btn_keep(boolean active);
 
     String btn_load();
 
+    @Deprecated
     String btn_none(boolean active);
 
     String btn_play(boolean active);
@@ -110,27 +117,43 @@ public interface I18N {
 
     String label_bgm();
 
+    @Deprecated
     String label_draw2Stack();
 
     String label_forcePlay();
 
+    @Deprecated
     String label_gameMode();
 
+    String label_gameMode(int i);
+
+    @Deprecated
     String label_initialCards();
+
+    String label_initialCards(int i);
 
     String label_lacks(int n, int e, int w, int s);
 
+    String label_leftArrow();
+
+    @Deprecated
     String label_level();
+
+    String label_level(int i);
 
     String label_no();
 
     String label_remain_used(int i1, int i2);
+
+    String label_rightArrow();
 
     String label_score();
 
     String label_snd();
 
     String label_speed();
+
+    String label_stackRule(int i);
 
     String label_yes();
 } // I18N Interface
@@ -219,21 +242,25 @@ class I18N_en_US implements I18N {
     } // ask_target()
 
     @Override
+    @Deprecated
     public String btn_2vs2(boolean active) {
         return active ? "[G]<2vs2>" : "<2vs2>";
     } // btn_2vs2(boolean)
 
     @Override
+    @Deprecated
     public String btn_3p(boolean active) {
         return active ? "[R]<3P>" : "<3P>";
     } // btn_3p(boolean)
 
     @Override
+    @Deprecated
     public String btn_4p(boolean active) {
         return active ? "[Y]<4P>" : "<4P>";
     } // btn_4p(boolean)
 
     @Override
+    @Deprecated
     public String btn_7_0(boolean active) {
         return active ? "[B]<7-0>" : "<7-0>";
     } // btn_7_0(boolean)
@@ -249,11 +276,13 @@ class I18N_en_US implements I18N {
     } // btn_auto()
 
     @Override
+    @Deprecated
     public String btn_d2(boolean active) {
         return active ? "[Y]<+2>" : "<+2>";
     } // btn_d2(boolean)
 
     @Override
+    @Deprecated
     public String btn_d4(boolean active) {
         return active ? "[G]<+2+4>" : "<+2+4>";
     } // btn_d4(boolean)
@@ -269,6 +298,7 @@ class I18N_en_US implements I18N {
     } // btn_load()
 
     @Override
+    @Deprecated
     public String btn_none(boolean active) {
         return active ? "[R]<NONE>" : "<NONE>";
     } // btn_none(boolean)
@@ -391,6 +421,7 @@ class I18N_en_US implements I18N {
     } // label_bgm()
 
     @Override
+    @Deprecated
     public String label_draw2Stack() {
         return "Stackable cards:";
     } // label_draw2Stack()
@@ -401,14 +432,32 @@ class I18N_en_US implements I18N {
     } // label_forcePlay()
 
     @Override
+    @Deprecated
     public String label_gameMode() {
         return "How to play:";
     } // label_gameMode()
 
     @Override
+    public String label_gameMode(int i) {
+        return i == 1
+                ? "How to play:  7-0"
+                : i == 2
+                ? "How to play: 2vs2"
+                : i == 3
+                ? "How to play:   3P"
+                : "How to play:   4P";
+    } // label_gameMode(int)
+
+    @Override
+    @Deprecated
     public String label_initialCards() {
         return "Initial cards:";
     } // label_initialCards()
+
+    @Override
+    public String label_initialCards(int i) {
+        return "Initial cards: " + i / 10 + i % 10;
+    } // label_initialCards(int)
 
     @Override
     public String label_lacks(int n, int e, int w, int s) {
@@ -420,9 +469,20 @@ class I18N_en_US implements I18N {
     } // label_lacks(int, int, int, int)
 
     @Override
+    public String label_leftArrow() {
+        return "[Y]＜－";
+    } // label_leftArrow()
+
+    @Override
+    @Deprecated
     public String label_level() {
         return "LEVEL";
     } // label_level()
+
+    @Override
+    public String label_level(int i) {
+        return i == 0 ? "Level: EASY" : "Level: HARD";
+    } // label_level(int)
 
     @Override
     public String label_no() {
@@ -433,6 +493,11 @@ class I18N_en_US implements I18N {
     public String label_remain_used(int i1, int i2) {
         return "[Y]R" + i1 + "[W]/[G]U" + i2;
     } // label_remain_used(int, int)
+
+    @Override
+    public String label_rightArrow() {
+        return "[Y]＋＞";
+    } // label_rightArrow()
 
     @Override
     public String label_score() {
@@ -448,6 +513,15 @@ class I18N_en_US implements I18N {
     public String label_speed() {
         return "SPEED";
     } // label_speed()
+
+    @Override
+    public String label_stackRule(int i) {
+        return i == 0
+                ? "Stackable cards: NONE"
+                : i == 1
+                ? "Stackable cards:   +2"
+                : "Stackable cards: +2+4";
+    } // label_stackRule(int)
 
     @Override
     public String label_yes() {
@@ -535,21 +609,25 @@ class I18N_zh_CN implements I18N {
     } // ask_target()
 
     @Override
+    @Deprecated
     public String btn_2vs2(boolean active) {
         return active ? "[G]<2vs2>" : "<2vs2>";
     } // btn_2vs2(boolean)
 
     @Override
+    @Deprecated
     public String btn_3p(boolean active) {
         return active ? "[R]<3P>" : "<3P>";
     } // btn_3p(boolean)
 
     @Override
+    @Deprecated
     public String btn_4p(boolean active) {
         return active ? "[Y]<4P>" : "<4P>";
     } // btn_4p(boolean)
 
     @Override
+    @Deprecated
     public String btn_7_0(boolean active) {
         return active ? "[B]<7-0>" : "<7-0>";
     } // btn_7_0(boolean)
@@ -565,11 +643,13 @@ class I18N_zh_CN implements I18N {
     } // btn_auto()
 
     @Override
+    @Deprecated
     public String btn_d2(boolean active) {
         return active ? "[Y]<+2>" : "<+2>";
     } // btn_d2(boolean)
 
     @Override
+    @Deprecated
     public String btn_d4(boolean active) {
         return active ? "[G]<+2+4>" : "<+2+4>";
     } // btn_d4(boolean)
@@ -585,6 +665,7 @@ class I18N_zh_CN implements I18N {
     } // btn_load()
 
     @Override
+    @Deprecated
     public String btn_none(boolean active) {
         return active ? "[R]<无效>" : "<无效>";
     } // btn_none(boolean)
@@ -701,6 +782,7 @@ class I18N_zh_CN implements I18N {
     } // label_bgm()
 
     @Override
+    @Deprecated
     public String label_draw2Stack() {
         return "叠牌:";
     } // label_draw2Stack()
@@ -711,14 +793,32 @@ class I18N_zh_CN implements I18N {
     } // label_forcePlay()
 
     @Override
+    @Deprecated
     public String label_gameMode() {
         return "玩法:";
     } // label_gameMode()
 
     @Override
+    public String label_gameMode(int i) {
+        return i == 1
+                ? "玩法:  7-0"
+                : i == 2
+                ? "玩法: 2vs2"
+                : i == 3
+                ? "玩法:   3P"
+                : "玩法:   4P";
+    } // label_gameMode(int)
+
+    @Override
+    @Deprecated
     public String label_initialCards() {
         return "发牌张数:";
     } // label_initialCards()
+
+    @Override
+    public String label_initialCards(int i) {
+        return "发牌张数: " + i / 10 + i % 10;
+    } // label_initialCards(int)
 
     @Override
     public String label_lacks(int n, int e, int w, int s) {
@@ -730,9 +830,20 @@ class I18N_zh_CN implements I18N {
     } // label_lacks(int, int, int, int)
 
     @Override
+    public String label_leftArrow() {
+        return "[Y]＜－";
+    } // label_leftArrow()
+
+    @Override
+    @Deprecated
     public String label_level() {
         return "难度";
     } // label_level()
+
+    @Override
+    public String label_level(int i) {
+        return i == 0 ? "难度: 简单" : "难度: 困难";
+    } // label_level(int)
 
     @Override
     public String label_no() {
@@ -743,6 +854,11 @@ class I18N_zh_CN implements I18N {
     public String label_remain_used(int i1, int i2) {
         return "[Y]剩" + i1 + "[G]用" + i2;
     } // label_remain_used(int, int)
+
+    @Override
+    public String label_rightArrow() {
+        return "[Y]＋＞";
+    } // label_rightArrow()
 
     @Override
     public String label_score() {
@@ -758,6 +874,15 @@ class I18N_zh_CN implements I18N {
     public String label_speed() {
         return "速度";
     } // label_speed()
+
+    @Override
+    public String label_stackRule(int i) {
+        return i == 0
+                ? "叠牌: 无效"
+                : i == 1
+                ? "叠牌: 仅+2"
+                : "叠牌: +2+4";
+    } // label_stackRule(int)
 
     @Override
     public String label_yes() {
@@ -845,21 +970,25 @@ class I18N_ja_JP implements I18N {
     } // ask_target()
 
     @Override
+    @Deprecated
     public String btn_2vs2(boolean active) {
         return active ? "[G]<2vs2>" : "<2vs2>";
     } // btn_2vs2(boolean)
 
     @Override
+    @Deprecated
     public String btn_3p(boolean active) {
         return active ? "[R]<3P>" : "<3P>";
     } // btn_3p(boolean)
 
     @Override
+    @Deprecated
     public String btn_4p(boolean active) {
         return active ? "[Y]<4P>" : "<4P>";
     } // btn_4p(boolean)
 
     @Override
+    @Deprecated
     public String btn_7_0(boolean active) {
         return active ? "[B]<7-0>" : "<7-0>";
     } // btn_7_0(boolean)
@@ -875,11 +1004,13 @@ class I18N_ja_JP implements I18N {
     } // btn_auto()
 
     @Override
+    @Deprecated
     public String btn_d2(boolean active) {
         return active ? "[Y]<+2>" : "<+2>";
     } // btn_d2(boolean)
 
     @Override
+    @Deprecated
     public String btn_d4(boolean active) {
         return active ? "[G]<+2+4>" : "<+2+4>";
     } // btn_d4(boolean)
@@ -895,6 +1026,7 @@ class I18N_ja_JP implements I18N {
     } // btn_load()
 
     @Override
+    @Deprecated
     public String btn_none(boolean active) {
         return active ? "[R]<無効>" : "<無効>";
     } // btn_none(boolean)
@@ -1011,6 +1143,7 @@ class I18N_ja_JP implements I18N {
     } // label_bgm()
 
     @Override
+    @Deprecated
     public String label_draw2Stack() {
         return "積み重ね可能の手札:";
     } // label_draw2Stack()
@@ -1021,14 +1154,32 @@ class I18N_ja_JP implements I18N {
     } // label_forcePlay()
 
     @Override
+    @Deprecated
     public String label_gameMode() {
         return "遊び方:";
     } // label_gameMode()
 
     @Override
+    public String label_gameMode(int i) {
+        return i == 1
+                ? "遊び方:  7-0"
+                : i == 2
+                ? "遊び方: 2vs2"
+                : i == 3
+                ? "遊び方:   3P"
+                : "遊び方:   4P";
+    } // label_gameMode(int)
+
+    @Override
+    @Deprecated
     public String label_initialCards() {
         return "最初の手札数:";
     } // label_initialCards()
+
+    @Override
+    public String label_initialCards(int i) {
+        return "最初の手札数: " + i / 10 + i % 10;
+    } // label_initialCards(int)
 
     @Override
     public String label_lacks(int n, int e, int w, int s) {
@@ -1040,9 +1191,20 @@ class I18N_ja_JP implements I18N {
     } // label_lacks(int, int, int, int)
 
     @Override
+    public String label_leftArrow() {
+        return "[Y]＜－";
+    } // label_leftArrow()
+
+    @Override
+    @Deprecated
     public String label_level() {
         return "難易度";
     } // label_level()
+
+    @Override
+    public String label_level(int i) {
+        return i == 0 ? "難易度: 簡　単" : "難易度：難しい";
+    } // label_level(int)
 
     @Override
     public String label_no() {
@@ -1053,6 +1215,11 @@ class I18N_ja_JP implements I18N {
     public String label_remain_used(int i1, int i2) {
         return "[Y]残" + i1 + "[G]使" + i2;
     } // label_remain_used(int, int)
+
+    @Override
+    public String label_rightArrow() {
+        return "[Y]＋＞";
+    } // label_rightArrow()
 
     @Override
     public String label_score() {
@@ -1068,6 +1235,15 @@ class I18N_ja_JP implements I18N {
     public String label_speed() {
         return "速さ";
     } // label_speed()
+
+    @Override
+    public String label_stackRule(int i) {
+        return i == 0
+                ? "積み重ね可能の手札:なし"
+                : i == 1
+                ? "積み重ね可能の手札:  +2"
+                : "積み重ね可能の手札:+2+4";
+    } // label_stackRule(int)
 
     @Override
     public String label_yes() {

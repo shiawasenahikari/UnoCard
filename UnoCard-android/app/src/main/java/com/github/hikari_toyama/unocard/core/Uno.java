@@ -518,11 +518,17 @@ public class Uno {
      * @param hiLight Pass true if you want to get a hi-lighted image,
      *                or false if you want to get a dark image.
      * @return Corresponding difficulty button image.
+     * @deprecated This image resource has been deprecated.
      */
+    @Deprecated
     public Mat getLevelImage(int level, boolean hiLight) {
-        return level == LV_EASY ?
-                /* level == LV_EASY */ (hiLight ? easyImage : easyImage_d) :
-                /* level == LV_HARD */ (hiLight ? hardImage : hardImage_d);
+        return level == LV_EASY
+                ? (hiLight
+                ? findCard(Color.GREEN, Content.NUM1).image
+                : findCard(Color.GREEN, Content.NUM1).darkImg)
+                : (hiLight
+                ? findCard(Color.RED, Content.NUM2).image
+                : findCard(Color.RED, Content.NUM2).darkImg);
     } // getLevelImage(int, boolean)
 
     /**
@@ -799,6 +805,30 @@ public class Uno {
             stackRule = rule;
         } // if (0 <= rule && rule <= 2)
     } // setStackRule(int)
+
+    /**
+     * @return Current game mode. Must be one of the following:
+     * 1: 7-0, 2: 2vs2, 3: 3P, 4: 4P.
+     */
+    public int getGameMode() {
+        return sevenZeroRule ? 1 : _2vs2 ? 2 : players;
+    } // getGameMode()
+
+    /**
+     * @param gameMode Set to which game mode. Must be one of the following:
+     *                 1: 7-0, 2: 2vs2, 3: 3P, 4: 4P.
+     */
+    public void setGameMode(int gameMode) {
+        if (gameMode == 1) {
+            setSevenZeroRule(true);
+        } // if (gameMode == 1)
+        else if (gameMode == 2) {
+            set2vs2(true);
+        } // else if (gameMode == 2)
+        else {
+            setPlayers(gameMode);
+        } // else
+    } // setGameMode(int)
 
     /**
      * Only available in +2 stack rule. In this rule, when a +2 card is put

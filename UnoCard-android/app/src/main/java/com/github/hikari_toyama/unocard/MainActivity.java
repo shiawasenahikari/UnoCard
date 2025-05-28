@@ -573,89 +573,68 @@ public class MainActivity extends AppCompatActivity
             // BGM switch
             putText(i18n.label_bgm(), 60, 160);
             image = mBgmVol > 0.0f
-                    ? mUno.findCard(Color.RED, Content.SKIP).darkImg
-                    : mUno.findCard(Color.RED, Content.SKIP).image;
-            image.copyTo(mScr.submat(60, 241, 150, 271), image);
-            image = mBgmVol > 0.0f
                     ? mUno.findCard(Color.GREEN, Content.REV).image
                     : mUno.findCard(Color.GREEN, Content.REV).darkImg;
-            image.copyTo(mScr.submat(60, 241, 330, 451), image);
+            image.copyTo(mScr.submat(60, 241, 150, 271), image);
 
             // Sound effect switch
-            putText(i18n.label_snd(), 60, 350);
+            putText(i18n.label_snd(), 420, 160);
             image = mSndVol > 0.0f
-                    ? mUno.findCard(Color.RED, Content.SKIP).darkImg
-                    : mUno.findCard(Color.RED, Content.SKIP).image;
-            image.copyTo(mScr.submat(250, 431, 150, 271), image);
-            image = mSndVol > 0.0f
-                    ? mUno.findCard(Color.GREEN, Content.REV).image
-                    : mUno.findCard(Color.GREEN, Content.REV).darkImg;
-            image.copyTo(mScr.submat(250, 431, 330, 451), image);
+                    ? mUno.findCard(Color.BLUE, Content.REV).image
+                    : mUno.findCard(Color.BLUE, Content.REV).darkImg;
+            image.copyTo(mScr.submat(60, 241, 510, 631), image);
 
             // Speed
-            putText(i18n.label_speed(), 780, 350);
+            putText(i18n.label_speed(), 780, 160);
             image = mSpeed < 2
-                    ? mUno.findCard(Color.GREEN, Content.NUM1).image
-                    : mUno.findCard(Color.GREEN, Content.NUM1).darkImg;
-            image.copyTo(mScr.submat(250, 431, 930, 1051), image);
+                    ? mUno.findCard(Color.RED, Content.NUM1).image
+                    : mUno.findCard(Color.RED, Content.NUM1).darkImg;
+            image.copyTo(mScr.submat(60, 241, 930, 1051), image);
             image = mSpeed == 2
                     ? mUno.findCard(Color.YELLOW, Content.NUM2).image
                     : mUno.findCard(Color.YELLOW, Content.NUM2).darkImg;
-            image.copyTo(mScr.submat(250, 431, 1110, 1231), image);
+            image.copyTo(mScr.submat(60, 241, 1110, 1231), image);
             image = mSpeed > 2
-                    ? mUno.findCard(Color.BLUE, Content.NUM3).image
-                    : mUno.findCard(Color.BLUE, Content.NUM3).darkImg;
-            image.copyTo(mScr.submat(250, 431, 1290, 1411), image);
+                    ? mUno.findCard(Color.GREEN, Content.NUM3).image
+                    : mUno.findCard(Color.GREEN, Content.NUM3).darkImg;
+            image.copyTo(mScr.submat(60, 241, 1290, 1411), image);
 
             if (status != Player.YOU) {
                 // [Level] option: easy / hard
-                putText(i18n.label_level(), 780, 160);
-                image = mUno.getLevelImage(
-                        /* level   */ Uno.LV_EASY,
-                        /* hiLight */ mUno.getDifficulty() == Uno.LV_EASY
-                ); // image = mUno.getLevelImage()
-                image.copyTo(mScr.submat(60, 241, 930, 1051), image);
-                image = mUno.getLevelImage(
-                        /* level   */ Uno.LV_HARD,
-                        /* hiLight */ mUno.getDifficulty() == Uno.LV_HARD
-                ); // image = mUno.getLevelImage()
-                image.copyTo(mScr.submat(60, 241, 1110, 1231), image);
+                info = i18n.label_level(mUno.getDifficulty());
+                width = getTextWidth(info);
+                putText(i18n.label_leftArrow(), 208, 670);
+                putText(info, 456 - width / 2, 670);
+                putText(i18n.label_rightArrow(), 638, 670);
 
                 // Rule settings
                 // Initial Cards
-                putText(i18n.label_initialCards(), 60, 670);
-                width = mUno.getInitialCards();
-                info = "" + width / 10 + width % 10;
-                putText("<-", 896, 670);
-                putText(info, 1127, 670);
-                putText("+>", 1358, 670);
+                info = i18n.label_initialCards(mUno.getInitialCards());
+                width = getTextWidth(info);
+                putText(i18n.label_leftArrow(), 896, 670);
+                putText(info, 1144 - width / 2, 670);
+                putText(i18n.label_rightArrow(), 1326, 670);
 
                 // Game Mode
-                putText(i18n.label_gameMode(), 60, 720);
-                active = mUno.getPlayers() == 3;
-                putText(i18n.btn_3p(active), 896, 720);
-                active = mUno.getPlayers() == 4
-                        && !mUno.isSevenZeroRule()
-                        && !mUno.is2vs2();
-                putText(i18n.btn_4p(active), 1028, 720);
-                active = mUno.isSevenZeroRule();
-                putText(i18n.btn_7_0(active), 1159, 720);
-                active = mUno.is2vs2();
-                putText(i18n.btn_2vs2(active), 1290, 720);
+                info = i18n.label_gameMode(mUno.getGameMode());
+                width = getTextWidth(info);
+                putText(i18n.label_leftArrow(), 208, 720);
+                putText(info, 456 - width / 2, 720);
+                putText(i18n.label_rightArrow(), 638, 720);
+
+                // Stacking
+                info = i18n.label_stackRule(mUno.getStackRule());
+                width = getTextWidth(info);
+                putText(i18n.label_leftArrow(), 896, 720);
+                putText(info, 1144 - width / 2, 720);
+                putText(i18n.label_rightArrow(), 1326, 720);
 
                 // Force play switch
                 i = mUno.getForcePlayRule();
-                putText(i18n.label_forcePlay(), 60, 770);
+                putText(i18n.label_forcePlay(), 208, 770);
                 putText(i18n.btn_keep(i == 0), 896, 770);
                 putText(i18n.btn_ask(i == 1), 1110, 770);
                 putText(i18n.btn_play(i == 2), 1290, 770);
-
-                // +2 stack
-                i = mUno.getStackRule();
-                putText(i18n.label_draw2Stack(), 60, 820);
-                putText(i18n.btn_none(i == 0), 896, 820);
-                putText(i18n.btn_d2(i == 1), 1110, 820);
-                putText(i18n.btn_d4(i == 2), 1290, 820);
             } // if (status != Player.YOU)
 
             // Show image
@@ -1108,40 +1087,18 @@ public class MainActivity extends AppCompatActivity
             // Do special behaviors when configuring game options
             if (60 <= y && y <= 240) {
                 if (150 <= x && x <= 270) {
-                    // BGM OFF button
-                    mBgmVol = 0.0f;
-                    mMediaPlayer.setVolume(0.0f, 0.0f);
+                    // BGM switch
+                    mBgmVol = mBgmVol > 0 ? 0.0f : 0.5f;
+                    mMediaPlayer.setVolume(mBgmVol, mBgmVol);
                     setStatus(mStatus);
                 } // if (150 <= x && x <= 270)
-                else if (330 <= x && x <= 450) {
-                    // BGM ON button
-                    mBgmVol = 0.5f;
-                    mMediaPlayer.setVolume(0.5f, 0.5f);
+                else if (510 <= x && x <= 630) {
+                    // SND switch
+                    if ((mSndVol = mSndVol > 0 ? 0.0f : 0.5f) > 0) {
+                        mSoundPool.play(sndPlay, mSndVol, mSndVol, 1, 0, 1.0f);
+                    } // if ((mSndVol = mSndVol > 0 ? 0.0f : 0.5f) > 0)
                     setStatus(mStatus);
-                } // else if (330 <= x && x <= 450)
-                else if (930 <= x && x <= 1050 && mStatus != Player.YOU) {
-                    // Easy AI Level
-                    mUno.setDifficulty(Uno.LV_EASY);
-                    setStatus(mStatus);
-                } // else if (930 <= x && x <= 1050 && mStatus != Player.YOU)
-                else if (1110 <= x && x <= 1230 && mStatus != Player.YOU) {
-                    // Hard AI Level
-                    mUno.setDifficulty(Uno.LV_HARD);
-                    setStatus(mStatus);
-                } // else if (1110 <= x && x <= 1230 && mStatus != Player.YOU)
-            } // if (60 <= y && y <= 240)
-            else if (270 <= y && y <= 450) {
-                if (150 <= x && x <= 270) {
-                    // SND OFF button
-                    mSndVol = 0.0f;
-                    setStatus(mStatus);
-                } // if (150 <= x && x <= 270)
-                else if (330 <= x && x <= 450) {
-                    // SND ON button
-                    mSndVol = 0.5f;
-                    mSoundPool.play(sndPlay, 0.5f, 0.5f, 1, 0, 1.0f);
-                    setStatus(mStatus);
-                } // else if (330 <= x && x <= 450)
+                } // else if (510 <= x && x <= 630)
                 else if (930 <= x && x <= 1050) {
                     // Speed = 1
                     mSpeed = 1;
@@ -1157,40 +1114,50 @@ public class MainActivity extends AppCompatActivity
                     mSpeed = 3;
                     setStatus(mStatus);
                 } // else if (1290 <= x && x <= 1410)
-            } // else if (270 <= y && y <= 450)
+            } // if (60 <= y && y <= 240)
             else if (649 <= y && y <= 670 && mStatus != Player.YOU) {
-                if (896 <= x && x <= 929) {
+                if (208 <= x && x <= 273) {
+                    // Level EASY
+                    mUno.setDifficulty(Uno.LV_EASY);
+                    setStatus(mStatus);
+                } // if (208 <= x && x <= 273)
+                else if (638 <= x && x <= 703) {
+                    // Level HARD
+                    mUno.setDifficulty(Uno.LV_HARD);
+                    setStatus(mStatus);
+                } // else if (638 <= x && x <= 703)
+                if (896 <= x && x <= 961) {
                     // Decrease initial cards
                     mUno.decreaseInitialCards();
                     setStatus(mStatus);
-                } // if (896 <= x && x <= 929)
-                else if (1358 <= x && x <= 1391) {
+                } // if (896 <= x && x <= 961)
+                else if (1326 <= x && x <= 1391) {
                     // Increase initial cards
                     mUno.increaseInitialCards();
                     setStatus(mStatus);
-                } // else if (1358 <= x && x <= 1391)
+                } // else if (1326 <= x && x <= 1391)
             } // else if (649 <= y && y <= 670 && mStatus != Player.YOU)
             else if (699 <= y && y <= 720 && mStatus != Player.YOU) {
-                if (896 <= x && x <= 963) {
-                    // Game mode, <3P> button
-                    mUno.setPlayers(3);
+                if (208 <= x && x <= 273) {
+                    // Game mode, backward
+                    mUno.setGameMode(mUno.getGameMode() - 1);
                     setStatus(mStatus);
-                } // if (896 <= x && x <= 963)
-                else if (1028 <= x && x <= 1095) {
-                    // Game mode, <4P> button
-                    mUno.setPlayers(4);
+                } // if (208 <= x && x <= 273)
+                else if (638 <= x && x <= 703) {
+                    // Game mode, forward
+                    mUno.setGameMode(mUno.getGameMode() + 1);
                     setStatus(mStatus);
-                } // else if (1028 <= x && x <= 1095)
-                else if (1159 <= x && x <= 1243) {
-                    // Game mode, <7-0> button
-                    mUno.setSevenZeroRule(true);
+                } // else if (638 <= x && x <= 703)
+                else if (896 <= x && x <= 961) {
+                    // Stacking, backward
+                    mUno.setStackRule(mUno.getStackRule() - 1);
                     setStatus(mStatus);
-                } // else if (1159 <= x && x <= 1243)
-                else if (1290 <= x && x <= 1391) {
-                    // Game mode, <2vs2> button
-                    mUno.set2vs2(true);
+                } // else if (896 <= x && x <= 961)
+                else if (1326 <= x && x <= 1391) {
+                    // Stacking, forward
+                    mUno.setStackRule(mUno.getStackRule() + 1);
                     setStatus(mStatus);
-                } // else if (1290 <= x && x <= 1391)
+                } // else if (1326 <= x && x <= 1391)
             } // else if (699 <= y && y <= 720 && mStatus != Player.YOU)
             else if (749 <= y && y <= 770 && mStatus != Player.YOU) {
                 if (896 <= x && x <= 997) {
@@ -1209,23 +1176,6 @@ public class MainActivity extends AppCompatActivity
                     setStatus(mStatus);
                 } // else if (1290 <= x && x <= 1391)
             } // else if (749 <= y && y <= 770 && mStatus != Player.YOU)
-            else if (799 <= y && y <= 820 && mStatus != Player.YOU) {
-                if (896 <= x && x <= 997) {
-                    // stacking, <NONE> button
-                    mUno.setStackRule(0);
-                    setStatus(mStatus);
-                } // if (896 <= x && x <= 997)
-                else if (1110 <= x && x <= 1177) {
-                    // stacking, <+2> button
-                    mUno.setStackRule(1);
-                    setStatus(mStatus);
-                } // else if (1110 <= x && x <= 1177)
-                else if (1290 <= x && x <= 1391) {
-                    // stacking, <+2+4> button
-                    mUno.setStackRule(2);
-                    setStatus(mStatus);
-                } // else if (1290 <= x && x <= 1391)
-            } // else if (799 <= y && y <= 820 && mStatus != Player.YOU)
             else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
                 // <OPTIONS> button
                 // Leave options page
