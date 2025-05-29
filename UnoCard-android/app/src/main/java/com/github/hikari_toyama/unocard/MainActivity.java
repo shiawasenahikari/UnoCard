@@ -603,38 +603,38 @@ public class MainActivity extends AppCompatActivity
                 // [Level] option: easy / hard
                 info = i18n.label_level(mUno.getDifficulty());
                 width = getTextWidth(info);
-                putText(i18n.label_leftArrow(), 208, 670);
-                putText(info, 456 - width / 2, 670);
-                putText(i18n.label_rightArrow(), 638, 670);
+                putText(i18n.label_leftArrow(), 208, 690);
+                putText(info, 456 - width / 2, 690);
+                putText(i18n.label_rightArrow(), 638, 690);
 
                 // Rule settings
                 // Initial Cards
                 info = i18n.label_initialCards(mUno.getInitialCards());
                 width = getTextWidth(info);
-                putText(i18n.label_leftArrow(), 896, 670);
-                putText(info, 1144 - width / 2, 670);
-                putText(i18n.label_rightArrow(), 1326, 670);
+                putText(i18n.label_leftArrow(), 896, 690);
+                putText(info, 1144 - width / 2, 690);
+                putText(i18n.label_rightArrow(), 1326, 690);
 
                 // Game Mode
                 info = i18n.label_gameMode(mUno.getGameMode());
                 width = getTextWidth(info);
-                putText(i18n.label_leftArrow(), 208, 720);
-                putText(info, 456 - width / 2, 720);
-                putText(i18n.label_rightArrow(), 638, 720);
+                putText(i18n.label_leftArrow(), 208, 760);
+                putText(info, 456 - width / 2, 760);
+                putText(i18n.label_rightArrow(), 638, 760);
 
                 // Stacking
                 info = i18n.label_stackRule(mUno.getStackRule());
                 width = getTextWidth(info);
-                putText(i18n.label_leftArrow(), 896, 720);
-                putText(info, 1144 - width / 2, 720);
-                putText(i18n.label_rightArrow(), 1326, 720);
+                putText(i18n.label_leftArrow(), 896, 760);
+                putText(info, 1144 - width / 2, 760);
+                putText(i18n.label_rightArrow(), 1326, 760);
 
                 // Force play switch
                 i = mUno.getForcePlayRule();
-                putText(i18n.label_forcePlay(), 208, 770);
-                putText(i18n.btn_keep(i == 0), 896, 770);
-                putText(i18n.btn_ask(i == 1), 1110, 770);
-                putText(i18n.btn_play(i == 2), 1290, 770);
+                putText(i18n.label_forcePlay(), 208, 830);
+                putText(i18n.btn_keep(i == 0), 896, 830);
+                putText(i18n.btn_ask(i == 1), 1110, 830);
+                putText(i18n.btn_play(i == 2), 1290, 830);
             } // if (status != Player.YOU)
 
             // Show image
@@ -1115,7 +1115,7 @@ public class MainActivity extends AppCompatActivity
                     setStatus(mStatus);
                 } // else if (1290 <= x && x <= 1410)
             } // if (60 <= y && y <= 240)
-            else if (649 <= y && y <= 670 && mStatus != Player.YOU) {
+            else if (669 <= y && y <= 690 && mStatus != Player.YOU) {
                 if (208 <= x && x <= 273) {
                     // Level EASY
                     mUno.setDifficulty(Uno.LV_EASY);
@@ -1136,8 +1136,8 @@ public class MainActivity extends AppCompatActivity
                     mUno.increaseInitialCards();
                     setStatus(mStatus);
                 } // else if (1326 <= x && x <= 1391)
-            } // else if (649 <= y && y <= 670 && mStatus != Player.YOU)
-            else if (699 <= y && y <= 720 && mStatus != Player.YOU) {
+            } // else if (669 <= y && y <= 690 && mStatus != Player.YOU)
+            else if (739 <= y && y <= 760 && mStatus != Player.YOU) {
                 if (208 <= x && x <= 273) {
                     // Game mode, backward
                     mUno.setGameMode(mUno.getGameMode() - 1);
@@ -1158,8 +1158,8 @@ public class MainActivity extends AppCompatActivity
                     mUno.setStackRule(mUno.getStackRule() + 1);
                     setStatus(mStatus);
                 } // else if (1326 <= x && x <= 1391)
-            } // else if (699 <= y && y <= 720 && mStatus != Player.YOU)
-            else if (749 <= y && y <= 770 && mStatus != Player.YOU) {
+            } // else if (739 <= y && y <= 760 && mStatus != Player.YOU)
+            else if (809 <= y && y <= 830 && mStatus != Player.YOU) {
                 if (896 <= x && x <= 997) {
                     // Force play, <KEEP> button
                     mUno.setForcePlayRule(0);
@@ -1175,7 +1175,7 @@ public class MainActivity extends AppCompatActivity
                     mUno.setForcePlayRule(2);
                     setStatus(mStatus);
                 } // else if (1290 <= x && x <= 1391)
-            } // else if (749 <= y && y <= 770 && mStatus != Player.YOU)
+            } // else if (809 <= y && y <= 830 && mStatus != Player.YOU)
             else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
                 // <OPTIONS> button
                 // Leave options page

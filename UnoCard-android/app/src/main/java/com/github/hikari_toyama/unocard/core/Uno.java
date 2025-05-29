@@ -126,16 +126,6 @@ public class Uno {
     Mat bgClockwise;
 
     /**
-     * Difficulty button image resources (EASY).
-     */
-    Mat easyImage, easyImage_d;
-
-    /**
-     * Difficulty button image resources (HARD).
-     */
-    Mat hardImage, hardImage_d;
-
-    /**
      * Player in turn. Must be one of the following:
      * Player.YOU, Player.COM1, Player.COM2, Player.COM3.
      */
@@ -243,7 +233,7 @@ public class Uno {
 
         // Preparations
         loaded = 0;
-        total = 124;
+        total = 120;
         Log.i(TAG, "Loading... (0%)");
 
         // Load background image resources
@@ -260,18 +250,6 @@ public class Uno {
         backImage = Utils.loadResource(c, R.raw.back);
         Imgproc.cvtColor(backImage, backImage, Imgproc.COLOR_BGRA2RGBA);
         ++loaded;
-        Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
-
-        // Load difficulty image resources
-        easyImage = Utils.loadResource(c, R.raw.lv_easy);
-        hardImage = Utils.loadResource(c, R.raw.lv_hard);
-        easyImage_d = Utils.loadResource(c, R.raw.lv_easy_dark);
-        hardImage_d = Utils.loadResource(c, R.raw.lv_hard_dark);
-        Imgproc.cvtColor(easyImage, easyImage, Imgproc.COLOR_BGRA2RGBA);
-        Imgproc.cvtColor(hardImage, hardImage, Imgproc.COLOR_BGRA2RGBA);
-        Imgproc.cvtColor(easyImage_d, easyImage_d, Imgproc.COLOR_BGRA2RGBA);
-        Imgproc.cvtColor(hardImage_d, hardImage_d, Imgproc.COLOR_BGRA2RGBA);
-        loaded += 4;
         Log.i(TAG, "Loading... (" + 100 * loaded / total + "%)");
 
         // Load cards' front image resources

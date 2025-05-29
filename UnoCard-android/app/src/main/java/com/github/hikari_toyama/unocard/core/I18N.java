@@ -842,7 +842,7 @@ class I18N_zh_CN implements I18N {
 
     @Override
     public String label_level(int i) {
-        return i == 0 ? "难度: 简单" : "难度: 困难";
+        return i == 0 ? "难易度: 简单" : "难易度: 困难";
     } // label_level(int)
 
     @Override
@@ -878,10 +878,10 @@ class I18N_zh_CN implements I18N {
     @Override
     public String label_stackRule(int i) {
         return i == 0
-                ? "叠牌: 无效"
+                ? "允许叠牌: 　　　无"
                 : i == 1
-                ? "叠牌: 仅+2"
-                : "叠牌: +2+4";
+                ? "允许叠牌: 只有＋２"
+                : "允许叠牌: ＋２＋４";
     } // label_stackRule(int)
 
     @Override
@@ -1203,7 +1203,7 @@ class I18N_ja_JP implements I18N {
 
     @Override
     public String label_level(int i) {
-        return i == 0 ? "難易度: 簡　単" : "難易度：難しい";
+        return i == 0 ? "難易度: 　簡単" : "難易度: 難しい";
     } // label_level(int)
 
     @Override
@@ -1239,10 +1239,10 @@ class I18N_ja_JP implements I18N {
     @Override
     public String label_stackRule(int i) {
         return i == 0
-                ? "積み重ね可能の手札:なし"
+                ? "積み重ね可: 　　なし"
                 : i == 1
-                ? "積み重ね可能の手札:  +2"
-                : "積み重ね可能の手札:+2+4";
+                ? "積み重ね可: ＋２のみ"
+                : "積み重ね可: ＋２＋４";
     } // label_stackRule(int)
 
     @Override

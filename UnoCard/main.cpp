@@ -544,38 +544,38 @@ void Main::refreshScreen(const QString& message, int area) {
             // [Level] option: easy / hard
             info = i18n->label_level(sUno->getDifficulty());
             width = getTextWidth(info);
-            putText(i18n->label_leftArrow(), 208, 670);
-            putText(info, 456 - width / 2, 670);
-            putText(i18n->label_rightArrow(), 638, 670);
+            putText(i18n->label_leftArrow(), 208, 690);
+            putText(info, 456 - width / 2, 690);
+            putText(i18n->label_rightArrow(), 638, 690);
 
             // Rule settings
             // Initial cards
             info = i18n->label_initialCards(sUno->getInitialCards());
             width = getTextWidth(info);
-            putText(i18n->label_leftArrow(), 896, 670);
-            putText(info, 1144 - width / 2, 670);
-            putText(i18n->label_rightArrow(), 1326, 670);
+            putText(i18n->label_leftArrow(), 896, 690);
+            putText(info, 1144 - width / 2, 690);
+            putText(i18n->label_rightArrow(), 1326, 690);
 
             // Game Mode
             info = i18n->label_gameMode(sUno->getGameMode());
             width = getTextWidth(info);
-            putText(i18n->label_leftArrow(), 208, 720);
-            putText(info, 456 - width / 2, 720);
-            putText(i18n->label_rightArrow(), 638, 720);
+            putText(i18n->label_leftArrow(), 208, 760);
+            putText(info, 456 - width / 2, 760);
+            putText(i18n->label_rightArrow(), 638, 760);
 
             // Stacking
             info = i18n->label_stackRule(sUno->getStackRule());
             width = getTextWidth(info);
-            putText(i18n->label_leftArrow(), 896, 720);
-            putText(info, 1144 - width / 2, 720);
-            putText(i18n->label_rightArrow(), 1326, 720);
+            putText(i18n->label_leftArrow(), 896, 760);
+            putText(info, 1144 - width / 2, 760);
+            putText(i18n->label_rightArrow(), 1326, 760);
 
             // Force play switch
             i = sUno->getForcePlayRule();
-            putText(i18n->label_forcePlay(), 208, 770);
-            putText(i18n->btn_keep(i == 0), 896, 770);
-            putText(i18n->btn_ask(i == 1), 1110, 770);
-            putText(i18n->btn_play(i == 2), 1290, 770);
+            putText(i18n->label_forcePlay(), 208, 830);
+            putText(i18n->btn_keep(i == 0), 896, 830);
+            putText(i18n->btn_ask(i == 1), 1110, 830);
+            putText(i18n->btn_play(i == 2), 1290, 830);
         } // if (status != Player::YOU)
     } // if (sAdjustOptions)
     else if (status == STAT_WELCOME) {
@@ -930,7 +930,7 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     setStatus(sStatus);
                 } // else if (1290 <= x && x <= 1410)
             } // if (60 <= y && y <= 240)
-            else if (649 <= y && y <= 670 && sStatus != Player::YOU) {
+            else if (669 <= y && y <= 690 && sStatus != Player::YOU) {
                 if (208 <= x && x <= 273) {
                     // Level EASY
                     sUno->setDifficulty(Uno::LV_EASY);
@@ -951,8 +951,8 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     sUno->increaseInitialCards();
                     setStatus(sStatus);
                 } // else if (1326 <= x && x <= 1391)
-            } // else if (649 <= y && y <= 670 && sStatus != Player::YOU)
-            else if (699 <= y && y <= 720 && sStatus != Player::YOU) {
+            } // else if (669 <= y && y <= 690 && sStatus != Player::YOU)
+            else if (739 <= y && y <= 760 && sStatus != Player::YOU) {
                 if (208 <= x && x <= 273) {
                     // Game mode, backward
                     sUno->setGameMode(sUno->getGameMode() - 1);
@@ -973,8 +973,8 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     sUno->setStackRule(sUno->getStackRule() + 1);
                     setStatus(sStatus);
                 } // else if (1326 <= x && x <= 1391)
-            } // else if (699 <= y && y <= 720 && sStatus != Player::YOU)
-            else if (749 <= y && y <= 770 && sStatus != Player::YOU) {
+            } // else if (739 <= y && y <= 760 && sStatus != Player::YOU)
+            else if (809 <= y && y <= 830 && sStatus != Player::YOU) {
                 if (896 <= x && x <= 997) {
                     // Force play, <KEEP> button
                     sUno->setForcePlayRule(0);
@@ -990,7 +990,7 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     sUno->setForcePlayRule(2);
                     setStatus(sStatus);
                 } // else if (1290 <= x && x <= 1391)
-            } // else if (749 <= y && y <= 770 && sStatus != Player::YOU)
+            } // else if (809 <= y && y <= 830 && sStatus != Player::YOU)
             else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
                 // <OPTIONS> button
                 // Leave options page

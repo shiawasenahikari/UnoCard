@@ -74,16 +74,6 @@ private:
     QImage wildDraw4Image[5];
 
     /**
-     * Difficulty button image resources (EASY).
-     */
-    QImage easyImage, easyImage_d;
-
-    /**
-     * Difficulty button image resources (HARD).
-     */
-    QImage hardImage, hardImage_d;
-
-    /**
      * Player in turn. Must be one of the following:
      * Player::YOU, Player::COM1, Player::COM2, Player::COM3.
      */
@@ -211,7 +201,7 @@ private:
 
         // Preparations
         done = 0;
-        total = 124;
+        total = 120;
         qDebug("Loading... (0%%)");
 
         // Load background image resources
@@ -224,14 +214,6 @@ private:
         // Load card back image resource
         backImage = load("resource/back.png", 121, 181);
         ++done;
-        qDebug("Loading... (%d%%)", 100 * done / total);
-
-        // Load difficulty image resources
-        easyImage = load("resource/lv_easy.png", 121, 181);
-        hardImage = load("resource/lv_hard.png", 121, 181);
-        easyImage_d = load("resource/lv_easy_dark.png", 121, 181);
-        hardImage_d = load("resource/lv_hard_dark.png", 121, 181);
-        done += 4;
         qDebug("Loading... (%d%%)", 100 * done / total);
 
         // Generate 54 types of cards
