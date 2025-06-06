@@ -571,33 +571,39 @@ public class MainActivity extends AppCompatActivity
         if (mAdjustOptions) {
             // Show special screen when configuring game options
             // BGM switch
-            putText(i18n.label_bgm(), 60, 160);
+            info = i18n.label_bgm();
+            width = getTextWidth(info);
+            putText(info, 268 - width / 2, 60);
             image = mBgmVol > 0.0f
                     ? mUno.findCard(Color.GREEN, Content.REV).image
                     : mUno.findCard(Color.GREEN, Content.REV).darkImg;
-            image.copyTo(mScr.submat(60, 241, 150, 271), image);
+            image.copyTo(mScr.submat(80, 261, 208, 329), image);
 
             // Sound effect switch
-            putText(i18n.label_snd(), 420, 160);
+            info = i18n.label_snd();
+            width = getTextWidth(info);
+            putText(info, 670 - width / 2, 60);
             image = mSndVol > 0.0f
                     ? mUno.findCard(Color.BLUE, Content.REV).image
                     : mUno.findCard(Color.BLUE, Content.REV).darkImg;
-            image.copyTo(mScr.submat(60, 241, 510, 631), image);
+            image.copyTo(mScr.submat(80, 261, 610, 731), image);
 
             // Speed
-            putText(i18n.label_speed(), 780, 160);
+            info = i18n.label_speed();
+            width = getTextWidth(info);
+            putText(info, 1202 - width / 2, 60);
             image = mSpeed < 2
                     ? mUno.findCard(Color.RED, Content.NUM1).image
                     : mUno.findCard(Color.RED, Content.NUM1).darkImg;
-            image.copyTo(mScr.submat(60, 241, 930, 1051), image);
+            image.copyTo(mScr.submat(80, 261, 1012, 1133), image);
             image = mSpeed == 2
                     ? mUno.findCard(Color.YELLOW, Content.NUM2).image
                     : mUno.findCard(Color.YELLOW, Content.NUM2).darkImg;
-            image.copyTo(mScr.submat(60, 241, 1110, 1231), image);
+            image.copyTo(mScr.submat(80, 261, 1142, 1263), image);
             image = mSpeed > 2
                     ? mUno.findCard(Color.GREEN, Content.NUM3).image
                     : mUno.findCard(Color.GREEN, Content.NUM3).darkImg;
-            image.copyTo(mScr.submat(60, 241, 1290, 1411), image);
+            image.copyTo(mScr.submat(80, 261, 1272, 1393), image);
 
             if (status != Player.YOU) {
                 // [Level] option: easy / hard
@@ -1083,39 +1089,48 @@ public class MainActivity extends AppCompatActivity
             // load the replay file named [message.obj]
             loadReplay((String) message.obj);
         } // else if (message.what == 1)
+        else if (844 <= y && y <= 880 && 20 <= x && x <= 200) {
+            // <OPTIONS> button
+            if (mStatus == Player.YOU ||
+                    mStatus == STAT_WELCOME ||
+                    mStatus == STAT_GAME_OVER) {
+                mAdjustOptions ^= true;
+                setStatus(mStatus);
+            } // if (mStatus == Player.YOU || ...)
+        } // else if (844 <= y && y <= 880 && 20 <= x && x <= 200)
         else if (mAdjustOptions) {
             // Do special behaviors when configuring game options
-            if (60 <= y && y <= 240) {
-                if (150 <= x && x <= 270) {
+            if (80 <= y && y <= 260) {
+                if (208 <= x && x <= 328) {
                     // BGM switch
                     mBgmVol = mBgmVol > 0 ? 0.0f : 0.5f;
                     mMediaPlayer.setVolume(mBgmVol, mBgmVol);
                     setStatus(mStatus);
-                } // if (150 <= x && x <= 270)
-                else if (510 <= x && x <= 630) {
+                } // if (208 <= x && x <= 328)
+                else if (610 <= x && x <= 730) {
                     // SND switch
                     if ((mSndVol = mSndVol > 0 ? 0.0f : 0.5f) > 0) {
                         mSoundPool.play(sndPlay, mSndVol, mSndVol, 1, 0, 1.0f);
                     } // if ((mSndVol = mSndVol > 0 ? 0.0f : 0.5f) > 0)
                     setStatus(mStatus);
-                } // else if (510 <= x && x <= 630)
-                else if (930 <= x && x <= 1050) {
+                } // else if (610 <= x && x <= 730)
+                else if (1012 <= x && x <= 1132) {
                     // Speed = 1
                     mSpeed = 1;
                     setStatus(mStatus);
-                } // else if (930 <= x && x <= 1050)
-                else if (1110 <= x && x <= 1230) {
+                } // else if (1012 <= x && x <= 1132)
+                else if (1142 <= x && x <= 1262) {
                     // Speed = 2
                     mSpeed = 2;
                     setStatus(mStatus);
-                } // else if (1110 <= x && x <= 1230)
-                else if (1290 <= x && x <= 1410) {
+                } // else if (1142 <= x && x <= 1262)
+                else if (1272 <= x && x <= 1392) {
                     // Speed = 3
                     mSpeed = 3;
                     setStatus(mStatus);
-                } // else if (1290 <= x && x <= 1410)
-            } // if (60 <= y && y <= 240)
-            else if (669 <= y && y <= 690 && mStatus != Player.YOU) {
+                } // else if (1272 <= x && x <= 1392)
+            } // if (80 <= y && y <= 260)
+            else if (654 <= y && y <= 690 && mStatus != Player.YOU) {
                 if (208 <= x && x <= 273) {
                     // Level EASY
                     mUno.setDifficulty(Uno.LV_EASY);
@@ -1136,8 +1151,8 @@ public class MainActivity extends AppCompatActivity
                     mUno.increaseInitialCards();
                     setStatus(mStatus);
                 } // else if (1326 <= x && x <= 1391)
-            } // else if (669 <= y && y <= 690 && mStatus != Player.YOU)
-            else if (739 <= y && y <= 760 && mStatus != Player.YOU) {
+            } // else if (654 <= y && y <= 690 && mStatus != Player.YOU)
+            else if (724 <= y && y <= 760 && mStatus != Player.YOU) {
                 if (208 <= x && x <= 273) {
                     // Game mode, backward
                     mUno.setGameMode(mUno.getGameMode() - 1);
@@ -1158,8 +1173,8 @@ public class MainActivity extends AppCompatActivity
                     mUno.setStackRule(mUno.getStackRule() + 1);
                     setStatus(mStatus);
                 } // else if (1326 <= x && x <= 1391)
-            } // else if (739 <= y && y <= 760 && mStatus != Player.YOU)
-            else if (809 <= y && y <= 830 && mStatus != Player.YOU) {
+            } // else if (724 <= y && y <= 760 && mStatus != Player.YOU)
+            else if (794 <= y && y <= 830 && mStatus != Player.YOU) {
                 if (896 <= x && x <= 997) {
                     // Force play, <KEEP> button
                     mUno.setForcePlayRule(0);
@@ -1175,15 +1190,9 @@ public class MainActivity extends AppCompatActivity
                     mUno.setForcePlayRule(2);
                     setStatus(mStatus);
                 } // else if (1290 <= x && x <= 1391)
-            } // else if (809 <= y && y <= 830 && mStatus != Player.YOU)
-            else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
-                // <OPTIONS> button
-                // Leave options page
-                mAdjustOptions = false;
-                setStatus(mStatus);
-            } // else if (859 <= y && y <= 880 && 20 <= x && x <= 200)
+            } // else if (794 <= y && y <= 830 && mStatus != Player.YOU)
         } // else if (mAdjustOptions)
-        else if (859 <= y && y <= 880 && 1450 <= x && x <= 1580) {
+        else if (844 <= y && y <= 880 && 1450 <= x && x <= 1580) {
             // <AUTO> button
             // In player's action, automatically play or draw cards by AI
             if (mStatus == Player.YOU && !mAuto) {
@@ -1201,7 +1210,7 @@ public class MainActivity extends AppCompatActivity
                 mGameSaved = !replayName.isEmpty();
                 refreshScreen(i18n.info_save(replayName), 0x20);
             } // else if (mStatus == STAT_GAME_OVER && !mGameSaved)
-        } // else if (859 <= y && y <= 880 && 1450 <= x && x <= 1580)
+        } // else if (844 <= y && y <= 880 && 1450 <= x && x <= 1580)
         else {
             switch (mStatus) {
                 case STAT_WELCOME:
@@ -1210,11 +1219,6 @@ public class MainActivity extends AppCompatActivity
                         mGameSaved = false;
                         setStatus(STAT_NEW_GAME);
                     } // if (360 <= y && y <= 540 && 740 <= x && x <= 860)
-                    else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
-                        // <OPTIONS> button
-                        mAdjustOptions = true;
-                        setStatus(mStatus);
-                    } // else if (859 <= y && y <= 880 && 20 <= x && x <= 200)
                     break; // case STAT_WELCOME
 
                 case Player.YOU:
@@ -1252,11 +1256,6 @@ public class MainActivity extends AppCompatActivity
                                 } // else
                             } // else if (mUno.isLegalToPlay(card))
                         } // if (startX <= x && x <= startX + width)
-                        else if (y >= 859 && 20 <= x && x <= 200) {
-                            // <OPTIONS> button
-                            mAdjustOptions = true;
-                            setStatus(mStatus);
-                        } // else if (y >= 859 && 20 <= x && x <= 200)
                         else {
                             // Blank area, cancel your selection
                             mSelectedIdx = -1;
@@ -1386,11 +1385,6 @@ public class MainActivity extends AppCompatActivity
                         mGameSaved = false;
                         setStatus(STAT_NEW_GAME);
                     } // if (360 <= y && y <= 540 && 338 <= x && x <= 458)
-                    else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
-                        // <OPTIONS> button
-                        mAdjustOptions = true;
-                        setStatus(mStatus);
-                    } // else if (859 <= y && y <= 880 && 20 <= x && x <= 200)
                     break; // case STAT_GAME_OVER
 
                 default:

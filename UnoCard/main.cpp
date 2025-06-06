@@ -512,33 +512,39 @@ void Main::refreshScreen(const QString& message, int area) {
     if (sAdjustOptions) {
         // Show special screen when configuring game options
         // BGM switch
-        putText(i18n->label_bgm(), 60, 160);
+        info = i18n->label_bgm();
+        width = getTextWidth(info);
+        putText(info, 268 - width / 2, 60);
         image = sMediaPlay->volume() > 0
             ? sUno->findCard(GREEN, REV)->image
             : sUno->findCard(GREEN, REV)->darkImg;
-        sPainter->drawImage(150, 60, image);
+        sPainter->drawImage(208, 80, image);
 
         // Sound effect switch
-        putText(i18n->label_snd(), 420, 160);
+        info = i18n->label_snd();
+        width = getTextWidth(info);
+        putText(info, 670 - width / 2, 60);
         image = sSoundPool->isEnabled()
             ? sUno->findCard(BLUE, REV)->image
             : sUno->findCard(BLUE, REV)->darkImg;
-        sPainter->drawImage(510, 60, image);
+        sPainter->drawImage(610, 80, image);
 
         // Speed
-        putText(i18n->label_speed(), 780, 160);
+        info = i18n->label_speed();
+        width = getTextWidth(info);
+        putText(info, 1202 - width / 2, 60);
         image = sSpeed < 2
             ? sUno->findCard(RED, NUM1)->image
             : sUno->findCard(RED, NUM1)->darkImg;
-        sPainter->drawImage(930, 60, image);
+        sPainter->drawImage(1012, 80, image);
         image = sSpeed == 2
             ? sUno->findCard(YELLOW, NUM2)->image
             : sUno->findCard(YELLOW, NUM2)->darkImg;
-        sPainter->drawImage(1110, 60, image);
+        sPainter->drawImage(1142, 80, image);
         image = sSpeed > 2
             ? sUno->findCard(GREEN, NUM3)->image
             : sUno->findCard(GREEN, NUM3)->darkImg;
-        sPainter->drawImage(1290, 60, image);
+        sPainter->drawImage(1272, 80, image);
 
         if (status != Player::YOU) {
             // [Level] option: easy / hard
@@ -898,39 +904,48 @@ void Main::mousePressEvent(QMouseEvent* event) {
         // Only response to left-click events, and ignore the others
         int x = 1600 * event->x() / this->width();
         int y = 900 * event->y() / this->height();
-        if (sAdjustOptions) {
+        if (844 <= y && y <= 880 && 20 <= x && x <= 200) {
+            // <OPTIONS> button
+            if (sStatus == Player::YOU ||
+                sStatus == STAT_WELCOME ||
+                sStatus == STAT_GAME_OVER) {
+                sAdjustOptions ^= true;
+                setStatus(sStatus);
+            } // if (sStatus == Player::YOU || ...)
+        } // if (844 <= y && y <= 880 && 20 <= x && x <= 200)
+        else if (sAdjustOptions) {
             // Do special behaviors when configuring game options
-            if (60 <= y && y <= 240) {
-                if (150 <= x && x <= 270) {
+            if (80 <= y && y <= 260) {
+                if (208 <= x && x <= 328) {
                     // BGM switch
                     sMediaPlay->setVolume(sMediaPlay->volume() > 0 ? 0 : 50);
                     setStatus(sStatus);
-                } // if (150 <= x && x <= 270)
-                else if (510 <= x && x <= 630) {
+                } // if (208 <= x && x <= 328)
+                else if (610 <= x && x <= 730) {
                     // SND switch
                     sSoundPool->setEnabled(!sSoundPool->isEnabled());
                     if (sSoundPool->isEnabled()) {
                         sSoundPool->play(SoundPool::SND_PLAY);
                     } // if (sSoundPool->isEnabled())
                     setStatus(sStatus);
-                } // else if (510 <= x && x <= 630)
-                else if (930 <= x && x <= 1050) {
+                } // else if (610 <= x && x <= 730)
+                else if (1012 <= x && x <= 1132) {
                     // Speed = 1
                     sSpeed = 1;
                     setStatus(sStatus);
-                } // else if (930 <= x && x <= 1050)
-                else if (1110 <= x && x <= 1230) {
+                } // else if (1012 <= x && x <= 1132)
+                else if (1142 <= x && x <= 1262) {
                     // Speed = 2
                     sSpeed = 2;
                     setStatus(sStatus);
-                } // else if (1110 <= x && x <= 1230)
-                else if (1290 <= x && x <= 1410) {
+                } // else if (1142 <= x && x <= 1262)
+                else if (1272 <= x && x <= 1392) {
                     // Speed = 3
                     sSpeed = 3;
                     setStatus(sStatus);
-                } // else if (1290 <= x && x <= 1410)
-            } // if (60 <= y && y <= 240)
-            else if (669 <= y && y <= 690 && sStatus != Player::YOU) {
+                } // else if (1272 <= x && x <= 1392)
+            } // if (80 <= y && y <= 260)
+            else if (654 <= y && y <= 690 && sStatus != Player::YOU) {
                 if (208 <= x && x <= 273) {
                     // Level EASY
                     sUno->setDifficulty(Uno::LV_EASY);
@@ -951,8 +966,8 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     sUno->increaseInitialCards();
                     setStatus(sStatus);
                 } // else if (1326 <= x && x <= 1391)
-            } // else if (669 <= y && y <= 690 && sStatus != Player::YOU)
-            else if (739 <= y && y <= 760 && sStatus != Player::YOU) {
+            } // else if (654 <= y && y <= 690 && sStatus != Player::YOU)
+            else if (724 <= y && y <= 760 && sStatus != Player::YOU) {
                 if (208 <= x && x <= 273) {
                     // Game mode, backward
                     sUno->setGameMode(sUno->getGameMode() - 1);
@@ -973,8 +988,8 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     sUno->setStackRule(sUno->getStackRule() + 1);
                     setStatus(sStatus);
                 } // else if (1326 <= x && x <= 1391)
-            } // else if (739 <= y && y <= 760 && sStatus != Player::YOU)
-            else if (809 <= y && y <= 830 && sStatus != Player::YOU) {
+            } // else if (724 <= y && y <= 760 && sStatus != Player::YOU)
+            else if (794 <= y && y <= 830 && sStatus != Player::YOU) {
                 if (896 <= x && x <= 997) {
                     // Force play, <KEEP> button
                     sUno->setForcePlayRule(0);
@@ -990,15 +1005,9 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     sUno->setForcePlayRule(2);
                     setStatus(sStatus);
                 } // else if (1290 <= x && x <= 1391)
-            } // else if (809 <= y && y <= 830 && sStatus != Player::YOU)
-            else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
-                // <OPTIONS> button
-                // Leave options page
-                sAdjustOptions = false;
-                setStatus(sStatus);
-            } // else if (859 <= y && y <= 880 && 20 <= x && x <= 200)
-        } // if (sAdjustOptions)
-        else if (859 <= y && y <= 880 && 1450 <= x && x <= 1580) {
+            } // else if (794 <= y && y <= 830 && sStatus != Player::YOU)
+        } // else if (sAdjustOptions)
+        else if (844 <= y && y <= 880 && 1450 <= x && x <= 1580) {
             // <AUTO> button
             // In player's action, automatically play or draw cards by AI
             if (sStatus == Player::YOU && !sAuto) {
@@ -1025,7 +1034,7 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 sGameSaved = !replayName.isEmpty();
                 refreshScreen(i18n->info_save(replayName.toLatin1()), 0x20);
             } // else if (sStatus == STAT_GAME_OVER && !sGameSaved)
-        } // else if (859 <= y && y <= 880 && 1450 <= x && x <= 1580)
+        } // else if (844 <= y && y <= 880 && 1450 <= x && x <= 1580)
         else switch (sStatus) {
         case STAT_WELCOME:
             if (360 <= y && y <= 540 && 740 <= x && x <= 860) {
@@ -1033,11 +1042,6 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 sGameSaved = false;
                 setStatus(STAT_NEW_GAME);
             } // if (360 <= y && y <= 540 && 740 <= x && x <= 860)
-            else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
-                // <OPTIONS> button
-                sAdjustOptions = true;
-                setStatus(sStatus);
-            } // else if (859 <= y && y <= 880 && 20 <= x && x <= 200)
             break; // case STAT_WELCOME
 
         case Player::YOU:
@@ -1075,11 +1079,6 @@ void Main::mousePressEvent(QMouseEvent* event) {
                         } // else
                     } // else if (sUno->isLegalToPlay(card))
                 } // if (startX <= x && x <= startX + width)
-                else if (y >= 859 && 20 <= x && x <= 200) {
-                    // <OPTIONS> button
-                    sAdjustOptions = true;
-                    setStatus(sStatus);
-                } // else if (y >= 859 && 20 <= x && x <= 200)
                 else {
                     // Blank area, cancel your selection
                     sSelectedIdx = -1;
@@ -1209,11 +1208,6 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 sGameSaved = false;
                 setStatus(STAT_NEW_GAME);
             } // if (360 <= y && y <= 540 && 338 <= x && x <= 458)
-            else if (859 <= y && y <= 880 && 20 <= x && x <= 200) {
-                // <OPTIONS> button
-                sAdjustOptions = true;
-                setStatus(sStatus);
-            } // else if (859 <= y && y <= 880 && 20 <= x && x <= 200)
             break; // case STAT_GAME_OVER
 
         default:
