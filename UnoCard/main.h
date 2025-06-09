@@ -72,24 +72,19 @@ private:
     QMediaPlaylist* sMediaList;
 
     // Functions
-    void cycle();
-    void onChallenge();
-    void swapWith(int whom);
+    int cycle();
+    int requestAI();
+    int onChallenge();
+    int swapWith(int whom);
     void setStatus(int status);
     void threadWait(int millis);
     int getTextWidth(const QString& text);
-    void play(int index, Color color = NONE);
-    void draw(int count = 1, bool force = false);
+    int play(int index, Color color = NONE);
+    int draw(int count = 1, bool force = false);
     void putText(const QString& text, int x, int y);
     void loadReplay(const QString& replayName = "");
     void animate(int layerCount, AnimateLayer layer[]);
     void refreshScreen(const QString& message = "", int area = 0xff);
-
-signals:
-    void signal_requestAI();
-
-private slots:
-    void requestAI();
 
 protected:
     // Implemented Listeners

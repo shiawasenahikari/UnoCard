@@ -186,7 +186,6 @@ Main::Main(int argc, char* argv[], QWidget* parent) : QWidget(parent) {
     sSelectedIdx = -1;
     sWinner = Player::YOU;
     sAdjustOptions = false;
-    connect(this, SIGNAL(signal_requestAI()), this, SLOT(requestAI()));
     for (i = 0; i <= 3; ++i) {
         sBackup[i] = QImage(1600, 900, QImage::Format_RGB888);
         sBkPainter[i] = new QPainter(&sBackup[i]);
@@ -221,7 +220,7 @@ void Main::threadWait(int millis) {
  * @param status New status value.
  */
 void Main::setStatus(int status) {
-    switch (sStatus = status) {
+    do switch (sStatus = status) {
     case STAT_WELCOME:
         if (sAdjustOptions) {
             refreshScreen(i18n->info_ruleSettings());
@@ -244,14 +243,14 @@ void Main::setStatus(int status) {
         switch (sUno->getRecentInfo()[3].card->content) {
         case DRAW2:
             // If starting with a [+2], let dealer draw 2 cards.
-            draw(2, /* force */ true);
+            status = draw(2, /* force */ true);
             break; // case DRAW2
 
         case SKIP:
             // If starting with a [skip], skip dealer's turn.
             refreshScreen(i18n->info_skipped(sUno->getNow()), 0x00);
             threadWait(1500);
-            setStatus(sUno->switchNow());
+            status = sUno->switchNow();
             break; // case SKIP
 
         case REV:
@@ -260,12 +259,12 @@ void Main::setStatus(int status) {
             sUno->switchDirection();
             refreshScreen(i18n->info_dirChanged());
             threadWait(1500);
-            setStatus(sUno->getNow());
+            status = sUno->getNow();
             break; // case REV
 
         default:
             // Otherwise, go to dealer's turn.
-            setStatus(sUno->getNow());
+            status = sUno->getNow();
             break; // default
         } // switch (sUno->getRecentInfo()[3].card->content)
         break; // case STAT_NEW_GAME
@@ -273,16 +272,16 @@ void Main::setStatus(int status) {
     case Player::YOU:
         // Your turn, select a hand card to play, or draw a card
         if (sAuto) {
-            emit signal_requestAI();
+            status = requestAI();
         } // if (sAuto)
         else if (sAdjustOptions) {
             refreshScreen();
         } // else if (sAdjustOptions)
         else if (sUno->legalCardsCount4NowPlayer() == 0) {
-            draw();
+            status = draw();
         } // else if (sUno->legalCardsCount4NowPlayer() == 0)
         else if (sUno->getHandCardsOf(Player::YOU).size() == 1) {
-            play(0);
+            status = play(0);
         } // else if (sUno->getHandCardsOf(Player::YOU).size() == 1)
         else if (sSelectedIdx < 0) {
             int c = sUno->getDraw2StackCount();
@@ -316,11 +315,11 @@ void Main::setStatus(int status) {
         } // if (sUno->getNext() == Player::YOU && !sAuto)
         else if (sAI->needToChallenge()) {
             // Challenge or not is decided by AI
-            onChallenge();
+            status = onChallenge();
         } // else if (sAI->needToChallenge())
         else {
             sUno->switchNow();
-            draw(4, /* force */ true);
+            status = draw(4, /* force */ true);
         } // else
         break; // case STAT_DOUBT_WILD4
 
@@ -329,7 +328,7 @@ void Main::setStatus(int status) {
         // must swap hand cards with another player immediately.
         if (sAuto || sUno->getNow() != Player::YOU) {
             // Seven-card is played by AI. Select target automatically.
-            swapWith(sAI->calcBestSwapTarget4NowPlayer());
+            status = swapWith(sAI->calcBestSwapTarget4NowPlayer());
         } // if (sAuto || sUno->getNow() != Player::YOU)
         else {
             // Seven-card is played by you. Select target manually.
@@ -339,7 +338,7 @@ void Main::setStatus(int status) {
 
     case STAT_ASK_KEEP_PLAY:
         if (sAuto) {
-            play(sSelectedIdx, sAI->calcBestColor4NowPlayer());
+            status = play(sSelectedIdx, sAI->calcBestColor4NowPlayer());
         } // if (sAuto)
         else {
             refreshScreen(i18n->ask_keep_play(), 0x01);
@@ -350,7 +349,7 @@ void Main::setStatus(int status) {
     case Player::COM2:
     case Player::COM3:
         // AI players' turn
-        emit signal_requestAI();
+        status = requestAI();
         break; // case Player::COM1, Player::COM2, Player::COM3
 
     case STAT_GAME_OVER:
@@ -365,7 +364,7 @@ void Main::setStatus(int status) {
 
     default:
         break; // default
-    } // switch (sStatus = status)
+    } while (sStatus != status);
 } // setStatus(int)
 
 /**
@@ -1068,14 +1067,14 @@ void Main::mousePressEvent(QMouseEvent* event) {
                     } // if (index != sSelectedIdx)
                     else if (sUno->isLegalToPlay(card)) {
                         if (!card->isWild() || size < 2) {
-                            play(index);
+                            setStatus(play(index));
                         } // if (!card->isWild() || size < 2)
                         else if (sUno->getStackRule() != 2 ||
                             card->content != WILD_DRAW4) {
                             setStatus(STAT_WILD_COLOR);
                         } // else if (sUno->getStackRule() != 2 || ...)
                         else {
-                            play(index, sUno->lastColor());
+                            setStatus(play(index, sUno->lastColor()));
                         } // else
                     } // else if (sUno->isLegalToPlay(card))
                 } // if (startX <= x && x <= startX + width)
@@ -1087,7 +1086,7 @@ void Main::mousePressEvent(QMouseEvent* event) {
             } // else if (700 <= y && y <= 880)
             else if (360 <= y && y <= 540 && 338 <= x && x <= 458) {
                 // Card deck area, draw a card
-                draw();
+                setStatus(draw());
             } // else if (360 <= y && y <= 540 && 338 <= x && x <= 458)
             break; // case Player::YOU
 
@@ -1095,21 +1094,21 @@ void Main::mousePressEvent(QMouseEvent* event) {
             if (310 < y && y < 405) {
                 if (310 < x && x < 405) {
                     // Red sector
-                    play(sSelectedIdx, RED);
+                    setStatus(play(sSelectedIdx, RED));
                 } // if (310 < x && x < 405)
                 else if (405 < x && x < 500) {
                     // Blue sector
-                    play(sSelectedIdx, BLUE);
+                    setStatus(play(sSelectedIdx, BLUE));
                 } // else if (405 < x && x < 500)
             } // if (310 < y && y < 405)
             else if (405 < y && y < 500) {
                 if (310 < x && x < 405) {
                     // Yellow sector
-                    play(sSelectedIdx, YELLOW);
+                    setStatus(play(sSelectedIdx, YELLOW));
                 } // if (310 < x && x < 405)
                 else if (405 < x && x < 500) {
                     // Green sector
-                    play(sSelectedIdx, GREEN);
+                    setStatus(play(sSelectedIdx, GREEN));
                 } // else if (405 < x && x < 500)
             } // else if (405 < y && y < 500)
             break; // case STAT_WILD_COLOR
@@ -1119,12 +1118,12 @@ void Main::mousePressEvent(QMouseEvent* event) {
             if (310 < x && x < 500) {
                 if (310 < y && y < 405) {
                     // YES button, challenge wild +4
-                    onChallenge();
+                    setStatus(onChallenge());
                 } // if (310 < y && y < 405)
                 else if (405 < y && y < 500) {
                     // NO button, do not challenge wild +4
                     sUno->switchNow();
-                    draw(4, /* force */ true);
+                    setStatus(draw(4, /* force */ true));
                 } // else if (405 < y && y < 500)
             } // if (310 < x && x < 500)
             break; // case STAT_DOUBT_WILD4
@@ -1144,14 +1143,14 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 Card* card = hand[sSelectedIdx];
 
                 if (!card->isWild() || hand.size() < 2) {
-                    play(sSelectedIdx, card->color);
+                    setStatus(play(sSelectedIdx, card->color));
                 } // if (!card->isWild() || hand.size() < 2)
                 else if (sUno->getStackRule() != 2 ||
                     card->content != WILD_DRAW4) {
                     setStatus(STAT_WILD_COLOR);
                 } // else if (sUno->getStackRule() != 2 || ...)
                 else {
-                    play(sSelectedIdx, sUno->lastColor());
+                    setStatus(play(sSelectedIdx, sUno->lastColor()));
                 } // else
             } // else if (310 < x && x < 500 && 310 < y && y < 405)
             else if (700 <= y && y <= 880) {
@@ -1171,14 +1170,14 @@ void Main::mousePressEvent(QMouseEvent* event) {
                 } // if (index != sSelectedIdx)
 
                 if (!card->isWild() || hand.size() < 2) {
-                    play(sSelectedIdx, card->color);
+                    setStatus(play(sSelectedIdx, card->color));
                 } // if (!card->isWild() || hand.size() < 2)
                 else if (sUno->getStackRule() != 2 ||
                     card->content != WILD_DRAW4) {
                     setStatus(STAT_WILD_COLOR);
                 } // else if (sUno->getStackRule() != 2 || ...)
                 else {
-                    play(sSelectedIdx, sUno->lastColor());
+                    setStatus(play(sSelectedIdx, sUno->lastColor()));
                 } // else
             } // else if (700 <= y && y <= 880)
             break; // case STAT_ASK_KEEP_PLAY
@@ -1187,17 +1186,17 @@ void Main::mousePressEvent(QMouseEvent* event) {
             if (288 < y && y < 366 && sUno->getPlayers() == 4) {
                 if (338 < x && x < 472) {
                     // North sector
-                    swapWith(Player::COM2);
+                    setStatus(swapWith(Player::COM2));
                 } // if (338 < x && x < 472)
             } // if (288 < y && y < 366 && sUno->getPlayers() == 4)
             else if (405 < y && y < 500) {
                 if (310 < x && x < 405) {
                     // West sector
-                    swapWith(Player::COM1);
+                    setStatus(swapWith(Player::COM1));
                 } // if (310 < x && x < 405)
                 else if (405 < x && x < 500) {
                     // East sector
-                    swapWith(Player::COM3);
+                    setStatus(swapWith(Player::COM3));
                 } // else if (405 < x && x < 500)
             } // else if (405 < y && y < 500)
             break; // case STAT_SEVEN_TARGET
@@ -1218,8 +1217,10 @@ void Main::mousePressEvent(QMouseEvent* event) {
 
 /**
  * The unique AI entry point.
+ *
+ * @return Next status value.
  */
-void Main::requestAI() {
+int Main::requestAI() {
     int idxBest;
     Color bestColor[1];
 
@@ -1233,12 +1234,14 @@ void Main::requestAI() {
         : sAI->hardAI_bestCardIndex4NowPlayer(bestColor);
     if (idxBest >= 0) {
         // Found an appropriate card to play
-        play(idxBest, bestColor[0]);
+        idxBest = play(idxBest, bestColor[0]);
     } // if (idxBest >= 0)
     else {
         // No appropriate cards to play, or no card to play
-        draw();
+        idxBest = draw();
     } // else
+
+    return idxBest;
 } // requestAI()
 
 /**
@@ -1249,8 +1252,9 @@ void Main::requestAI() {
  *              i.e. previous player played a [+2] or [wild +4] to let this
  *              player draw cards. Or false if the specified player draws a
  *              card by itself in its action.
+ * @return Next status value.
  */
-void Main::draw(int count, bool force) {
+int Main::draw(int count, bool force) {
     Card* drawn;
     QString message;
     int i, index, c, now, size, width, flag;
@@ -1328,34 +1332,36 @@ void Main::draw(int count, bool force) {
         // Player drew one card by itself, the drawn card
         // can be played immediately if it's legal to play
         if (sAuto || now != Player::YOU) {
-            play(index, sAI->calcBestColor4NowPlayer());
+            now = play(index, sAI->calcBestColor4NowPlayer());
         } // if (sAuto || now != Player::YOU)
         else if (sUno->getForcePlayRule() == 1) {
             // Store index value as global value. This value
             // will be used after the wild color determined.
             sSelectedIdx = index;
-            setStatus(STAT_ASK_KEEP_PLAY);
+            now = STAT_ASK_KEEP_PLAY;
         } // else if (sUno->getForcePlayRule() == 1)
         else if (!drawn->isWild()) {
             // Force play a non-wild card
-            play(index, drawn->color);
+            now = play(index, drawn->color);
         } // else if (!drawn->isWild())
         else if (sUno->getStackRule() == 2 &&
             drawn->content == WILD_DRAW4) {
             // Force play a Wild +4 card, but do not change the next color
-            play(index, sUno->lastColor());
+            now = play(index, sUno->lastColor());
         } // else if (sUno->getStackRule() == 2 && ...)
         else {
             // Force play a Wild / Wild +4 card, and change the next color
             sSelectedIdx = index;
-            setStatus(STAT_WILD_COLOR);
+            now = STAT_WILD_COLOR;
         } // else
     } // if (count == 1 && ...)
     else {
         refreshScreen(i18n->act_pass(now), 0x00);
         threadWait(750);
-        setStatus(sUno->switchNow());
+        now = sUno->switchNow();
     } // else
+
+    return now;
 } // draw(int, bool)
 
 /**
@@ -1365,8 +1371,9 @@ void Main::draw(int count, bool force) {
  *              player's hand cards.
  * @param color Optional, available when the card to play is a wild card.
  *              Pass the specified following legal color.
+ * @return Next status value.
  */
-void Main::play(int index, Color color) {
+int Main::play(int index, Color color) {
     Card* card;
     int c, now, size, width, next, flag;
 
@@ -1448,7 +1455,7 @@ void Main::play(int index, Color color) {
 
             sAuto = false; // Force disable the AUTO switch
             sWinner = now;
-            setStatus(STAT_GAME_OVER);
+            now = STAT_GAME_OVER;
         } // if (size == 1)
         else {
             // When the played card is an action card or a wild card,
@@ -1461,12 +1468,12 @@ void Main::play(int index, Color color) {
                     c = sUno->getDraw2StackCount();
                     refreshScreen(i18n->act_playDraw2(now, next, c), flag);
                     threadWait(1500);
-                    setStatus(next);
+                    now = next;
                 } // if (sUno->getStackRule() != 0)
                 else {
                     refreshScreen(i18n->act_playDraw2(now, next, 2), flag);
                     threadWait(1500);
-                    draw(2, /* force */ true);
+                    now = draw(2, /* force */ true);
                 } // else
                 break; // case DRAW2
 
@@ -1474,20 +1481,20 @@ void Main::play(int index, Color color) {
                 next = sUno->switchNow();
                 refreshScreen(i18n->act_playSkip(now, next), flag);
                 threadWait(1500);
-                setStatus(sUno->switchNow());
+                now = sUno->switchNow();
                 break; // case SKIP
 
             case REV:
                 sUno->switchDirection();
                 refreshScreen(i18n->act_playRev(now));
                 threadWait(1500);
-                setStatus(sUno->switchNow());
+                now = sUno->switchNow();
                 break; // case REV
 
             case WILD:
                 refreshScreen(i18n->act_playWild(now, color), flag);
                 threadWait(1500);
-                setStatus(sUno->switchNow());
+                now = sUno->switchNow();
                 break; // case WILD
 
             case WILD_DRAW4:
@@ -1496,13 +1503,13 @@ void Main::play(int index, Color color) {
                     c = sUno->getDraw2StackCount();
                     refreshScreen(i18n->act_playDraw2(now, next, c), flag);
                     threadWait(1500);
-                    setStatus(next);
+                    now = next;
                 } // if (sUno->getStackRule() == 2)
                 else {
                     next = sUno->getNext();
                     refreshScreen(i18n->act_playWildDraw4(now, next), flag);
                     threadWait(1500);
-                    setStatus(STAT_DOUBT_WILD4);
+                    now = STAT_DOUBT_WILD4;
                 } // else
                 break; // case WILD_DRAW4
 
@@ -1510,7 +1517,7 @@ void Main::play(int index, Color color) {
                 if (sUno->isSevenZeroRule()) {
                     refreshScreen(i18n->act_playCard(now, card->name), flag);
                     threadWait(750);
-                    setStatus(STAT_SEVEN_TARGET);
+                    now = STAT_SEVEN_TARGET;
                     break; // case NUM7
                 } // if (sUno->isSevenZeroRule())
                 // else fall through
@@ -1519,7 +1526,7 @@ void Main::play(int index, Color color) {
                 if (sUno->isSevenZeroRule()) {
                     refreshScreen(i18n->act_playCard(now, card->name), flag);
                     threadWait(750);
-                    cycle();
+                    now = cycle();
                     break; // case NUM0
                 } // if (sUno->isSevenZeroRule())
                 // else fall through
@@ -1527,11 +1534,13 @@ void Main::play(int index, Color color) {
             default:
                 refreshScreen(i18n->act_playCard(now, card->name), flag);
                 threadWait(1500);
-                setStatus(sUno->switchNow());
+                now = sUno->switchNow();
                 break; // default
             } // switch (card->content)
         } // else
     } // if (card != nullptr)
+
+    return now;
 } // play(int, Color)
 
 /**
@@ -1541,8 +1550,10 @@ void Main::play(int index, Color color) {
  * Next player does not challenge: next player draw 4 cards;
  * Challenge success: current player draw 4 cards;
  * Challenge failure: next player draw 6 cards.
+ *
+ * @return Next status value.
  */
-void Main::onChallenge() {
+int Main::onChallenge() {
     int now, challenger;
     bool challengeSuccess;
 
@@ -1557,15 +1568,17 @@ void Main::onChallenge() {
         // Challenge success, who played [wild +4] draws 4 cards
         refreshScreen(i18n->info_challengeSuccess(now), 0x00);
         threadWait(1500);
-        draw(4, /* force */ true);
+        now = draw(4, /* force */ true);
     } // if (challengeSuccess)
     else {
         // Challenge failure, challenger draws 6 cards
         refreshScreen(i18n->info_challengeFailure(challenger), 0x00);
         threadWait(1500);
         sUno->switchNow();
-        draw(6, /* force */ true);
+        now = draw(6, /* force */ true);
     } // else
+
+    return now;
 } // onChallenge()
 
 /**
@@ -1573,8 +1586,9 @@ void Main::onChallenge() {
  *
  * @param whom Swap with whom. Must be one of the following:
  *             Player::YOU, Player::COM1, Player::COM2, Player::COM3
+ * @return Next status value.
  */
-void Main::swapWith(int whom) {
+int Main::swapWith(int whom) {
     static int x[] = { 740, 160, 740, 1320 };
     static int y[] = { 670, 360, 50, 360 };
     int curr, flag;
@@ -1598,14 +1612,16 @@ void Main::swapWith(int whom) {
     sUno->swap(curr, whom);
     refreshScreen(i18n->info_7_swap(curr, whom), flag & ~0x40);
     threadWait(1500);
-    setStatus(sUno->switchNow());
+    return sUno->switchNow();
 } // swapWith(int)
 
 /**
  * In 7-0 rule, when a zero card is put down, everyone need to pass
  * the hand cards to the next player.
+ *
+ * @return Next status value.
  */
-void Main::cycle() {
+int Main::cycle() {
     static int x[] = { 740, 160, 740, 1320 };
     static int y[] = { 670, 360, 50, 360 };
     int curr, next, oppo, prev;
@@ -1653,7 +1669,7 @@ void Main::cycle() {
     sUno->cycle();
     refreshScreen(i18n->info_0_rotate(), 0x0f);
     threadWait(1500);
-    setStatus(sUno->switchNow());
+    return sUno->switchNow();
 } // cycle()
 
 /**

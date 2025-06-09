@@ -256,7 +256,7 @@ public class MainActivity extends AppCompatActivity
      */
     @WorkerThread
     private void setStatus(int status) {
-        switch (mStatus = status) {
+        do switch (mStatus = status) {
             case STAT_WELCOME:
                 if (mAdjustOptions) {
                     refreshScreen(i18n.info_ruleSettings());
@@ -279,14 +279,14 @@ public class MainActivity extends AppCompatActivity
                 switch (mUno.getRecentInfo()[3].card.content) {
                     case DRAW2:
                         // If starting with a [+2], let dealer draw 2 cards.
-                        draw(2, /* force */ true);
+                        status = draw(2, /* force */ true);
                         break; // case DRAW2
 
                     case SKIP:
                         // If starting with a [skip], skip dealer's turn.
                         refreshScreen(i18n.info_skipped(mUno.getNow()), 0x00);
                         threadWait(1500);
-                        setStatus(mUno.switchNow());
+                        status = mUno.switchNow();
                         break; // case SKIP
 
                     case REV:
@@ -295,12 +295,12 @@ public class MainActivity extends AppCompatActivity
                         mUno.switchDirection();
                         refreshScreen(i18n.info_dirChanged());
                         threadWait(1500);
-                        setStatus(mUno.getNow());
+                        status = mUno.getNow();
                         break; // case REV
 
                     default:
                         // Otherwise, go to dealer's turn.
-                        setStatus(mUno.getNow());
+                        status = mUno.getNow();
                         break; // default
                 } // switch (mUno.getRecentInfo()[3].card.content)
                 break; // case STAT_NEW_GAME
@@ -308,16 +308,16 @@ public class MainActivity extends AppCompatActivity
             case Player.YOU:
                 // Your turn, select a hand card to play, or draw a card
                 if (mAuto) {
-                    mSubHandler.sendEmptyMessage(2);
+                    status = requestAI();
                 } // if (mAuto)
                 else if (mAdjustOptions) {
                     refreshScreen("");
                 } // else if (mAdjustOptions)
                 else if (mUno.legalCardsCount4NowPlayer() == 0) {
-                    draw(1, /* force */ false);
+                    status = draw(1, /* force */ false);
                 } // else if (mUno.legalCardsCount4NowPlayer() == 0)
                 else if (mUno.getHandCardsOf(Player.YOU).size() == 1) {
-                    play(0, Color.NONE);
+                    status = play(0, Color.NONE);
                 } // else if (mUno.getHandCardsOf(Player.YOU).size() == 1)
                 else if (mSelectedIdx < 0) {
                     int c = mUno.getDraw2StackCount();
@@ -347,16 +347,15 @@ public class MainActivity extends AppCompatActivity
             case STAT_DOUBT_WILD4:
                 if (mUno.getNext() == Player.YOU && !mAuto) {
                     // Challenge or not is decided by you
-                    refreshScreen(i18n.ask_challenge(
-                            mUno.next2lastColor().ordinal()), 0x00);
+                    refreshScreen(i18n.ask_challenge(mUno.next2lastColor().ordinal()), 0x00);
                 } // if (mUno.getNext() == Player.YOU && !mAuto)
                 else if (mAI.needToChallenge()) {
                     // Challenge or not is decided by AI
-                    onChallenge();
+                    status = onChallenge();
                 } // else if (mAI.needToChallenge())
                 else {
                     mUno.switchNow();
-                    draw(4, /* force */ true);
+                    status = draw(4, /* force */ true);
                 } // else
                 break; // case STAT_DOUBT_WILD4
 
@@ -365,7 +364,7 @@ public class MainActivity extends AppCompatActivity
                 // must swap hand cards with another player immediately.
                 if (mAuto || mUno.getNow() != Player.YOU) {
                     // Seven-card is played by AI. Select target automatically.
-                    swapWith(mAI.calcBestSwapTarget4NowPlayer());
+                    status = swapWith(mAI.calcBestSwapTarget4NowPlayer());
                 } // if (mAuto || mUno.getNow() != Player.YOU)
                 else {
                     // Seven-card is played by you. Select target manually.
@@ -375,7 +374,7 @@ public class MainActivity extends AppCompatActivity
 
             case STAT_ASK_KEEP_PLAY:
                 if (mAuto) {
-                    play(mSelectedIdx, mAI.calcBestColor4NowPlayer());
+                    status = play(mSelectedIdx, mAI.calcBestColor4NowPlayer());
                 } // if (mAuto)
                 else {
                     refreshScreen(i18n.ask_keep_play(), 0x01);
@@ -386,7 +385,7 @@ public class MainActivity extends AppCompatActivity
             case Player.COM2:
             case Player.COM3:
                 // AI players' turn
-                mSubHandler.sendEmptyMessage(2);
+                status = requestAI();
                 break; // case Player.COM1, Player.COM2, Player.COM3
 
             case STAT_GAME_OVER:
@@ -401,7 +400,7 @@ public class MainActivity extends AppCompatActivity
 
             default:
                 break; // default
-        } // switch (mStatus = status)
+        } while (mStatus != status);
     } // setStatus(int)
 
     /**
@@ -1080,15 +1079,11 @@ public class MainActivity extends AppCompatActivity
     private boolean handleMessage2(Message message) {
         int x = message.arg1, y = message.arg2;
 
-        if (message.what == 2) {
-            // Request AI when message.what == 2
-            requestAI();
-        } // if (message.what == 2)
-        else if (message.what == 1) {
+        if (message.what == 1) {
             // When message.what == 1
             // load the replay file named [message.obj]
             loadReplay((String) message.obj);
-        } // else if (message.what == 1)
+        } // if (message.what == 1)
         else if (844 <= y && y <= 880 && 20 <= x && x <= 200) {
             // <OPTIONS> button
             if (mStatus == Player.YOU ||
@@ -1245,14 +1240,14 @@ public class MainActivity extends AppCompatActivity
                             } // if (index != mSelectedIdx)
                             else if (mUno.isLegalToPlay(card)) {
                                 if (!card.isWild() || size < 2) {
-                                    play(index, Color.NONE);
+                                    setStatus(play(index, Color.NONE));
                                 } // if (!card.isWild() || size < 2)
                                 else if (mUno.getStackRule() != 2 ||
                                         card.content != Content.WILD_DRAW4) {
                                     setStatus(STAT_WILD_COLOR);
                                 } // else if (mUno.getStackRule() != 2 || ...)
                                 else {
-                                    play(index, mUno.lastColor());
+                                    setStatus(play(index, mUno.lastColor()));
                                 } // else
                             } // else if (mUno.isLegalToPlay(card))
                         } // if (startX <= x && x <= startX + width)
@@ -1264,7 +1259,7 @@ public class MainActivity extends AppCompatActivity
                     } // else if (700 <= y && y <= 880)
                     else if (360 <= y && y <= 540 && 338 <= x && x <= 458) {
                         // Card deck area, draw a card
-                        draw(1, /* force */ false);
+                        setStatus(draw(1, /* force */ false));
                     } // else if (360 <= y && y <= 540 && 338 <= x && x <= 458)
                     break; // case Player.YOU
 
@@ -1272,21 +1267,21 @@ public class MainActivity extends AppCompatActivity
                     if (310 < y && y < 405) {
                         if (310 < x && x < 405) {
                             // Red sector
-                            play(mSelectedIdx, Color.RED);
+                            setStatus(play(mSelectedIdx, Color.RED));
                         } // if (310 < x && x < 405)
                         else if (405 < x && x < 500) {
                             // Blue sector
-                            play(mSelectedIdx, Color.BLUE);
+                            setStatus(play(mSelectedIdx, Color.BLUE));
                         } // else if (405 < x && x < 500)
                     } // if (310 < y && y < 405)
                     else if (405 < y && y < 500) {
                         if (310 < x && x < 405) {
                             // Yellow sector
-                            play(mSelectedIdx, Color.YELLOW);
+                            setStatus(play(mSelectedIdx, Color.YELLOW));
                         } // if (310 < x && x < 405)
                         else if (405 < x && x < 500) {
                             // Green sector
-                            play(mSelectedIdx, Color.GREEN);
+                            setStatus(play(mSelectedIdx, Color.GREEN));
                         } // else if (405 < x && x < 500)
                     } // else if (405 < y && y < 500)
                     break; // case STAT_WILD_COLOR
@@ -1296,12 +1291,12 @@ public class MainActivity extends AppCompatActivity
                     if (310 < x && x < 500) {
                         if (310 < y && y < 405) {
                             // YES button, challenge wild +4
-                            onChallenge();
+                            setStatus(onChallenge());
                         } // if (310 < y && y < 405)
                         else if (405 < y && y < 500) {
                             // NO button, do not challenge wild +4
                             mUno.switchNow();
-                            draw(4, /* force */ true);
+                            setStatus(draw(4, /* force */ true));
                         } // else if (405 < y && y < 500)
                     } // if (310 < x && x < 500)
                     break; // case STAT_DOUBT_WILD4
@@ -1321,14 +1316,14 @@ public class MainActivity extends AppCompatActivity
                         Card card = hand.get(mSelectedIdx);
 
                         if (!card.isWild() || hand.size() < 2) {
-                            play(mSelectedIdx, card.color);
+                            setStatus(play(mSelectedIdx, card.color));
                         } // if (!card.isWild() || hand.size() < 2)
                         else if (mUno.getStackRule() != 2 ||
                                 card.content != Content.WILD_DRAW4) {
                             setStatus(STAT_WILD_COLOR);
                         } // else if (mUno.getStackRule() != 2 || ...)
                         else {
-                            play(mSelectedIdx, mUno.lastColor());
+                            setStatus(play(mSelectedIdx, mUno.lastColor()));
                         } // else
                     } // else if (310 < x && x < 500 && 310 < y && y < 405)
                     else if (700 <= y && y <= 880) {
@@ -1348,14 +1343,14 @@ public class MainActivity extends AppCompatActivity
                         } // if (index != mSelectedIdx)
 
                         if (!card.isWild() || hand.size() < 2) {
-                            play(mSelectedIdx, card.color);
+                            setStatus(play(mSelectedIdx, card.color));
                         } // if (!card.isWild() || hand.size() < 2)
                         else if (mUno.getStackRule() != 2 ||
                                 card.content != Content.WILD_DRAW4) {
                             setStatus(STAT_WILD_COLOR);
                         } // else if (mUno.getStackRule() != 2 || ...)
                         else {
-                            play(mSelectedIdx, mUno.lastColor());
+                            setStatus(play(mSelectedIdx, mUno.lastColor()));
                         } // else
                     } // else if (700 <= y && y <= 880)
                     break; // case STAT_ASK_KEEP_PLAY
@@ -1364,17 +1359,17 @@ public class MainActivity extends AppCompatActivity
                     if (288 < y && y < 366 && mUno.getPlayers() == 4) {
                         if (338 < x && x < 472) {
                             // North sector
-                            swapWith(Player.COM2);
+                            setStatus(swapWith(Player.COM2));
                         } // if (338 < x && x < 472)
                     } // if (288 < y && y < 366 && mUno.getPlayers() == 4)
                     else if (405 < y && y < 500) {
                         if (310 < x && x < 405) {
                             // West sector
-                            swapWith(Player.COM1);
+                            setStatus(swapWith(Player.COM1));
                         } // if (310 < x && x < 405)
                         else if (405 < x && x < 500) {
                             // East sector
-                            swapWith(Player.COM3);
+                            setStatus(swapWith(Player.COM3));
                         } // else if (405 < x && x < 500)
                     } // else if (405 < y && y < 500)
                     break; // case STAT_SEVEN_TARGET
@@ -1397,9 +1392,11 @@ public class MainActivity extends AppCompatActivity
 
     /**
      * The unique AI entry point.
+     *
+     * @return Next status value.
      */
     @WorkerThread
-    private void requestAI() {
+    private int requestAI() {
         int idxBest;
 
         setStatus(STAT_IDLE); // block tap down events when idle
@@ -1412,12 +1409,14 @@ public class MainActivity extends AppCompatActivity
                 : mAI.hardAI_bestCardIndex4NowPlayer(mBestColor);
         if (idxBest >= 0) {
             // Found an appropriate card to play
-            play(idxBest, mBestColor[0]);
+            idxBest = play(idxBest, mBestColor[0]);
         } // if (idxBest >= 0)
         else {
             // No appropriate cards to play, or no card to play
-            draw(1, /* force */ false);
+            idxBest = draw(1, /* force */ false);
         } // else
+
+        return idxBest;
     } // requestAI()
 
     /**
@@ -1428,9 +1427,10 @@ public class MainActivity extends AppCompatActivity
      *              i.e. previous player played a [+2] or [wild +4] to let this
      *              player draw cards. Or false if the specified player draws a
      *              card by itself in its action.
+     * @return Next status value.
      */
     @WorkerThread
-    private void draw(int count, boolean force) {
+    private int draw(int count, boolean force) {
         Card drawn;
         String message;
         int i, index, c, now, size, width, flag;
@@ -1509,34 +1509,36 @@ public class MainActivity extends AppCompatActivity
             // Player drew one card by itself, the drawn card
             // can be played immediately if it's legal to play
             if (mAuto || now != Player.YOU) {
-                play(index, mAI.calcBestColor4NowPlayer());
+                now = play(index, mAI.calcBestColor4NowPlayer());
             } // if (mAuto || now != Player.YOU)
             else if (mUno.getForcePlayRule() == 1) {
                 // Store index value as global value. This value
                 // will be used after the wild color determined.
                 mSelectedIdx = index;
-                setStatus(STAT_ASK_KEEP_PLAY);
+                now = STAT_ASK_KEEP_PLAY;
             } // else if (mUno.getForcePlayRule() == 1)
             else if (!drawn.isWild()) {
                 // Force play a non-wild card
-                play(index, drawn.color);
+                now = play(index, drawn.color);
             } // else if (!drawn.isWild())
             else if (mUno.getStackRule() == 2 &&
                     drawn.content == Content.WILD_DRAW4) {
                 // Force play a Wild +4 card, but do not change the next color
-                play(index, mUno.lastColor());
+                now = play(index, mUno.lastColor());
             } // else if (mUno.getStackRule() == 2 && ...)
             else {
                 // Force play a Wild / Wild +4 card, and change the next color
                 mSelectedIdx = index;
-                setStatus(STAT_WILD_COLOR);
+                now = STAT_WILD_COLOR;
             } // else
         } // if (count == 1 && ...)
         else {
             refreshScreen(i18n.act_pass(now), 0x00);
             threadWait(750);
-            setStatus(mUno.switchNow());
+            now = mUno.switchNow();
         } // else
+
+        return now;
     } // draw(int, boolean)
 
     /**
@@ -1546,9 +1548,10 @@ public class MainActivity extends AppCompatActivity
      *              player's hand cards.
      * @param color Optional, available when the card to play is a wild card.
      *              Pass the specified following legal color.
+     * @return Next status value.
      */
     @WorkerThread
-    private void play(int index, Color color) {
+    private int play(int index, Color color) {
         Card card;
         int c, now, size, width, next, flag;
 
@@ -1630,7 +1633,7 @@ public class MainActivity extends AppCompatActivity
 
                 mAuto = false; // Force disable the AUTO switch
                 mWinner = now;
-                setStatus(STAT_GAME_OVER);
+                now = STAT_GAME_OVER;
             } // if (size == 1)
             else {
                 // When the played card is an action card or a wild card,
@@ -1643,12 +1646,12 @@ public class MainActivity extends AppCompatActivity
                             c = mUno.getDraw2StackCount();
                             refreshScreen(i18n.act_playDraw2(now, next, c), flag);
                             threadWait(1500);
-                            setStatus(next);
+                            now = next;
                         } // if (mUno.getStackRule() != 0)
                         else {
                             refreshScreen(i18n.act_playDraw2(now, next, 2), flag);
                             threadWait(1500);
-                            draw(2, /* force */ true);
+                            now = draw(2, /* force */ true);
                         } // else
                         break; // case DRAW2
 
@@ -1656,20 +1659,20 @@ public class MainActivity extends AppCompatActivity
                         next = mUno.switchNow();
                         refreshScreen(i18n.act_playSkip(now, next), flag);
                         threadWait(1500);
-                        setStatus(mUno.switchNow());
+                        now = mUno.switchNow();
                         break; // case SKIP
 
                     case REV:
                         mUno.switchDirection();
                         refreshScreen(i18n.act_playRev(now));
                         threadWait(1500);
-                        setStatus(mUno.switchNow());
+                        now = mUno.switchNow();
                         break; // case REV
 
                     case WILD:
                         refreshScreen(i18n.act_playWild(now, color.ordinal()), flag);
                         threadWait(1500);
-                        setStatus(mUno.switchNow());
+                        now = mUno.switchNow();
                         break; // case WILD
 
                     case WILD_DRAW4:
@@ -1678,13 +1681,13 @@ public class MainActivity extends AppCompatActivity
                             c = mUno.getDraw2StackCount();
                             refreshScreen(i18n.act_playDraw2(now, next, c), flag);
                             threadWait(1500);
-                            setStatus(next);
+                            now = next;
                         } // if (mUno.getStackRule() == 2)
                         else {
                             next = mUno.getNext();
                             refreshScreen(i18n.act_playWildDraw4(now, next), flag);
                             threadWait(1500);
-                            setStatus(STAT_DOUBT_WILD4);
+                            now = STAT_DOUBT_WILD4;
                         } // else
                         break; // case WILD_DRAW4
 
@@ -1692,7 +1695,7 @@ public class MainActivity extends AppCompatActivity
                         if (mUno.isSevenZeroRule()) {
                             refreshScreen(i18n.act_playCard(now, card.name), flag);
                             threadWait(750);
-                            setStatus(STAT_SEVEN_TARGET);
+                            now = STAT_SEVEN_TARGET;
                             break; // case NUM7
                         } // if (mUno.isSevenZeroRule())
                         // else fall through
@@ -1701,7 +1704,7 @@ public class MainActivity extends AppCompatActivity
                         if (mUno.isSevenZeroRule()) {
                             refreshScreen(i18n.act_playCard(now, card.name), flag);
                             threadWait(750);
-                            cycle();
+                            now = cycle();
                             break; // case NUM0
                         } // if (mUno.isSevenZeroRule())
                         // else fall through
@@ -1709,11 +1712,13 @@ public class MainActivity extends AppCompatActivity
                     default:
                         refreshScreen(i18n.act_playCard(now, card.name), flag);
                         threadWait(1500);
-                        setStatus(mUno.switchNow());
+                        now = mUno.switchNow();
                         break; // default
                 } // switch (card.content)
             } // else
         } // if (card != null)
+
+        return now;
     } // play(int, Color)
 
     /**
@@ -1723,9 +1728,11 @@ public class MainActivity extends AppCompatActivity
      * Next player does not challenge: next player draw 4 cards;
      * Challenge success: current player draw 4 cards;
      * Challenge failure: next player draw 6 cards.
+     *
+     * @return Next status value.
      */
     @WorkerThread
-    private void onChallenge() {
+    private int onChallenge() {
         int now, challenger;
         boolean challengeSuccess;
 
@@ -1740,15 +1747,17 @@ public class MainActivity extends AppCompatActivity
             // Challenge success, who played [wild +4] draws 4 cards
             refreshScreen(i18n.info_challengeSuccess(now), 0x00);
             threadWait(1500);
-            draw(4, /* force */ true);
+            now = draw(4, /* force */ true);
         } // if (challengeSuccess)
         else {
             // Challenge failure, challenger draws 6 cards
             refreshScreen(i18n.info_challengeFailure(challenger), 0x00);
             threadWait(1500);
             mUno.switchNow();
-            draw(6, /* force */ true);
+            now = draw(6, /* force */ true);
         } // else
+
+        return now;
     } // onChallenge()
 
     /**
@@ -1756,9 +1765,10 @@ public class MainActivity extends AppCompatActivity
      *
      * @param whom Swap with whom. Must be one of the following:
      *             Player.YOU, Player.COM1, Player.COM2, Player.COM3
+     * @return Next status value.
      */
     @WorkerThread
-    private void swapWith(int whom) {
+    private int swapWith(int whom) {
         final int[] x = {740, 160, 740, 1320};
         final int[] y = {670, 360, 50, 360};
         int curr, flag;
@@ -1782,15 +1792,17 @@ public class MainActivity extends AppCompatActivity
         mUno.swap(curr, whom);
         refreshScreen(i18n.info_7_swap(curr, whom), flag & ~0x40);
         threadWait(1500);
-        setStatus(mUno.switchNow());
+        return mUno.switchNow();
     } // swapWith(int)
 
     /**
      * In 7-0 rule, when a zero card is put down, everyone need to pass
      * the hand cards to the next player.
+     *
+     * @return Next status value.
      */
     @WorkerThread
-    private void cycle() {
+    private int cycle() {
         final int[] x = {740, 160, 740, 1320};
         final int[] y = {670, 360, 50, 360};
         int curr, next, oppo, prev;
@@ -1838,7 +1850,7 @@ public class MainActivity extends AppCompatActivity
         mUno.cycle();
         refreshScreen(i18n.info_0_rotate(), 0x0f);
         threadWait(1500);
-        setStatus(mUno.switchNow());
+        return mUno.switchNow();
     } // cycle()
 
     /**
